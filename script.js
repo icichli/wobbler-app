@@ -24,7 +24,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Apply Device Layout Mode (auto, mobile, desktop)
   function setDeviceMode(mode) {
     document.body.classList.remove('mode-auto', 'force-mobile', 'force-desktop');
-
     document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
 
     if (mode === 'mobile') {
@@ -414,7 +413,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Render Print Area for Window.print()
+  // Render Clean Print Area for Window.print()
   function preparePrintArea() {
     printArea.innerHTML = '';
     const wCm = parseFloat(wobblerWidthInput.value) || 6.5;
@@ -428,7 +427,11 @@ document.addEventListener('DOMContentLoaded', () => {
       count = Math.min(parseInt(sheetCount.value, 10), grid.maxCount);
     }
 
-    const wobblerHTML = wobblerPreview.outerHTML;
+    // Clone clean wobbler element without UI wrappers or box shadows
+    const cleanWobbler = wobblerPreview.cloneNode(true);
+    cleanWobbler.removeAttribute('id');
+    cleanWobbler.style.boxShadow = 'none';
+
     const page = document.createElement('div');
     page.className = 'print-page';
     page.style.gridTemplateColumns = `repeat(${grid.cols}, ${wMm}mm)`;
@@ -439,7 +442,7 @@ document.addEventListener('DOMContentLoaded', () => {
       itemWrapper.className = 'print-wobbler-wrapper';
       itemWrapper.style.width = `${wMm}mm`;
       itemWrapper.style.height = `${hMm}mm`;
-      itemWrapper.innerHTML = wobblerHTML;
+      itemWrapper.appendChild(cleanWobbler.cloneNode(true));
 
       if (showCropMarks.checked) {
         const crop = document.createElement('div');
@@ -453,11 +456,15 @@ document.addEventListener('DOMContentLoaded', () => {
     printArea.appendChild(page);
   }
 
-  // Print Trigger Function
+  // Robust Print Trigger Function
   function triggerPrint() {
     preparePrintArea();
+    document.body.classList.add('is-printing');
     setTimeout(() => {
       window.print();
+      setTimeout(() => {
+        document.body.classList.remove('is-printing');
+      }, 500);
     }, 150);
   }
 
