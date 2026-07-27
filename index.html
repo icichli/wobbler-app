@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Конструктор ценников и воблеров</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@700&family=Comfortaa:wght@700&family=Inter:wght@600;800;900&family=Lobster&family=Marck+Script&family=Montserrat:wght@400;600;700;800;900&family=Neucha&family=Oswald:wght@600;700&family=Pacifico&family=Pattaya&family=Playfair+Display:wght@700;900&family=Press+Start+2P&family=Roboto:wght@500;700;900&family=Rubik:wght@500;700;900&family=Ruslan+Display&family=Russo+One&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Top App Navigation -->
+  <header class="app-header no-print">
+    <div class="logo">
+      <span class="logo-icon">🏷️</span>
+      <div>
+        <h1>Конструктор Воблеров и Ценников</h1>
+        <p class="subtitle" id="topSubtitle">Размер: 6,5 см × 4,5 см (настраиваемый)</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button id="saveTemplateBtn" class="btn btn-secondary">
+        <span class="icon">💾</span> Сохранить как новый шаблон
+      </button>
+      <button id="printBtn" class="btn btn-primary btn-glow">
+        <span class="icon">🖨️</span> Распечатать лист А4
+      </button>
+    </div>
+  </header>
+
+  <main class="main-layout no-print">
+    <!-- Left Sidebar Controls -->
+    <aside class="controls-sidebar">
+      
+      <!-- Preset & Saved Templates Manager -->
+      <section class="control-card">
+        <h3><span class="card-num">1</span> Шаблоны</h3>
+        
+        <div class="template-tabs">
+          <button class="tab-btn active" data-tab="builtIn">Встроенные</button>
+          <button class="tab-btn" data-tab="userSaved">Мои шаблоны (<span id="userCount">0</span>)</button>
+        </div>
+
+        <!-- Built-in presets -->
+        <div id="builtInTemplates" class="presets-grid tab-content active">
+          <button class="preset-card active" data-preset="novy_vkus">
+            <div class="preset-color red"></div>
+            <div class="preset-info">
+              <span class="preset-title">Новый вкус</span>
+              <span class="preset-desc">Красный 6.5×4.5 см (сплошная заливка)</span>
+            </div>
+          </button>
+
+          <button class="preset-card" data-preset="novinka">
+            <div class="preset-color yellow"></div>
+            <div class="preset-info">
+              <span class="preset-title">Новинка</span>
+              <span class="preset-desc">Желтый 6.5×7 см (раздельный)</span>
+            </div>
+          </button>
+
+          <button class="preset-card" data-preset="tomat">
+            <div class="preset-color tomato"></div>
+            <div class="preset-info">
+              <span class="preset-title">Томатное</span>
+              <span class="preset-desc">Фон с томатами 6.5×7 см</span>
+            </div>
+          </button>
+
+          <button class="preset-card" data-preset="sladko">
+            <div class="preset-color purple"></div>
+            <div class="preset-info">
+              <span class="preset-title">Сладко</span>
+              <span class="preset-desc">Фиолетовый фон 6.5×7 см</span>
+            </div>
+          </button>
+        </div>
+
+        <!-- User saved templates -->
+        <div id="userTemplates" class="presets-grid tab-content">
+          <div class="empty-state" id="emptyUserTemplates">
+            У вас пока нет сохраненных шаблонов.<br>Настройте макет и нажмите «Сохранить как новый шаблон».
+          </div>
+        </div>
+      </section>
+
+      <!-- Layout Type -->
+      <section class="control-card">
+        <h3><span class="card-num">2</span> Формат воблера</h3>
+        <div class="radio-group">
+          <label class="radio-option">
+            <input type="radio" name="layoutType" value="full" checked>
+            <span class="radio-custom"></span>
+            <div class="radio-text">
+              <strong>Сплошной воблер (Полная заливка)</strong>
+              <small>Фон и цвет на всю площадь воблера</small>
+            </div>
+          </label>
+          <label class="radio-option">
+            <input type="radio" name="layoutType" value="split">
+            <span class="radio-custom"></span>
+            <div class="radio-text">
+              <strong>Раздельный (как на фото)</strong>
+              <small>Верхний фоновый блок + нижнее белое поле</small>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      <!-- Text, Font & Position Customization -->
+      <section class="control-card">
+        <h3><span class="card-num">3</span> Текст и шрифты</h3>
+        
+        <!-- Main Title Settings -->
+        <div class="field-settings-group">
+          <div class="group-header">
+            <h4>1. Главный заголовок</h4>
+          </div>
+          <div class="form-group">
+            <input type="text" id="inputTitle" value="НОВЫЙ ВКУС">
+          </div>
+          <div class="form-row">
+            <div class="form-group flex-2">
+              <label>Шрифт заголовка</label>
+              <select id="titleFont" class="font-dropdown">
+                <option value="'Montserrat', sans-serif">Montserrat (Современный)</option>
+                <option value="'Russo One', sans-serif">Russo One (Мощный)</option>
+                <option value="'Bebas Neue', cursive">Bebas Neue (Высокий)</option>
+                <option value="'Rubik', sans-serif">Rubik (Плотный)</option>
+                <option value="'Oswald', sans-serif">Oswald (Акцентный)</option>
+                <option value="'Lobster', cursive">Lobster (Декоративный)</option>
+                <option value="'Playfair Display', serif">Playfair Display (Засечки)</option>
+                <option value="'Caveat', cursive">Caveat (Рукописный)</option>
+                <option value="'Marck Script', cursive">Marck Script (Каллиграфия)</option>
+                <option value="'Neucha', cursive">Neucha (Игривый)</option>
+                <option value="'Comfortaa', cursive">Comfortaa (Округлый)</option>
+                <option value="'Ruslan Display', cursive">Ruslan (Плакатный)</option>
+                <option value="'Press Start 2P', cursive">Press Start (Пиксельный)</option>
+                <option value="Arial, sans-serif">Arial (Классический)</option>
+              </select>
+            </div>
+            <div class="form-group flex-1">
+              <label>Цвет</label>
+              <input type="color" id="titleColor" value="#ffffff">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label>Размер: <span id="titleSizeVal">18</span>pt</label>
+              <input type="range" id="titleSize" min="8" max="42" value="18">
+            </div>
+            <div class="form-group flex-1">
+              <label>Толщина</label>
+              <select id="titleWeight">
+                <option value="900" selected>Extra Bold (900)</option>
+                <option value="700">Bold (700)</option>
+                <option value="400">Regular (400)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Title Position & Alignment -->
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label>Выравнивание</label>
+              <div class="align-btn-group">
+                <button type="button" class="align-btn active" data-target="title" data-align="center">↔ По центру</button>
+                <button type="button" class="align-btn" data-target="title" data-align="left">← Слева</button>
+                <button type="button" class="align-btn" data-target="title" data-align="right">Справа →</button>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Смещение по вертикали: <span id="titleOffsetYVal">0</span> мм</label>
+            <input type="range" id="titleOffsetY" min="-20" max="20" value="0">
+          </div>
+        </div>
+
+        <!-- Subtitle Settings -->
+        <div class="field-settings-group">
+          <div class="group-header">
+            <h4>2. Подзаголовок / Описание</h4>
+          </div>
+          <div class="form-group">
+            <input type="text" id="inputSubtitle" value="">
+          </div>
+          <div class="form-row">
+            <div class="form-group flex-2">
+              <label>Шрифт подзаголовка</label>
+              <select id="subtitleFont" class="font-dropdown">
+                <option value="'Montserrat', sans-serif">Montserrat</option>
+                <option value="'Russo One', sans-serif">Russo One</option>
+                <option value="'Bebas Neue', cursive">Bebas Neue</option>
+                <option value="'Rubik', sans-serif">Rubik</option>
+                <option value="'Comfortaa', cursive">Comfortaa</option>
+                <option value="'Caveat', cursive">Caveat</option>
+                <option value="'Neucha', cursive">Neucha</option>
+                <option value="'Playfair Display', serif">Playfair Display</option>
+                <option value="Arial, sans-serif">Arial</option>
+              </select>
+            </div>
+            <div class="form-group flex-1">
+              <label>Цвет</label>
+              <input type="color" id="subtitleColor" value="#ffffff">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label>Размер: <span id="subtitleSizeVal">10</span>pt</label>
+              <input type="range" id="subtitleSize" min="6" max="24" value="10">
+            </div>
+          </div>
+
+          <!-- Subtitle Position & Alignment -->
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label>Выравнивание</label>
+              <div class="align-btn-group">
+                <button type="button" class="align-btn active" data-target="subtitle" data-align="center">↔ По центру</button>
+                <button type="button" class="align-btn" data-target="subtitle" data-align="left">← Слева</button>
+                <button type="button" class="align-btn" data-target="subtitle" data-align="right">Справа →</button>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Смещение по вертикали: <span id="subtitleOffsetYVal">0</span> мм</label>
+            <input type="range" id="subtitleOffsetY" min="-20" max="20" value="0">
+          </div>
+        </div>
+
+        <!-- Optional Price Section -->
+        <div class="field-settings-group">
+          <div class="checkbox-option" style="margin-bottom: 8px;">
+            <label>
+              <input type="checkbox" id="showPriceToggle">
+              <strong>Включить блок цены</strong>
+            </label>
+          </div>
+          <div id="priceFieldsBlock" style="display: none;">
+            <div class="form-row">
+              <div class="form-group flex-2">
+                <label>Значение цены</label>
+                <input type="text" id="inputPrice" value="240">
+              </div>
+              <div class="form-group flex-1">
+                <label>Валюта</label>
+                <input type="text" id="inputCurrency" value="₽">
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Design Customization & Custom Image Upload -->
+      <section class="control-card">
+        <h3><span class="card-num">4</span> Оформление и Фоны</h3>
+        
+        <div class="form-group">
+          <label for="headerBgColor">Цвет заливки воблера</label>
+          <input type="color" id="headerBgColor" value="#e63946">
+        </div>
+
+        <!-- Custom Image Upload Input -->
+        <div class="form-group">
+          <label>Загрузить свою фоновую картинку:</label>
+          <div class="upload-btn-wrapper">
+            <label for="customBgUpload" class="btn btn-secondary upload-btn">
+              📁 Выбрать файл картинки...
+            </label>
+            <input type="file" id="customBgUpload" accept="image/*">
+          </div>
+          <div id="uploadStatus" class="upload-status"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="bgImageSelect">Или выбрать из готовых фонов:</label>
+          <select id="bgImageSelect">
+            <option value="none" selected>Без картинки (Однотонная заливка цветом)</option>
+            <option value="yellow.jpg">Желтый абстрактный узор</option>
+            <option value="tomatoes.jpg">Сочные томаты</option>
+            <option value="purple.jpg">Фиолетовое свечение</option>
+            <option value="custom" id="customBgOption" style="display:none;">Загруженное фото пользователем</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="headerHeightRange">Высота цветного блока (% для раздельного): <span id="headerHeightVal">50</span>%</label>
+          <input type="range" id="headerHeightRange" min="20" max="90" value="50">
+        </div>
+      </section>
+
+      <!-- Print Config -->
+      <section class="control-card">
+        <h3><span class="card-num">5</span> Печать на А4</h3>
+        <div class="form-group">
+          <label for="sheetCount">Количество на листе:</label>
+          <select id="sheetCount">
+            <option value="auto">Автоматически (Максимально на А4)</option>
+            <option value="18">18 шт (для 6.5×4.5 см)</option>
+            <option value="12">12 шт</option>
+            <option value="6">6 шт</option>
+            <option value="1">1 шт</option>
+          </select>
+        </div>
+        <div class="checkbox-option" style="margin-bottom: 12px;">
+          <label>
+            <input type="checkbox" id="showCropMarks" checked>
+            <span>Показывать метки для вырезания (пунктир)</span>
+          </label>
+        </div>
+        <button id="printBtnSidebar" class="btn btn-primary" style="width: 100%; justify-content: center;">
+          🖨️ Запустить печать (Печать на А4)
+        </button>
+      </section>
+
+    </aside>
+
+    <!-- Right Interactive Workspace -->
+    <section class="workspace-panel">
+      <!-- Interactive Preview Header with Custom Size Controls -->
+      <div class="workspace-header">
+        <h2>Интерактивный предпросмотр воблера</h2>
+        
+        <!-- Size Controls Controls Directly in Preview Header -->
+        <div class="size-controls-inline">
+          <span class="size-label">Размер воблера:</span>
+          <div class="size-input-pair">
+            <label for="wobblerWidthInput">Ш (см):</label>
+            <input type="number" id="wobblerWidthInput" min="3.0" max="20.0" step="0.1" value="6.5">
+          </div>
+          <span class="size-times">×</span>
+          <div class="size-input-pair">
+            <label for="wobblerHeightInput">В (см):</label>
+            <input type="number" id="wobblerHeightInput" min="3.0" max="28.0" step="0.1" value="4.5">
+          </div>
+          
+          <div class="quick-preset-sizes">
+            <button type="button" class="preset-size-btn active" data-w="6.5" data-h="4.5">6,5×4,5 см</button>
+            <button type="button" class="preset-size-btn" data-w="6.5" data-h="7.0">6,5×7 см</button>
+            <button type="button" class="preset-size-btn" data-w="5.0" data-h="5.0">5×5 см</button>
+            <button type="button" class="preset-size-btn" data-w="7.0" data-h="10.0">7×10 см</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Single Tag Real Preview -->
+      <div class="single-preview-container">
+        <div class="preview-stage">
+          <div class="ruler ruler-h"><span id="rulerHText">6,5 см</span></div>
+          <div class="ruler ruler-v"><span id="rulerVText">4,5 см</span></div>
+
+          <!-- The Wobbler Element -->
+          <div id="wobblerPreview" class="wobbler-element layout-full">
+            <!-- Crop lines visual overlay -->
+            <div class="crop-guides"></div>
+            
+            <!-- Top Header Section -->
+            <div class="wobbler-header" id="wobblerHeader">
+              <div class="header-bg-overlay" id="headerOverlay"></div>
+              <div class="header-content">
+                <div class="wobbler-title" id="previewTitle">НОВЫЙ ВКУС</div>
+                <div class="wobbler-subtitle" id="previewSubtitle"></div>
+                <div class="wobbler-price-box" id="previewPriceBox" style="display: none;">
+                  <span class="price-val" id="previewPrice">240</span>
+                  <span class="price-curr" id="previewCurrency">₽</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottom Section -->
+            <div class="wobbler-bottom" id="wobblerBottom"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sheet Grid Preview Section -->
+      <div class="sheet-preview-card">
+        <div class="sheet-card-header">
+          <h3>Раскладка на листе А4 (<span id="sheetCalcText">18 воблеров на листе</span>)</h3>
+          <p>Сетка печати автоматически рассчитывается под выбранный вами размер воблера</p>
+        </div>
+        <div class="sheet-mini-container">
+          <div id="sheetGridPreview" class="a4-sheet-preview">
+            <!-- Generated dynamically via JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal for Saving New Template -->
+  <div id="saveModal" class="modal-backdrop no-print">
+    <div class="modal-box">
+      <h3>Сохранить шаблон</h3>
+      <p>Введите название для нового шаблона:</p>
+      <input type="text" id="newTemplateNameInput" placeholder="Например: Новый вкус 6.5x4.5, Акция 5x5...">
+      <div class="modal-actions">
+        <button id="cancelSaveModal" class="btn btn-secondary">Отмена</button>
+        <button id="confirmSaveModal" class="btn btn-primary">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRINT ONLY CONTAINER -->
+  <div id="printArea" class="print-only">
+    <!-- JS populates this with printable A4 pages -->
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
