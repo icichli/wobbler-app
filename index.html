@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Конструктор ценников и воблеров</title>
   
   <!-- Telegram Web App SDK -->
@@ -29,17 +29,17 @@
     <!-- Device Mode Toggle & Actions -->
     <div class="header-actions">
       <!-- Device View Switcher -->
-      <div class="device-toggle-group" title="Переключение вида интерфейса">
+      <div class="device-toggle-group" title="Переключение вида">
         <button id="deviceAutoBtn" class="device-btn active" title="Авто-определение">⚡ Авто</button>
-        <button id="deviceMobileBtn" class="device-btn" title="Мобильный интерфейс">📱 Мобильный</button>
-        <button id="deviceDesktopBtn" class="device-btn" title="Полный интерфейс ПК">🖥️ ПК</button>
+        <button id="deviceMobileBtn" class="device-btn" title="Мобильный экран">📱 Мобильный</button>
+        <button id="deviceDesktopBtn" class="device-btn" title="Экран ПК">🖥️ ПК</button>
       </div>
 
       <button id="saveTemplateBtn" class="btn btn-secondary btn-icon-only-mobile">
         <span class="icon">💾</span> <span class="btn-text">Сохранить</span>
       </button>
       <button id="printBtn" class="btn btn-primary btn-glow btn-icon-only-mobile">
-        <span class="icon">🖨️</span> <span class="btn-text">Печать А4</span>
+        <span class="icon">🖨️</span> <span class="btn-text">Печать</span>
       </button>
     </div>
   </header>
@@ -347,7 +347,7 @@
     <section class="workspace-panel" id="workspacePanel">
       <!-- Interactive Preview Header with Custom Size Controls -->
       <div class="workspace-header">
-        <h2>Предпросмотр воблера</h2>
+        <h2>Предпросмотр</h2>
         
         <!-- Size Controls Controls Directly in Preview Header -->
         <div class="size-controls-inline">
@@ -373,30 +373,32 @@
 
       <!-- Single Tag Real Preview -->
       <div class="single-preview-container">
-        <div class="preview-stage">
-          <div class="ruler ruler-h"><span id="rulerHText">6,5 см</span></div>
-          <div class="ruler ruler-v"><span id="rulerVText">4,5 см</span></div>
+        <div class="preview-stage-wrapper">
+          <div class="preview-stage">
+            <div class="ruler ruler-h"><span id="rulerHText">6,5 см</span></div>
+            <div class="ruler ruler-v"><span id="rulerVText">4,5 см</span></div>
 
-          <!-- The Wobbler Element -->
-          <div id="wobblerPreview" class="wobbler-element layout-full">
-            <!-- Crop lines visual overlay -->
-            <div class="crop-guides"></div>
-            
-            <!-- Top Header Section -->
-            <div class="wobbler-header" id="wobblerHeader">
-              <div class="header-bg-overlay" id="headerOverlay"></div>
-              <div class="header-content">
-                <div class="wobbler-title" id="previewTitle">НОВЫЙ ВКУС</div>
-                <div class="wobbler-subtitle" id="previewSubtitle"></div>
-                <div class="wobbler-price-box" id="previewPriceBox" style="display: none;">
-                  <span class="price-val" id="previewPrice">240</span>
-                  <span class="price-curr" id="previewCurrency">₽</span>
+            <!-- The Wobbler Element -->
+            <div id="wobblerPreview" class="wobbler-element layout-full">
+              <!-- Crop lines visual overlay -->
+              <div class="crop-guides"></div>
+              
+              <!-- Top Header Section -->
+              <div class="wobbler-header" id="wobblerHeader">
+                <div class="header-bg-overlay" id="headerOverlay"></div>
+                <div class="header-content">
+                  <div class="wobbler-title" id="previewTitle">НОВЫЙ ВКУС</div>
+                  <div class="wobbler-subtitle" id="previewSubtitle"></div>
+                  <div class="wobbler-price-box" id="previewPriceBox" style="display: none;">
+                    <span class="price-val" id="previewPrice">240</span>
+                    <span class="price-curr" id="previewCurrency">₽</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <!-- Bottom Section -->
-            <div class="wobbler-bottom" id="wobblerBottom"></div>
+              <!-- Bottom Section -->
+              <div class="wobbler-bottom" id="wobblerBottom"></div>
+            </div>
           </div>
         </div>
       </div>

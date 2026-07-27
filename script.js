@@ -21,13 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Mobile View Tabs
   const mobileTabBtns = document.querySelectorAll('.mobile-tab-btn');
 
-  // Device Detection Helper
-  function isMobileScreen() {
-    return isTelegramMobile || 
-      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
-      window.innerWidth <= 850;
-  }
-
   // Apply Device Layout Mode (auto, mobile, desktop)
   function setDeviceMode(mode) {
     document.body.classList.remove('mode-auto', 'force-mobile', 'force-desktop');
@@ -689,13 +682,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const savedDeviceMode = localStorage.getItem('wobbler_device_mode') || 'auto';
   setDeviceMode(savedDeviceMode);
   setMobileActiveTab('preview');
-
-  // Resize Listener for Auto Mode
-  window.addEventListener('resize', () => {
-    if (document.body.classList.contains('mode-auto')) {
-      // Re-trigger layout checks if needed
-    }
-  });
 
   // Initialize Preview State
   renderSavedTemplates();
