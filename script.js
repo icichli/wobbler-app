@@ -1,4 +1,76 @@
 document.addEventListener('DOMContentLoaded', () => {
+  // Telegram WebApp Integration & Platform Detection
+  const tg = window.Telegram ? window.Telegram.WebApp : null;
+  let isTelegramMobile = false;
+
+  if (tg) {
+    try {
+      tg.expand();
+      tg.ready();
+      if (['android', 'ios', 'mobile'].includes(tg.platform)) {
+        isTelegramMobile = true;
+      }
+    } catch(e) {}
+  }
+
+  // Device Mode Toggle Buttons
+  const deviceAutoBtn = document.getElementById('deviceAutoBtn');
+  const deviceMobileBtn = document.getElementById('deviceMobileBtn');
+  const deviceDesktopBtn = document.getElementById('deviceDesktopBtn');
+
+  // Mobile View Tabs
+  const mobileTabBtns = document.querySelectorAll('.mobile-tab-btn');
+
+  // Device Detection Helper
+  function isMobileScreen() {
+    return isTelegramMobile || 
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+      window.innerWidth <= 850;
+  }
+
+  // Apply Device Layout Mode (auto, mobile, desktop)
+  function setDeviceMode(mode) {
+    document.body.classList.remove('mode-auto', 'force-mobile', 'force-desktop');
+
+    document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
+
+    if (mode === 'mobile') {
+      document.body.classList.add('force-mobile');
+      if (deviceMobileBtn) deviceMobileBtn.classList.add('active');
+    } else if (mode === 'desktop') {
+      document.body.classList.add('force-desktop');
+      if (deviceDesktopBtn) deviceDesktopBtn.classList.add('active');
+    } else {
+      document.body.classList.add('mode-auto');
+      if (deviceAutoBtn) deviceAutoBtn.classList.add('active');
+    }
+
+    localStorage.setItem('wobbler_device_mode', mode);
+  }
+
+  // Initial View Switch (Preview vs Controls on Mobile)
+  function setMobileActiveTab(tabName) {
+    document.body.classList.remove('view-preview', 'view-controls');
+    document.body.classList.add(`view-${tabName}`);
+
+    mobileTabBtns.forEach(btn => {
+      btn.classList.toggle('active', btn.getAttribute('data-mobile-view') === tabName);
+    });
+  }
+
+  // Mode button click events
+  if (deviceAutoBtn) deviceAutoBtn.addEventListener('click', () => setDeviceMode('auto'));
+  if (deviceMobileBtn) deviceMobileBtn.addEventListener('click', () => setDeviceMode('mobile'));
+  if (deviceDesktopBtn) deviceDesktopBtn.addEventListener('click', () => setDeviceMode('desktop'));
+
+  // Mobile view tab buttons click events
+  mobileTabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const view = btn.getAttribute('data-mobile-view');
+      setMobileActiveTab(view);
+    });
+  });
+
   // DOM Inputs - Size
   const wobblerWidthInput = document.getElementById('wobblerWidthInput');
   const wobblerHeightInput = document.getElementById('wobblerHeightInput');
@@ -127,7 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
       price: '240',
       currency: '₽',
       headerBg: '#ffd600',
-      bgImage: 'yellow.jpg',
+      bgImage: 'none',
       customBgData: null,
       headerHeight: 50,
       layout: 'split'
@@ -153,7 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
       price: '199',
       currency: '₽',
       headerBg: '#e63946',
-      bgImage: 'tomatoes.jpg',
+      bgImage: 'none',
       customBgData: null,
       headerHeight: 50,
       layout: 'split'
@@ -179,7 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
       price: '159',
       currency: '₽',
       headerBg: '#7b2cbf',
-      bgImage: 'purple.jpg',
+      bgImage: 'none',
       customBgData: null,
       headerHeight: 50,
       layout: 'split'
@@ -187,7 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // LocalStorage Custom Templates Storage
-  let customTemplates = JSON.parse(localStorage.getItem('wobbler_custom_templates_v3') || '[]');
+  let customTemplates = JSON.parse(localStorage.getItem('wobbler_custom_templates_gas') || '[]');
 
   // Calculate maximum fitting wobblers on A4
   function calcA4Grid(wMm, hMm) {
@@ -205,16 +277,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const widthMm = widthCm * 10;
     const heightMm = heightCm * 10;
 
-    // Apply dimensions to CSS variables
     document.documentElement.style.setProperty('--wobbler-width', `${widthMm}mm`);
     document.documentElement.style.setProperty('--wobbler-height', `${heightMm}mm`);
 
-    // Update Rulers & Subtitles
     rulerHText.textContent = `${widthCm.toString().replace('.', ',')} см`;
     rulerVText.textContent = `${heightCm.toString().replace('.', ',')} см`;
     topSubtitle.textContent = `Размер: ${widthCm.toString().replace('.', ',')} см × ${heightCm.toString().replace('.', ',')} см`;
 
-    // 1. Title Position, Alignment, Font & Size
+    // Title
     previewTitle.textContent = inputTitle.value.trim() || 'ЗАГОЛОВОК';
     previewTitle.style.fontFamily = titleFont.value;
     previewTitle.style.color = titleColor.value;
@@ -225,7 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
     titleSizeVal.textContent = titleSize.value;
     titleOffsetYVal.textContent = titleOffsetY.value;
 
-    // 2. Subtitle Position, Alignment, Font & Size
+    // Subtitle
     const subText = inputSubtitle.value.trim();
     previewSubtitle.textContent = subText;
     previewSubtitle.style.display = subText ? 'block' : 'none';
@@ -237,7 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
     subtitleSizeVal.textContent = subtitleSize.value;
     subtitleOffsetYVal.textContent = subtitleOffsetY.value;
 
-    // 3. Price Toggle & Values
+    // Price Toggle & Values
     if (showPriceToggle.checked) {
       priceFieldsBlock.style.display = 'block';
       previewPriceBox.style.display = 'flex';
@@ -248,24 +318,22 @@ document.addEventListener('DOMContentLoaded', () => {
       previewPriceBox.style.display = 'none';
     }
 
-    // 4. Background Image Logic
+    // Background Color & Images
     wobblerHeader.style.backgroundColor = headerBgColor.value;
     const bgVal = bgImageSelect.value;
     if (bgVal === 'custom' && uploadedDataUrl) {
       wobblerHeader.style.backgroundImage = `url('${uploadedDataUrl}')`;
-    } else if (bgVal !== 'none' && bgVal !== 'custom') {
-      wobblerHeader.style.backgroundImage = `url('assets/${bgVal}')`;
     } else {
       wobblerHeader.style.backgroundImage = 'none';
     }
 
-    // 5. Header Height & Layout Fix
+    // Layout Fix
     headerHeightVal.textContent = headerHeightRange.value;
     const selectedLayout = document.querySelector('input[name="layoutType"]:checked').value;
     if (selectedLayout === 'full') {
       wobblerPreview.classList.remove('layout-split');
       wobblerPreview.classList.add('layout-full');
-      wobblerHeader.style.height = '100%'; // FIX: Override inline height style!
+      wobblerHeader.style.height = '100%';
       if (wobblerBottom) wobblerBottom.style.display = 'none';
     } else {
       wobblerPreview.classList.remove('layout-full');
@@ -274,7 +342,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (wobblerBottom) wobblerBottom.style.display = 'flex';
     }
 
-    // Render A4 Sheet Preview
     renderSheetPreview(widthMm, heightMm);
   }
 
@@ -292,15 +359,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Handle Custom Image Upload File Reader
+  // Custom Image Upload File Reader
   customBgUpload.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      alert('Пожалуйста, выберите файл изображения (PNG, JPG, WEBP).');
-      return;
-    }
 
     const reader = new FileReader();
     reader.onload = function(event) {
@@ -338,7 +400,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     sheetCalcText.textContent = `${count} шт на листе (${grid.cols}×${grid.rows})`;
-
     sheetGridPreview.style.gridTemplateColumns = `repeat(${grid.cols}, ${wMm}mm)`;
     sheetGridPreview.style.gridTemplateRows = `repeat(${grid.rows}, ${hMm}mm)`;
 
@@ -375,7 +436,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const wobblerHTML = wobblerPreview.outerHTML;
-
     const page = document.createElement('div');
     page.className = 'print-page';
     page.style.gridTemplateColumns = `repeat(${grid.cols}, ${wMm}mm)`;
@@ -400,7 +460,7 @@ document.addEventListener('DOMContentLoaded', () => {
     printArea.appendChild(page);
   }
 
-  // Robust Print Trigger Function
+  // Print Trigger Function
   function triggerPrint() {
     preparePrintArea();
     setTimeout(() => {
@@ -413,7 +473,6 @@ document.addEventListener('DOMContentLoaded', () => {
     wobblerWidthInput.value = state.widthCm || 6.5;
     wobblerHeightInput.value = state.heightCm || 4.5;
 
-    // Check size preset buttons active state
     document.querySelectorAll('.preset-size-btn').forEach(b => {
       const isMatch = b.getAttribute('data-w') == state.widthCm && b.getAttribute('data-h') == state.heightCm;
       b.classList.toggle('active', isMatch);
@@ -535,7 +594,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.stopPropagation();
         if (confirm(`Удалить шаблон "${item.name}"?`)) {
           customTemplates.splice(index, 1);
-          localStorage.setItem('wobbler_custom_templates_v3', JSON.stringify(customTemplates));
+          localStorage.setItem('wobbler_custom_templates_gas', JSON.stringify(customTemplates));
           renderSavedTemplates();
         }
       });
@@ -594,11 +653,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const state = getCurrentState();
     customTemplates.push({ name, state });
-    localStorage.setItem('wobbler_custom_templates_v3', JSON.stringify(customTemplates));
+    localStorage.setItem('wobbler_custom_templates_gas', JSON.stringify(customTemplates));
     
     saveModal.classList.remove('active');
     renderSavedTemplates();
-
     document.querySelector('.tab-btn[data-tab="userSaved"]').click();
   });
 
@@ -627,9 +685,19 @@ document.addEventListener('DOMContentLoaded', () => {
   if (printBtn) printBtn.addEventListener('click', triggerPrint);
   if (printBtnSidebar) printBtnSidebar.addEventListener('click', triggerPrint);
 
-  // Initialize
-  renderSavedTemplates();
+  // Initialize Device Mode (Saved Mode or Auto)
+  const savedDeviceMode = localStorage.getItem('wobbler_device_mode') || 'auto';
+  setDeviceMode(savedDeviceMode);
+  setMobileActiveTab('preview');
 
-  // Load default "novy_vkus" sample preset initially
+  // Resize Listener for Auto Mode
+  window.addEventListener('resize', () => {
+    if (document.body.classList.contains('mode-auto')) {
+      // Re-trigger layout checks if needed
+    }
+  });
+
+  // Initialize Preview State
+  renderSavedTemplates();
   applyState(builtInPresets.novy_vkus);
 });
