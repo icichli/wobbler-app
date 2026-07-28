@@ -1,0 +1,72 @@
+{
+  "app": "wobbler_designer",
+  "version": 1,
+  "exportedAt": "2026-07-28T20:37:25.965Z",
+  "templates": [
+    {
+      "name": "Рыба (изменён)",
+      "state": {
+        "widthCm": 9.2,
+        "heightCm": 5.5,
+        "title": "Судак вяленый",
+        "subtitle": "100гр",
+        "titleFont": "Arial, sans-serif",
+        "titleColor": "#ffffff",
+        "titleSize": "18",
+        "titleWeight": "800",
+        "titleAlign": "center",
+        "titleOffsetY": "0",
+        "showPrice": true,
+        "priceFont": "Arial, sans-serif",
+        "priceSize": "40",
+        "priceWeight": "800",
+        "priceColor": "#000000",
+        "priceAlign": "center",
+        "priceOffsetY": "6",
+        "price": "300",
+        "currency": "₽",
+        "headerBg": "#000000",
+        "bgImage": "ryba_bg.jpg",
+        "customBgData": null,
+        "headerHeight": "90",
+        "layout": "full",
+        "priceInBottom": false,
+        "subtitleCorner": true,
+        "pricePlate": false,
+        "labelPos": {
+          "title": {
+            "x": -0.6,
+            "y": -1
+          },
+          "subtitle": {
+            "x": -0.6,
+            "y": 7.6
+          },
+          "price": {
+            "x": 0,
+            "y": 0
+          },
+          "priceDigits": [
+            {
+              "x": -5.5,
+              "y": 0.2
+            },
+            {
+              "x": -1.1,
+              "y": 0
+            },
+            {
+              "x": 3.6,
+              "y": 0
+            }
+          ],
+          "currency": {
+            "x": 5.5,
+            "y": 0.6
+          }
+        }
+      },
+      "_embeddedBgs": {}
+    }
+  ]
+}

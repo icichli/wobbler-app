@@ -238,7 +238,7 @@ html, body {
 /* Layout Grid */
 .main-layout {
   display: grid;
-  grid-template-columns: 390px 1fr;
+  grid-template-columns: 410px 1fr;
   gap: 1.5rem;
   padding: 1.5rem;
   flex: 1;
@@ -288,6 +288,46 @@ html, body {
   font-weight: 800;
 }
 
+/* Collapsible Section Toggle */
+.card-toggle {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  transition: color 0.2s ease;
+  padding-bottom: 0;
+}
+.card-toggle:hover {
+  color: var(--accent-blue);
+}
+.toggle-arrow {
+  margin-left: auto;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  transition: transform 0.25s ease, color 0.2s ease;
+  line-height: 1;
+}
+.card-toggle:not(.collapsed) .toggle-arrow {
+  /* expanded — arrow up */
+  transform: rotate(0deg);
+}
+.card-toggle.collapsed .toggle-arrow {
+  transform: rotate(0deg);
+}
+.card-body {
+  overflow: hidden;
+  transition: opacity 0.25s ease;
+}
+.card-toggle:not(.collapsed) ~ .card-body {
+  margin-top: 1rem;
+}
+.card-toggle.collapsed ~ .card-body {
+  margin-top: 0;
+}
+
+
 /* Template Tabs */
 .template-tabs {
   display: flex;
@@ -295,6 +335,14 @@ html, body {
   background: rgba(15, 23, 42, 0.6);
   padding: 4px;
   border-radius: var(--radius-md);
+  margin-bottom: 12px;
+}
+
+/* Панель Экспорт/Импорт шаблонов */
+.template-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
   margin-bottom: 12px;
 }
 
@@ -356,10 +404,17 @@ html, body {
   flex-shrink: 0;
 }
 
+.preset-color.dots-black { 
+  background-image: url('dots_bg.jpg'); 
+  background-size: cover;
+  background-position: center;
+  border: 1px solid #3f3f46;
+}
 .preset-color.yellow { background: linear-gradient(135deg, #ffe600, #ffb700); }
 .preset-color.red { background: linear-gradient(135deg, #e63946, #c1121f); }
 .preset-color.tomato { background: linear-gradient(135deg, #e63946, #800f2f); }
 .preset-color.purple { background: linear-gradient(135deg, #7b2cbf, #5a189a); }
+.preset-color.ryba { background: linear-gradient(135deg, #0f172a, #1e3a5f); border: 1px solid #334155; }
 .preset-color.custom { background: linear-gradient(135deg, #38bdf8, #818cf8); }
 
 .preset-info {
@@ -394,6 +449,22 @@ html, body {
   opacity: 1;
 }
 
+/* Кнопка экспорта на карточке шаблона (как у удаления, но свой цвет) */
+.btn-export-template {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 4px;
+  opacity: 0.7;
+  transition: opacity 0.2s, color 0.2s;
+}
+.btn-export-template:hover {
+  opacity: 1;
+  color: var(--accent);
+}
+
 .empty-state {
   font-size: 0.8rem;
   color: var(--text-muted);
@@ -402,6 +473,97 @@ html, body {
   background: rgba(15, 23, 42, 0.4);
   border-radius: 8px;
   border: 1px dashed var(--border-color);
+}
+
+/* Multi-Item Excel Table Input Section */
+#pasteExcelArea {
+  width: 100%;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--accent-blue);
+  font-family: monospace;
+  font-size: 0.78rem;
+  padding: 8px;
+  resize: vertical;
+}
+
+.items-table-wrapper {
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.8);
+  padding: 4px;
+  margin-top: 8px;
+}
+
+.items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.item-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(30, 41, 59, 0.6);
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.item-num {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--accent-yellow);
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.item-title-input {
+  flex: 3;
+  padding: 4px 6px !important;
+  font-size: 0.78rem !important;
+}
+
+.item-subtitle-input {
+  flex: 1;
+  padding: 4px 6px !important;
+  font-size: 0.78rem !important;
+  color: #a5b4fc !important;
+}
+
+.item-price-input {
+  flex: 1.2;
+  padding: 4px 6px !important;
+  font-size: 0.78rem !important;
+  font-weight: 700;
+  color: var(--accent-yellow) !important;
+}
+
+/* 4 клетки для ввода цены по одной цифре */
+.price-cells {
+  display: flex;
+  gap: 6px;
+}
+.price-cell {
+  width: 38px;
+  height: 42px;
+  text-align: center;
+  font-size: 1.3rem !important;
+  font-weight: 800;
+  padding: 0 !important;
+  border: 2px solid rgba(255,255,255,0.18);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.8);
+  color: var(--accent-yellow) !important;
+}
+.price-cell:focus {
+  border-color: var(--accent-blue, #2563eb);
+  outline: none;
 }
 
 /* Field Settings Group */
@@ -518,6 +680,26 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus {
   border-color: var(--accent-blue);
 }
 
+/* Textarea выглядит как текстовое поле и растёт под содержимое.
+   Используется там, где нужен перенос строки (наименование, вес, декор-блоки). */
+textarea {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 0.88rem;
+  font-family: inherit;
+  outline: none;
+  resize: none;
+  overflow: hidden;
+  line-height: 1.3;
+}
+textarea:focus {
+  border-color: var(--accent-blue);
+}
+
 input[type="color"] {
   width: 100%;
   height: 36px;
@@ -572,6 +754,119 @@ input[type="range"] {
 .workspace-header h2 {
   font-size: 1.05rem;
   font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.workspace-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Кнопка свернуть/развернуть предпросмотр */
+.collapse-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: rgba(15, 23, 42, 0.6);
+  color: var(--accent-blue);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+.collapse-btn:hover {
+  border-color: var(--accent-blue);
+  background: rgba(56, 189, 248, 0.1);
+}
+.collapse-arrow {
+  font-size: 0.7rem;
+  transition: transform 0.25s ease;
+  line-height: 1;
+}
+/* Схлопнутое состояние: стрелка повёрнута */
+.is-collapsed .collapse-arrow {
+  transform: rotate(-90deg);
+}
+
+/* Индикатор размера (только чтение) */
+.size-readout {
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--accent-yellow);
+  background: rgba(15, 23, 42, 0.7);
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+
+/* Тулбар предпросмотра: перетаскивание надписей / сброс позиций */
+.preview-toolbar {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.btn-sm {
+  font-size: 0.72rem !important;
+  padding: 4px 10px !important;
+}
+.btn-sm.active {
+  background: var(--accent-blue, #2563eb) !important;
+  color: #fff !important;
+  border-color: var(--accent-blue, #2563eb) !important;
+}
+
+/* Цена: каждая цифра — отдельный inline-block span (для перетаскивания по отдельности) */
+.price-val {
+  display: inline-flex;
+  align-items: baseline;
+}
+.price-digit {
+  display: inline-block;
+}
+
+/* Режим перетаскивания надписей: надписи выделяются и становятся «хватаемыми» */
+.wobbler-element.drag-mode .wobbler-title,
+.wobbler-element.drag-mode .wobbler-subtitle,
+.wobbler-element.drag-mode .wobbler-price-box {
+  cursor: move;
+  touch-action: none;
+  outline: 1px dashed rgba(37, 99, 235, 0.8);
+  outline-offset: 3px;
+}
+/* Каждая цифра и валюта перетаскиваются отдельно */
+.wobbler-element.drag-mode .price-digit,
+.wobbler-element.drag-mode .price-curr {
+  cursor: move;
+  touch-action: none;
+  outline: 1px dashed rgba(245, 158, 11, 0.85);
+  outline-offset: 2px;
+}
+.wobbler-element.drag-mode .price-val {
+  outline: none;
+}
+
+/* Скрытое состояние блоков предпросмотра/раскладки */
+.single-preview-container.is-collapsed,
+.sheet-preview-card.is-collapsed {
+  display: none !important;
+}
+
+.preview-item-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: var(--accent-blue);
+  color: #0f172a;
+  padding: 2px 8px;
+  border-radius: 20px;
+  letter-spacing: 0.03em;
+  vertical-align: middle;
 }
 
 /* Size Controls in Workspace Header */
@@ -724,6 +1019,67 @@ input[type="range"] {
   transition: width 0.2s ease, height 0.2s ease;
 }
 
+/* === Декоративные блоки «Оформление» ===
+   .wobbler-outside-top — баннер СВЕРХУ над ценником (не входит в размер самого
+   ценника): раздвигает карточку вверх. .wobbler-inside-top — плашка ВНУТРИ
+   ценника сверху. По умолчанию оба скрыты (height:0, display:none); видимость
+   включается классами .has-outside-top / .has-inside-top на #wobblerPreview. */
+.wobbler-outside-top,
+.wobbler-inside-top {
+  flex: 0 0 auto;
+  height: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-sizing: border-box;
+  border-radius: 0 !important;
+  background-size: cover;
+  background-position: center;
+}
+
+.wobbler-outside-top .block-text,
+.wobbler-inside-top .block-text {
+  display: block;
+  width: 100%;
+  text-align: center;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  line-height: 1.05;
+  word-break: break-word;
+  white-space: pre-line;
+  padding: 0 2mm;
+}
+
+/* Внешний блок показан: карточка РАСТЁТ на высоту блока (var(--wobbler-height) +
+   var(--outside-top-h)); само тело ценника остаётся полноразмерным — см. ниже
+   привязку header/bottom к --wobbler-height вместо процентов. */
+.wobbler-element.has-outside-top {
+  height: calc(var(--wobbler-height) + var(--outside-top-h, 0mm));
+}
+.wobbler-element.has-outside-top .wobbler-outside-top {
+  display: flex;
+  flex: 0 0 auto;
+  height: var(--outside-top-h, 0mm);
+  border-bottom: 1px solid rgba(0,0,0,0.15);
+}
+/* Линия реза только по телу ценника, не по внешнему блоку. */
+.wobbler-element.has-outside-top .crop-guides {
+  top: var(--outside-top-h, 0mm);
+}
+
+/* Внутренний блок: плашка ПОВЕРХ ценника (absolute), ничего не сдвигает.
+   z-index:5 — выше содержимого шапки (z-index:2), ниже направляющих реза (10). */
+.wobbler-element.has-inside-top .wobbler-inside-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  height: var(--inside-top-h, 0mm);
+  z-index: 5;
+}
+
 .crop-guides {
   position: absolute;
   inset: 0;
@@ -733,14 +1089,17 @@ input[type="range"] {
   z-index: 10;
 }
 
-/* Layout Split vs Full */
+/* Layout Split vs Full.
+   Высота шапки/нижнего поля привязана к --wobbler-height (размер самого ценника),
+   а не к процентам от элемента: это позволяет внешнему декор-блоку растягивать
+   карточку сверху, не сжимая тело ценника. */
 .wobbler-element.layout-split .wobbler-header {
-  height: 50%;
+  height: calc(var(--wobbler-height) * 0.5);
   position: relative;
 }
 
 .wobbler-element.layout-full .wobbler-header {
-  height: 100%;
+  height: var(--wobbler-height);
 }
 
 .wobbler-element.layout-full .wobbler-bottom {
@@ -749,7 +1108,7 @@ input[type="range"] {
 
 .wobbler-header {
   width: 100%;
-  background-color: #ffd600;
+  background-color: #18181b;
   background-size: cover;
   background-position: center;
   position: relative;
@@ -759,7 +1118,7 @@ input[type="range"] {
   align-items: center;
   text-align: center;
   padding: 3mm;
-  color: #111;
+  color: #fff;
   border-radius: 0 !important;
   transition: height 0.3s ease;
 }
@@ -783,25 +1142,35 @@ input[type="range"] {
 }
 
 .wobbler-title {
-  font-size: 18pt;
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: -0.3px;
-  text-transform: uppercase;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  font-size: 13pt;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.2px;
   word-break: break-word;
+  white-space: pre-line;
   width: 100%;
   text-align: center;
-  transition: transform 0.1s ease;
+  transition: transform 0.1s ease, font-size 0.1s ease;
+  /* Фиксированная зона названия: длинный текст обрезается (скрывается),
+     чтобы блок цены под ним не смещался. Высоту задаёт --title-zone-h (мм). */
+  max-height: var(--title-zone-h, 12mm);
+  overflow: hidden;
 }
 
+/* Подзаголовок (вес/доп. текст) — всегда в нижнем левом углу ценника
+   (поведение по умолчанию для всех шаблонов, как у «Рыбы»). */
 .wobbler-subtitle {
-  font-size: 10pt;
+  position: absolute;
+  bottom: 1.5mm;
+  left: 3mm;
+  width: auto;
+  max-width: 45%;
+  z-index: 3;
+  text-align: left;
+  font-size: 11pt;
   font-weight: 700;
   line-height: 1.1;
-  margin-top: 1mm;
-  width: 100%;
-  text-align: center;
+  white-space: pre-line;
   transition: transform 0.1s ease;
 }
 
@@ -810,22 +1179,58 @@ input[type="range"] {
   align-items: baseline;
   justify-content: center;
   margin-top: 1mm;
+  width: 100%;
+  transition: transform 0.1s ease, justify-content 0.1s ease;
+}
+
+/* Светлая плашка под ценой — для шаблона «Рыба» (цена чёрная на чёрном фоне).
+   Плашка делает цифры читаемыми, не меняя расположения поля. */
+.wobbler-element.price-plate .wobbler-price-box {
+  background: #ffffff;
+  border-radius: 2mm;
+  padding: 1mm 3mm 1.2mm;
+  width: auto;
+  min-width: 22mm;
+  margin-left: auto;
+  margin-right: auto;
+  box-shadow: 0 0 0 0.2mm rgba(255,255,255,0.9);
+}
+.wobbler-element.price-plate.layout-full .wobbler-price-box {
+  margin-top: 0;
+}
+
+/* Подписи-чекбоксы в настройках цены */
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #d4d4d8;
+  cursor: pointer;
+  height: 100%;
+}
+.checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #2563eb;
 }
 
 .price-val {
-  font-size: 24pt;
+  font-size: 28pt;
   font-weight: 900;
   line-height: 0.9;
+  transition: font-family 0.1s ease, font-size 0.1s ease, font-weight 0.1s ease, color 0.1s ease;
 }
 
 .price-curr {
-  font-size: 14pt;
-  font-weight: 800;
   margin-left: 1mm;
+  line-height: 0.9;
+  transition: font-family 0.1s ease, font-size 0.1s ease, font-weight 0.1s ease, color 0.1s ease;
 }
 
 .wobbler-bottom {
-  height: 50%;
+  height: calc(var(--wobbler-height) * 0.5);
   background: #ffffff;
   display: flex;
   align-items: center;
@@ -834,8 +1239,22 @@ input[type="range"] {
   border-top: 1px dashed #ccc;
   text-align: center;
   border-radius: 0 !important;
-  flex: 1;
+  flex: 0 0 auto;
   position: relative;
+}
+
+/* Шаблон «Рыба»: цена перенесена в нижнее белое поле */
+.wobbler-element.price-in-bottom .wobbler-bottom {
+  border-top: none;
+  padding: 2mm 4mm;
+}
+.wobbler-element.price-in-bottom .wobbler-price-box {
+  margin-top: 0;
+  width: 100%;
+  align-items: baseline;
+}
+.wobbler-element.price-in-bottom .wobbler-header {
+  justify-content: center;
 }
 
 /* Modal Dialog */
@@ -882,6 +1301,21 @@ input[type="range"] {
   margin-top: 1.25rem;
 }
 
+/* Подсказка в модалке сохранения (какой шаблон будет обновлён) */
+.save-modal-hint {
+  font-size: 0.8rem;
+  color: var(--accent-blue, #60a5fa);
+  background: rgba(37, 99, 235, 0.12);
+  border: 1px solid rgba(37, 99, 235, 0.35);
+  border-radius: 8px;
+  padding: 6px 10px;
+  margin-top: 8px;
+}
+#updateTemplateBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 /* Sheet Preview Grid */
 .sheet-preview-card {
   background: var(--bg-card);
@@ -895,9 +1329,24 @@ input[type="range"] {
   margin-bottom: 0.8rem;
 }
 
+.sheet-card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
 .sheet-card-header h3 {
   font-size: 0.98rem;
   font-weight: 700;
+}
+
+/* Сворачивание контейнера раскладки */
+.sheet-mini-container.is-collapsed {
+  display: none !important;
+}
+.sheet-card-header.is-collapsed p {
+  display: none;
 }
 
 .sheet-card-header p {
@@ -923,18 +1372,17 @@ input[type="range"] {
   transform: scale(0.35);
   transform-origin: top center;
   margin-bottom: -190mm;
-  padding: 12mm 10mm;
+  padding: 0;
   display: grid;
-  gap: 4mm 4mm;
-  justify-content: center;
+  gap: 0;
+  justify-content: start;
   align-content: start;
 }
 
 /* ==========================================================================
-   MOBILE & RESPONSIVE LAYOUT MODES (Zero Horizontal Overflow)
+   MOBILE & RESPONSIVE LAYOUT MODES
    ========================================================================== */
 
-/* Force Mobile Layout Class */
 body.force-mobile .main-layout {
   grid-template-columns: 1fr !important;
   padding: 0.5rem !important;
@@ -974,9 +1422,8 @@ body.force-mobile .a4-sheet-preview {
   margin-bottom: -210mm;
 }
 
-/* Force Desktop Layout Class */
 body.force-desktop .main-layout {
-  grid-template-columns: 390px 1fr !important;
+  grid-template-columns: 410px 1fr !important;
   padding: 1.5rem !important;
 }
 
@@ -989,7 +1436,6 @@ body.force-desktop .workspace-panel {
   display: flex !important;
 }
 
-/* Auto Responsive (Media Query <= 850px) */
 @media (max-width: 850px) {
   body.mode-auto .main-layout {
     grid-template-columns: 1fr !important;
@@ -1052,9 +1498,21 @@ body.force-desktop .workspace-panel {
   }
 }
 
-/* Print Only Styles */
+/* PRINT EXCLUSIVE OVERRIDES */
 .print-only {
   display: none;
+}
+
+body.is-printing header,
+body.is-printing main,
+body.is-printing .mobile-tab-bar,
+body.is-printing .app-header,
+body.is-printing .no-print {
+  display: none !important;
+}
+
+body.is-printing #printArea {
+  display: block !important;
 }
 
 @media print {
@@ -1063,46 +1521,64 @@ body.force-desktop .workspace-panel {
     margin: 0;
   }
 
-  body {
+  html, body {
     background: #ffffff !important;
     color: #000000 !important;
+    width: 210mm !important;
+    height: 297mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
   }
 
-  .no-print {
+  header, aside, main, nav, .no-print, .mobile-tab-bar, .app-header, .main-layout, .controls-sidebar, .workspace-panel {
     display: none !important;
   }
 
-  .print-only {
+  .print-only, #printArea {
     display: block !important;
-    width: 210mm;
-    height: 297mm;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 210mm !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
   }
 
   .print-page {
-    width: 210mm;
-    height: 297mm;
-    padding: 8mm 7.5mm;
-    box-sizing: border-box;
-    display: grid;
-    gap: 0;
-    align-content: start;
-    justify-content: start;
-    page-break-after: always;
+    width: 210mm !important;
+    height: 297mm !important;
+    padding: 0.9mm !important;
+    box-sizing: border-box !important;
+    display: grid !important;
+    gap: 0 !important;
+    align-content: start !important;
+    justify-content: start !important;
+    page-break-after: always !important;
+    background: #ffffff !important;
   }
 
   .print-wobbler-wrapper {
-    position: relative;
-    box-sizing: border-box;
-    border: 0.2mm solid #e2e8f0;
+    position: relative !important;
+    box-sizing: border-box !important;
+    border: 0.2mm solid #e2e8f0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .print-wobbler-wrapper .wobbler-element {
+    box-shadow: none !important;
     border-radius: 0 !important;
   }
 
-  .print-crop-marks {
-    position: absolute;
-    inset: 0;
-    border: 0.1mm dashed #a1a1aa;
+  .print-wobbler-wrapper .wobbler-outside-top,
+  .print-wobbler-wrapper .wobbler-inside-top {
+    box-shadow: none !important;
     border-radius: 0 !important;
-    pointer-events: none;
-    z-index: 100;
   }
 }
