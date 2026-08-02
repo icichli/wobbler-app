@@ -1111,10 +1111,12 @@ input[type="range"] {
 
 /* === Декоративные блоки «Оформление» ===
    .wobbler-outside-top — баннер СВЕРХУ над ценником (не входит в размер самого
-   ценника): раздвигает карточку вверх. .wobbler-inside-top — плашка ВНУТРИ
-   ценника сверху. По умолчанию оба скрыты (height:0, display:none); видимость
-   включается классами .has-outside-top / .has-inside-top на #wobblerPreview. */
+   ценника): раздвигает карточку вверх. .wobbler-outside-bottom — симметричный
+   баннер СНИЗУ под ценником. .wobbler-inside-top — плашка ВНУТРИ ценника сверху.
+   По умолчанию все скрыты (height:0, display:none); видимость включается классами
+   .has-outside-top / .has-outside-bottom / .has-inside-top на #wobblerPreview. */
 .wobbler-outside-top,
+.wobbler-outside-bottom,
 .wobbler-inside-top {
   flex: 0 0 auto;
   height: 0;
@@ -1129,6 +1131,7 @@ input[type="range"] {
 }
 
 .wobbler-outside-top .block-text,
+.wobbler-outside-bottom .block-text,
 .wobbler-inside-top .block-text {
   display: block;
   width: 100%;
@@ -1141,9 +1144,9 @@ input[type="range"] {
   padding: 0 2mm;
 }
 
-/* Внешний блок показан: карточка РАСТЁТ на высоту блока (var(--wobbler-height) +
-   var(--outside-top-h)); само тело ценника остаётся полноразмерным — см. ниже
-   привязку header/bottom к --wobbler-height вместо процентов. */
+/* Внешний блок СВЕРХУ показан: карточка РАСТЁТ на высоту блока
+   (var(--wobbler-height) + var(--outside-top-h)); само тело ценника остаётся
+   полноразмерным — см. ниже привязку header/bottom к --wobbler-height. */
 .wobbler-element.has-outside-top {
   height: calc(var(--wobbler-height) + var(--outside-top-h, 0mm));
 }
@@ -1158,15 +1161,33 @@ input[type="range"] {
   top: var(--outside-top-h, 0mm);
 }
 
+/* Внешний блок СНИЗУ показан: карточка РАСТЁТ на его высоту (симметрично
+   верхнему блоку). Блок рисуется под телом ценника в flex-потоке карты. */
+.wobbler-element.has-outside-bottom {
+  height: calc(var(--wobbler-height) + var(--outside-bottom-h, 0mm));
+}
+.wobbler-element.has-outside-top.has-outside-bottom {
+  /* Если показаны оба внешних блока — высота учитывает оба. */
+  height: calc(var(--wobbler-height) + var(--outside-top-h, 0mm) + var(--outside-bottom-h, 0mm));
+}
+.wobbler-element.has-outside-bottom .wobbler-outside-bottom {
+  display: flex;
+  flex: 0 0 auto;
+  height: var(--outside-bottom-h, 0mm);
+  border-top: 1px solid rgba(0,0,0,0.15);
+  order: 99;   /* в самом низу flex-потока карты */
+}
+
 /* Внутренний блок: плашка ПОВЕРХ ценника (absolute), ничего не сдвигает.
    z-index:5 — выше содержимого шапки (z-index:2), ниже направляющих реза (10). */
 .wobbler-element.has-inside-top .wobbler-inside-top {
   position: absolute;
   top: 0;
-  /* Половина ширины ценника, по центру, с округлыми краями (а не во весь ценник).
+  /* Ширина плашки — управляется ползунком «Ширина блока» (по умолчанию 50%,
+     как раньше). По центру ценника, с округлыми краями (а не во весь ценник).
      Специфичность 0,3,0 выше base/print border-radius:0 → радиус применяется
      и на экране, и в печати. */
-  width: 50%;
+  width: var(--inside-top-w, 50%);
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -1459,6 +1480,32 @@ input[type="range"] {
   justify-content: flex-end;
   gap: 10px;
   margin-top: 1.25rem;
+}
+
+/* Список шаблонов-приёмников в модалке «Перенести на шаблон» */
+.copy-targets {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 50vh;
+  overflow-y: auto;
+  margin: 0.5rem 0;
+}
+.copy-target {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  color: #fff;
+  font-size: 0.85rem;
+}
+.copy-target:hover {
+  background: rgba(56, 189, 248, 0.08);
+}
+.copy-target input {
+  accent-color: var(--accent-blue);
 }
 
 /* Подсказка в модалке сохранения (какой шаблон будет обновлён) */
@@ -1815,6 +1862,7 @@ body.is-printing #printArea {
   }
 
   .print-wobbler-wrapper .wobbler-outside-top,
+  .print-wobbler-wrapper .wobbler-outside-bottom,
   .print-wobbler-wrapper .wobbler-inside-top {
     box-shadow: none !important;
     border-radius: 0 !important;

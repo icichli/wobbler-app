@@ -193,6 +193,9 @@
               <button type="button" id="clearAllItemsBtn" class="btn btn-secondary" style="font-size: 0.75rem; justify-content: center;">
                 🗑 Очистить всё
               </button>
+              <button type="button" id="copyItemsBtn" class="btn btn-secondary" style="font-size: 0.75rem; justify-content: center;" title="Скопировать товары текущего шаблона в другие шаблоны">
+                ⧉ Перенести на шаблон…
+              </button>
               <button type="button" id="syncPricePosBtn" class="btn btn-secondary" style="font-size: 0.75rem; justify-content: center;" title="Скопировать расположение цены с ценника №1 на все остальные">
                 💴 Выровнять цену по №1
               </button>
@@ -283,12 +286,17 @@
               <input type="range" id="titleSize" min="7" max="32" value="13">
             </div>
             <div class="form-group flex-1">
-              <label>Толщина</label>
-              <select id="titleWeight">
-                <option value="900">Extra Bold (900)</option>
-                <option value="800" selected>Bold (800)</option>
-                <option value="400">Regular (400)</option>
-              </select>
+              <label>Толщина / стиль</label>
+              <div style="display:flex; gap:8px; align-items:center;">
+                <select id="titleWeight">
+                  <option value="900">Extra Bold (900)</option>
+                  <option value="800" selected>Bold (800)</option>
+                  <option value="400">Regular (400)</option>
+                </select>
+                <label class="checkbox-label" style="white-space:nowrap;">
+                  <input type="checkbox" id="titleItalic"> Курсив
+                </label>
+              </div>
             </div>
           </div>
 
@@ -560,6 +568,58 @@
               <label for="decorInsideHeight">Высота блока (мм): <span id="decorInsideHeightVal">8</span></label>
               <input type="range" id="decorInsideHeight" min="3" max="15" value="8">
             </div>
+            <div class="form-group">
+              <label for="decorInsideWidth">Ширина блока: <span id="decorInsideWidthVal">50</span>%</label>
+              <input type="range" id="decorInsideWidth" min="20" max="100" value="50">
+            </div>
+          </div>
+
+          <hr style="border:none;border-top:1px solid var(--border-color);margin:12px 0;">
+
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="decorBottomShow"> Блок СНИЗУ под ценником (не входит в размер)
+            </label>
+          </div>
+          <div id="decorBottomGroup">
+            <div class="form-group">
+              <label for="decorBottomText">Текст блока:</label>
+              <textarea id="decorBottomText" rows="1" placeholder="Например: НОВИНКА, АКЦИЯ, -20%">НОВИНКА</textarea>
+            </div>
+            <div class="form-group">
+              <label for="decorBottomBg">Цвет заливки блока:</label>
+              <input type="color" id="decorBottomBg" value="#e63946">
+            </div>
+            <div class="form-group">
+              <label for="decorBottomBgImg">Фоновая картинка блока:</label>
+              <select id="decorBottomBgImg">
+                <option value="none" selected>Без картинки (заливка цветом)</option>
+                <option value="dots_bg.jpg">📷 Точечный фон</option>
+                <option value="ryba_bg.jpg">🐟 Чёрный фон с рамкой</option>
+                <option value="ryba_scales">🐟 Рыбья чешуя</option>
+                <option value="custom" id="decorBottomCustomOption" style="display:none;">Загруженное фото</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Или загрузить свою картинку:</label>
+              <div class="upload-btn-wrapper">
+                <label for="decorBottomCustomUpload" class="btn btn-secondary upload-btn">📁 Выбрать файл…</label>
+                <input type="file" id="decorBottomCustomUpload" accept="image/*">
+              </div>
+              <div id="decorBottomUploadStatus" class="upload-status"></div>
+            </div>
+            <div class="form-group">
+              <label for="decorBottomColor">Цвет текста:</label>
+              <input type="color" id="decorBottomColor" value="#ffffff">
+            </div>
+            <div class="form-group">
+              <label for="decorBottomFontSize">Размер шрифта (pt): <span id="decorBottomFontSizeVal">14</span></label>
+              <input type="range" id="decorBottomFontSize" min="6" max="30" value="14">
+            </div>
+            <div class="form-group">
+              <label for="decorBottomHeight">Высота блока (мм): <span id="decorBottomHeightVal">12</span></label>
+              <input type="range" id="decorBottomHeight" min="5" max="30" value="12">
+            </div>
           </div>
 
         </div><!-- /.card-body section5 Оформление -->
@@ -663,6 +723,9 @@
 
               <!-- Bottom Section -->
               <div class="wobbler-bottom" id="wobblerBottom"></div>
+
+              <!-- Декоративный блок СНИЗУ (под ценником, добавляет высоту) -->
+              <div class="wobbler-outside-bottom" id="wobblerOutsideBottom"><span class="block-text" id="outsideBottomText"></span></div>
             </div>
           </div>
         </div>
@@ -699,6 +762,19 @@
         <button id="cancelSaveModal" class="btn btn-secondary">Отмена</button>
         <button id="updateTemplateBtn" class="btn btn-secondary" disabled>🔄 Обновить</button>
         <button id="confirmSaveModal" class="btn btn-primary">💾 Сохранить новый</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: перенос товаров текущего шаблона на другие шаблоны -->
+  <div id="copyItemsModal" class="modal-backdrop no-print">
+    <div class="modal-box modal-box-wide">
+      <h3>Перенести товары на другой шаблон</h3>
+      <p id="copyItemsHint">Текущая таблица скопируется в выбранные шаблоны, заменив их данные.</p>
+      <div id="copyItemsTargets" class="copy-targets"></div>
+      <div class="modal-actions">
+        <button id="cancelCopyItems" class="btn btn-secondary">Отмена</button>
+        <button id="confirmCopyItems" class="btn btn-primary">⧉ Скопировать</button>
       </div>
     </div>
   </div>
@@ -843,6 +919,58 @@
           <div class="form-group">
             <label for="isInsideHeight">Высота блока (мм):</label>
             <input type="range" id="isInsideHeight" min="3" max="15" value="8">
+          </div>
+        </div>
+      </div>
+
+      <hr class="is-sep">
+
+      <!-- Блок СНИЗУ -->
+      <div class="is-group">
+        <h4 class="is-group-title">Блок СНИЗУ под ценником</h4>
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="isBottomShow"> Показать блок СНИЗУ для этого ценника
+          </label>
+        </div>
+        <div class="is-group-body" data-is-bottom>
+          <div class="form-group">
+            <label for="isBottomText">Текст блока:</label>
+            <textarea id="isBottomText" rows="1" placeholder="Например: НОВИНКА, АКЦИЯ, -20%">НОВИНКА</textarea>
+          </div>
+          <div class="form-group">
+            <label for="isBottomBg">Цвет заливки блока:</label>
+            <input type="color" id="isBottomBg" value="#e63946">
+          </div>
+          <div class="form-group">
+            <label for="isBottomBgImg">Фоновая картинка блока:</label>
+            <select id="isBottomBgImg">
+              <option value="none" selected>Без картинки (заливка цветом)</option>
+              <option value="dots_bg.jpg">📷 Точечный фон</option>
+              <option value="ryba_bg.jpg">🐟 Чёрный фон с рамкой</option>
+              <option value="ryba_scales">🐟 Рыбья чешуя</option>
+              <option value="custom" id="isBottomCustomOption" style="display:none;">Загруженное фото</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Или загрузить свою картинку:</label>
+            <div class="upload-btn-wrapper">
+              <label for="isBottomCustomUpload" class="btn btn-secondary upload-btn">📁 Выбрать файл…</label>
+              <input type="file" id="isBottomCustomUpload" accept="image/*">
+            </div>
+            <div id="isBottomUploadStatus" class="upload-status"></div>
+          </div>
+          <div class="form-group">
+            <label for="isBottomColor">Цвет текста:</label>
+            <input type="color" id="isBottomColor" value="#ffffff">
+          </div>
+          <div class="form-group">
+            <label for="isBottomFontSize">Размер шрифта (pt):</label>
+            <input type="range" id="isBottomFontSize" min="6" max="30" value="14">
+          </div>
+          <div class="form-group">
+            <label for="isBottomHeight">Высота блока (мм):</label>
+            <input type="range" id="isBottomHeight" min="5" max="30" value="12">
           </div>
         </div>
       </div>

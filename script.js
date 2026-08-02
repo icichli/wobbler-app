@@ -82,7 +82,18 @@ document.addEventListener('DOMContentLoaded', () => {
     { title: '', price: '' }
   ];
 
-  let itemsData = [...initialExcelItems];
+  // Per-template хранилище товаров в режиме «Разные товары».
+  // Каждый встроенный пресет имеет СВОЙ 18-элементный массив — ввод наименования,
+  // цена и вес независимы по каждому шаблону. itemsData оставляем let-ссылкой на
+  // активный массив; весь существующий код читает/пишет itemsData, поэтому при
+  // смене шаблона достаточно перенаправить ссылку на templateItems[key].
+  const TEMPLATE_KEYS = ['alaska_dots', 'ryba', 'sneki', 'novy_vkus', 'novinka', 'tomat', 'sladko'];
+  const templateItems = {};
+  function freshItems() {
+    return Array.from({ length: 18 }, () => ({ title: '', price: '', subtitle: '', subtitleManual: false }));
+  }
+  TEMPLATE_KEYS.forEach(k => { templateItems[k] = freshItems(); });
+  let itemsData = templateItems.alaska_dots;   // активный массив (старт — Бутылки)
 
   // Index of the item currently shown in the single preview (multi mode)
   let activePreviewIndex = 0;
@@ -112,6 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const titleSize = document.getElementById('titleSize');
   const titleSizeVal = document.getElementById('titleSizeVal');
   const titleWeight = document.getElementById('titleWeight');
+  const titleItalic = document.getElementById('titleItalic');
   const titleOffsetY = document.getElementById('titleOffsetY');
   const titleOffsetYVal = document.getElementById('titleOffsetYVal');
 
@@ -192,11 +204,30 @@ document.addEventListener('DOMContentLoaded', () => {
   const decorInsideFontSizeVal = document.getElementById('decorInsideFontSizeVal');
   const decorInsideHeight = document.getElementById('decorInsideHeight');
   const decorInsideHeightVal = document.getElementById('decorInsideHeightVal');
+  const decorInsideWidth = document.getElementById('decorInsideWidth');
+  const decorInsideWidthVal = document.getElementById('decorInsideWidthVal');
   const wobblerInsideTop = document.getElementById('wobblerInsideTop');
   const insideTopText = document.getElementById('insideTopText');
 
+  // Декоративный блок СНИЗУ (под ценником) — полный аналог блока СВЕРХУ.
+  const decorBottomShow = document.getElementById('decorBottomShow');
+  const decorBottomText = document.getElementById('decorBottomText');
+  const decorBottomBg = document.getElementById('decorBottomBg');
+  const decorBottomBgImg = document.getElementById('decorBottomBgImg');
+  const decorBottomCustomUpload = document.getElementById('decorBottomCustomUpload');
+  const decorBottomCustomOption = document.getElementById('decorBottomCustomOption');
+  const decorBottomUploadStatus = document.getElementById('decorBottomUploadStatus');
+  const decorBottomColor = document.getElementById('decorBottomColor');
+  const decorBottomFontSize = document.getElementById('decorBottomFontSize');
+  const decorBottomFontSizeVal = document.getElementById('decorBottomFontSizeVal');
+  const decorBottomHeight = document.getElementById('decorBottomHeight');
+  const decorBottomHeightVal = document.getElementById('decorBottomHeightVal');
+  const wobblerOutsideBottom = document.getElementById('wobblerOutsideBottom');
+  const outsideBottomText = document.getElementById('outsideBottomText');
+
   let uploadedDataUrl2 = null; // фон внешнего блока (custom)
   let uploadedDataUrl3 = null; // фон внутреннего блока (custom)
+  let uploadedDataUrl4 = null; // фон нижнего блока (custom)
 
   // Sheet Config & Buttons
   const sheetCount = document.getElementById('sheetCount');
@@ -263,6 +294,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const isInsideColor = document.getElementById('isInsideColor');
   const isInsideFontSize = document.getElementById('isInsideFontSize');
   const isInsideHeight = document.getElementById('isInsideHeight');
+
+  // Per-item контролы блока СНИЗУ (модал «Оформление и фон ценника»).
+  const isBottomShow = document.getElementById('isBottomShow');
+  const isBottomText = document.getElementById('isBottomText');
+  const isBottomBg = document.getElementById('isBottomBg');
+  const isBottomBgImg = document.getElementById('isBottomBgImg');
+  const isBottomCustomOption = document.getElementById('isBottomCustomOption');
+  const isBottomCustomUpload = document.getElementById('isBottomCustomUpload');
+  const isBottomUploadStatus = document.getElementById('isBottomUploadStatus');
+  const isBottomColor = document.getElementById('isBottomColor');
+  const isBottomFontSize = document.getElementById('isBottomFontSize');
+  const isBottomHeight = document.getElementById('isBottomHeight');
 
   // Экспорт / Импорт шаблонов
   const exportAllBtn = document.getElementById('exportAllBtn');
@@ -332,6 +375,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const PER_ITEM_FIELDS = {
     outside: ['outsideShow','outsideText','outsideBg','outsideBgImg','outsideCustomBg','outsideColor','outsideFontSize','outsideHeight'],
     inside:  ['insideShow','insideText','insideBg','insideBgImg','insideCustomBg','insideColor','insideFontSize','insideHeight'],
+    bottom:  ['bottomShow','bottomText','bottomBg','bottomBgImg','bottomCustomBg','bottomColor','bottomFontSize','bottomHeight'],
     bg:      ['headerBg','bgImage','customBgData','titleSafe']
   };
 
@@ -365,6 +409,18 @@ document.addEventListener('DOMContentLoaded', () => {
         height:   resolveItemField(i, 'outside', 'outsideHeight', decorOutsideHeight ? decorOutsideHeight.value : 12)
       };
     }
+    if (kind === 'bottom') {
+      return {
+        show:     resolveItemField(i, 'bottom', 'bottomShow', !!(decorBottomShow && decorBottomShow.checked)),
+        text:     resolveItemField(i, 'bottom', 'bottomText', decorBottomText ? decorBottomText.value : ''),
+        bg:       resolveItemField(i, 'bottom', 'bottomBg',   decorBottomBg ? decorBottomBg.value : '#e63946'),
+        bgImg:    resolveItemField(i, 'bottom', 'bottomBgImg',decorBottomBgImg ? decorBottomBgImg.value : 'none'),
+        customBg: resolveItemField(i, 'bottom', 'bottomCustomBg', uploadedDataUrl4),
+        color:    resolveItemField(i, 'bottom', 'bottomColor',decorBottomColor ? decorBottomColor.value : '#ffffff'),
+        fontSize: resolveItemField(i, 'bottom', 'bottomFontSize', decorBottomFontSize ? decorBottomFontSize.value : 14),
+        height:   resolveItemField(i, 'bottom', 'bottomHeight', decorBottomHeight ? decorBottomHeight.value : 12)
+      };
+    }
     return {
       show:     resolveItemField(i, 'inside', 'insideShow', !!(decorInsideShow && decorInsideShow.checked)),
       text:     resolveItemField(i, 'inside', 'insideText', decorInsideText ? decorInsideText.value : ''),
@@ -373,7 +429,8 @@ document.addEventListener('DOMContentLoaded', () => {
       customBg: resolveItemField(i, 'inside', 'insideCustomBg', uploadedDataUrl3),
       color:    resolveItemField(i, 'inside', 'insideColor',decorInsideColor ? decorInsideColor.value : '#ffffff'),
       fontSize: resolveItemField(i, 'inside', 'insideFontSize', decorInsideFontSize ? decorInsideFontSize.value : 11),
-      height:   resolveItemField(i, 'inside', 'insideHeight', decorInsideHeight ? decorInsideHeight.value : 8)
+      height:   resolveItemField(i, 'inside', 'insideHeight', decorInsideHeight ? decorInsideHeight.value : 8),
+      width:    resolveItemField(i, 'inside', 'insideWidth', decorInsideWidth ? decorInsideWidth.value : 50)
     };
   }
 
@@ -441,6 +498,18 @@ document.addEventListener('DOMContentLoaded', () => {
         height:   pick(item, 'outside', 'outsideHeight', decorOutsideHeight ? decorOutsideHeight.value : 12)
       };
     }
+    if (kind === 'bottom') {
+      return {
+        show:     pick(item, 'bottom', 'bottomShow', !!(decorBottomShow && decorBottomShow.checked)),
+        text:     pick(item, 'bottom', 'bottomText', decorBottomText ? decorBottomText.value : ''),
+        bg:       pick(item, 'bottom', 'bottomBg',   decorBottomBg ? decorBottomBg.value : '#e63946'),
+        bgImg:    pick(item, 'bottom', 'bottomBgImg',decorBottomBgImg ? decorBottomBgImg.value : 'none'),
+        customBg: pick(item, 'bottom', 'bottomCustomBg', uploadedDataUrl4),
+        color:    pick(item, 'bottom', 'bottomColor',decorBottomColor ? decorBottomColor.value : '#ffffff'),
+        fontSize: pick(item, 'bottom', 'bottomFontSize', decorBottomFontSize ? decorBottomFontSize.value : 14),
+        height:   pick(item, 'bottom', 'bottomHeight', decorBottomHeight ? decorBottomHeight.value : 12)
+      };
+    }
     return {
       show:     pick(item, 'inside', 'insideShow', !!(decorInsideShow && decorInsideShow.checked)),
       text:     pick(item, 'inside', 'insideText', decorInsideText ? decorInsideText.value : ''),
@@ -449,7 +518,8 @@ document.addEventListener('DOMContentLoaded', () => {
       customBg: pick(item, 'inside', 'insideCustomBg', uploadedDataUrl3),
       color:    pick(item, 'inside', 'insideColor',decorInsideColor ? decorInsideColor.value : '#ffffff'),
       fontSize: pick(item, 'inside', 'insideFontSize', decorInsideFontSize ? decorInsideFontSize.value : 11),
-      height:   pick(item, 'inside', 'insideHeight', decorInsideHeight ? decorInsideHeight.value : 8)
+      height:   pick(item, 'inside', 'insideHeight', decorInsideHeight ? decorInsideHeight.value : 8),
+      width:    pick(item, 'inside', 'insideWidth', decorInsideWidth ? decorInsideWidth.value : 50)
     };
   }
   function bgFromItem(item) {
@@ -467,8 +537,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!it) return;
     delete it.outsideCustomized;
     delete it.insideCustomized;
+    delete it.bottomCustomized;
     delete it.bgCustomized;
-    [...PER_ITEM_FIELDS.outside, ...PER_ITEM_FIELDS.inside, ...PER_ITEM_FIELDS.bg].forEach(f => delete it[f]);
+    [...PER_ITEM_FIELDS.outside, ...PER_ITEM_FIELDS.inside, ...PER_ITEM_FIELDS.bottom, ...PER_ITEM_FIELDS.bg].forEach(f => delete it[f]);
   }
 
   // Built-in presets (Default font for Alaska is Arial)
@@ -481,8 +552,9 @@ document.addEventListener('DOMContentLoaded', () => {
       subtitle: '',
       titleFont: "Arial, sans-serif",
       titleColor: '#ffffff',
-      titleSize: 9,
+      titleSize: 10,
       titleWeight: '800',
+      titleItalic: false,
       titleAlign: 'center',
       titleOffsetY: 0,
       subtitleColor: '#ffffff',
@@ -504,8 +576,8 @@ document.addEventListener('DOMContentLoaded', () => {
       headerHeight: 90,
       // Safe-зона названия Alaska (выставлена вручную в визуальном редакторе границ
       // поверх dots_bg.jpg): название в верхней половине ценника — отступы сверху
-      // 0.28 и снизу 0.45, по бокам без ограничений. Доли от сторон шапки.
-      titleSafe: { left: 0, right: 0, top: 0.28, bottom: 0.45 },
+      // 0.32 и снизу 0.45, по бокам без ограничений. Доли от сторон шапки.
+      titleSafe: { left: 0, right: 0, top: 0.32, bottom: 0.45 },
       layout: 'full',
       priceInBottom: false,
       subtitleCorner: false,
@@ -526,7 +598,16 @@ document.addEventListener('DOMContentLoaded', () => {
       decorInsideColor: '#ffffff',
       decorInsideFontSize: 11,
       decorInsideHeight: 8,
-      labelPos: { title: { x: -0.4, y: 1 }, subtitle: { x: -4.9, y: -1.6 }, price: { x: 0, y: 0 }, priceDigits: [ { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 } ], currency: { x: 0, y: 0 } }
+      decorInsideWidth: 50,
+      decorBottomShow: false,
+      decorBottomText: 'НОВИНКА',
+      decorBottomBg: '#e63946',
+      decorBottomBgImg: 'none',
+      decorBottomCustomBg: null,
+      decorBottomColor: '#ffffff',
+      decorBottomFontSize: 14,
+      decorBottomHeight: 12,
+      labelPos: { title: { x: -0.4, y: 1 }, subtitle: { x: -4.9, y: -0.3 }, price: { x: 0.2, y: 1.7 }, priceDigits: [ { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 } ], currency: { x: 0, y: 0 } }
     },
     novy_vkus: {
       name: 'Новый вкус',
@@ -537,6 +618,7 @@ document.addEventListener('DOMContentLoaded', () => {
       titleColor: '#ffffff',
       titleSize: 18,
       titleWeight: '900',
+      titleItalic: false,
       titleAlign: 'center',
       titleOffsetY: 0,
       showPrice: false,
@@ -564,6 +646,7 @@ document.addEventListener('DOMContentLoaded', () => {
       titleColor: '#111111',
       titleSize: 18,
       titleWeight: '900',
+      titleItalic: false,
       titleAlign: 'center',
       titleOffsetY: 0,
       showPrice: false,
@@ -591,6 +674,7 @@ document.addEventListener('DOMContentLoaded', () => {
       titleColor: '#ffffff',
       titleSize: 17,
       titleWeight: '900',
+      titleItalic: false,
       titleAlign: 'center',
       titleOffsetY: 0,
       showPrice: false,
@@ -618,6 +702,7 @@ document.addEventListener('DOMContentLoaded', () => {
       titleColor: '#ffffff',
       titleSize: 18,
       titleWeight: '900',
+      titleItalic: false,
       titleAlign: 'center',
       titleOffsetY: 0,
       showPrice: false,
@@ -646,6 +731,7 @@ document.addEventListener('DOMContentLoaded', () => {
       titleColor: '#ffffff',
       titleSize: 22,
       titleWeight: '800',
+      titleItalic: false,
       titleAlign: 'center',
       titleOffsetY: 0,
       subtitleColor: '#ffffff',
@@ -690,6 +776,15 @@ document.addEventListener('DOMContentLoaded', () => {
       decorInsideColor: '#ffffff',
       decorInsideFontSize: 11,
       decorInsideHeight: 8,
+      decorInsideWidth: 50,
+      decorBottomShow: false,
+      decorBottomText: 'НОВИНКА',
+      decorBottomBg: '#e63946',
+      decorBottomBgImg: 'none',
+      decorBottomCustomBg: null,
+      decorBottomColor: '#ffffff',
+      decorBottomFontSize: 14,
+      decorBottomHeight: 12,
       labelPos: { title: { x: -0.6, y: -0.1 }, subtitle: { x: -0.6, y: -1 }, price: { x: 0, y: 0 }, priceDigits: [ { x: -5.5, y: 0.2 }, { x: -1.1, y: 0 }, { x: 3.6, y: 0 } ], currency: { x: 5.5, y: 0.6 } }
     },
     // Снеки — копия Рыбы, масштабированная под размер 6,5×3,5 см (вместо 9,2×5,5).
@@ -706,6 +801,7 @@ document.addEventListener('DOMContentLoaded', () => {
       titleColor: '#ffffff',
       titleSize: 14,
       titleWeight: '800',
+      titleItalic: false,
       titleAlign: 'center',
       titleOffsetY: 0,
       subtitleColor: '#ffffff',
@@ -746,6 +842,15 @@ document.addEventListener('DOMContentLoaded', () => {
       decorInsideColor: '#ffffff',
       decorInsideFontSize: 7,
       decorInsideHeight: 5,
+      decorInsideWidth: 50,
+      decorBottomShow: false,
+      decorBottomText: 'НОВИНКА',
+      decorBottomBg: '#e63946',
+      decorBottomBgImg: 'none',
+      decorBottomCustomBg: null,
+      decorBottomColor: '#ffffff',
+      decorBottomFontSize: 14,
+      decorBottomHeight: 12,
       labelPos: { title: { x: -0.4, y: -0.1 }, subtitle: { x: -2.1, y: -0.6 }, price: { x: 0, y: 0 }, priceDigits: [ { x: -5.3, y: 0.5 }, { x: -1, y: 0.4 }, { x: 2.3, y: 0.4 } ], currency: { x: 5, y: 0.3 } }
     }
   };
@@ -790,10 +895,11 @@ document.addEventListener('DOMContentLoaded', () => {
         itemsData[idx].title = e.target.value;
     // Авто-вес «100гр»: пока пользователь не правил вес вручную,
     // подставляем дефолт при наличии наименования (и очищаем при пустом).
-    // Для встроенного шаблона «Бутылки» (alaska_dots) авто-вес отключён —
-    // пользователь вводит вес сам; поле остаётся пустым до ручного ввода.
-    const isBottle = activeTemplateRef && activeTemplateRef.kind === 'builtin' && activeTemplateRef.key === 'alaska_dots';
-    if (!isBottle && !itemsData[idx].subtitleManual) {
+    // Действует ТОЛЬКО для встроенных шаблонов «Рыба» и «Снеки» — у прочих
+    // (Бутылки, Воблеры) поле веса остаётся пустым до ручного ввода.
+    const isRybaFamily = activeTemplateRef && activeTemplateRef.kind === 'builtin'
+      && (activeTemplateRef.key === 'ryba' || activeTemplateRef.key === 'sneki');
+    if (isRybaFamily && !itemsData[idx].subtitleManual) {
       itemsData[idx].subtitle = e.target.value.trim() ? '100гр' : '';
       const si = row.querySelector('.item-subtitle-input');
       if (si) si.value = itemsData[idx].subtitle;
@@ -1167,28 +1273,37 @@ document.addEventListener('DOMContentLoaded', () => {
     const v = parseFloat(decorInsideHeight && decorInsideHeight.value);
     return isNaN(v) ? 8 : v;
   }
+  function decorBottomHeightMm() {
+    const v = parseFloat(decorBottomHeight && decorBottomHeight.value);
+    return isNaN(v) ? 12 : v;
+  }
 
-  // Высота карточки для раскладки А4: ценник + внешний декоративный блок (если он
-  // показан). Внешний блок не входит в размер ценника, но печатается, поэтому
-  // ячейка листа становится выше и ценников влезает меньше.
+  // Высота карточки для раскладки А4: ценник + внешние декоративные блоки
+  // (СВЕРХУ и СНИЗУ, если показаны). Они не входят в размер ценника, но
+  // печатаются, поэтому ячейка листа становится выше и ценников влезает меньше.
   // В мультирежиме берём ЕДИНУЮ высоту по максимуму: если хотя бы у одного
-  // выводимого ценника включён блок СВЕРХУ — все ячейки получают ценник+блок,
-  // ценники без блока оставляют пустое место сверху.
+  // выводимого ценника включён блок — все ячейки получают ценник+блок,
+  // ценники без блока оставляют пустое место.
   function effectiveCardHeight(hMm) {
     if (!isMultiModeNow()) {
-      // Single-режим: глобальный блок.
+      // Single-режим: глобальные блоки.
       const showOutside = !!(decorOutsideShow && decorOutsideShow.checked);
-      return showOutside ? hMm + decorOutsideHeightMm() : hMm;
+      const showBottom  = !!(decorBottomShow && decorBottomShow.checked);
+      let h = hMm;
+      if (showOutside) h += decorOutsideHeightMm();
+      if (showBottom)  h += decorBottomHeightMm();
+      return h;
     }
-    // Мультирежим: максимум высот внешних блоков по всем товарам.
+    // Мультирежим: максимум суммарной высоты внешних блоков (сверху+снизу) по товарам.
     let extra = 0;
     itemsData.forEach(it => {
       if (!it || !(it.title && it.title.trim())) return; // незаполненные не печатаются
-      const snap = decorBlockFromItem(it, 'outside');
-      if (snap.show) {
-        const hh = parseFloat(snap.height) || 0;
-        if (hh > extra) extra = hh;
-      }
+      let perItem = 0;
+      const outSnap = decorBlockFromItem(it, 'outside');
+      const botSnap = decorBlockFromItem(it, 'bottom');
+      if (outSnap.show) perItem += parseFloat(outSnap.height) || 0;
+      if (botSnap.show) perItem += parseFloat(botSnap.height) || 0;
+      if (perItem > extra) extra = perItem;
     });
     return hMm + extra;
   }
@@ -1241,6 +1356,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Здесь перезаписываем фон/декор-блоки под конкретный товар ценника.
     const outSnap = decorBlockFromItem(item, 'outside');
     const inSnap = decorBlockFromItem(item, 'inside');
+    const botSnap = decorBlockFromItem(item, 'bottom');
     const bgSnap = bgFromItem(item);
 
     // Фон ценника (хедер).
@@ -1250,10 +1366,34 @@ document.addEventListener('DOMContentLoaded', () => {
     // CSS-переменные высот блоков — на самом клоне (локально, не глобально).
     const outH = parseFloat(outSnap.height) || 0;
     const inH = parseFloat(inSnap.height) || 0;
+    const botH = parseFloat(botSnap.height) || 0;
     clone.style.setProperty('--outside-top-h', `${outH.toFixed(2)}mm`);
     clone.style.setProperty('--inside-top-h', `${inH.toFixed(2)}mm`);
+    clone.style.setProperty('--outside-bottom-h', `${botH.toFixed(2)}mm`);
+    clone.style.setProperty('--inside-top-w', `${(inSnap.width != null ? inSnap.width : 50)}%`);
     clone.classList.toggle('has-outside-top', !!outSnap.show);
     clone.classList.toggle('has-inside-top', !!inSnap.show);
+    clone.classList.toggle('has-outside-bottom', !!botSnap.show);
+
+    // Рендер декоративных блоков клона (фон/текст под конкретный товар).
+    function applyCloneDecorBlock(blockEl, snap) {
+      if (!blockEl) return;
+      if (snap.show) {
+        blockEl.style.display = 'flex';
+        applyBackgroundTo(blockEl, snap.bgImg, snap.customBg, snap.bg);
+        const txt = blockEl.querySelector('.block-text');
+        if (txt) {
+          txt.textContent = snap.text || '';
+          txt.style.color = snap.color || '#ffffff';
+          txt.style.fontSize = `${snap.fontSize || 12}pt`;
+        }
+      } else {
+        blockEl.style.display = 'none';
+      }
+    }
+    applyCloneDecorBlock(clone.querySelector('.wobbler-outside-top'), outSnap);
+    applyCloneDecorBlock(clone.querySelector('.wobbler-inside-top'), inSnap);
+    applyCloneDecorBlock(clone.querySelector('.wobbler-outside-bottom'), botSnap);
 
     // Safe-зона названия — per-item на клоне (локально переопределяет глобальные
     // --title-safe-w / --title-zone-h, унаследованные от :root). Так в раскладке
@@ -1277,39 +1417,8 @@ document.addEventListener('DOMContentLoaded', () => {
       clone.style.setProperty('--title-safe-w', `${(_swf * 100).toFixed(2)}%`);
     }
 
-    // Блок СВЕРХУ.
-    const cloneOutside = clone.querySelector('.wobbler-outside-top');
-    const cloneOutsideText = cloneOutside ? cloneOutside.querySelector('.block-text') : null;
-    if (cloneOutside) {
-      if (outSnap.show) {
-        cloneOutside.style.display = 'flex';
-        applyBackgroundTo(cloneOutside, outSnap.bgImg, outSnap.customBg, outSnap.bg);
-        if (cloneOutsideText) {
-          cloneOutsideText.textContent = outSnap.text || '';
-          cloneOutsideText.style.color = outSnap.color || '#ffffff';
-          cloneOutsideText.style.fontSize = `${outSnap.fontSize || 12}pt`;
-        }
-      } else {
-        cloneOutside.style.display = 'none';
-      }
-    }
-
-    // Блок ВНУТРИ.
-    const cloneInside = clone.querySelector('.wobbler-inside-top');
-    const cloneInsideText = cloneInside ? cloneInside.querySelector('.block-text') : null;
-    if (cloneInside) {
-      if (inSnap.show) {
-        cloneInside.style.display = 'flex';
-        applyBackgroundTo(cloneInside, inSnap.bgImg, inSnap.customBg, inSnap.bg);
-        if (cloneInsideText) {
-          cloneInsideText.textContent = inSnap.text || '';
-          cloneInsideText.style.color = inSnap.color || '#ffffff';
-          cloneInsideText.style.fontSize = `${inSnap.fontSize || 12}pt`;
-        }
-      } else {
-        cloneInside.style.display = 'none';
-      }
-    }
+    // Декоративные блоки (СВЕРХУ / ВНУТРИ / СНИЗУ) отрисованы выше через
+    // applyCloneDecorBlock() — единый хелпер для всех трёх блоков клона.
   }
 
   // Применение фона (имя встроенной картинки / custom data-URL / none) к любому
@@ -1392,6 +1501,7 @@ document.addEventListener('DOMContentLoaded', () => {
     previewTitle.style.color = titleColor.value;
     previewTitle.style.fontSize = `${effTitleSize}pt`;
     previewTitle.style.fontWeight = titleWeight.value;
+    previewTitle.style.fontStyle = (titleItalic && titleItalic.checked) ? 'italic' : 'normal';
     previewTitle.style.textAlign = alignState.title;
     previewTitle.style.transform = `translate(${lp.title.x}mm, ${(parseFloat(titleOffsetY.value) || 0) + lp.title.y}mm)`;
     // Держим слайдер и индикатор в синхроне с активным товаром.
@@ -1499,15 +1609,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // outsideH — также «добавка» к высоте ячейки листа/печати (ценник + блок).
     const activeOutsideSnap = resolveDecorBlock(activePreviewIndex, 'outside');
     const activeInsideSnap = resolveDecorBlock(activePreviewIndex, 'inside');
+    const activeBottomSnap = resolveDecorBlock(activePreviewIndex, 'bottom');
     const outsideH = parseFloat(activeOutsideSnap.height) || 0; // мм, над ценником
     const insideH = parseFloat(activeInsideSnap.height) || 0;   // мм, внутри ценника сверху
+    const bottomH = parseFloat(activeBottomSnap.height) || 0;   // мм, под ценником
     document.documentElement.style.setProperty('--outside-top-h', `${outsideH.toFixed(2)}mm`);
     document.documentElement.style.setProperty('--inside-top-h', `${insideH.toFixed(2)}mm`);
+    document.documentElement.style.setProperty('--outside-bottom-h', `${bottomH.toFixed(2)}mm`);
+    // Ширина блока «внутри» (% ширины ценника) — сужает полосу, центрируя её.
+    const insideW = (activeInsideSnap.width != null) ? activeInsideSnap.width : 50;
+    document.documentElement.style.setProperty('--inside-top-w', `${insideW}%`);
 
     const showOutside = !!activeOutsideSnap.show;
     const showInside = !!activeInsideSnap.show;
+    const showBottom = !!activeBottomSnap.show;
     wobblerPreview.classList.toggle('has-outside-top', showOutside);
     wobblerPreview.classList.toggle('has-inside-top', showInside);
+    wobblerPreview.classList.toggle('has-outside-bottom', showBottom);
 
     function applyDecorBlock(el, textEl, text, bgVal, customData, color, fontColor, fontSize) {
       if (!el) return;
@@ -1543,12 +1661,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (decorInsideFontSize && decorInsideFontSizeVal) decorInsideFontSizeVal.textContent = decorInsideFontSize.value;
     if (decorInsideHeight && decorInsideHeightVal) decorInsideHeightVal.textContent = decorInsideHeight.value;
+    if (decorInsideWidth && decorInsideWidthVal) decorInsideWidthVal.textContent = decorInsideWidth.value;
+
+    // Декоративный блок СНИЗУ (под ценником) — полный аналог блока СВЕРХУ.
+    if (wobblerOutsideBottom) {
+      if (showBottom) {
+        applyDecorBlock(wobblerOutsideBottom, outsideBottomText,
+          activeBottomSnap.text, activeBottomSnap.bgImg, activeBottomSnap.customBg,
+          activeBottomSnap.bg, activeBottomSnap.color, activeBottomSnap.fontSize);
+      } else {
+        wobblerOutsideBottom.style.display = 'none';
+      }
+    }
+    if (decorBottomFontSize && decorBottomFontSizeVal) decorBottomFontSizeVal.textContent = decorBottomFontSize.value;
+    if (decorBottomHeight && decorBottomHeightVal) decorBottomHeightVal.textContent = decorBottomHeight.value;
 
     // Внутренний блок позиционируется поверх (absolute) — шапку не трогаем,
     // её высоту задаёт CSS (привязка к --wobbler-height).
 
-    // Эффективная высота карточки для раскладки листа/печати (с учётом внешнего блока).
-    window.__cardEffH = heightMm + (showOutside ? outsideH : 0);
+    // Эффективная высота карточки для раскладки листа/печати (с учётом внешних блоков
+    // сверху и снизу — оба добавляют высоту и не входят в размер ценника).
+    window.__cardEffH = heightMm + (showOutside ? outsideH : 0) + (showBottom ? bottomH : 0);
 
     // Высота шапки в мм: в full — вся высота воблера; в split — headerHeight%.
     const headerHm = selectedLayout === 'full'
@@ -1649,7 +1782,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const reader = new FileReader();
       reader.onload = function(event) {
         if (targetVar === 'outside') uploadedDataUrl2 = event.target.result;
-        else uploadedDataUrl3 = event.target.result;
+        else if (targetVar === 'inside') uploadedDataUrl3 = event.target.result;
+        else uploadedDataUrl4 = event.target.result;
         if (optionEl) optionEl.style.display = 'block';
         if (statusEl) statusEl.textContent = `✓ Загружено: ${file.name}`;
         // Переключаем select этого блока на custom и обновляем превью.
@@ -1662,6 +1796,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   setupDecorUpload(decorOutsideCustomUpload, decorOutsideCustomOption, decorOutsideUploadStatus, 'outside');
   setupDecorUpload(decorInsideCustomUpload, decorInsideCustomOption, decorInsideUploadStatus, 'inside');
+  setupDecorUpload(decorBottomCustomUpload, decorBottomCustomOption, decorBottomUploadStatus, 'bottom');
 
   // Alignment Buttons Click Handler
   document.querySelectorAll('.align-btn').forEach(btn => {
@@ -1848,6 +1983,7 @@ document.addEventListener('DOMContentLoaded', () => {
     titleColor.value = state.titleColor || '#ffffff';
     titleSize.value = state.titleSize || 13;
     titleWeight.value = state.titleWeight || '800';
+    if (titleItalic) titleItalic.checked = !!state.titleItalic;
     titleOffsetY.value = state.titleOffsetY || 0;
     alignState.title = state.titleAlign || 'center';
     // Subtitle (Вес / доп. текст) — собственные параметры слоя.
@@ -1907,10 +2043,22 @@ document.addEventListener('DOMContentLoaded', () => {
     if (decorInsideColor) decorInsideColor.value = state.decorInsideColor || '#ffffff';
     if (decorInsideFontSize) decorInsideFontSize.value = state.decorInsideFontSize != null ? state.decorInsideFontSize : 11;
     if (decorInsideHeight) decorInsideHeight.value = state.decorInsideHeight != null ? state.decorInsideHeight : 8;
+    if (decorInsideWidth) decorInsideWidth.value = state.decorInsideWidth != null ? state.decorInsideWidth : 50;
     if (decorInsideCustomOption) decorInsideCustomOption.style.display = state.decorInsideCustomBg ? 'block' : 'none';
     uploadedDataUrl3 = state.decorInsideCustomBg || null;
     if (decorInsideBgImg) decorInsideBgImg.value = state.decorInsideCustomBg ? 'custom' : (state.decorInsideBgImg || 'none');
     if (decorInsideUploadStatus) decorInsideUploadStatus.textContent = state.decorInsideCustomBg ? '✓ Пользовательский фон' : '';
+
+    if (decorBottomShow) decorBottomShow.checked = !!state.decorBottomShow;
+    if (decorBottomText) decorBottomText.value = state.decorBottomText != null ? state.decorBottomText : 'НОВИНКА';
+    if (decorBottomBg) decorBottomBg.value = state.decorBottomBg || '#e63946';
+    if (decorBottomColor) decorBottomColor.value = state.decorBottomColor || '#ffffff';
+    if (decorBottomFontSize) decorBottomFontSize.value = state.decorBottomFontSize != null ? state.decorBottomFontSize : 14;
+    if (decorBottomHeight) decorBottomHeight.value = state.decorBottomHeight != null ? state.decorBottomHeight : 12;
+    if (decorBottomCustomOption) decorBottomCustomOption.style.display = state.decorBottomCustomBg ? 'block' : 'none';
+    uploadedDataUrl4 = state.decorBottomCustomBg || null;
+    if (decorBottomBgImg) decorBottomBgImg.value = state.decorBottomCustomBg ? 'custom' : (state.decorBottomBgImg || 'none');
+    if (decorBottomUploadStatus) decorBottomUploadStatus.textContent = state.decorBottomCustomBg ? '✓ Пользовательский фон' : '';
 
     // Раскладка берётся из шаблона (раньше была radio-группа «Формат воблера»).
     currentLayout = (state.layout === 'split') ? 'split' : 'full';
@@ -1979,6 +2127,7 @@ document.addEventListener('DOMContentLoaded', () => {
       titleColor: titleColor.value,
       titleSize: titleSize.value,
       titleWeight: titleWeight.value,
+      titleItalic: titleItalic ? titleItalic.checked : false,
       titleAlign: alignState.title,
       titleOffsetY: titleOffsetY.value,
       subtitleColor: subtitleColor ? subtitleColor.value : '#ffffff',
@@ -2022,6 +2171,15 @@ document.addEventListener('DOMContentLoaded', () => {
       decorInsideColor: decorInsideColor ? decorInsideColor.value : '#ffffff',
       decorInsideFontSize: decorInsideFontSize ? decorInsideFontSize.value : 11,
       decorInsideHeight: decorInsideHeight ? decorInsideHeight.value : 8,
+      decorInsideWidth: decorInsideWidth ? decorInsideWidth.value : 50,
+      decorBottomShow: decorBottomShow ? decorBottomShow.checked : false,
+      decorBottomText: decorBottomText ? decorBottomText.value : 'НОВИНКА',
+      decorBottomBg: decorBottomBg ? decorBottomBg.value : '#e63946',
+      decorBottomBgImg: decorBottomBgImg ? decorBottomBgImg.value : 'none',
+      decorBottomCustomBg: (decorBottomBgImg && decorBottomBgImg.value === 'custom') ? uploadedDataUrl4 : null,
+      decorBottomColor: decorBottomColor ? decorBottomColor.value : '#ffffff',
+      decorBottomFontSize: decorBottomFontSize ? decorBottomFontSize.value : 14,
+      decorBottomHeight: decorBottomHeight ? decorBottomHeight.value : 12,
       labelPos: JSON.parse(JSON.stringify(activeLabelPos()))
     };
   }
@@ -2265,6 +2423,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (p) {
         // Запоминаем выбранный встроенный пресет — «Обновить» создаст пользовательскую копию.
         activeTemplateRef = { kind: 'builtin', key };
+        // Per-template товары: переключаем активный массив товаров этого шаблона.
+        // Каждый пресет хранит свой список независимо (см. templateItems).
+        if (templateItems[key]) {
+          itemsData = templateItems[key];
+          renderItemsListInputs();
+        }
         applyState(p);
       }
     });
@@ -2351,6 +2515,48 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('.tab-btn[data-tab="userSaved"]').click();
   });
 
+  // ===== Модал «Перенести товары на другой шаблон» =====
+  // Копирует таблицу товаров активного встроенного шаблона в выбранные
+  // (глубокий клон — каждый приёмник получает независимую копию данных).
+  const copyItemsBtn = document.getElementById('copyItemsBtn');
+  const copyItemsModal = document.getElementById('copyItemsModal');
+  const copyItemsTargets = document.getElementById('copyItemsTargets');
+  const copyItemsHint = document.getElementById('copyItemsHint');
+
+  function openCopyItemsModal() {
+    const currentKey = (activeTemplateRef && activeTemplateRef.kind === 'builtin') ? activeTemplateRef.key : null;
+    const filledCount = itemsData.filter(it => it && (it.title || '').trim()).length;
+    if (copyItemsHint) {
+      copyItemsHint.textContent = `Текущая таблица (${filledCount} заполненных тов.) скопируется в выбранные шаблоны, заменив их данные.`;
+    }
+    // Список всех встроенных шаблонов, кроме текущего.
+    copyItemsTargets.innerHTML = TEMPLATE_KEYS
+      .filter(k => k !== currentKey)
+      .map(k => `<label class="copy-target"><input type="checkbox" value="${k}"> ${builtInPresets[k].name}</label>`)
+      .join('');
+    copyItemsModal.classList.add('active');
+  }
+  if (copyItemsBtn) copyItemsBtn.addEventListener('click', openCopyItemsModal);
+  if (copyItemsModal) {
+    copyItemsModal.addEventListener('click', e => { if (e.target === copyItemsModal) copyItemsModal.classList.remove('active'); });
+  }
+  const cancelCopyItems = document.getElementById('cancelCopyItems');
+  if (cancelCopyItems) cancelCopyItems.addEventListener('click', () => copyItemsModal.classList.remove('active'));
+  const confirmCopyItems = document.getElementById('confirmCopyItems');
+  if (confirmCopyItems) confirmCopyItems.addEventListener('click', () => {
+    const targets = [...copyItemsTargets.querySelectorAll('input[type=checkbox]:checked')].map(cb => cb.value);
+    if (!targets.length) { alert('Выберите хотя бы один шаблон'); return; }
+    // Глубокий клон активного массива — каждый приёмник получает независимую копию
+    // (включая per-item labelPos и оформление, если они заданы).
+    const sourceCopy = itemsData.map(it => it ? JSON.parse(JSON.stringify(it)) : { title: '', price: '', subtitle: '', subtitleManual: false });
+    targets.forEach(k => {
+      templateItems[k] = sourceCopy.map(it => JSON.parse(JSON.stringify(it)));
+    });
+    copyItemsModal.classList.remove('active');
+    renderItemsListInputs();
+    updatePreview();
+  });
+
   // ===== Модал per-item оформления/фон (кнопка ⚙ в строке) =====
   // Заполняет контролы модала текущими значениями ценника (per-item если задано,
   // иначе — из общих секций «Фоны»/«Оформление»), показывает модал.
@@ -2395,6 +2601,18 @@ document.addEventListener('DOMContentLoaded', () => {
     isInsideFontSize.value = inSnap.fontSize || 11;
     isInsideHeight.value = inSnap.height || 8;
 
+    // Блок СНИЗУ
+    const botSnap = resolveDecorBlock(i, 'bottom');
+    if (isBottomShow) isBottomShow.checked = botSnap.show;
+    if (isBottomText) isBottomText.value = botSnap.text || '';
+    if (isBottomBg) isBottomBg.value = botSnap.bg || '#e63946';
+    if (isBottomBgImg) isBottomBgImg.value = botSnap.bgImg || 'none';
+    if (isBottomCustomOption) isBottomCustomOption.style.display = (botSnap.bgImg === 'custom' && botSnap.customBg) ? 'block' : 'none';
+    if (isBottomUploadStatus) isBottomUploadStatus.textContent = (botSnap.bgImg === 'custom' && botSnap.customBg) ? '✓ Своя картинка загружена' : '';
+    if (isBottomColor) isBottomColor.value = botSnap.color || '#ffffff';
+    if (isBottomFontSize) isBottomFontSize.value = botSnap.fontSize || 14;
+    if (isBottomHeight) isBottomHeight.value = botSnap.height || 12;
+
     refreshIsGroupStates();
     itemSettingsModal.classList.add('active');
   }
@@ -2408,6 +2626,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setBody(isBgEnabled.checked, 'bg');
     setBody(isOutsideShow.checked, 'outside');
     setBody(isInsideShow.checked, 'inside');
+    setBody(isBottomShow ? isBottomShow.checked : false, 'bottom');
   }
 
   // Записывает per-item поле и помечает группу как настроенную.
@@ -2470,6 +2689,21 @@ document.addEventListener('DOMContentLoaded', () => {
   if (isInsideFontSize) isInsideFontSize.addEventListener('input', () => setIsField('inside', 'insideFontSize', isInsideFontSize.value));
   if (isInsideHeight) isInsideHeight.addEventListener('input', () => setIsField('inside', 'insideHeight', isInsideHeight.value));
 
+  // Группа «Блок СНИЗУ»
+  if (isBottomShow) isBottomShow.addEventListener('change', () => {
+    const it = itemsData[currentItemSettingsIndex] || (itemsData[currentItemSettingsIndex] = {});
+    it.bottomShow = isBottomShow.checked;
+    it.bottomCustomized = true;
+    refreshIsGroupStates();
+    updatePreview();
+  });
+  if (isBottomText) isBottomText.addEventListener('input', () => setIsField('bottom', 'bottomText', isBottomText.value));
+  if (isBottomBg) isBottomBg.addEventListener('input', () => setIsField('bottom', 'bottomBg', isBottomBg.value));
+  if (isBottomBgImg) isBottomBgImg.addEventListener('change', () => setIsField('bottom', 'bottomBgImg', isBottomBgImg.value));
+  if (isBottomColor) isBottomColor.addEventListener('input', () => setIsField('bottom', 'bottomColor', isBottomColor.value));
+  if (isBottomFontSize) isBottomFontSize.addEventListener('input', () => setIsField('bottom', 'bottomFontSize', isBottomFontSize.value));
+  if (isBottomHeight) isBottomHeight.addEventListener('input', () => setIsField('bottom', 'bottomHeight', isBottomHeight.value));
+
   // Загрузка своих картинок для per-item фона/блоков (аналог setupDecorUpload,
   // но пишет в itemsData[i] вместо глобальных uploadedDataUrl-переменных).
   function setupIsUpload(input, optionEl, statusEl, kind, imgField, dataField) {
@@ -2486,7 +2720,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (optionEl) optionEl.style.display = 'block';
         if (statusEl) statusEl.textContent = `✓ Загружено: ${file.name}`;
         // Переключаем select группы на «custom», чтобы пользователь видел выбор.
-        const selMap = { bg: isBgImage, outside: isOutsideBgImg, inside: isInsideBgImg };
+        const selMap = { bg: isBgImage, outside: isOutsideBgImg, inside: isInsideBgImg, bottom: isBottomBgImg };
         if (selMap[kind]) selMap[kind].value = 'custom';
         updatePreview();
       };
@@ -2496,6 +2730,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupIsUpload(isBgCustomUpload, isBgCustomOption, isBgUploadStatus, 'bg', 'bgImage', 'customBgData');
   setupIsUpload(isOutsideCustomUpload, isOutsideCustomOption, isOutsideUploadStatus, 'outside', 'outsideBgImg', 'outsideCustomBg');
   setupIsUpload(isInsideCustomUpload, isInsideCustomOption, isInsideUploadStatus, 'inside', 'insideBgImg', 'insideCustomBg');
+  setupIsUpload(isBottomCustomUpload, isBottomCustomOption, isBottomUploadStatus, 'bottom', 'bottomBgImg', 'bottomCustomBg');
 
   // Кнопки модала
   const cancelItemSettings = document.getElementById('cancelItemSettings');
@@ -2596,7 +2831,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Event Listeners for Input Changes
   const allInputs = [
     wobblerWidthInput, wobblerHeightInput,
-    inputTitle, inputSubtitle, titleFont, titleColor, titleSize, titleWeight, titleOffsetY,
+    inputTitle, inputSubtitle, titleFont, titleColor, titleSize, titleWeight, titleItalic, titleOffsetY,
     subtitleColor, subtitleSize, subtitleWeight,
     showPriceToggle, priceFont, priceSize, priceWeight, priceColor, priceOffsetY, inputPrice, inputCurrency, pricePlateToggle,
     headerBgColor, bgImageSelect, headerHeightRange,
@@ -2605,7 +2840,8 @@ document.addEventListener('DOMContentLoaded', () => {
     sheetCount, singleRepeatCount, showCropMarks,
     // Декоративные блоки «Оформление»
     decorOutsideShow, decorOutsideText, decorOutsideBg, decorOutsideBgImg, decorOutsideColor, decorOutsideFontSize, decorOutsideHeight,
-    decorInsideShow, decorInsideText, decorInsideBg, decorInsideBgImg, decorInsideColor, decorInsideFontSize, decorInsideHeight
+    decorInsideShow, decorInsideText, decorInsideBg, decorInsideBgImg, decorInsideColor, decorInsideFontSize, decorInsideHeight, decorInsideWidth,
+    decorBottomShow, decorBottomText, decorBottomBg, decorBottomBgImg, decorBottomColor, decorBottomFontSize, decorBottomHeight
   ];
 
   // Per-item размер шрифта наименования в режиме «Разные товары»: изменение
