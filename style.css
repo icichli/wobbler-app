@@ -523,6 +523,37 @@ html, body {
   flex-shrink: 0;
 }
 
+/* Кнопка ⚙ в строке таблицы — открывает per-item оформление/фон.
+   flex-shrink:0 + фиксированная ширина, чтобы не ломать пропорции textareas. */
+.item-settings-btn {
+  flex-shrink: 0;
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(37, 99, 235, 0.18);
+  color: #e2e8f0;
+  border-radius: 6px;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background .15s, transform .1s;
+}
+.item-settings-btn:hover { background: rgba(37, 99, 235, 0.4); }
+.item-settings-btn:active { transform: scale(0.92); }
+
+/* Общее для полей таблицы (textarea): игнорируем intrinsic-размер cols,
+   делим ширину строго по flex-grow; единая стартовая высота строки. */
+.item-title-input,
+.item-subtitle-input,
+.item-price-input {
+  min-width: 0;
+  flex-basis: 0;
+  min-height: 30px;
+  line-height: 1.2;
+}
+
 .item-title-input {
   flex: 3;
   padding: 4px 6px !important;
@@ -700,6 +731,14 @@ textarea:focus {
   border-color: var(--accent-blue);
 }
 
+/* Textarea внутри form-group: полная ширина и нормальная стартовая высота,
+   чтобы поля (наименование/вес) не выглядели узкими в режиме «Одинаковый текст». */
+.form-group textarea {
+  width: 100%;
+  min-height: 38px;
+  flex: 0 0 auto;
+}
+
 input[type="color"] {
   width: 100%;
   height: 36px;
@@ -829,6 +868,12 @@ input[type="range"] {
 }
 .price-digit {
   display: inline-block;
+}
+/* Пробел в цене — полноценный символ шириной с цифру (nbsp не схлопывается
+   в inline-flex; min-width ≈ ширина табличной цифры 4/5). */
+.price-digit.price-space {
+  min-width: 0.55em;
+  text-align: center;
 }
 
 /* Режим перетаскивания надписей: надписи выделяются и становятся «хватаемыми» */
@@ -1073,10 +1118,15 @@ input[type="range"] {
 .wobbler-element.has-inside-top .wobbler-inside-top {
   position: absolute;
   top: 0;
-  left: 0;
-  right: 0;
+  /* Половина ширины ценника, по центру, с округлыми краями (а не во весь ценник).
+     Специфичность 0,3,0 выше base/print border-radius:0 → радиус применяется
+     и на экране, и в печати. */
+  width: 50%;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   height: var(--inside-top-h, 0mm);
+  border-radius: 4mm !important;
   z-index: 5;
 }
 
@@ -1088,6 +1138,57 @@ input[type="range"] {
   pointer-events: none;
   z-index: 10;
 }
+
+/* ── Редактор safe-зоны названия ───────────────────────────────────────
+   Виден только при #wobblerPreview.safe-edit-mode. Прямоугольник .safe-rect
+   показывает границы названия; box-shadow с огромным spread затемняет зону
+   ВНЕ прямоугольника (где графика фона — колосья/логотип). 4 ручки тянут края.
+   Позиция/размер rect задаётся JS через инлайн-стиль (inset в % от шапки). */
+.safe-edit-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  display: none;
+  cursor: default;
+}
+#wobblerPreview.safe-edit-mode .safe-edit-overlay { display: block; }
+
+.safe-rect {
+  position: absolute;
+  /* inset ставится инлайн из JS (positionSafeRect): left/right/top/bottom в % */
+  border: 2px dashed #2563eb;
+  background: transparent;
+  /* Затемнение ВНЕ прямоугольника: огромная тень наружу */
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45);
+}
+
+.safe-handle {
+  position: absolute;
+  background: #2563eb;
+  border: 1px solid #fff;
+  border-radius: 2px;
+  touch-action: none;
+}
+/* Верхний/нижний край — горизонтальная полоса посередине, курсор ns-resize */
+.safe-h-top, .safe-h-bottom {
+  left: 50%;
+  transform: translateX(-50%);
+  width: 14mm;
+  height: 4mm;
+  cursor: ns-resize;
+}
+.safe-h-top    { top: -2mm; }
+.safe-h-bottom { bottom: -2mm; }
+/* Левый/правый край — вертикальная полоса посередине, курсор ew-resize */
+.safe-h-left, .safe-h-right {
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4mm;
+  height: 14mm;
+  cursor: ew-resize;
+}
+.safe-h-left  { left: -2mm; }
+.safe-h-right { right: -2mm; }
 
 /* Layout Split vs Full.
    Высота шапки/нижнего поля привязана к --wobbler-height (размер самого ценника),
@@ -1146,22 +1247,36 @@ input[type="range"] {
   font-weight: 800;
   line-height: 1.1;
   letter-spacing: -0.2px;
-  word-break: break-word;
+  /* Перенос по словам: слова не рвутся посередине, перенос идёт по пробелам
+     (white-space: pre-line уважает и ручные \n из textarea). Сверхдлинное
+     слово без пробелов всё же переносится через overflow-wrap, не ломая
+     вёрстку. JS (fitTitleSize) подбирает кегль под эту же раскладку. */
+  word-break: normal;
+  overflow-wrap: anywhere;
   white-space: pre-line;
-  width: 100%;
+  /* Ширина названия = безопасная зона (--title-safe-w, % от рабочей зоны
+     шапки). Меньше 100% — блок ýже и отцентрирован (родитель .header-content
+     имеет align-items:center), текст не заезжает на боковую графику фона
+     (колосья/печать). fitTitleSize читает уменьшенный clientWidth и подбирает
+     кегль под новую ширину. Дефолт 100% — фон без графики. */
+  width: var(--title-safe-w, 100%);
   text-align: center;
   transition: transform 0.1s ease, font-size 0.1s ease;
-  /* Фиксированная зона названия: длинный текст обрезается (скрывается),
-     чтобы блок цены под ним не смещался. Высоту задаёт --title-zone-h (мм). */
-  max-height: var(--title-zone-h, 12mm);
+  /* Фиксированная зона названия: блок всегда занимает --title-zone-h, а текст
+     центрируется внутри неё. Так при переносе строк / разной длине название
+     НЕ сдвигает блок цены и веса — слои независимы по вертикали. */
+  height: var(--title-zone-h, 12mm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
 }
 
-/* Подзаголовок (вес/доп. текст) — всегда в нижнем левом углу ценника
-   (поведение по умолчанию для всех шаблонов, как у «Рыбы»). */
+/* Подзаголовок (вес/доп. текст) — в нижнем левом углу ценника.
+   Опущен на 3мм от прежней позиции (bottom 1.5mm → -1.5mm). */
 .wobbler-subtitle {
   position: absolute;
-  bottom: 1.5mm;
+  bottom: -1.5mm;
   left: 3mm;
   width: auto;
   max-width: 45%;
@@ -1311,6 +1426,37 @@ input[type="range"] {
   padding: 6px 10px;
   margin-top: 8px;
 }
+
+/* === Модал per-item оформления (кнопка ⚙) === */
+.modal-box-wide {
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.item-settings-hint {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+}
+.is-group {
+  margin-bottom: 4px;
+}
+.is-group-title {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--accent-yellow);
+  margin: 0.5rem 0 0.4rem;
+}
+.is-sep {
+  border: none;
+  border-top: 1px solid var(--border-color);
+  margin: 12px 0;
+}
+/* Пока чекбокс группы выключен — тело приглушено и недоступно. */
+.is-group-body.is-disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
 #updateTemplateBtn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
@@ -1434,6 +1580,53 @@ body.force-desktop .mobile-tab-bar {
 body.force-desktop .controls-sidebar,
 body.force-desktop .workspace-panel {
   display: flex !important;
+}
+
+/* === Независимый вертикальный скролл колонок в десктопном режиме ===
+   Каждая колонка (настройки слева, предпросмотр справа) скроллится сама
+   в пределах высоты окна. Мобильный режим (force-mobile, mode-auto ≤850px)
+   намеренно НЕ затрагиваем — там скроллит вся страница целиком.
+
+   Схема: body фиксированной высоты вьюпорта и без своего скролла → main
+   через flex:1+min-height:0+overflow:hidden занимает остаток под шапкой →
+   колонки через height:100%+overflow-y:auto+min-height:0 скроллятся сами.
+   Магическое число высоты шапки не нужно — flex распределяет автоматически. */
+body.force-desktop {
+  height: 100vh;
+  height: 100dvh;            /* динамическая высота (учитывает мобильные панели) */
+  overflow: hidden;          /* убираем общий скролл страницы */
+}
+body.force-desktop .main-layout {
+  height: auto;              /* flex:1 уже растягивает; явно не фиксируем */
+  min-height: 0;             /* разрешаем сжатие ниже контента */
+  overflow: hidden;          /* обрезаем — скролл у колонок */
+}
+body.force-desktop .controls-sidebar,
+body.force-desktop .workspace-panel {
+  height: 100%;
+  min-height: 0;             /* критично для flex/grid, иначе не сжимается */
+  overflow-y: auto;          /* независимый скролл каждой колонки */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Тот же режим для авто-определения на широких экранах. */
+@media (min-width: 851px) {
+  body.mode-auto {
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+  body.mode-auto .main-layout {
+    min-height: 0;
+    overflow: hidden;
+  }
+  body.mode-auto .controls-sidebar,
+  body.mode-auto .workspace-panel {
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 @media (max-width: 850px) {

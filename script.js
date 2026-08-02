@@ -115,6 +115,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const titleOffsetY = document.getElementById('titleOffsetY');
   const titleOffsetYVal = document.getElementById('titleOffsetYVal');
 
+  // Subtitle (Вес / доп. текст) — собственные параметры слоя.
+  const subtitleColor = document.getElementById('subtitleColor');
+  const subtitleSize = document.getElementById('subtitleSize');
+  const subtitleSizeVal = document.getElementById('subtitleSizeVal');
+  const subtitleWeight = document.getElementById('subtitleWeight');
+
   // Price Toggle & Inputs
   const showPriceToggle = document.getElementById('showPriceToggle');
   const priceFieldsBlock = document.getElementById('priceFieldsBlock');
@@ -211,6 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const sheetGridPreview = document.getElementById('sheetGridPreview');
   const printArea = document.getElementById('printArea');
   const dragModeToggle = document.getElementById('dragModeToggle');
+  const safeEditToggle = document.getElementById('safeEditToggle');
   const resetLabelPosBtn = document.getElementById('resetLabelPosBtn');
 
   // Modal & Template Elements
@@ -225,6 +232,38 @@ document.addEventListener('DOMContentLoaded', () => {
   const emptyUserTemplates = document.getElementById('emptyUserTemplates');
   const userCount = document.getElementById('userCount');
 
+  // === Модал per-item оформления/фон (кнопка ⚙) ===
+  const itemSettingsModal = document.getElementById('itemSettingsModal');
+  const itemSettingsTitle = document.getElementById('itemSettingsTitle');
+  let currentItemSettingsIndex = 0;
+  // Контролы модала (зеркало глобальных секций «Фоны» и «Оформление»).
+  const isBgEnabled = document.getElementById('isBgEnabled');
+  const isHeaderBgColor = document.getElementById('isHeaderBgColor');
+  const isBgImage = document.getElementById('isBgImage');
+  const isBgCustomOption = document.getElementById('isBgCustomOption');
+  const isBgCustomUpload = document.getElementById('isBgCustomUpload');
+  const isBgUploadStatus = document.getElementById('isBgUploadStatus');
+  const isOutsideShow = document.getElementById('isOutsideShow');
+  const isOutsideText = document.getElementById('isOutsideText');
+  const isOutsideBg = document.getElementById('isOutsideBg');
+  const isOutsideBgImg = document.getElementById('isOutsideBgImg');
+  const isOutsideCustomOption = document.getElementById('isOutsideCustomOption');
+  const isOutsideCustomUpload = document.getElementById('isOutsideCustomUpload');
+  const isOutsideUploadStatus = document.getElementById('isOutsideUploadStatus');
+  const isOutsideColor = document.getElementById('isOutsideColor');
+  const isOutsideFontSize = document.getElementById('isOutsideFontSize');
+  const isOutsideHeight = document.getElementById('isOutsideHeight');
+  const isInsideShow = document.getElementById('isInsideShow');
+  const isInsideText = document.getElementById('isInsideText');
+  const isInsideBg = document.getElementById('isInsideBg');
+  const isInsideBgImg = document.getElementById('isInsideBgImg');
+  const isInsideCustomOption = document.getElementById('isInsideCustomOption');
+  const isInsideCustomUpload = document.getElementById('isInsideCustomUpload');
+  const isInsideUploadStatus = document.getElementById('isInsideUploadStatus');
+  const isInsideColor = document.getElementById('isInsideColor');
+  const isInsideFontSize = document.getElementById('isInsideFontSize');
+  const isInsideHeight = document.getElementById('isInsideHeight');
+
   // Экспорт / Импорт шаблонов
   const exportAllBtn = document.getElementById('exportAllBtn');
   const importBtn = document.getElementById('importBtn');
@@ -232,7 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let alignState = {
     title: 'center',
-    subtitle: 'center',
+    subtitle: 'left',
     price: 'center'
   };
 
@@ -283,6 +322,155 @@ document.addEventListener('DOMContentLoaded', () => {
     return parseFloat(titleSize.value) || 13;
   }
 
+  // === Per-item оформление и фон (кнопка ⚙ в строке таблицы) ===
+  // Каждый ценник может переопределить блоки СВЕРХУ/ВНУТРИ и фон. В single-режиме
+  // всегда читаются глобальные контролы; в multi — per-item поле, если оно задано,
+  // иначе fallback к глобальному. Хелперы ниже — единая точка чтения значений для
+  // превью активного ценника (updatePreview) и для клонов листа/печати.
+  // Поле считается «заданным», если выставлен флаг ...Show явно (true/false),
+  // чтобы пользователь мог и включать, и выключать блок для конкретного ценника.
+  const PER_ITEM_FIELDS = {
+    outside: ['outsideShow','outsideText','outsideBg','outsideBgImg','outsideCustomBg','outsideColor','outsideFontSize','outsideHeight'],
+    inside:  ['insideShow','insideText','insideBg','insideBgImg','insideCustomBg','insideColor','insideFontSize','insideHeight'],
+    bg:      ['headerBg','bgImage','customBgData','titleSafe']
+  };
+
+  function isMultiModeNow() {
+    return document.querySelector('input[name="printMode"]:checked').value === 'multi';
+  }
+
+  // Резолвит значение конкретного поля для ценника i: per-item если задано, иначе глобальное.
+  // kind — 'outside'|'inside'|'bg', field — имя поля, globalVal — значение глобального контрола.
+  function resolveItemField(i, kind, field, globalVal) {
+    if (!isMultiModeNow()) return globalVal;
+    const it = itemsData[i];
+    if (it && it[`${kind}Customized`]) {
+      return it[field] != null ? it[field] : globalVal;
+    }
+    return globalVal;
+  }
+
+  // Возвращает полный «снимок» оформления блока (outside/inside) для ценника i
+  // как простой объект — удобно передавать в applyDecorBlock/applyItemDecorToClone.
+  function resolveDecorBlock(i, kind) {
+    if (kind === 'outside') {
+      return {
+        show:     resolveItemField(i, 'outside', 'outsideShow', !!(decorOutsideShow && decorOutsideShow.checked)),
+        text:     resolveItemField(i, 'outside', 'outsideText', decorOutsideText ? decorOutsideText.value : ''),
+        bg:       resolveItemField(i, 'outside', 'outsideBg',   decorOutsideBg ? decorOutsideBg.value : '#e63946'),
+        bgImg:    resolveItemField(i, 'outside', 'outsideBgImg',decorOutsideBgImg ? decorOutsideBgImg.value : 'none'),
+        customBg: resolveItemField(i, 'outside', 'outsideCustomBg', uploadedDataUrl2),
+        color:    resolveItemField(i, 'outside', 'outsideColor',decorOutsideColor ? decorOutsideColor.value : '#ffffff'),
+        fontSize: resolveItemField(i, 'outside', 'outsideFontSize', decorOutsideFontSize ? decorOutsideFontSize.value : 14),
+        height:   resolveItemField(i, 'outside', 'outsideHeight', decorOutsideHeight ? decorOutsideHeight.value : 12)
+      };
+    }
+    return {
+      show:     resolveItemField(i, 'inside', 'insideShow', !!(decorInsideShow && decorInsideShow.checked)),
+      text:     resolveItemField(i, 'inside', 'insideText', decorInsideText ? decorInsideText.value : ''),
+      bg:       resolveItemField(i, 'inside', 'insideBg',   decorInsideBg ? decorInsideBg.value : '#e63946'),
+      bgImg:    resolveItemField(i, 'inside', 'insideBgImg',decorInsideBgImg ? decorInsideBgImg.value : 'none'),
+      customBg: resolveItemField(i, 'inside', 'insideCustomBg', uploadedDataUrl3),
+      color:    resolveItemField(i, 'inside', 'insideColor',decorInsideColor ? decorInsideColor.value : '#ffffff'),
+      fontSize: resolveItemField(i, 'inside', 'insideFontSize', decorInsideFontSize ? decorInsideFontSize.value : 11),
+      height:   resolveItemField(i, 'inside', 'insideHeight', decorInsideHeight ? decorInsideHeight.value : 8)
+    };
+  }
+
+  // Читает безопасную зону названия (доли 0..1 от сторон шапки) из 4 полей UI
+  // (L/R/T/B в процентах). Применяется как глобальное значение по умолчанию в
+  // resolveItemBg/bgFromItem. При отсутствии полей — нулевые отступы.
+  function readGlobalTitleSafe() {
+    const g = id => { const el = document.getElementById(id); const v = parseFloat(el && el.value); return isNaN(v) ? 0 : Math.max(0, Math.min(45, v)) / 100; };
+    return { left: g('titleSafeL'), right: g('titleSafeR'), top: g('titleSafeT'), bottom: g('titleSafeB') };
+  }
+  // Нормализует объект titleSafe (защита от частичных/нечисловых значений из state).
+  function normTitleSafe(s) {
+    const n = v => { const x = parseFloat(v); return isNaN(x) ? 0 : Math.max(0, Math.min(0.45, x)); };
+    return s ? { left: n(s.left), right: n(s.right), top: n(s.top), bottom: n(s.bottom) } : { left:0, right:0, top:0, bottom:0 };
+  }
+  // Ограничение доли в [0, 0.9] (для drag краёв safe-зоны).
+  const clampSafe = v => Math.max(0, Math.min(0.9, v));
+
+  // Пишет 4 поля L/R/T/B (в %) из объекта titleSafe (доли). Без dispatch event —
+  // обновление превью/кегля вызывающий запускает сам (updatePreview+refit).
+  function writeSafeInputs(ts) {
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = Math.round(v * 100); };
+    set('titleSafeL', ts.left); set('titleSafeR', ts.right);
+    set('titleSafeT', ts.top);  set('titleSafeB', ts.bottom);
+  }
+
+  // Позиционирует прямоугольник редактора (.safe-rect) по текущим долям titleSafe.
+  // inset — в % от .wobbler-header. Нет элемента/режима — тихо пропускает.
+  function positionSafeRect(ts) {
+    const rect = document.getElementById('safeRect');
+    if (!rect) return;
+    rect.style.left   = (ts.left   * 100).toFixed(2) + '%';
+    rect.style.right  = (ts.right  * 100).toFixed(2) + '%';
+    rect.style.top    = (ts.top    * 100).toFixed(2) + '%';
+    rect.style.bottom = (ts.bottom * 100).toFixed(2) + '%';
+  }
+
+  // Возвращает снимок фона ценника (хедер) для ценника i.
+  function resolveItemBg(i) {
+    return {
+      headerBg: resolveItemField(i, 'bg', 'headerBg', headerBgColor ? headerBgColor.value : '#ffffff'),
+      bgImage:  resolveItemField(i, 'bg', 'bgImage',  bgImageSelect ? bgImageSelect.value : 'none'),
+      customBg: resolveItemField(i, 'bg', 'customBgData', uploadedDataUrl),
+      titleSafe: normTitleSafe(resolveItemField(i, 'bg', 'titleSafe', readGlobalTitleSafe()))
+    };
+  }
+
+  // Объектные варианты хелперов: работают по самому item (не по индексу), что
+  // удобно для клонов листа/печати, где передаётся объект товара. В single-режиме
+  // item — синтетический baseItem без per-item полей → берутся глобальные значения.
+  function pick(item, kind, field, globalVal) {
+    if (item && item[`${kind}Customized`] && item[field] != null) return item[field];
+    return globalVal;
+  }
+  function decorBlockFromItem(item, kind) {
+    if (kind === 'outside') {
+      return {
+        show:     pick(item, 'outside', 'outsideShow', !!(decorOutsideShow && decorOutsideShow.checked)),
+        text:     pick(item, 'outside', 'outsideText', decorOutsideText ? decorOutsideText.value : ''),
+        bg:       pick(item, 'outside', 'outsideBg',   decorOutsideBg ? decorOutsideBg.value : '#e63946'),
+        bgImg:    pick(item, 'outside', 'outsideBgImg',decorOutsideBgImg ? decorOutsideBgImg.value : 'none'),
+        customBg: pick(item, 'outside', 'outsideCustomBg', uploadedDataUrl2),
+        color:    pick(item, 'outside', 'outsideColor',decorOutsideColor ? decorOutsideColor.value : '#ffffff'),
+        fontSize: pick(item, 'outside', 'outsideFontSize', decorOutsideFontSize ? decorOutsideFontSize.value : 14),
+        height:   pick(item, 'outside', 'outsideHeight', decorOutsideHeight ? decorOutsideHeight.value : 12)
+      };
+    }
+    return {
+      show:     pick(item, 'inside', 'insideShow', !!(decorInsideShow && decorInsideShow.checked)),
+      text:     pick(item, 'inside', 'insideText', decorInsideText ? decorInsideText.value : ''),
+      bg:       pick(item, 'inside', 'insideBg',   decorInsideBg ? decorInsideBg.value : '#e63946'),
+      bgImg:    pick(item, 'inside', 'insideBgImg',decorInsideBgImg ? decorInsideBgImg.value : 'none'),
+      customBg: pick(item, 'inside', 'insideCustomBg', uploadedDataUrl3),
+      color:    pick(item, 'inside', 'insideColor',decorInsideColor ? decorInsideColor.value : '#ffffff'),
+      fontSize: pick(item, 'inside', 'insideFontSize', decorInsideFontSize ? decorInsideFontSize.value : 11),
+      height:   pick(item, 'inside', 'insideHeight', decorInsideHeight ? decorInsideHeight.value : 8)
+    };
+  }
+  function bgFromItem(item) {
+    return {
+      headerBg: pick(item, 'bg', 'headerBg', headerBgColor ? headerBgColor.value : '#ffffff'),
+      bgImage:  pick(item, 'bg', 'bgImage',  bgImageSelect ? bgImageSelect.value : 'none'),
+      customBg: pick(item, 'bg', 'customBgData', uploadedDataUrl),
+      titleSafe: normTitleSafe(pick(item, 'bg', 'titleSafe', readGlobalTitleSafe()))
+    };
+  }
+
+  // Сбрасывает per-item оформление ценника i (возвращает к глобальному).
+  function resetItemDecor(i) {
+    const it = itemsData[i];
+    if (!it) return;
+    delete it.outsideCustomized;
+    delete it.insideCustomized;
+    delete it.bgCustomized;
+    [...PER_ITEM_FIELDS.outside, ...PER_ITEM_FIELDS.inside, ...PER_ITEM_FIELDS.bg].forEach(f => delete it[f]);
+  }
+
   // Built-in presets (Default font for Alaska is Arial)
   const builtInPresets = {
     alaska_dots: {
@@ -290,12 +478,17 @@ document.addEventListener('DOMContentLoaded', () => {
       widthCm: 6.5,
       heightCm: 3.5,
       title: 'Alaska Фейхоа 0,45 ж/б',
+      subtitle: '',
       titleFont: "Arial, sans-serif",
       titleColor: '#ffffff',
-      titleSize: 13,
+      titleSize: 9,
       titleWeight: '800',
       titleAlign: 'center',
       titleOffsetY: 0,
+      subtitleColor: '#ffffff',
+      subtitleSize: 13,
+      subtitleWeight: '700',
+      subtitleAlign: 'left',
       showPrice: true,
       priceFont: "Arial, sans-serif",
       priceSize: 40,
@@ -308,8 +501,32 @@ document.addEventListener('DOMContentLoaded', () => {
       headerBg: '#18181b',
       bgImage: 'dots_bg.jpg',
       customBgData: null,
-      headerHeight: 100,
-      layout: 'full'
+      headerHeight: 90,
+      // Safe-зона названия Alaska (выставлена вручную в визуальном редакторе границ
+      // поверх dots_bg.jpg): название в верхней половине ценника — отступы сверху
+      // 0.28 и снизу 0.45, по бокам без ограничений. Доли от сторон шапки.
+      titleSafe: { left: 0, right: 0, top: 0.28, bottom: 0.45 },
+      layout: 'full',
+      priceInBottom: false,
+      subtitleCorner: false,
+      pricePlate: false,
+      decorOutsideShow: false,
+      decorOutsideText: 'НОВИНКА',
+      decorOutsideBg: '#e63946',
+      decorOutsideBgImg: 'none',
+      decorOutsideCustomBg: null,
+      decorOutsideColor: '#ffffff',
+      decorOutsideFontSize: 14,
+      decorOutsideHeight: 12,
+      decorInsideShow: false,
+      decorInsideText: 'НОВИНКА',
+      decorInsideBg: '#e63946',
+      decorInsideBgImg: 'none',
+      decorInsideCustomBg: null,
+      decorInsideColor: '#ffffff',
+      decorInsideFontSize: 11,
+      decorInsideHeight: 8,
+      labelPos: { title: { x: -0.4, y: 1 }, subtitle: { x: -4.9, y: -1.6 }, price: { x: 0, y: 0 }, priceDigits: [ { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 } ], currency: { x: 0, y: 0 } }
     },
     novy_vkus: {
       name: 'Новый вкус',
@@ -335,7 +552,8 @@ document.addEventListener('DOMContentLoaded', () => {
       bgImage: 'none',
       customBgData: null,
       headerHeight: 100,
-      layout: 'full'
+      layout: 'full',
+      titleSafe: { left: 0, right: 0, top: 0, bottom: 0 }
     },
     novinka: {
       name: 'Новинка',
@@ -361,7 +579,8 @@ document.addEventListener('DOMContentLoaded', () => {
       bgImage: 'none',
       customBgData: null,
       headerHeight: 50,
-      layout: 'split'
+      layout: 'split',
+      titleSafe: { left: 0, right: 0, top: 0, bottom: 0 }
     },
     tomat: {
       name: 'Томатное',
@@ -387,7 +606,8 @@ document.addEventListener('DOMContentLoaded', () => {
       bgImage: 'none',
       customBgData: null,
       headerHeight: 50,
-      layout: 'split'
+      layout: 'split',
+      titleSafe: { left: 0, right: 0, top: 0, bottom: 0 }
     },
     sladko: {
       name: 'Сладко',
@@ -413,7 +633,8 @@ document.addEventListener('DOMContentLoaded', () => {
       bgImage: 'none',
       customBgData: null,
       headerHeight: 50,
-      layout: 'split'
+      layout: 'split',
+      titleSafe: { left: 0, right: 0, top: 0, bottom: 0 }
     },
     ryba: {
       name: 'Рыба',
@@ -423,28 +644,53 @@ document.addEventListener('DOMContentLoaded', () => {
       subtitle: '100гр',
       titleFont: "Arial, sans-serif",
       titleColor: '#ffffff',
-      titleSize: 18,
+      titleSize: 22,
       titleWeight: '800',
       titleAlign: 'center',
       titleOffsetY: 0,
+      subtitleColor: '#ffffff',
+      subtitleSize: 13,
+      subtitleWeight: '700',
+      subtitleAlign: 'left',
       showPrice: true,
       priceFont: "Arial, sans-serif",
       priceSize: 40,
       priceWeight: '800',
       priceColor: '#000000',
       priceAlign: 'center',
-      priceOffsetY: 6,
+      priceOffsetY: 2,
       price: '300',
       currency: '₽',
       headerBg: '#000000',
       bgImage: 'ryba_bg.jpg',
       customBgData: null,
       headerHeight: 90,
+      // Safe-зона названия Рыбы (выставлена вручную в визуальном редакторе границ
+      // поверх ryba_bg.jpg): не наезжать на логотип «МЕСТОПИВО» сверху (top 0.29),
+      // на колосья/печать по бокам (left 0.17, right 0.16) и на белые декор-
+      // прямоугольники внизу (bottom 0.4). Доли от сторон шапки.
+      titleSafe: { left: 0.17, right: 0.16, top: 0.29, bottom: 0.4 },
       layout: 'full',
       priceInBottom: false,
       subtitleCorner: true,
       pricePlate: false,
-      labelPos: { title: { x: -0.6, y: -1 }, subtitle: { x: -0.6, y: 7.6 }, price: { x: 0, y: 0 }, priceDigits: [ { x: -5.5, y: 0.2 }, { x: -1.1, y: 0 }, { x: 3.6, y: 0 } ], currency: { x: 5.5, y: 0.6 } }
+      decorOutsideShow: false,
+      decorOutsideText: 'НОВИНКА',
+      decorOutsideBg: '#e63946',
+      decorOutsideBgImg: 'none',
+      decorOutsideCustomBg: null,
+      decorOutsideColor: '#ffffff',
+      decorOutsideFontSize: 14,
+      decorOutsideHeight: 12,
+      decorInsideShow: false,
+      decorInsideText: 'НОВИНКА',
+      decorInsideBg: '#e63946',
+      decorInsideBgImg: 'none',
+      decorInsideCustomBg: null,
+      decorInsideColor: '#ffffff',
+      decorInsideFontSize: 11,
+      decorInsideHeight: 8,
+      labelPos: { title: { x: -0.6, y: -0.1 }, subtitle: { x: -0.6, y: -1 }, price: { x: 0, y: 0 }, priceDigits: [ { x: -5.5, y: 0.2 }, { x: -1.1, y: 0 }, { x: 3.6, y: 0 } ], currency: { x: 5.5, y: 0.6 } }
     }
   };
 
@@ -462,6 +708,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const item = itemsData[i] || { title: '', price: '', subtitle: '' };
       // Гарантируем поле subtitle у существующих элементов
       if (itemsData[i] && itemsData[i].subtitle === undefined) itemsData[i].subtitle = '';
+      // Флаг ручного ввода веса: если undefined — вес ещё не правили вручную
+      // (авто-подстановка «100гр» при вводе наименования активна).
+      if (itemsData[i] && itemsData[i].subtitleManual === undefined) itemsData[i].subtitleManual = false;
       const row = document.createElement('div');
       row.className = 'item-row';
       const safeTitle = (item.title || '').replace(/"/g, '&quot;');
@@ -472,6 +721,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <textarea class="item-title-input" rows="1" placeholder="Наименование товара №${i + 1}" data-index="${i}">${safeTitle}</textarea>
         <textarea class="item-subtitle-input" rows="1" placeholder="Вес" data-index="${i}">${safeSub}</textarea>
         <textarea class="item-price-input" rows="1" placeholder="Цена" data-index="${i}">${safePrice}</textarea>
+        <button type="button" class="item-settings-btn" data-index="${i}" title="Оформление и фон ценника №${i + 1}">⚙</button>
       `;
 
       row.querySelector('.item-title-input').addEventListener('focus', () => {
@@ -482,8 +732,16 @@ document.addEventListener('DOMContentLoaded', () => {
       row.querySelector('.item-title-input').addEventListener('input', (e) => {
         const idx = parseInt(e.target.getAttribute('data-index'), 10);
         itemsData[idx].title = e.target.value;
+        // Авто-вес «100гр»: пока пользователь не правил вес вручную,
+        // подставляем дефолт при наличии наименования (и очищаем при пустом).
+        if (!itemsData[idx].subtitleManual) {
+          itemsData[idx].subtitle = e.target.value.trim() ? '100гр' : '';
+          const si = row.querySelector('.item-subtitle-input');
+          if (si) si.value = itemsData[idx].subtitle;
+        }
         activePreviewIndex = idx;
-        updatePreview();
+        // Подгон кегля под перенос названия по словам — сразу при вводе.
+        refitActiveTitle();
       });
 
       const subInput = row.querySelector('.item-subtitle-input');
@@ -495,6 +753,8 @@ document.addEventListener('DOMContentLoaded', () => {
         subInput.addEventListener('input', (e) => {
           const idx = parseInt(e.target.getAttribute('data-index'), 10);
           itemsData[idx].subtitle = e.target.value;
+          // Пользователь ввёл вес сам — больше не перезаписываем авто-значением.
+          itemsData[idx].subtitleManual = true;
           activePreviewIndex = idx;
           updatePreview();
         });
@@ -511,6 +771,15 @@ document.addEventListener('DOMContentLoaded', () => {
         activePreviewIndex = idx;
         updatePreview();
       });
+
+      // Кнопка ⚙ открывает модал per-item оформления (декор-блоки + фон).
+      const settingsBtn = row.querySelector('.item-settings-btn');
+      if (settingsBtn) {
+        settingsBtn.addEventListener('click', () => {
+          activePreviewIndex = i;
+          openItemSettings(i);
+        });
+      }
 
       itemsListContainer.appendChild(row);
 
@@ -545,10 +814,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       // parts.length >= 3: title, subtitle, price(=последний)
       const priceStr = parts[2] ? parts[2].replace(/[^\d]/g, '') : '';
+      const subVal = parts[1].trim();
       itemsData[index] = {
         title: parts[0].trim(),
-        subtitle: parts[1].trim(),
-        price: priceStr
+        subtitle: subVal,
+        price: priceStr,
+        // Непустой вес из вставки — считаем ручным вводом (не перезаписывать).
+        subtitleManual: !!subVal
       };
     });
 
@@ -563,7 +835,7 @@ document.addEventListener('DOMContentLoaded', () => {
     clearAllItemsBtn.addEventListener('click', () => {
       if (!confirm('Очистить все товары в таблице?')) return;
       for (let i = 0; i < itemsData.length; i++) {
-        itemsData[i] = { title: '', price: '', subtitle: '', labelPos: defaultLabelPos() };
+        itemsData[i] = { title: '', price: '', subtitle: '', subtitleManual: false, labelPos: defaultLabelPos() };
       }
       if (pasteExcelArea) pasteExcelArea.value = '';
       renderItemsListInputs();
@@ -571,19 +843,27 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Применить расположение ЦЕНЫ (сдвиг блока, позиции цифр, валюта) с ценника №1
-  // ко всем остальным (#2–18). Поля названия/веса НЕ трогаются. Источник — всегда
-  // itemsData[0], независимо от активного ценника.
-  function applyPricePosFromFirstToAll() {
+  // Синхронизация расположения ВЕСА и ЦЕНЫ (сдвиг блоков, позиции цифр цены,
+  // валюта) с ценника №1 на все остальные (#2–18). Поля наименования НЕ трогаются
+  // (у каждого ценника — свой заголовок и свой кегль).
+  // По ТЗ вес и цена на всех ценниках должны совпадать с №1, а двигать их можно
+  // на любом ценнике — движение копируется на все. Источник синхронизации —
+  // ценник №1 (как образец); обновление активного ценника само «проталкивает»
+  // его позиции в №1 (см. syncSharedPosFromActive).
+  function applySharedPosFromFirstToAll() {
     const src = itemsData[0] || (itemsData[0] = {});
     if (!src.labelPos) src.labelPos = defaultLabelPos();
-    // Глубокий клон ценовых полей источника (каждый target получит свою копию).
+    // Глубокий клон общих полей источника (наименование + вес + цена + цифры + валюта).
+    const srcTitle = JSON.parse(JSON.stringify(src.labelPos.title));
+    const srcSub = JSON.parse(JSON.stringify(src.labelPos.subtitle));
     const srcPrice = JSON.parse(JSON.stringify(src.labelPos.price));
     const srcDigits = JSON.parse(JSON.stringify(src.labelPos.priceDigits));
     const srcCurrency = JSON.parse(JSON.stringify(src.labelPos.currency));
     itemsData.forEach((it, i) => {
       if (i === 0 || !it) return;
       if (!it.labelPos) it.labelPos = defaultLabelPos();
+      it.labelPos.title = JSON.parse(JSON.stringify(srcTitle));
+      it.labelPos.subtitle = JSON.parse(JSON.stringify(srcSub));
       it.labelPos.price = JSON.parse(JSON.stringify(srcPrice));
       it.labelPos.priceDigits = JSON.parse(JSON.stringify(srcDigits));
       it.labelPos.currency = JSON.parse(JSON.stringify(srcCurrency));
@@ -591,42 +871,160 @@ document.addEventListener('DOMContentLoaded', () => {
     updatePreview();
   }
 
+  // «Протолкнуть» общие позиции (вес + цена) с АКТИВНОГО ценника в ценник №1,
+  // затем разнести №1 по всем остальным. Так движение на любом ценнике
+  // мгновенно применяется ко всем (включая №1).
+  function syncSharedPosFromActive() {
+    const isMultiMode = document.querySelector('input[name="printMode"]:checked').value === 'multi';
+    if (!isMultiMode) return;
+    const src = itemsData[activePreviewIndex];
+    if (!src || !src.labelPos) return;
+    if (activePreviewIndex !== 0) {
+      const first = itemsData[0] || (itemsData[0] = {});
+      if (!first.labelPos) first.labelPos = defaultLabelPos();
+      first.labelPos.title = JSON.parse(JSON.stringify(src.labelPos.title));
+      first.labelPos.subtitle = JSON.parse(JSON.stringify(src.labelPos.subtitle));
+      first.labelPos.price = JSON.parse(JSON.stringify(src.labelPos.price));
+      first.labelPos.priceDigits = JSON.parse(JSON.stringify(src.labelPos.priceDigits));
+      first.labelPos.currency = JSON.parse(JSON.stringify(src.labelPos.currency));
+    }
+    applySharedPosFromFirstToAll();
+  }
+
   const syncPricePosBtn = document.getElementById('syncPricePosBtn');
   if (syncPricePosBtn) {
-    syncPricePosBtn.addEventListener('click', applyPricePosFromFirstToAll);
+    syncPricePosBtn.addEventListener('click', applySharedPosFromFirstToAll);
   }
 
   // Размер шрифта наименования по количеству символов (эмпирическая шкала).
   // Короткое название → крупный кегль, длинное → уменьшаем до минимума 8pt.
-  function titleSizeByLen(len) {
-    if (len <= 12) return 18;
-    if (len <= 18) return 16;
-    if (len <= 24) return 14;
-    if (len <= 30) return 12;
-    if (len <= 40) return 11;
-    if (len <= 52) return 10;
-    return 8;   // длинные названия — минимальный кегль
+  // minSize — необязательный нижний порог (например, для шаблона «Рыба» = 22pt).
+  function titleSizeByLen(len, minSize) {
+    let sz;
+    if (len <= 12) sz = 18;
+    else if (len <= 18) sz = 16;
+    else if (len <= 24) sz = 14;
+    else if (len <= 30) sz = 12;
+    else if (len <= 40) sz = 11;
+    else if (len <= 52) sz = 10;
+    else sz = 8;   // длинные названия — минимальный кегль
+    return Math.max(sz, minSize || 0);
   }
 
-  // "Подогнать шрифт" — настраивает ТОЛЬКО наименование.
-  // В режиме «Разные товары» каждый ценник получает СВОЙ размер шрифта по длине
-  // своего названия (per-item). В режиме «Одинаковый текст» — по текущему
-  // наименованию (общий слайдер). Вес форсируется Bold (800), вертикальный
-  // сдвиг названия обнуляется (зона названия фиксирована).
+  // Подбор кегля наименования под размер ценника. .wobbler-title — это flex с
+  // прямой текстовой нодой, в котором перенос слов и scrollHeight ведут себя
+  // ненадёжно (анонимный flex-item не сжимается под min-width:auto). Поэтому
+  // замеряем высоту на отдельном скрытом block-зонде с теми же текстовыми
+  // стилями и шириной = ширине зоны названия; блочный контекст корректно
+  // переносит текст по словам. Бинарным поиском находим максимальный целый pt,
+  // при котором высота зонируемого текста ≤ бюджету (--title-zone-h).
+  // Возвращает null, если замер невозможен (нет бюджета/текста).
+  const TITLE_FIT_MAX = 32;   // верх слайдера titleSize
+  let __titleProbe = null;
+  function getTitleProbe(budgetW) {
+    if (!__titleProbe) {
+      __titleProbe = document.createElement('div');
+      __titleProbe.setAttribute('aria-hidden', 'true');
+      // Совпадает с финальным рендером (.wobbler-title): перенос по словам,
+      // тот же line-height/letter-spacing, но блочный (чтобы замер был точен).
+      __titleProbe.style.cssText =
+        'position:absolute; left:-99999px; top:0; visibility:hidden;' +
+        'display:block; height:auto; width:0; text-align:center;' +
+        'line-height:1.1; letter-spacing:-0.2px; white-space:pre-line;' +
+        'word-break:normal; overflow-wrap:anywhere; margin:0; padding:0;';
+      document.body.appendChild(__titleProbe);
+    }
+    if (budgetW) __titleProbe.style.width = `${budgetW}px`;
+    return __titleProbe;
+  }
+  function fitTitleSize(text, family, weight) {
+    if (!text || !text.trim()) return null;
+    if (!previewTitle) return null;
+    const budgetW = previewTitle.clientWidth;
+    const budgetH = previewTitle.clientHeight;
+    if (!budgetW || !budgetH) return null;
+
+    // Эстетический нижний пол: для шаблона «Рыба» не мельче 22pt,
+    // для прочих — минимум слайдера (7pt).
+    const floor = subtitleCorner ? 22 : 7;
+
+    const probe = getTitleProbe(budgetW);
+    probe.style.fontFamily = family || '';
+    probe.style.fontWeight = weight || '800';
+    probe.textContent = text;
+
+    let best = floor;
+    let lo = floor, hi = TITLE_FIT_MAX;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      probe.style.fontSize = `${mid}pt`;
+      // Текст помещается, если его реальная высота не превышает зону названия.
+      if (probe.offsetHeight <= budgetH + 1) { best = mid; lo = mid + 1; }
+      else { hi = mid - 1; }
+    }
+    return best;
+  }
+
+  // Переподбор кегля активного товара и запись результата туда же, откуда
+  // читает activeItemTitleSize (per-item в multi, слайдер в single).
+  // Слайдер не вызывает эту функцию — ручная правка держится до ввода текста/шрифта.
+  function refitActiveTitle() {
+    const isMultiMode = document.querySelector('input[name="printMode"]:checked').value === 'multi';
+    const family = titleFont ? titleFont.value : '';
+    const weight = titleWeight ? titleWeight.value : '800';
+    if (isMultiMode) {
+      const it = itemsData[activePreviewIndex] || (itemsData[activePreviewIndex] = {});
+      const fit = fitTitleSize(it.title, family, weight);
+      if (fit != null) it.titleSize = fit;
+    } else {
+      const fit = fitTitleSize(inputTitle ? inputTitle.value : '', family, weight);
+      if (fit != null) {
+        titleSize.value = String(fit);
+        if (titleSizeVal) titleSizeVal.textContent = String(fit);
+      }
+    }
+    updatePreview();
+  }
+
+  // Размер шрифта веса/доп.текста по длине (короткий → крупнее).
+  function subtitleSizeByLen(len) {
+    if (len <= 6) return 13;
+    if (len <= 12) return 11;
+    if (len <= 20) return 9;
+    return 8;
+  }
+
+  // Размер шрифта цены по числу цифр (короткая → крупнее).
+  function priceSizeByLen(digitCount) {
+    if (digitCount <= 2) return 48;
+    if (digitCount <= 3) return 40;
+    if (digitCount <= 4) return 34;
+    return 28;
+  }
+
+  // "Подогнать шрифт" — подбирает размер КАЖДОЙ надписи по своей длине:
+  // наименование, вес/доп.текст и цену — независимо друг от друга.
+  // Наименование в режиме «Разные товары» получает СВОЙ размер (per-item) по
+  // длине названия; вес и цена — глобальный размер по активному товару.
   function autoFitFontSize() {
     const isMultiMode = document.querySelector('input[name="printMode"]:checked').value === 'multi';
 
-    // Вес — всегда Bold (800); доп. сдвиг названия не нужен (зона фиксирована).
+    // Наименование — Bold (800), доп. сдвиг не нужен (зона фиксирована).
+    // Для шаблона «Рыба» (subtitleCorner) наименование не мельче 22pt —
+    // этот пол зашит внутри fitTitleSize().
     titleWeight.value = '800';
     titleOffsetY.value = 0;
     titleOffsetYVal.textContent = '0';
 
     if (isMultiMode) {
-      // Per-item: каждому товару — свой кегль по длине его названия.
+      // Per-item: каждому товару — свой кегль под перенос его названия по словам.
+      // fitTitleSize измеряет на превью активного ценника; для прочих берём
+      // их текст с тем же шрифтом/толщиной — бюджет зоны одинаков у всех ценников.
+      const family = titleFont ? titleFont.value : '';
       itemsData.forEach(it => {
         if (!it) return;
-        const len = it.title ? it.title.trim().length : 0;
-        it.titleSize = titleSizeByLen(len);
+        const fit = fitTitleSize(it.title, family, '800');
+        if (fit != null) it.titleSize = fit;
       });
       // Активный товар отражаем в слайдере.
       const active = itemsData[activePreviewIndex];
@@ -636,11 +1034,32 @@ document.addEventListener('DOMContentLoaded', () => {
         titleSizeVal.textContent = String(sz);
       }
     } else {
-      const len = inputTitle.value.trim().length;
-      const optimalSize = titleSizeByLen(len);
-      titleSize.value = String(optimalSize);
-      titleSizeVal.textContent = String(optimalSize);
+      const fit = fitTitleSize(inputTitle.value, titleFont ? titleFont.value : '', '800');
+      if (fit != null) {
+        titleSize.value = String(fit);
+        titleSizeVal.textContent = String(fit);
+      }
     }
+
+    // Вес/доп.текст — глобальный размер по длине активного товара (независимо).
+    const activeSub = isMultiMode
+      ? ((itemsData[activePreviewIndex] && itemsData[activePreviewIndex].subtitle) || '')
+      : (inputSubtitle ? inputSubtitle.value : '');
+    const subOpt = subtitleSizeByLen(activeSub.trim().length);
+    if (subtitleSize) {
+      subtitleSize.value = String(subOpt);
+      if (subtitleSizeVal) subtitleSizeVal.textContent = String(subOpt);
+    }
+
+    // Цена — глобальный размер по числу цифр активного товара (независимо).
+    const activePrice = isMultiMode
+      ? ((itemsData[activePreviewIndex] && itemsData[activePreviewIndex].price) || '')
+      : inputPrice.value;
+    const priceOpt = priceSizeByLen(activePrice.replace(/\D/g, '').length);
+    // Для шаблона «Рыба» (subtitleCorner) цена не крупнее 40pt.
+    const priceOptCapped = subtitleCorner ? Math.min(priceOpt, 40) : priceOpt;
+    priceSize.value = String(priceOptCapped);
+    priceSizeVal.textContent = String(priceOptCapped);
 
     updatePreview();
   }
@@ -671,10 +1090,26 @@ document.addEventListener('DOMContentLoaded', () => {
   // Высота карточки для раскладки А4: ценник + внешний декоративный блок (если он
   // показан). Внешний блок не входит в размер ценника, но печатается, поэтому
   // ячейка листа становится выше и ценников влезает меньше.
+  // В мультирежиме берём ЕДИНУЮ высоту по максимуму: если хотя бы у одного
+  // выводимого ценника включён блок СВЕРХУ — все ячейки получают ценник+блок,
+  // ценники без блока оставляют пустое место сверху.
   function effectiveCardHeight(hMm) {
-    const showOutside = !!(decorOutsideShow && decorOutsideShow.checked);
-    if (!showOutside) return hMm;
-    return hMm + decorOutsideHeightMm();
+    if (!isMultiModeNow()) {
+      // Single-режим: глобальный блок.
+      const showOutside = !!(decorOutsideShow && decorOutsideShow.checked);
+      return showOutside ? hMm + decorOutsideHeightMm() : hMm;
+    }
+    // Мультирежим: максимум высот внешних блоков по всем товарам.
+    let extra = 0;
+    itemsData.forEach(it => {
+      if (!it || !(it.title && it.title.trim())) return; // незаполненные не печатаются
+      const snap = decorBlockFromItem(it, 'outside');
+      if (snap.show) {
+        const hh = parseFloat(snap.height) || 0;
+        if (hh > extra) extra = hh;
+      }
+    });
+    return hMm + extra;
   }
 
   // Применяет тексты товара и его ручные позиции (labelPos) к клону вобблера
@@ -705,8 +1140,10 @@ document.addEventListener('DOMContentLoaded', () => {
       pElem.innerHTML = '';
       digits.forEach((d, idx) => {
         const span = document.createElement('span');
-        span.className = 'price-digit';
-        span.textContent = d;
+        // Пробел — полноценный символ: nbsp + класс .price-space (ширина цифры).
+        const isSpace = d === ' ';
+        span.className = 'price-digit' + (isSpace ? ' price-space' : '');
+        span.textContent = isSpace ? '\u00A0' : d;
         const dp = lp.priceDigits[idx];
         span.style.transform = `translate(${dp.x}mm, ${dp.y}mm)`;
         pElem.appendChild(span);
@@ -716,6 +1153,81 @@ document.addEventListener('DOMContentLoaded', () => {
     if (box) {
       const yOffset = (parseFloat(priceOffsetYVal) || 0) + lp.price.y;
       box.style.transform = `translate(${lp.price.x}mm, ${yOffset}mm)`;
+    }
+
+    // === Per-item оформление и фон ===
+    // Клон наследует живой #wobblerPreview (с настройками активного ценника).
+    // Здесь перезаписываем фон/декор-блоки под конкретный товар ценника.
+    const outSnap = decorBlockFromItem(item, 'outside');
+    const inSnap = decorBlockFromItem(item, 'inside');
+    const bgSnap = bgFromItem(item);
+
+    // Фон ценника (хедер).
+    const cloneHeader = clone.querySelector('.wobbler-header');
+    if (cloneHeader) applyBackgroundTo(cloneHeader, bgSnap.bgImage, bgSnap.customBg, bgSnap.headerBg);
+
+    // CSS-переменные высот блоков — на самом клоне (локально, не глобально).
+    const outH = parseFloat(outSnap.height) || 0;
+    const inH = parseFloat(inSnap.height) || 0;
+    clone.style.setProperty('--outside-top-h', `${outH.toFixed(2)}mm`);
+    clone.style.setProperty('--inside-top-h', `${inH.toFixed(2)}mm`);
+    clone.classList.toggle('has-outside-top', !!outSnap.show);
+    clone.classList.toggle('has-inside-top', !!inSnap.show);
+
+    // Safe-зона названия — per-item на клоне (локально переопределяет глобальные
+    // --title-safe-w / --title-zone-h, унаследованные от :root). Так в раскладке
+    // и печати каждый ценник считает кегль по своей safe-зоне.
+    const ts = bgSnap.titleSafe;
+    // headerHm/размеры для клона = как в updatePreview (currentLayout/height глобальны).
+    const _w = parseFloat(wobblerWidthInput.value) || 6.5;
+    const _h = parseFloat(wobblerHeightInput.value) || 4.5;
+    const _hh = currentLayout === 'full' ? _h * 10 : _h * 10 * ((parseInt(headerHeightRange.value, 10) || 50) / 100);
+    const _pib = rybaPriceInBottom && currentLayout === 'split';
+    const _bySafeH = _hh * Math.max(0, 1 - ts.top - ts.bottom);
+    const _tz = Math.min(_hh * (_pib ? 0.85 : 0.45), _bySafeH);
+    clone.style.setProperty('--title-zone-h', `${_tz.toFixed(2)}mm`);
+    // Та же формула, что в updatePreview: titleW_mm = headerW*(1-l-r),
+    // --title-safe-w (доля от content-ширины) = titleW_mm / contentW.
+    {
+      const _hw = _w * 10;                         // ширина шапки, мм
+      const _cw = Math.max(1, _hw - 6);            // content-ширина, мм
+      const _tw = _hw * (1 - ts.left - ts.right);  // ширина названия, мм
+      const _swf = Math.max(0, Math.min(1, _tw / _cw));
+      clone.style.setProperty('--title-safe-w', `${(_swf * 100).toFixed(2)}%`);
+    }
+
+    // Блок СВЕРХУ.
+    const cloneOutside = clone.querySelector('.wobbler-outside-top');
+    const cloneOutsideText = cloneOutside ? cloneOutside.querySelector('.block-text') : null;
+    if (cloneOutside) {
+      if (outSnap.show) {
+        cloneOutside.style.display = 'flex';
+        applyBackgroundTo(cloneOutside, outSnap.bgImg, outSnap.customBg, outSnap.bg);
+        if (cloneOutsideText) {
+          cloneOutsideText.textContent = outSnap.text || '';
+          cloneOutsideText.style.color = outSnap.color || '#ffffff';
+          cloneOutsideText.style.fontSize = `${outSnap.fontSize || 12}pt`;
+        }
+      } else {
+        cloneOutside.style.display = 'none';
+      }
+    }
+
+    // Блок ВНУТРИ.
+    const cloneInside = clone.querySelector('.wobbler-inside-top');
+    const cloneInsideText = cloneInside ? cloneInside.querySelector('.block-text') : null;
+    if (cloneInside) {
+      if (inSnap.show) {
+        cloneInside.style.display = 'flex';
+        applyBackgroundTo(cloneInside, inSnap.bgImg, inSnap.customBg, inSnap.bg);
+        if (cloneInsideText) {
+          cloneInsideText.textContent = inSnap.text || '';
+          cloneInsideText.style.color = inSnap.color || '#ffffff';
+          cloneInsideText.style.fontSize = `${inSnap.fontSize || 12}pt`;
+        }
+      } else {
+        cloneInside.style.display = 'none';
+      }
     }
   }
 
@@ -807,20 +1319,21 @@ document.addEventListener('DOMContentLoaded', () => {
     titleOffsetYVal.textContent = titleOffsetY.value;
 
     // Подзаголовок (вес/доп. инфо) — всегда в нижнем левом углу ценника.
+    // Независимый слой: собственные размер/цвет/толщина/выравнивание
+    // (шрифт наследуется от наименования).
     if (previewSubtitle) {
       const subText = isMultiMode ? (activeItem?.subtitle || '') : (inputSubtitle?.value || '');
       previewSubtitle.textContent = subText || '';
       previewSubtitle.style.display = subText ? 'block' : 'none';
-      // Размер ~72% от шрифта названия (крупный угловой вариант).
-      const baseSize = parseInt(titleSize.value, 10) || 13;
-      const subPt = Math.max(11, Math.round(baseSize * 0.72));
+      const subPt = subtitleSize ? subtitleSize.value : 11;
       previewSubtitle.style.fontFamily = titleFont.value;
-      previewSubtitle.style.color = titleColor.value;
+      previewSubtitle.style.color = subtitleColor ? subtitleColor.value : '#ffffff';
       previewSubtitle.style.fontSize = `${subPt}pt`;
-      previewSubtitle.style.fontWeight = '700';
+      previewSubtitle.style.fontWeight = subtitleWeight ? subtitleWeight.value : '700';
       previewSubtitle.style.textAlign = alignState.subtitle || 'left';
       // Ручное смещение (перетаскивание) поверх углового позиционирования
       previewSubtitle.style.transform = `translate(${lp.subtitle.x}mm, ${lp.subtitle.y}mm)`;
+      if (subtitleSizeVal) subtitleSizeVal.textContent = subPt;
     }
 
     // Update preview item badge
@@ -846,8 +1359,11 @@ document.addEventListener('DOMContentLoaded', () => {
       previewPrice.innerHTML = '';
       digits.forEach((d, idx) => {
         const span = document.createElement('span');
-        span.className = 'price-digit';
-        span.textContent = d;
+        // Пробел рендерим как полноценный символ: nbsp не схлопывается
+        // в inline-flex, а класс .price-space даёт ему ширину цифры.
+        const isSpace = d === ' ';
+        span.className = 'price-digit' + (isSpace ? ' price-space' : '');
+        span.textContent = isSpace ? '\u00A0' : d;
         span.dataset.pos = idx;
         const dp = lp.priceDigits[idx];
         span.style.transform = `translate(${dp.x}mm, ${dp.y}mm)`;
@@ -877,8 +1393,10 @@ document.addEventListener('DOMContentLoaded', () => {
       previewPriceBox.style.display = 'none';
     }
 
-    // Background Image & Overlay (через обобщённый хелпер).
-    applyBackgroundTo(wobblerHeader, bgImageSelect.value, uploadedDataUrl, headerBgColor.value);
+    // Background Image & Overlay — per-item фон активного ценника, если задан
+    // (в single-режиме хелпер возвращает глобальные значения как раньше).
+    const activeBgSnap = resolveItemBg(activePreviewIndex);
+    applyBackgroundTo(wobblerHeader, activeBgSnap.bgImage, activeBgSnap.customBg, activeBgSnap.headerBg);
 
     // Layout Fix
     headerHeightVal.textContent = headerHeightRange.value;
@@ -896,15 +1414,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // === Декоративные блоки «Оформление» ===
-    // Высоты блоков задаются слайдерами (мм). outsideH — также «добавка» к высоте
-    // ячейки листа/печати (ценник + блок), учитывается при раскладке А4.
-    const outsideH = decorOutsideHeightMm(); // мм, над ценником
-    const insideH = decorInsideHeightMm();   // мм, внутри ценника сверху
+    // Значения берём через хелперы: per-item для активного ценника, иначе глобальные.
+    // outsideH — также «добавка» к высоте ячейки листа/печати (ценник + блок).
+    const activeOutsideSnap = resolveDecorBlock(activePreviewIndex, 'outside');
+    const activeInsideSnap = resolveDecorBlock(activePreviewIndex, 'inside');
+    const outsideH = parseFloat(activeOutsideSnap.height) || 0; // мм, над ценником
+    const insideH = parseFloat(activeInsideSnap.height) || 0;   // мм, внутри ценника сверху
     document.documentElement.style.setProperty('--outside-top-h', `${outsideH.toFixed(2)}mm`);
     document.documentElement.style.setProperty('--inside-top-h', `${insideH.toFixed(2)}mm`);
 
-    const showOutside = !!(decorOutsideShow && decorOutsideShow.checked);
-    const showInside = !!(decorInsideShow && decorInsideShow.checked);
+    const showOutside = !!activeOutsideSnap.show;
+    const showInside = !!activeInsideSnap.show;
     wobblerPreview.classList.toggle('has-outside-top', showOutside);
     wobblerPreview.classList.toggle('has-inside-top', showInside);
 
@@ -922,12 +1442,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (wobblerOutsideTop) {
       if (showOutside) {
         applyDecorBlock(wobblerOutsideTop, outsideTopText,
-          decorOutsideText ? decorOutsideText.value : '',
-          decorOutsideBgImg ? decorOutsideBgImg.value : 'none',
-          uploadedDataUrl2,
-          decorOutsideBg ? decorOutsideBg.value : '#e63946',
-          decorOutsideColor ? decorOutsideColor.value : '#ffffff',
-          decorOutsideFontSize ? decorOutsideFontSize.value : 14);
+          activeOutsideSnap.text, activeOutsideSnap.bgImg, activeOutsideSnap.customBg,
+          activeOutsideSnap.bg, activeOutsideSnap.color, activeOutsideSnap.fontSize);
       } else {
         wobblerOutsideTop.style.display = 'none';
       }
@@ -938,12 +1454,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (wobblerInsideTop) {
       if (showInside) {
         applyDecorBlock(wobblerInsideTop, insideTopText,
-          decorInsideText ? decorInsideText.value : '',
-          decorInsideBgImg ? decorInsideBgImg.value : 'none',
-          uploadedDataUrl3,
-          decorInsideBg ? decorInsideBg.value : '#e63946',
-          decorInsideColor ? decorInsideColor.value : '#ffffff',
-          decorInsideFontSize ? decorInsideFontSize.value : 11);
+          activeInsideSnap.text, activeInsideSnap.bgImg, activeInsideSnap.customBg,
+          activeInsideSnap.bg, activeInsideSnap.color, activeInsideSnap.fontSize);
       } else {
         wobblerInsideTop.style.display = 'none';
       }
@@ -957,17 +1469,38 @@ document.addEventListener('DOMContentLoaded', () => {
     // Эффективная высота карточки для раскладки листа/печати (с учётом внешнего блока).
     window.__cardEffH = heightMm + (showOutside ? outsideH : 0);
 
-    // Фиксированная высота зоны названия (мм), чтобы цена под ним не
-    // смещалась при росте шрифта/длины названия. Берём высоту шапки в мм:
-    // в режиме full — вся высота воблера; в split — headerHeight% от неё.
+    // Высота шапки в мм: в full — вся высота воблера; в split — headerHeight%.
     const headerHm = selectedLayout === 'full'
       ? heightMm
       : heightMm * (parseInt(headerHeightRange.value, 10) || 50) / 100;
     const priceInBottomNow = rybaPriceInBottom && selectedLayout === 'split';
     // Если цена в шапке — оставляем ~45% под название; если цена в нижнем
     // поле — шапка почти целиком отдаётся названию (~85%).
-    const titleZone = headerHm * (priceInBottomNow ? 0.85 : 0.45);
+    // Safe-зона (top+bottom) дополнительно ограничивает высоту названия снизу,
+    // чтобы текст не заехал на графику фона (логотип сверху, декор снизу).
+    // Берём минимум из множителя и безопасной высоты.
+    const ts = resolveItemBg(activePreviewIndex).titleSafe;
+    const mult = priceInBottomNow ? 0.85 : 0.45;
+    const bySafeH = headerHm * Math.max(0, 1 - ts.top - ts.bottom);
+    const titleZone = Math.min(headerHm * mult, bySafeH);
     document.documentElement.style.setProperty('--title-zone-h', `${titleZone.toFixed(2)}mm`);
+    // Безопасная ширина названия. left/right — доли от ВСЕЙ ширины шапки
+    // (.wobbler-header), как и top/bottom от её высоты: так прямоугольник
+    // редактора (.safe-rect, позиционируется внутри всей шапки) совпадает с
+    // реальным боксом названия 1:1, и пользователь видит истинные границы.
+    // Геометрия: ширина названия в мм = headerW*(1-l-r) (совпадает с rect).
+    // Но .wobbler-title живёт в .header-content (ширина = шапка − padding 6мм),
+    // поэтому --title-safe-w (это % от content-ширины) =
+    //   headerW*(1-l-r) / contentW * 100.
+    {
+      const headerW_mm = widthMm;
+      const contentW_mm = Math.max(1, widthMm - 6);   // padding 3мм × 2
+      const titleW_mm = headerW_mm * (1 - ts.left - ts.right);
+      const safeWFrac = Math.max(0, Math.min(1, titleW_mm / contentW_mm));
+      document.documentElement.style.setProperty('--title-safe-w', `${(safeWFrac * 100).toFixed(2)}%`);
+    }
+    // Прямоугольник редактора следует за состоянием (смена шаблона / ввод в поля).
+    positionSafeRect(ts);
 
     // Размещение блока цены: для шаблона «Рыба» цена уходит в нижнее белое поле,
     // наименование остаётся в верхнем блоке. Перемещение по DOM автоматически
@@ -1236,6 +1769,11 @@ document.addEventListener('DOMContentLoaded', () => {
     titleWeight.value = state.titleWeight || '800';
     titleOffsetY.value = state.titleOffsetY || 0;
     alignState.title = state.titleAlign || 'center';
+    // Subtitle (Вес / доп. текст) — собственные параметры слоя.
+    if (subtitleColor) subtitleColor.value = state.subtitleColor || '#ffffff';
+    if (subtitleSize) subtitleSize.value = state.subtitleSize != null ? state.subtitleSize : 11;
+    if (subtitleWeight) subtitleWeight.value = state.subtitleWeight || '700';
+    alignState.subtitle = state.subtitleAlign || 'left';
 
     showPriceToggle.checked = !!state.showPrice;
     priceFont.value = state.priceFont || "Arial, sans-serif";
@@ -1261,6 +1799,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     headerHeightRange.value = state.headerHeight || 100;
+
+    // Safe-зона названия (отступы от графики фона, в %). Дефолт — нули.
+    {
+      const ts = normTitleSafe(state.titleSafe);
+      const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = Math.round(v * 100); };
+      set('titleSafeL', ts.left); set('titleSafeR', ts.right);
+      set('titleSafeT', ts.top);  set('titleSafeB', ts.bottom);
+    }
 
     // Декоративные блоки «Оформление» (внешний + внутренний).
     if (decorOutsideShow) decorOutsideShow.checked = !!state.decorOutsideShow;
@@ -1314,6 +1860,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (document.querySelector('input[name="printMode"]:checked').value === 'multi') {
       const it = itemsData[activePreviewIndex];
       if (it) it.labelPos = mergeLabelPos(state.labelPos);
+      // Вес и цена общие для всех ценников: разносим базу пресета с активного
+      // ценника на все остальные (включая №1).
+      const src = itemsData[activePreviewIndex];
+      if (src && src.labelPos && itemsData[0]) {
+        if (!itemsData[0].labelPos) itemsData[0].labelPos = defaultLabelPos();
+        itemsData[0].labelPos.subtitle = JSON.parse(JSON.stringify(src.labelPos.subtitle));
+        itemsData[0].labelPos.price = JSON.parse(JSON.stringify(src.labelPos.price));
+        itemsData[0].labelPos.priceDigits = JSON.parse(JSON.stringify(src.labelPos.priceDigits));
+        itemsData[0].labelPos.currency = JSON.parse(JSON.stringify(src.labelPos.currency));
+      }
+      applySharedPosFromFirstToAll();
     }
 
     ['title', 'subtitle', 'price'].forEach(target => {
@@ -1343,6 +1900,10 @@ document.addEventListener('DOMContentLoaded', () => {
       titleWeight: titleWeight.value,
       titleAlign: alignState.title,
       titleOffsetY: titleOffsetY.value,
+      subtitleColor: subtitleColor ? subtitleColor.value : '#ffffff',
+      subtitleSize: subtitleSize ? subtitleSize.value : 11,
+      subtitleWeight: subtitleWeight ? subtitleWeight.value : '700',
+      subtitleAlign: alignState.subtitle || 'left',
 
       showPrice: showPriceToggle.checked,
       priceFont: priceFont.value,
@@ -1358,6 +1919,7 @@ document.addEventListener('DOMContentLoaded', () => {
       bgImage: bgImageSelect.value,
       customBgData: bgImageSelect.value === 'custom' ? uploadedDataUrl : null,
       headerHeight: headerHeightRange.value,
+      titleSafe: readGlobalTitleSafe(),
       layout: currentLayout,
       priceInBottom: rybaPriceInBottom,
       subtitleCorner: subtitleCorner,
@@ -1708,6 +2270,169 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('.tab-btn[data-tab="userSaved"]').click();
   });
 
+  // ===== Модал per-item оформления/фон (кнопка ⚙ в строке) =====
+  // Заполняет контролы модала текущими значениями ценника (per-item если задано,
+  // иначе — из общих секций «Фоны»/«Оформление»), показывает модал.
+  function openItemSettings(i) {
+    currentItemSettingsIndex = i;
+    itemSettingsTitle.textContent = `Настройки ценника №${i + 1}`;
+
+    const it = itemsData[i] || (itemsData[i] = {});
+    const bgC = !!it.bgCustomized;
+    const outC = !!it.outsideCustomized;
+    const inC = !!it.insideCustomized;
+
+    // Фон
+    isBgEnabled.checked = bgC;
+    const bgSnap = resolveItemBg(i);
+    isHeaderBgColor.value = bgSnap.headerBg || '#ffffff';
+    isBgImage.value = bgSnap.bgImage || 'none';
+    if (isBgCustomOption) isBgCustomOption.style.display = (bgSnap.bgImage === 'custom' && bgSnap.customBg) ? 'block' : 'none';
+    if (isBgUploadStatus) isBgUploadStatus.textContent = (bgSnap.bgImage === 'custom' && bgSnap.customBg) ? '✓ Своя картинка загружена' : '';
+
+    // Блок СВЕРХУ
+    const outSnap = resolveDecorBlock(i, 'outside');
+    isOutsideShow.checked = outSnap.show;
+    isOutsideText.value = outSnap.text || '';
+    isOutsideBg.value = outSnap.bg || '#e63946';
+    isOutsideBgImg.value = outSnap.bgImg || 'none';
+    if (isOutsideCustomOption) isOutsideCustomOption.style.display = (outSnap.bgImg === 'custom' && outSnap.customBg) ? 'block' : 'none';
+    if (isOutsideUploadStatus) isOutsideUploadStatus.textContent = (outSnap.bgImg === 'custom' && outSnap.customBg) ? '✓ Своя картинка загружена' : '';
+    isOutsideColor.value = outSnap.color || '#ffffff';
+    isOutsideFontSize.value = outSnap.fontSize || 14;
+    isOutsideHeight.value = outSnap.height || 12;
+
+    // Блок ВНУТРИ
+    const inSnap = resolveDecorBlock(i, 'inside');
+    isInsideShow.checked = inSnap.show;
+    isInsideText.value = inSnap.text || '';
+    isInsideBg.value = inSnap.bg || '#e63946';
+    isInsideBgImg.value = inSnap.bgImg || 'none';
+    if (isInsideCustomOption) isInsideCustomOption.style.display = (inSnap.bgImg === 'custom' && inSnap.customBg) ? 'block' : 'none';
+    if (isInsideUploadStatus) isInsideUploadStatus.textContent = (inSnap.bgImg === 'custom' && inSnap.customBg) ? '✓ Своя картинка загружена' : '';
+    isInsideColor.value = inSnap.color || '#ffffff';
+    isInsideFontSize.value = inSnap.fontSize || 11;
+    isInsideHeight.value = inSnap.height || 8;
+
+    refreshIsGroupStates();
+    itemSettingsModal.classList.add('active');
+  }
+
+  // Включает/выключает тело группы (визуально + pointer-events).
+  function refreshIsGroupStates() {
+    const setBody = (enabled, attr) => {
+      const body = itemSettingsModal.querySelector(`.is-group-body[data-is-${attr}]`);
+      if (body) body.classList.toggle('is-disabled', !enabled);
+    };
+    setBody(isBgEnabled.checked, 'bg');
+    setBody(isOutsideShow.checked, 'outside');
+    setBody(isInsideShow.checked, 'inside');
+  }
+
+  // Записывает per-item поле и помечает группу как настроенную.
+  function setIsField(kind, field, value) {
+    const it = itemsData[currentItemSettingsIndex] || (itemsData[currentItemSettingsIndex] = {});
+    it[field] = value;
+    it[`${kind}Customized`] = true;
+    updatePreview();
+  }
+
+  // === Привязки контроллов модала ===
+  // Группа «Фон»
+  if (isBgEnabled) isBgEnabled.addEventListener('change', () => {
+    const it = itemsData[currentItemSettingsIndex] || (itemsData[currentItemSettingsIndex] = {});
+    if (isBgEnabled.checked) {
+      // При включении фиксируем текущие значения как per-item.
+      it.bgCustomized = true;
+      it.headerBg = isHeaderBgColor.value;
+      it.bgImage = isBgImage.value;
+      if (uploadedDataUrl) it.customBgData = uploadedDataUrl;
+    } else {
+      // Выключение → возврат к глобальному фону.
+      delete it.bgCustomized;
+      PER_ITEM_FIELDS.bg.forEach(f => delete it[f]);
+    }
+    refreshIsGroupStates();
+    updatePreview();
+  });
+  if (isHeaderBgColor) isHeaderBgColor.addEventListener('input', () => setIsField('bg', 'headerBg', isHeaderBgColor.value));
+  if (isBgImage) isBgImage.addEventListener('change', () => setIsField('bg', 'bgImage', isBgImage.value));
+
+  // Группа «Блок СВЕРХУ»
+  if (isOutsideShow) isOutsideShow.addEventListener('change', () => {
+    // Чекбокс показывает/скрывает тело и сразу пишется в per-item поле.
+    const it = itemsData[currentItemSettingsIndex] || (itemsData[currentItemSettingsIndex] = {});
+    it.outsideShow = isOutsideShow.checked;
+    it.outsideCustomized = true;
+    refreshIsGroupStates();
+    updatePreview();
+  });
+  if (isOutsideText) isOutsideText.addEventListener('input', () => setIsField('outside', 'outsideText', isOutsideText.value));
+  if (isOutsideBg) isOutsideBg.addEventListener('input', () => setIsField('outside', 'outsideBg', isOutsideBg.value));
+  if (isOutsideBgImg) isOutsideBgImg.addEventListener('change', () => setIsField('outside', 'outsideBgImg', isOutsideBgImg.value));
+  if (isOutsideColor) isOutsideColor.addEventListener('input', () => setIsField('outside', 'outsideColor', isOutsideColor.value));
+  if (isOutsideFontSize) isOutsideFontSize.addEventListener('input', () => setIsField('outside', 'outsideFontSize', isOutsideFontSize.value));
+  if (isOutsideHeight) isOutsideHeight.addEventListener('input', () => setIsField('outside', 'outsideHeight', isOutsideHeight.value));
+
+  // Группа «Блок ВНУТРИ»
+  if (isInsideShow) isInsideShow.addEventListener('change', () => {
+    const it = itemsData[currentItemSettingsIndex] || (itemsData[currentItemSettingsIndex] = {});
+    it.insideShow = isInsideShow.checked;
+    it.insideCustomized = true;
+    refreshIsGroupStates();
+    updatePreview();
+  });
+  if (isInsideText) isInsideText.addEventListener('input', () => setIsField('inside', 'insideText', isInsideText.value));
+  if (isInsideBg) isInsideBg.addEventListener('input', () => setIsField('inside', 'insideBg', isInsideBg.value));
+  if (isInsideBgImg) isInsideBgImg.addEventListener('change', () => setIsField('inside', 'insideBgImg', isInsideBgImg.value));
+  if (isInsideColor) isInsideColor.addEventListener('input', () => setIsField('inside', 'insideColor', isInsideColor.value));
+  if (isInsideFontSize) isInsideFontSize.addEventListener('input', () => setIsField('inside', 'insideFontSize', isInsideFontSize.value));
+  if (isInsideHeight) isInsideHeight.addEventListener('input', () => setIsField('inside', 'insideHeight', isInsideHeight.value));
+
+  // Загрузка своих картинок для per-item фона/блоков (аналог setupDecorUpload,
+  // но пишет в itemsData[i] вместо глобальных uploadedDataUrl-переменных).
+  function setupIsUpload(input, optionEl, statusEl, kind, imgField, dataField) {
+    if (!input) return;
+    input.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const it = itemsData[currentItemSettingsIndex] || (itemsData[currentItemSettingsIndex] = {});
+        it[dataField] = event.target.result;
+        it[imgField] = 'custom';
+        it[`${kind}Customized`] = true;
+        if (optionEl) optionEl.style.display = 'block';
+        if (statusEl) statusEl.textContent = `✓ Загружено: ${file.name}`;
+        // Переключаем select группы на «custom», чтобы пользователь видел выбор.
+        const selMap = { bg: isBgImage, outside: isOutsideBgImg, inside: isInsideBgImg };
+        if (selMap[kind]) selMap[kind].value = 'custom';
+        updatePreview();
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+  setupIsUpload(isBgCustomUpload, isBgCustomOption, isBgUploadStatus, 'bg', 'bgImage', 'customBgData');
+  setupIsUpload(isOutsideCustomUpload, isOutsideCustomOption, isOutsideUploadStatus, 'outside', 'outsideBgImg', 'outsideCustomBg');
+  setupIsUpload(isInsideCustomUpload, isInsideCustomOption, isInsideUploadStatus, 'inside', 'insideBgImg', 'insideCustomBg');
+
+  // Кнопки модала
+  const cancelItemSettings = document.getElementById('cancelItemSettings');
+  const resetItemSettings = document.getElementById('resetItemSettings');
+  if (cancelItemSettings) cancelItemSettings.addEventListener('click', () => {
+    itemSettingsModal.classList.remove('active');
+  });
+  if (resetItemSettings) resetItemSettings.addEventListener('click', () => {
+    resetItemDecor(currentItemSettingsIndex);
+    updatePreview();
+    // Перезаполняем модал актуальными (теперь глобальными) значениями.
+    openItemSettings(currentItemSettingsIndex);
+  });
+  // Закрытие по клику на фон.
+  if (itemSettingsModal) itemSettingsModal.addEventListener('click', (e) => {
+    if (e.target === itemSettingsModal) itemSettingsModal.classList.remove('active');
+  });
+
   // ===== Экспорт / Импорт: обработчики кнопок =====
   if (exportAllBtn) {
     exportAllBtn.addEventListener('click', () => {
@@ -1791,8 +2516,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const allInputs = [
     wobblerWidthInput, wobblerHeightInput,
     inputTitle, inputSubtitle, titleFont, titleColor, titleSize, titleWeight, titleOffsetY,
+    subtitleColor, subtitleSize, subtitleWeight,
     showPriceToggle, priceFont, priceSize, priceWeight, priceColor, priceOffsetY, inputPrice, inputCurrency, pricePlateToggle,
     headerBgColor, bgImageSelect, headerHeightRange,
+    document.getElementById('titleSafeL'), document.getElementById('titleSafeR'),
+    document.getElementById('titleSafeT'), document.getElementById('titleSafeB'),
     sheetCount, singleRepeatCount, showCropMarks,
     // Декоративные блоки «Оформление»
     decorOutsideShow, decorOutsideText, decorOutsideBg, decorOutsideBgImg, decorOutsideColor, decorOutsideFontSize, decorOutsideHeight,
@@ -1812,10 +2540,28 @@ document.addEventListener('DOMContentLoaded', () => {
     titleSize.addEventListener('change', writeTitleSize);
   }
 
+  // Умный перенос названия по словам: при вводе наименования (single) и при
+  // смене шрифта/толщины (влияют на ширину слов) — заново подгоняем кегль под
+  // размер ценника. Слайдер сюда НЕ подключён — ручная правка держится до
+  // следующего ввода текста/шрифта. refitActiveTitle сам зовёт updatePreview.
+  if (inputTitle) inputTitle.addEventListener('input', refitActiveTitle);
+  if (titleFont) titleFont.addEventListener('change', refitActiveTitle);
+  if (titleWeight) titleWeight.addEventListener('change', refitActiveTitle);
+
   allInputs.forEach(el => {
     if (el) {
       el.addEventListener('input', updatePreview);
       el.addEventListener('change', updatePreview);
+    }
+  });
+
+  // Изменение safe-зоны названия меняет ширину/высоту бокса → кегль нужно
+  // пересчитать под новый бюджет. refitActiveTitle сам зовёт updatePreview.
+  ['titleSafeL', 'titleSafeR', 'titleSafeT', 'titleSafeB'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', refitActiveTitle);
+      el.addEventListener('change', refitActiveTitle);
     }
   });
 
@@ -1865,10 +2611,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // === Ручное перетаскивание надписей в предпросмотре ===
   // Тумблер «Двигать надписи» включает режим drag-mode на превью.
+  // Взаимоисключающе с режимом редактора границ (safe-edit-mode).
   if (dragModeToggle) {
     dragModeToggle.addEventListener('click', () => {
       const on = wobblerPreview.classList.toggle('drag-mode');
       dragModeToggle.classList.toggle('active', on);
+      if (on) {   // выключаем редактор границ, если был включён
+        wobblerPreview.classList.remove('safe-edit-mode');
+        if (safeEditToggle) safeEditToggle.classList.remove('active');
+      }
+    });
+  }
+  // Тумблер «Границы текста» включает режим safe-edit-mode: поверх шапки
+  // показывается редактируемый прямоугольник (края тянутся мышью).
+  if (safeEditToggle) {
+    safeEditToggle.addEventListener('click', () => {
+      const on = wobblerPreview.classList.toggle('safe-edit-mode');
+      safeEditToggle.classList.toggle('active', on);
+      if (on) {   // выключаем перетаскивание надписей
+        wobblerPreview.classList.remove('drag-mode');
+        if (dragModeToggle) dragModeToggle.classList.remove('active');
+        // Сразу позиционируем прямоугольник по текущим долям.
+        positionSafeRect(resolveItemBg(activePreviewIndex).titleSafe);
+      }
     });
   }
 
@@ -1876,11 +2641,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if (resetLabelPosBtn) {
     resetLabelPosBtn.addEventListener('click', () => {
       const lp = activeLabelPos();
-      lp.title = { x: 0, y: 0 };
-      lp.subtitle = { x: 0, y: 0 };
-      lp.price = { x: 0, y: 0 };
-      lp.priceDigits = [];
-      lp.currency = { x: 0, y: 0 };
+      // Сброс = возврат к значениям по умолчанию (вес/доп.текст остаётся на -2мм).
+      const def = defaultLabelPos();
+      lp.title = def.title;
+      lp.subtitle = def.subtitle;
+      lp.price = def.price;
+      lp.priceDigits = def.priceDigits;
+      lp.currency = def.currency;
       updatePreview();
     });
   }
@@ -1896,7 +2663,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Дубликат кнопки «💴 Цена по №1» в панели превью.
   const syncPricePosPreviewBtn = document.getElementById('syncPricePosPreviewBtn');
   if (syncPricePosPreviewBtn) {
-    syncPricePosPreviewBtn.addEventListener('click', applyPricePosFromFirstToAll);
+    syncPricePosPreviewBtn.addEventListener('click', applySharedPosFromFirstToAll);
   }
 
   // Перетаскивание надписей через Pointer Events с делегированием на #wobblerPreview.
@@ -1957,6 +2724,13 @@ document.addEventListener('DOMContentLoaded', () => {
       ref.x = Math.round((drag.baseX + dx) * 10) / 10;
       ref.y = Math.round((drag.baseY + dy) * 10) / 10;
       updatePreview();
+      // Наименование, вес и цена общие для всех ценников: движение на активном
+      // мгновенно разносится на все (включая №1).
+      if (drag.target.kind === 'title' || drag.target.kind === 'subtitle'
+          || drag.target.kind === 'price'
+          || drag.target.kind === 'digit' || drag.target.kind === 'currency') {
+        syncSharedPosFromActive();
+      }
     });
 
     const endDrag = (e) => {
@@ -1967,6 +2741,63 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     wobblerPreview.addEventListener('pointerup', endDrag);
     wobblerPreview.addEventListener('pointercancel', endDrag);
+  })();
+
+  // === Редактор safe-зоны названия (перетаскивание краёв прямоугольника) ===
+  // По образцу setupLabelDrag (Pointer Events + делегирование на #wobblerPreview),
+  // но цель — край прямоугольника (.safe-handle[data-edge]), а результат —
+  // доли titleSafe (left/right/top/bottom), пишутся в 4 поля и тут же применяется.
+  // Доли считаются от размеров .wobbler-header (ширина/высота шапки целиком).
+  (function setupSafeEditDrag() {
+    let drag = null;   // { edge, sx, sy, base, rect }
+
+    wobblerPreview.addEventListener('pointerdown', (e) => {
+      if (!wobblerPreview.classList.contains('safe-edit-mode')) return;
+      const handle = e.target.closest && e.target.closest('.safe-handle');
+      if (!handle) return;
+      const edge = handle.getAttribute('data-edge');     // top/bottom/left/right
+      if (!edge) return;
+      e.preventDefault();
+      try { wobblerPreview.setPointerCapture(e.pointerId); } catch (_) {}
+      drag = {
+        edge,
+        sx: e.clientX, sy: e.clientY,
+        base: readGlobalTitleSafe(),
+        rect: wobblerHeader.getBoundingClientRect()
+      };
+    });
+
+    wobblerPreview.addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      // Доля смещения от размеров шапки (px → доли 0..1).
+      const dx = (e.clientX - drag.sx) / (drag.rect.width  || 1);
+      const dy = (e.clientY - drag.sy) / (drag.rect.height || 1);
+      const ts = { left: drag.base.left, right: drag.base.right, top: drag.base.top, bottom: drag.base.bottom };
+      if      (drag.edge === 'left')   ts.left   = clampSafe(drag.base.left   + dx);
+      else if (drag.edge === 'right')  ts.right  = clampSafe(drag.base.right  - dx);
+      else if (drag.edge === 'top')    ts.top    = clampSafe(drag.base.top    + dy);
+      else if (drag.edge === 'bottom') ts.bottom = clampSafe(drag.base.bottom - dy);
+      // Не дадим краям «схлопнуть» прямоугольник: пара отступов ≤ 0.9
+      // (остаётся ≥10% соответствующей стороны под название).
+      if (ts.left + ts.right > 0.9) {
+        if (drag.edge === 'left')        ts.left  = 0.9 - ts.right;
+        else if (drag.edge === 'right')  ts.right = 0.9 - ts.left;
+      }
+      if (ts.top + ts.bottom > 0.9) {
+        if (drag.edge === 'top')         ts.top    = 0.9 - ts.bottom;
+        else if (drag.edge === 'bottom') ts.bottom = 0.9 - ts.top;
+      }
+      writeSafeInputs(ts);          // 4 поля (%), без dispatch
+      positionSafeRect(ts);         // прямоугольник следует за мышью
+      updatePreview();              // применяет доли к названию + CSS-переменные
+      refitActiveTitle();           // пересчёт кегля под новый бокс
+    });
+
+    const end = (e) => {
+      if (drag) { try { wobblerPreview.releasePointerCapture(e.pointerId); } catch (_) {} drag = null; }
+    };
+    wobblerPreview.addEventListener('pointerup', end);
+    wobblerPreview.addEventListener('pointercancel', end);
   })();
 
   // Подписка на смену режима печати (single/multi). Переключатель раскладки
