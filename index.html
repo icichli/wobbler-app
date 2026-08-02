@@ -76,53 +76,72 @@
 
         <!-- Built-in presets -->
         <div id="builtInTemplates" class="presets-grid tab-content active">
-          <button class="preset-card active" data-preset="alaska_dots">
-            <div class="preset-color dots-black"></div>
-            <div class="preset-info">
-              <span class="preset-title">Черный точечный (Alaska)</span>
-              <span class="preset-desc">Шрифт Arial + оригинальный фон</span>
-            </div>
-          </button>
+          <!-- Подгруппа: Ценники -->
+          <div class="preset-subgroup">
+            <button type="button" class="preset-sub-toggle" data-subgroup="priceTags">
+              <span class="preset-sub-title">Ценники</span>
+              <span class="preset-sub-arrow">▾</span>
+            </button>
+            <div class="preset-sub-body">
+              <button class="preset-card active" data-preset="alaska_dots">
+                <div class="preset-color dots-black"></div>
+                <div class="preset-info">
+                  <span class="preset-title">Бутылки</span>
+                </div>
+              </button>
 
-          <button class="preset-card" data-preset="novy_vkus">
-            <div class="preset-color red"></div>
-            <div class="preset-info">
-              <span class="preset-title">Новый вкус</span>
-              <span class="preset-desc">Красный 6.5×4.5 см (сплошной)</span>
-            </div>
-          </button>
+              <button class="preset-card" data-preset="ryba">
+                <div class="preset-color ryba"></div>
+                <div class="preset-info">
+                  <span class="preset-title">Рыба</span>
+                </div>
+              </button>
 
-          <button class="preset-card" data-preset="novinka">
-            <div class="preset-color yellow"></div>
-            <div class="preset-info">
-              <span class="preset-title">Новинка</span>
-              <span class="preset-desc">Желтый 6.5×7 см (раздельный)</span>
+              <button class="preset-card" data-preset="sneki">
+                <div class="preset-color sneki"></div>
+                <div class="preset-info">
+                  <span class="preset-title">Снеки</span>
+                </div>
+              </button>
             </div>
-          </button>
+          </div>
 
-          <button class="preset-card" data-preset="tomat">
-            <div class="preset-color tomato"></div>
-            <div class="preset-info">
-              <span class="preset-title">Томатное</span>
-              <span class="preset-desc">Фон с томатами 6.5×7 см</span>
-            </div>
-          </button>
+          <!-- Подгруппа: Воблеры -->
+          <div class="preset-subgroup">
+            <button type="button" class="preset-sub-toggle" data-subgroup="wobblers">
+              <span class="preset-sub-title">Воблеры</span>
+              <span class="preset-sub-arrow">▾</span>
+            </button>
+            <div class="preset-sub-body">
+              <button class="preset-card" data-preset="novy_vkus">
+                <div class="preset-color red"></div>
+                <div class="preset-info">
+                  <span class="preset-title">Новый вкус</span>
+                </div>
+              </button>
 
-          <button class="preset-card" data-preset="sladko">
-            <div class="preset-color purple"></div>
-            <div class="preset-info">
-              <span class="preset-title">Сладко</span>
-              <span class="preset-desc">Фиолетовый фон 6.5×7 см</span>
-            </div>
-          </button>
+              <button class="preset-card" data-preset="novinka">
+                <div class="preset-color yellow"></div>
+                <div class="preset-info">
+                  <span class="preset-title">Новинка</span>
+                </div>
+              </button>
 
-      <button class="preset-card" data-preset="ryba">
-            <div class="preset-color ryba"></div>
-            <div class="preset-info">
-              <span class="preset-title">Рыба</span>
-              <span class="preset-desc">МЕСТОПИВО. Чёрный фон, 9,2×5,5 см (цена+название в ₽)</span>
+              <button class="preset-card" data-preset="tomat">
+                <div class="preset-color tomato"></div>
+                <div class="preset-info">
+                  <span class="preset-title">Томатное</span>
+                </div>
+              </button>
+
+              <button class="preset-card" data-preset="sladko">
+                <div class="preset-color purple"></div>
+                <div class="preset-info">
+                  <span class="preset-title">Сладко</span>
+                </div>
+              </button>
             </div>
-          </button>
+          </div>
         </div>
 
         <!-- User saved templates -->
@@ -201,6 +220,21 @@
             <label for="inputSubtitle">Вес / доп. текст:</label>
             <textarea id="inputSubtitle" rows="1" placeholder="напр. 100 гр"></textarea>
           </div>
+          <div class="form-row">
+            <div class="form-group flex-2">
+              <label>Значение цены — по одной цифре в клетке:</label>
+              <div class="price-cells" id="priceCells">
+                <input type="text" class="price-cell" maxlength="1" inputmode="numeric" value="" data-pos="0">
+                <input type="text" class="price-cell" maxlength="1" inputmode="numeric" value="" data-pos="1">
+                <input type="text" class="price-cell" maxlength="1" inputmode="numeric" value="" data-pos="2">
+                <input type="text" class="price-cell" maxlength="1" inputmode="numeric" value="" data-pos="3">
+              </div>
+            </div>
+            <div class="form-group flex-1">
+              <label>Значок валюты</label>
+              <input type="text" id="inputCurrency" value="₽">
+            </div>
+          </div>
           <div class="form-group" id="singleRepeatWrap">
             <label for="singleRepeatCount">Количество одинаковых ценников на листе:</label>
             <select id="singleRepeatCount">
@@ -275,6 +309,40 @@
           </div>
         </div>
 
+        <!-- Subtitle (Вес / доп. текст) Settings -->
+        <div class="field-settings-group">
+          <div class="group-header" style="margin-bottom: 8px;">
+            <h4>Вес / доп. текст</h4>
+          </div>
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label>Размер: <span id="subtitleSizeVal">11</span>pt</label>
+              <input type="range" id="subtitleSize" min="7" max="20" value="11">
+            </div>
+            <div class="form-group flex-1">
+              <label>Толщина</label>
+              <select id="subtitleWeight">
+                <option value="900">Extra Bold (900)</option>
+                <option value="800">Bold (800)</option>
+                <option value="700" selected>Semi Bold (700)</option>
+                <option value="400">Regular (400)</option>
+              </select>
+            </div>
+            <div class="form-group flex-1">
+              <label>Цвет</label>
+              <input type="color" id="subtitleColor" value="#ffffff">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Выравнивание</label>
+            <div class="align-btn-group">
+              <button type="button" class="align-btn active" data-target="subtitle" data-align="left">← Слева</button>
+              <button type="button" class="align-btn" data-target="subtitle" data-align="center">↔ Центр</button>
+              <button type="button" class="align-btn" data-target="subtitle" data-align="right">Справа →</button>
+            </div>
+          </div>
+        </div>
+
         <!-- Full Price Block Customization (Font, Size, Weight, Alignment, Offset) -->
         <div class="field-settings-group">
           <div class="checkbox-option" style="margin-bottom: 8px;">
@@ -337,22 +405,6 @@
               <label>Смещение цены по вертикали: <span id="priceOffsetYVal">0</span> мм</label>
               <input type="range" id="priceOffsetY" min="-20" max="20" value="0">
             </div>
-
-            <div class="form-row">
-              <div class="form-group flex-2">
-                <label>Значение цены — по одной цифре в клетке (один. режим):</label>
-                <div class="price-cells" id="priceCells">
-                  <input type="text" class="price-cell" maxlength="1" inputmode="numeric" value="" data-pos="0">
-                  <input type="text" class="price-cell" maxlength="1" inputmode="numeric" value="" data-pos="1">
-                  <input type="text" class="price-cell" maxlength="1" inputmode="numeric" value="" data-pos="2">
-                  <input type="text" class="price-cell" maxlength="1" inputmode="numeric" value="" data-pos="3">
-                </div>
-              </div>
-              <div class="form-group flex-1">
-                <label>Значок валюты</label>
-                <input type="text" id="inputCurrency" value="₽">
-              </div>
-            </div>
           </div>
         </div>
         </div><!-- /.card-body section4 -->
@@ -389,6 +441,19 @@
             <input type="file" id="customBgUpload" accept="image/*">
           </div>
           <div id="uploadStatus" class="upload-status"></div>
+        </div>
+
+        <!-- Safe-зона названия: отступы (в % от сторон шапки), чтобы текст не
+             заезжал на графику фона (логотип/колосья/печать/декор). Применяется
+             только к боксу названия; цена и вес остаются на своих местах.
+             L/R — по бокам, T/B — сверху/снизу. 0 = не отступать. -->
+        <div class="form-group">
+          <label>Отступы названия от графики (%):<br>
+            L&nbsp;<input type="number" id="titleSafeL" min="0" max="45" step="1" value="0" style="width:3.5em">
+            R&nbsp;<input type="number" id="titleSafeR" min="0" max="45" step="1" value="0" style="width:3.5em">
+            T&nbsp;<input type="number" id="titleSafeT" min="0" max="45" step="1" value="0" style="width:3.5em">
+            B&nbsp;<input type="number" id="titleSafeB" min="0" max="45" step="1" value="0" style="width:3.5em">
+          </label>
         </div>
 
         <div class="form-group">
@@ -542,6 +607,7 @@
 
         <div class="preview-toolbar">
           <button type="button" id="dragModeToggle" class="btn btn-secondary btn-sm" title="Включить/выключить перетаскивание надписей мышью">✋ Двигать надписи</button>
+          <button type="button" id="safeEditToggle" class="btn btn-secondary btn-sm" title="Включить/выключить редактор границ названия (тяните края прямоугольника, чтобы текст не залезал на графику фона)">🔲 Границы текста</button>
           <button type="button" id="resetLabelPosBtn" class="btn btn-secondary btn-sm" title="Сбросить смещения активного ценника">↺ Сбросить активный</button>
           <button type="button" id="resetAllLabelPosBtn" class="btn btn-secondary btn-sm" title="Сбросить смещения всех ценников">↺ Сбросить все</button>
           <button type="button" id="syncPricePosPreviewBtn" class="btn btn-secondary btn-sm" title="Скопировать расположение цены с ценника №1 на все остальные">💴 Цена по №1</button>
@@ -573,6 +639,18 @@
               <!-- Top Header Section -->
               <div class="wobbler-header" id="wobblerHeader">
                 <div class="header-bg-overlay" id="headerOverlay"></div>
+                <!-- Редактор safe-зоны названия: виден только в режиме .safe-edit-mode.
+                     Прямоугольник .safe-rect = границы, в которых живёт название;
+                     затемнение (box-shadow) показывает «запретную» зону с графикой фона.
+                     4 ручки .safe-handle тянут края. Позиция задаётся JS (positionSafeRect). -->
+                <div class="safe-edit-overlay" id="safeEditOverlay" aria-hidden="true">
+                  <div class="safe-rect" id="safeRect">
+                    <div class="safe-handle safe-h-top" data-edge="top"></div>
+                    <div class="safe-handle safe-h-bottom" data-edge="bottom"></div>
+                    <div class="safe-handle safe-h-left" data-edge="left"></div>
+                    <div class="safe-handle safe-h-right" data-edge="right"></div>
+                  </div>
+                </div>
                 <div class="header-content">
                   <div class="wobbler-title" id="previewTitle">Alaska Фейхоа 0,45 ж/б</div>
                   <div class="wobbler-subtitle" id="previewSubtitle"></div>
@@ -621,6 +699,157 @@
         <button id="cancelSaveModal" class="btn btn-secondary">Отмена</button>
         <button id="updateTemplateBtn" class="btn btn-secondary" disabled>🔄 Обновить</button>
         <button id="confirmSaveModal" class="btn btn-primary">💾 Сохранить новый</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: per-item decoration & background (кнопка ⚙ в строке) -->
+  <div id="itemSettingsModal" class="modal-backdrop no-print">
+    <div class="modal-box modal-box-wide">
+      <h3 id="itemSettingsTitle">Настройки ценника</h3>
+      <p class="item-settings-hint">Эти настройки применяются только к выбранному ценнику. Поля, которые вы не меняете, берутся из общих секций «Фоны» и «Оформление».</p>
+
+      <!-- Фон ценника -->
+      <div class="is-group">
+        <h4 class="is-group-title">Фон ценника</h4>
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="isBgEnabled"> Свой фон для этого ценника
+          </label>
+        </div>
+        <div class="is-group-body" data-is-bg>
+          <div class="form-group">
+            <label for="isHeaderBgColor">Цвет заливки фона:</label>
+            <input type="color" id="isHeaderBgColor" value="#ffffff">
+          </div>
+          <div class="form-group">
+            <label for="isBgImage">Фоновая картинка:</label>
+            <select id="isBgImage">
+              <option value="none" selected>Без картинки (заливка цветом)</option>
+              <option value="dots_bg.jpg">📷 Точечный фон</option>
+              <option value="ryba_bg.jpg">🐟 Чёрный фон с рамкой</option>
+              <option value="ryba_scales">🐟 Рыбья чешуя</option>
+              <option value="custom" id="isBgCustomOption" style="display:none;">Загруженное фото</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Или загрузить свою картинку:</label>
+            <div class="upload-btn-wrapper">
+              <label for="isBgCustomUpload" class="btn btn-secondary upload-btn">📁 Выбрать файл…</label>
+              <input type="file" id="isBgCustomUpload" accept="image/*">
+            </div>
+            <div id="isBgUploadStatus" class="upload-status"></div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="is-sep">
+
+      <!-- Блок СВЕРХУ -->
+      <div class="is-group">
+        <h4 class="is-group-title">Блок СВЕРХУ над ценником</h4>
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="isOutsideShow"> Показать блок СВЕРХУ для этого ценника
+          </label>
+        </div>
+        <div class="is-group-body" data-is-outside>
+          <div class="form-group">
+            <label for="isOutsideText">Текст блока:</label>
+            <textarea id="isOutsideText" rows="1" placeholder="Например: НОВИНКА, АКЦИЯ, -20%">НОВИНКА</textarea>
+          </div>
+          <div class="form-group">
+            <label for="isOutsideBg">Цвет заливки блока:</label>
+            <input type="color" id="isOutsideBg" value="#e63946">
+          </div>
+          <div class="form-group">
+            <label for="isOutsideBgImg">Фоновая картинка блока:</label>
+            <select id="isOutsideBgImg">
+              <option value="none" selected>Без картинки (заливка цветом)</option>
+              <option value="dots_bg.jpg">📷 Точечный фон</option>
+              <option value="ryba_bg.jpg">🐟 Чёрный фон с рамкой</option>
+              <option value="ryba_scales">🐟 Рыбья чешуя</option>
+              <option value="custom" id="isOutsideCustomOption" style="display:none;">Загруженное фото</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Или загрузить свою картинку:</label>
+            <div class="upload-btn-wrapper">
+              <label for="isOutsideCustomUpload" class="btn btn-secondary upload-btn">📁 Выбрать файл…</label>
+              <input type="file" id="isOutsideCustomUpload" accept="image/*">
+            </div>
+            <div id="isOutsideUploadStatus" class="upload-status"></div>
+          </div>
+          <div class="form-group">
+            <label for="isOutsideColor">Цвет текста:</label>
+            <input type="color" id="isOutsideColor" value="#ffffff">
+          </div>
+          <div class="form-group">
+            <label for="isOutsideFontSize">Размер шрифта (pt):</label>
+            <input type="range" id="isOutsideFontSize" min="6" max="30" value="14">
+          </div>
+          <div class="form-group">
+            <label for="isOutsideHeight">Высота блока (мм):</label>
+            <input type="range" id="isOutsideHeight" min="5" max="30" value="12">
+          </div>
+        </div>
+      </div>
+
+      <hr class="is-sep">
+
+      <!-- Блок ВНУТРИ -->
+      <div class="is-group">
+        <h4 class="is-group-title">Блок ВНУТРИ ценника</h4>
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="isInsideShow"> Показать блок ВНУТРИ для этого ценника
+          </label>
+        </div>
+        <div class="is-group-body" data-is-inside>
+          <div class="form-group">
+            <label for="isInsideText">Текст блока:</label>
+            <textarea id="isInsideText" rows="1" placeholder="Например: НОВИНКА, АКЦИЯ, -20%">НОВИНКА</textarea>
+          </div>
+          <div class="form-group">
+            <label for="isInsideBg">Цвет заливки блока:</label>
+            <input type="color" id="isInsideBg" value="#e63946">
+          </div>
+          <div class="form-group">
+            <label for="isInsideBgImg">Фоновая картинка блока:</label>
+            <select id="isInsideBgImg">
+              <option value="none" selected>Без картинки (заливка цветом)</option>
+              <option value="dots_bg.jpg">📷 Точечный фон</option>
+              <option value="ryba_bg.jpg">🐟 Чёрный фон с рамкой</option>
+              <option value="ryba_scales">🐟 Рыбья чешуя</option>
+              <option value="custom" id="isInsideCustomOption" style="display:none;">Загруженное фото</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Или загрузить свою картинку:</label>
+            <div class="upload-btn-wrapper">
+              <label for="isInsideCustomUpload" class="btn btn-secondary upload-btn">📁 Выбрать файл…</label>
+              <input type="file" id="isInsideCustomUpload" accept="image/*">
+            </div>
+            <div id="isInsideUploadStatus" class="upload-status"></div>
+          </div>
+          <div class="form-group">
+            <label for="isInsideColor">Цвет текста:</label>
+            <input type="color" id="isInsideColor" value="#ffffff">
+          </div>
+          <div class="form-group">
+            <label for="isInsideFontSize">Размер шрифта (pt):</label>
+            <input type="range" id="isInsideFontSize" min="6" max="22" value="11">
+          </div>
+          <div class="form-group">
+            <label for="isInsideHeight">Высота блока (мм):</label>
+            <input type="range" id="isInsideHeight" min="3" max="15" value="8">
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button id="cancelItemSettings" class="btn btn-secondary">Готово</button>
+        <button id="resetItemSettings" class="btn btn-secondary">↩ Сбросить к общему</button>
       </div>
     </div>
   </div>
