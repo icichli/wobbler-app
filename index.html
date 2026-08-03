@@ -22,7 +22,7 @@
       <span class="logo-icon">🏷️</span>
       <div>
         <h1>Конструктор Воблеров</h1>
-        <p class="subtitle" id="topSubtitle">Размер: 6,5 см × 4,5 см</p>
+        <p class="subtitle" id="topSubtitle">Размер: 6,5 см × 3,5 см</p>
       </div>
     </div>
 
@@ -205,7 +205,7 @@
           <!-- Interactive Items List -->
           <div class="items-table-wrapper">
             <div id="itemsListContainer" class="items-list">
-              <!-- Dynamically generated row inputs 1..18 -->
+              <!-- Progressive: 1 row + new empty row appears on input -->
             </div>
           </div>
         </div>
@@ -244,7 +244,7 @@
               <option value="1">1 шт</option>
               <option value="6">6 шт</option>
               <option value="12">12 шт</option>
-              <option value="18" selected>18 шт (макс. для 6,5×4,5 см)</option>
+              <option value="24" selected>24 шт (макс. для 6,5×3,5 см)</option>
               <option value="auto">Авто (заполнить весь лист)</option>
             </select>
           </div>
@@ -620,11 +620,15 @@
           <label for="sheetCount">Количество на листе:</label>
           <select id="sheetCount">
             <option value="auto">Автоматически (Максимально на А4)</option>
-            <option value="18">18 шт (для 6.5×4.5 см)</option>
+            <option value="24">24 шт (для 6.5×3.5 см)</option>
             <option value="12">12 шт</option>
             <option value="6">6 шт</option>
             <option value="1">1 шт</option>
           </select>
+        </div>
+        <div class="form-group">
+          <label for="gapMm">Зазор между ценниками (мм): <span id="gapMmVal">0</span></label>
+          <input type="range" id="gapMm" min="0" max="5" step="0.5" value="0">
         </div>
         <div class="checkbox-option" style="margin-bottom: 12px;">
           <label>
@@ -650,7 +654,7 @@
           </button>
           <h2>Предпросмотр <span id="previewItemBadge" class="preview-item-badge" style="display:none;"></span></h2>
         </div>
-        <span id="sizeReadout" class="size-readout">6,5 × 4,5 см</span>
+        <span id="sizeReadout" class="size-readout">6,5 × 3,5 см</span>
 
         <div class="preview-toolbar">
           <button type="button" id="dragModeToggle" class="btn btn-secondary btn-sm" title="Включить/выключить перетаскивание надписей мышью">✋ Двигать надписи</button>
@@ -660,10 +664,17 @@
           <button type="button" id="syncPricePosPreviewBtn" class="btn btn-secondary btn-sm" title="Скопировать расположение цены с ценника №1 на все остальные">💴 Цена по №1</button>
         </div>
 
+        <!-- Ползунок размера шрифта наименования (дублирует #titleSize из настроек) -->
+        <div class="preview-title-size" title="Размер шрифта наименования">
+          <span class="preview-title-size-label">Аа</span>
+          <input type="range" id="titleSizePreview" min="7" max="32" value="13">
+          <span class="preview-title-size-val" id="titleSizePreviewVal">13</span>
+        </div>
+
         <!-- Size inputs: скрыты, размер задаётся только пресетами/шаблонами -->
         <div class="size-inputs-hidden" style="display:none;">
           <input type="number" id="wobblerWidthInput" min="3.0" max="20.0" step="0.1" value="6.5">
-          <input type="number" id="wobblerHeightInput" min="3.0" max="28.0" step="0.1" value="4.5">
+          <input type="number" id="wobblerHeightInput" min="3.0" max="28.0" step="0.1" value="3.5">
         </div>
       </div>
 
@@ -672,7 +683,7 @@
         <div class="preview-stage-wrapper">
           <div class="preview-stage">
             <div class="ruler ruler-h"><span id="rulerHText">6,5 см</span></div>
-            <div class="ruler ruler-v"><span id="rulerVText">4,5 см</span></div>
+            <div class="ruler ruler-v"><span id="rulerVText">3,5 см</span></div>
 
             <!-- The Wobbler Element -->
             <div id="wobblerPreview" class="wobbler-element layout-full">
@@ -725,7 +736,7 @@
             <button type="button" class="collapse-btn" id="toggleSheetBtn" title="Скрыть/показать раскладку">
               <span class="collapse-arrow">▼</span>
             </button>
-            <h3>Раскладка на листе А4 (<span id="sheetCalcText">18 воблеров на листе</span>)</h3>
+            <h3>Раскладка на листе А4 (<span id="sheetCalcText">24 воблера на листе</span>)</h3>
           </div>
           <p>Каждый ценник на листе отображает свой товар из списка выше. Печатаются и показываются только заполненные позиции (с наименованием).</p>
         </div>
@@ -743,7 +754,7 @@
     <div class="modal-box">
       <h3>Сохранить шаблон</h3>
       <p>Введите название для нового шаблона:</p>
-      <input type="text" id="newTemplateNameInput" placeholder="Например: Новый вкус 6.5x4.5, Акция 5x5...">
+      <input type="text" id="newTemplateNameInput" placeholder="Например: Новый вкус 6.5x3.5, Акция 5x5...">
       <div id="saveModalHint" class="save-modal-hint" style="display:none;"></div>
       <div class="modal-actions">
         <button id="cancelSaveModal" class="btn btn-secondary">Отмена</button>

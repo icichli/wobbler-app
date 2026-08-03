@@ -896,6 +896,30 @@ input[type="range"] {
   gap: 6px;
   flex-wrap: wrap;
 }
+/* Ползунок размера шрифта наименования в тулбаре предпросмотра. */
+.preview-title-size {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 4px 10px;
+}
+.preview-title-size-label {
+  font-weight: 800;
+  color: var(--accent-yellow);
+  font-size: 0.85rem;
+}
+.preview-title-size input[type=range] {
+  width: 90px;
+}
+.preview-title-size-val {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  min-width: 1.6em;
+  text-align: right;
+}
 .btn-sm {
   font-size: 0.72rem !important;
   padding: 4px 10px !important;
@@ -1838,7 +1862,7 @@ body.is-printing #printArea {
     padding: 2mm !important;
     box-sizing: border-box !important;
     display: grid !important;
-    gap: 0 !important;
+    gap: 0; /* задаётся инлайн-стилем из JS (preparePrintArea) через setProperty !important */
     align-content: start !important;
     justify-content: start !important;
     page-break-after: always !important;

@@ -83,14 +83,30 @@ document.addEventListener('DOMContentLoaded', () => {
   ];
 
   // Per-template хранилище товаров в режиме «Разные товары».
-  // Каждый встроенный пресет имеет СВОЙ 18-элементный массив — ввод наименования,
+  // Каждый встроенный пресет имеет СВОЙ массив товаров — ввод наименования,
   // цена и вес независимы по каждому шаблону. itemsData оставляем let-ссылкой на
   // активный массив; весь существующий код читает/пишет itemsData, поэтому при
   // смене шаблона достаточно перенаправить ссылку на templateItems[key].
+  // Массив растёт прогрессивно: стартует с 1 пустой строки; при вводе в последнее
+  // поле появляется следующая пустая (см. syncRowExtent / normalizeItemsArray).
+  const MAX_ITEMS = 100; // мягкий защитный потолок (только для вставки больших таблиц)
   const TEMPLATE_KEYS = ['alaska_dots', 'ryba', 'sneki', 'novy_vkus', 'novinka', 'tomat', 'sladko'];
   const templateItems = {};
+  function freshItem() {
+    return { title: '', price: '', subtitle: '', subtitleManual: false };
+  }
+  // Пуста ли строка: все три поля (наименование/вес/цена) не заполнены.
+  function isItemEmpty(it) {
+    return !it || (
+      !(it.title || '').trim() &&
+      !(it.subtitle || '').trim() &&
+      !(it.price || '').trim()
+    );
+  }
+  // Заполнена ли строка (введено ХОТЯ БЫ в одно из трёх полей) — для роста списка.
+  function isItemFilled(it) { return !isItemEmpty(it); }
   function freshItems() {
-    return Array.from({ length: 18 }, () => ({ title: '', price: '', subtitle: '', subtitleManual: false }));
+    return [ freshItem() ]; // стартовая 1 пустая строка-«добавить»
   }
   TEMPLATE_KEYS.forEach(k => { templateItems[k] = freshItems(); });
   let itemsData = templateItems.alaska_dots;   // активный массив (старт — Бутылки)
@@ -122,6 +138,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const titleColor = document.getElementById('titleColor');
   const titleSize = document.getElementById('titleSize');
   const titleSizeVal = document.getElementById('titleSizeVal');
+  const titleSizePreview = document.getElementById('titleSizePreview');
+  const titleSizePreviewVal = document.getElementById('titleSizePreviewVal');
   const titleWeight = document.getElementById('titleWeight');
   const titleItalic = document.getElementById('titleItalic');
   const titleOffsetY = document.getElementById('titleOffsetY');
@@ -233,6 +251,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const sheetCount = document.getElementById('sheetCount');
   const singleRepeatCount = document.getElementById('singleRepeatCount');
   const showCropMarks = document.getElementById('showCropMarks');
+  const gapInput = document.getElementById('gapMm');
+  const gapMmVal = document.getElementById('gapMmVal');
   const printBtn = document.getElementById('printBtn');
   const printBtnSidebar = document.getElementById('printBtnSidebar');
 
@@ -601,6 +621,8 @@ document.addEventListener('DOMContentLoaded', () => {
       decorBottomColor: '#ffffff',
       decorBottomFontSize: 14,
       decorBottomHeight: 12,
+      // Зазор между ценниками на листе А4 для «Бутылок» — 0,5 мм (под аккуратный рез).
+      gapMm: 0.5,
       labelPos: { title: { x: -0.4, y: 1 }, subtitle: { x: -4.9, y: -0.3 }, price: { x: 0.2, y: 1.7 }, priceDigits: [ { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 } ], currency: { x: 0, y: 0 } }
     },
     novy_vkus: {
@@ -856,37 +878,79 @@ document.addEventListener('DOMContentLoaded', () => {
   // Позволяет «Обновить» работать и для встроенных пресетов (создаётся пользовательская копия).
   let activeTemplateRef = null;
 
-  // Render Multi-Item Rows (1 to 18)
-  function renderItemsListInputs() {
-    itemsListContainer.innerHTML = '';
-    for (let i = 0; i < 18; i++) {
-      const item = itemsData[i] || { title: '', price: '', subtitle: '' };
-      // Гарантируем поле subtitle у существующих элементов
+  // Прогрессивные строки «Разных товаров»: показываем столько строк, сколько
+  // заполнено, + одну рабочую пустую снизу. При вводе в рабочую пустую строку
+  // появляется следующая; при очистке — лишние пустые хвосты схлопываются.
+  // Мутации делаем прямо по itemsData (это let-ссылка на templateItems[key]),
+  // НЕ переприсваивая массив, чтобы не оторваться от хранилища шаблона.
+
+  // Приводит itemsData к каноничному виду: ≤1 пустой строки в хвосте, но если
+  // последний элемент заполнен — добавляем одну рабочую пустую. Идемпотентно.
+  function normalizeItemsArray() {
+    // Гарантируем поля subtitle/subtitleManual у существующих элементов.
+    for (let i = 0; i < itemsData.length; i++) {
       if (itemsData[i] && itemsData[i].subtitle === undefined) itemsData[i].subtitle = '';
-      // Флаг ручного ввода веса: если undefined — вес ещё не правили вручную
-      // (авто-подстановка «100гр» при вводе наименования активна).
       if (itemsData[i] && itemsData[i].subtitleManual === undefined) itemsData[i].subtitleManual = false;
-      const row = document.createElement('div');
-      row.className = 'item-row';
-      const safeTitle = (item.title || '').replace(/"/g, '&quot;');
-      const safeSub = (item.subtitle || '').replace(/"/g, '&quot;');
-      const safePrice = (item.price || '').replace(/"/g, '&quot;');
-      row.innerHTML = `
-        <span class="item-num">${i + 1}</span>
-        <textarea class="item-title-input" rows="1" placeholder="Наименование товара №${i + 1}" data-index="${i}">${safeTitle}</textarea>
-        <textarea class="item-subtitle-input" rows="1" placeholder="Вес" data-index="${i}">${safeSub}</textarea>
-        <textarea class="item-price-input" rows="1" placeholder="Цена" data-index="${i}">${safePrice}</textarea>
-        <button type="button" class="item-settings-btn" data-index="${i}" title="Оформление и фон ценника №${i + 1}">⚙</button>
-      `;
+    }
+    // Убираем лишние пустые строки в хвосте, пока не останется ровно одна.
+    while (itemsData.length > 1 && isItemEmpty(itemsData[itemsData.length - 1])
+                                 && isItemEmpty(itemsData[itemsData.length - 2])) {
+      itemsData.pop();
+    }
+    // Если последний элемент заполнен — добавляем одну рабочую пустую.
+    if (itemsData.length === 0 || isItemFilled(itemsData[itemsData.length - 1])) {
+      itemsData.push(freshItem());
+    }
+  }
 
-      row.querySelector('.item-title-input').addEventListener('focus', () => {
-        activePreviewIndex = i;
-        updatePreview();
-      });
+  // Инкрементальное обновление длины списка без полной перерисовки (чтобы не
+  // сбрасывать фокус/каретку при вводе). Вызывается из input-обработчиков строки.
+  function syncRowExtent(idx) {
+    if (idx < 0 || idx >= itemsData.length) return;
+    const last = itemsData.length - 1;
+    if (idx === last && isItemFilled(itemsData[idx])) {
+      // Ввели данные в последнюю рабочую строку → добавляем новую пустую ниже.
+      itemsData.push(freshItem());
+      itemsListContainer.appendChild(createItemRow(itemsData.length - 1));
+    } else if (isItemEmpty(itemsData[idx])) {
+      // Очистили товар: убираем дублирующие пустые в хвосте (≥2 подряд пустых),
+      // не трогая строку с фокусом. Оставляем одну рабочую пустую.
+      while (itemsData.length > 1 && isItemEmpty(itemsData[itemsData.length - 1])
+                                   && isItemEmpty(itemsData[itemsData.length - 2])) {
+        itemsData.pop();
+        const rows = itemsListContainer.querySelectorAll('.item-row');
+        if (rows[rows.length - 1]) rows[rows.length - 1].remove();
+      }
+    }
+  }
 
-      row.querySelector('.item-title-input').addEventListener('input', (e) => {
-        const idx = parseInt(e.target.getAttribute('data-index'), 10);
-        itemsData[idx].title = e.target.value;
+  // Создаёт один DOM-элемент строки .item-row для индекса i (со всеми
+  // обработчиками фокуса/ввода, авто-ростом textarea и кнопкой ⚙).
+  function createItemRow(i) {
+    const item = itemsData[i] || freshItem();
+    if (itemsData[i] && itemsData[i].subtitle === undefined) itemsData[i].subtitle = '';
+    if (itemsData[i] && itemsData[i].subtitleManual === undefined) itemsData[i].subtitleManual = false;
+    const row = document.createElement('div');
+    row.className = 'item-row';
+    const safeTitle = (item.title || '').replace(/"/g, '&quot;');
+    const safeSub = (item.subtitle || '').replace(/"/g, '&quot;');
+    const safePrice = (item.price || '').replace(/"/g, '&quot;');
+    row.innerHTML = `
+      <span class="item-num">${i + 1}</span>
+      <textarea class="item-title-input" rows="1" placeholder="Наименование товара №${i + 1}" data-index="${i}">${safeTitle}</textarea>
+      <textarea class="item-subtitle-input" rows="1" placeholder="Вес" data-index="${i}">${safeSub}</textarea>
+      <textarea class="item-price-input" rows="1" placeholder="Цена" data-index="${i}">${safePrice}</textarea>
+      <button type="button" class="item-settings-btn" data-index="${i}" title="Оформление и фон ценника №${i + 1}">⚙</button>
+    `;
+
+    row.querySelector('.item-title-input').addEventListener('focus', () => {
+      activePreviewIndex = i;
+      updatePreview();
+    });
+
+    row.querySelector('.item-title-input').addEventListener('input', (e) => {
+      const idx = parseInt(e.target.getAttribute('data-index'), 10);
+      itemsData[idx].title = e.target.value;
     // Авто-вес «100гр»: пока пользователь не правил вес вручную,
     // подставляем дефолт при наличии наименования (и очищаем при пустом).
     // Действует ТОЛЬКО для встроенных шаблонов «Рыба» и «Снеки» — у прочих
@@ -898,55 +962,67 @@ document.addEventListener('DOMContentLoaded', () => {
       const si = row.querySelector('.item-subtitle-input');
       if (si) si.value = itemsData[idx].subtitle;
     }
-        activePreviewIndex = idx;
-        // Подгон кегля под перенос названия по словам — сразу при вводе.
-        refitActiveTitle();
-      });
+      activePreviewIndex = idx;
+      // Подгон кегля под перенос названия по словам — сразу при вводе.
+      refitActiveTitle();
+      // Прогрессивный рост/схлопывание строк по факту ввода.
+      syncRowExtent(idx);
+    });
 
-      const subInput = row.querySelector('.item-subtitle-input');
-      if (subInput) {
-        subInput.addEventListener('focus', () => {
-          activePreviewIndex = i;
-          updatePreview();
-        });
-        subInput.addEventListener('input', (e) => {
-          const idx = parseInt(e.target.getAttribute('data-index'), 10);
-          itemsData[idx].subtitle = e.target.value;
-          // Пользователь ввёл вес сам — больше не перезаписываем авто-значением.
-          itemsData[idx].subtitleManual = true;
-          activePreviewIndex = idx;
-          updatePreview();
-        });
-      }
-
-      row.querySelector('.item-price-input').addEventListener('focus', () => {
+    const subInput = row.querySelector('.item-subtitle-input');
+    if (subInput) {
+      subInput.addEventListener('focus', () => {
         activePreviewIndex = i;
         updatePreview();
       });
-
-      row.querySelector('.item-price-input').addEventListener('input', (e) => {
+      subInput.addEventListener('input', (e) => {
         const idx = parseInt(e.target.getAttribute('data-index'), 10);
-        itemsData[idx].price = e.target.value;
+        itemsData[idx].subtitle = e.target.value;
+        // Пользователь ввёл вес сам — больше не перезаписываем авто-значением.
+        itemsData[idx].subtitleManual = true;
         activePreviewIndex = idx;
+        syncRowExtent(idx);
         updatePreview();
       });
+    }
 
-      // Кнопка ⚙ открывает модал per-item оформления (декор-блоки + фон).
-      const settingsBtn = row.querySelector('.item-settings-btn');
-      if (settingsBtn) {
-        settingsBtn.addEventListener('click', () => {
-          activePreviewIndex = i;
-          openItemSettings(i);
-        });
-      }
+    row.querySelector('.item-price-input').addEventListener('focus', () => {
+      activePreviewIndex = i;
+      updatePreview();
+    });
 
-      itemsListContainer.appendChild(row);
+    row.querySelector('.item-price-input').addEventListener('input', (e) => {
+      const idx = parseInt(e.target.getAttribute('data-index'), 10);
+      itemsData[idx].price = e.target.value;
+      activePreviewIndex = idx;
+      syncRowExtent(idx);
+      updatePreview();
+    });
 
-      // Авто-рост полей таблицы под содержимое (перенос строки удлиняет поле).
-      row.querySelectorAll('textarea').forEach(el => {
-        autoGrowTextarea(el);
-        el.addEventListener('input', () => autoGrowTextarea(el));
+    // Кнопка ⚙ открывает модал per-item оформления (декор-блоки + фон).
+    const settingsBtn = row.querySelector('.item-settings-btn');
+    if (settingsBtn) {
+      settingsBtn.addEventListener('click', () => {
+        activePreviewIndex = i;
+        openItemSettings(i);
       });
+    }
+
+    // Авто-рост полей таблицы под содержимое (перенос строки удлиняет поле).
+    row.querySelectorAll('textarea').forEach(el => {
+      autoGrowTextarea(el);
+      el.addEventListener('input', () => autoGrowTextarea(el));
+    });
+
+    return row;
+  }
+
+  // Render Multi-Item Rows (прогрессивно: заполненные + 1 рабочая пустая).
+  function renderItemsListInputs() {
+    normalizeItemsArray();
+    itemsListContainer.innerHTML = '';
+    for (let i = 0; i < itemsData.length; i++) {
+      itemsListContainer.appendChild(createItemRow(i));
     }
   }
 
@@ -955,9 +1031,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const text = pasteExcelArea.value.trim();
     if (!text) return;
 
+    // Вставка ЗАМЕНЯЕТ текущий список, а не дописывает: обрезаем массив до 0 и
+    // заполняем заново по строкам. Мягкий потолок MAX_ITEMS защищает от случайной
+    // вставки очень большой таблицы.
+    itemsData.length = 0;
     const lines = text.split(/\r?\n/);
     lines.forEach((line, index) => {
-      if (index >= 18) return;
+      if (index >= MAX_ITEMS) return;
       let parts = line.split('\t');
       // Если столбцов 3+ — считаем что 2-й это «Вес/доп. текст», последний — цена.
       // Если 2 — наименование и цена. Если 1 — только наименование.
@@ -974,28 +1054,30 @@ document.addEventListener('DOMContentLoaded', () => {
       // parts.length >= 3: title, subtitle, price(=последний)
       const priceStr = parts[2] ? parts[2].replace(/[^\d]/g, '') : '';
       const subVal = parts[1].trim();
-      itemsData[index] = {
+      itemsData.push({
         title: parts[0].trim(),
         subtitle: subVal,
         price: priceStr,
         // Непустой вес из вставки — считаем ручным вводом (не перезаписывать).
         subtitleManual: !!subVal
-      };
+      });
     });
 
+    // normalizeItemsArray добавит рабочую пустую строку снизу и уберёт хвосты.
     renderItemsListInputs();
     updatePreview();
     autoFitFontSize();
   });
 
-  // Очистка всей таблицы «Разные товары»
+  // Очистка всей таблицы «Разные товары»: оставляем одну рабочую пустую строку.
   const clearAllItemsBtn = document.getElementById('clearAllItemsBtn');
   if (clearAllItemsBtn) {
     clearAllItemsBtn.addEventListener('click', () => {
       if (!confirm('Очистить все товары в таблице?')) return;
-      for (let i = 0; i < itemsData.length; i++) {
-        itemsData[i] = { title: '', price: '', subtitle: '', subtitleManual: false, labelPos: defaultLabelPos() };
-      }
+      // Мутируем массив на месте (не переприсваиваем), чтобы остаться ссылкой
+      // на templateItems[key]. Сбрасываем смещения ценников в дефолт.
+      itemsData.length = 0;
+      itemsData.push({ ...freshItem(), labelPos: defaultLabelPos() });
       if (pasteExcelArea) pasteExcelArea.value = '';
       renderItemsListInputs();
       updatePreview();
@@ -1156,6 +1238,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (fit != null) {
         titleSize.value = String(fit);
         if (titleSizeVal) titleSizeVal.textContent = String(fit);
+        syncTitleSizePreview();
       }
     }
     updatePreview();
@@ -1213,12 +1296,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const sz = activeItemTitleSize(active);
         titleSize.value = String(sz);
         titleSizeVal.textContent = String(sz);
+        syncTitleSizePreview();
       }
     } else {
       const fit = fitTitleSize(inputTitle.value, titleFont ? titleFont.value : '', '800');
       if (fit != null) {
         titleSize.value = String(fit);
         titleSizeVal.textContent = String(fit);
+        syncTitleSizePreview();
       }
     }
 
@@ -1249,13 +1334,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   autoFitFontBtn.addEventListener('click', autoFitFontSize);
 
-  // Calculate maximum fitting wobblers on A4 (поля печати по 2 мм со всех сторон, без зазоров между ценниками)
+  // Calculate maximum fitting wobblers on A4 (поля печати по 2 мм со всех сторон,
+  // зазор между ценниками gapMm задаётся слайдером; при 0 ценники печатаются встык).
+  // Формула числа ячеек в ряду: n*w + (n-1)*g ≤ pageW  →  n = floor((pageW + g)/(w + g)).
   function calcA4Grid(wMm, hMm) {
     const margin = 2; // 2 мм со всех сторон — умолчание печати для всех шаблонов
+    const g = gapMm();
     const pageW = 210 - margin * 2;
     const pageH = 297 - margin * 2;
-    const cols = Math.max(1, Math.floor(pageW / wMm));
-    const rows = Math.max(1, Math.floor(pageH / hMm));
+    const cols = Math.max(1, Math.floor((pageW + g) / (wMm + g)));
+    const rows = Math.max(1, Math.floor((pageH + g) / (hMm + g)));
     return { cols, rows, maxCount: cols * rows };
   }
 
@@ -1272,6 +1360,11 @@ document.addEventListener('DOMContentLoaded', () => {
   function decorBottomHeightMm() {
     const v = parseFloat(decorBottomHeight && decorBottomHeight.value);
     return isNaN(v) ? 12 : v;
+  }
+  // Зазор между ценниками на листе А4 (мм). Безопасный fallback 0 (встык).
+  function gapMm() {
+    const v = parseFloat(gapInput && gapInput.value);
+    return isNaN(v) ? 0 : v;
   }
 
   // Высота карточки для раскладки А4: ценник + внешние декоративные блоки
@@ -1503,6 +1596,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Держим слайдер и индикатор в синхроне с активным товаром.
     if (titleSize.value != effTitleSize) titleSize.value = String(effTitleSize);
     titleSizeVal.textContent = titleSize.value;
+    syncTitleSizePreview();
     titleOffsetYVal.textContent = titleOffsetY.value;
 
     // Подзаголовок (вес/доп. инфо) — всегда в нижнем левом углу ценника.
@@ -1645,6 +1739,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (decorOutsideFontSize && decorOutsideFontSizeVal) decorOutsideFontSizeVal.textContent = decorOutsideFontSize.value;
     if (decorOutsideHeight && decorOutsideHeightVal) decorOutsideHeightVal.textContent = decorOutsideHeight.value;
+    if (gapInput && gapMmVal) gapMmVal.textContent = gapInput.value;
 
     if (wobblerInsideTop) {
       if (showInside) {
@@ -1843,6 +1938,7 @@ document.addEventListener('DOMContentLoaded', () => {
     sheetCalcText.textContent = `${count} заполнено · влезает ${grid.maxCount}/лист (${grid.cols}×${grid.rows})${pagesText > 1 ? ` · ${pagesText} стр.` : ''}`;
     sheetGridPreview.style.gridTemplateColumns = `repeat(${grid.cols}, ${wMm}mm)`;
     sheetGridPreview.style.gridTemplateRows = `repeat(${grid.rows}, ${effH}mm)`;
+    sheetGridPreview.style.gap = gapMm() + 'mm';
 
     for (let i = 0; i < count; i++) {
       const item = itemsToShow[i] || itemsToShow[0] || { title: '', price: '' };
@@ -1913,6 +2009,8 @@ document.addEventListener('DOMContentLoaded', () => {
       page.className = 'print-page';
       page.style.gridTemplateColumns = `repeat(${grid.cols}, ${wMm}mm)`;
       page.style.gridTemplateRows = `repeat(${grid.rows}, ${effH}mm)`;
+      // gap задаём через setProperty, т.к. в @media print у .print-page был !important.
+      page.style.setProperty('gap', gapMm() + 'mm', 'important');
 
       const startIdx = pageNum * perPage;
       const endIdx = Math.min(startIdx + perPage, totalItems);
@@ -1978,6 +2076,7 @@ document.addEventListener('DOMContentLoaded', () => {
     titleFont.value = state.titleFont || "Arial, sans-serif";
     titleColor.value = state.titleColor || '#ffffff';
     titleSize.value = state.titleSize || 13;
+    syncTitleSizePreview();
     titleWeight.value = state.titleWeight || '800';
     if (titleItalic) titleItalic.checked = !!state.titleItalic;
     titleOffsetY.value = state.titleOffsetY || 0;
@@ -2027,6 +2126,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (decorOutsideColor) decorOutsideColor.value = state.decorOutsideColor || '#ffffff';
     if (decorOutsideFontSize) decorOutsideFontSize.value = state.decorOutsideFontSize != null ? state.decorOutsideFontSize : 14;
     if (decorOutsideHeight) decorOutsideHeight.value = state.decorOutsideHeight != null ? state.decorOutsideHeight : 12;
+    if (gapInput) {
+      const gv = state.gapMm != null ? parseFloat(state.gapMm) : 0;
+      gapInput.value = isNaN(gv) ? 0 : Math.max(0, Math.min(5, gv));
+      if (gapMmVal) gapMmVal.textContent = gapInput.value;
+    }
     if (decorOutsideCustomOption) decorOutsideCustomOption.style.display = state.decorOutsideCustomBg ? 'block' : 'none';
     uploadedDataUrl2 = state.decorOutsideCustomBg || null;
     if (decorOutsideBgImg) decorOutsideBgImg.value = state.decorOutsideCustomBg ? 'custom' : (state.decorOutsideBgImg || 'none');
@@ -2175,6 +2279,8 @@ document.addEventListener('DOMContentLoaded', () => {
       decorBottomColor: decorBottomColor ? decorBottomColor.value : '#ffffff',
       decorBottomFontSize: decorBottomFontSize ? decorBottomFontSize.value : 14,
       decorBottomHeight: decorBottomHeight ? decorBottomHeight.value : 12,
+      // Зазор между ценниками на листе А4 (мм); 0 = встык.
+      gapMm: gapInput ? (parseFloat(gapInput.value) || 0) : 0,
       labelPos: JSON.parse(JSON.stringify(activeLabelPos()))
     };
   }
@@ -2830,7 +2936,7 @@ document.addEventListener('DOMContentLoaded', () => {
     subtitleColor, subtitleSize, subtitleWeight,
     showPriceToggle, priceFont, priceSize, priceWeight, priceColor, priceOffsetY, inputPrice, inputCurrency, pricePlateToggle,
     headerBgColor, bgImageSelect, headerHeightRange,
-    sheetCount, singleRepeatCount, showCropMarks,
+    sheetCount, singleRepeatCount, showCropMarks, gapInput,
     // Декоративные блоки «Оформление»
     decorOutsideShow, decorOutsideText, decorOutsideBg, decorOutsideBgImg, decorOutsideColor, decorOutsideFontSize, decorOutsideHeight,
     decorInsideShow, decorInsideText, decorInsideBg, decorInsideBgImg, decorInsideColor, decorInsideFontSize, decorInsideHeight, decorInsideWidth,
@@ -2848,6 +2954,32 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     titleSize.addEventListener('input', writeTitleSize);
     titleSize.addEventListener('change', writeTitleSize);
+  }
+
+  // === Ползунок размера наименования в тулбаре предпросмотра ===
+  // Дублирует #titleSize: двусторонняя синхронизация. syncTitleSizePreview()
+  // вызывается во всех точках, где приложение меняет titleSize.value, чтобы
+  // ползунок предпросмотра следовал за оригиналом.
+  function syncTitleSizePreview() {
+    if (!titleSize || !titleSizePreview) return;
+    titleSizePreview.value = titleSize.value;
+    if (titleSizePreviewVal) titleSizePreviewVal.textContent = titleSize.value;
+  }
+  if (titleSizePreview) {
+    const onPreviewInput = () => {
+      if (!titleSize) return;
+      titleSize.value = titleSizePreview.value;
+      if (titleSizeVal) titleSizeVal.textContent = titleSizePreview.value;
+      if (titleSizePreviewVal) titleSizePreviewVal.textContent = titleSizePreview.value;
+      // per-item запись в multi-режиме (повторяет writeTitleSize).
+      if (document.querySelector('input[name="printMode"]:checked').value === 'multi') {
+        const it = itemsData[activePreviewIndex] || (itemsData[activePreviewIndex] = {});
+        it.titleSize = parseFloat(titleSizePreview.value) || 13;
+      }
+      updatePreview();
+    };
+    titleSizePreview.addEventListener('input', onPreviewInput);
+    titleSizePreview.addEventListener('change', onPreviewInput);
   }
 
   // Умный перенос названия по словам: при вводе наименования (single) и при
