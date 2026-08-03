@@ -434,12 +434,14 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // Читает безопасную зону названия (доли 0..1 от сторон шапки) из 4 полей UI
-  // (L/R/T/B в процентах). Применяется как глобальное значение по умолчанию в
-  // resolveItemBg/bgFromItem. При отсутствии полей — нулевые отступы.
+  // Глобальная safe-зона названия (доли 0..0.45 от сторон шапки) — хранится в JS,
+  // не в DOM-инпутах (поля L/R/T/B убраны из UI). Источник: applyState(state.titleSafe)
+  // и drag-редактор границ. Применяется как глобальное значение по умолчанию в
+  // resolveItemBg/bgFromItem.
+  let globalTitleSafe = { left: 0, right: 0, top: 0, bottom: 0 };
+  // Возвращает копию глобальной safe-зоны (чтобы потребители не мутировали оригинал).
   function readGlobalTitleSafe() {
-    const g = id => { const el = document.getElementById(id); const v = parseFloat(el && el.value); return isNaN(v) ? 0 : Math.max(0, Math.min(45, v)) / 100; };
-    return { left: g('titleSafeL'), right: g('titleSafeR'), top: g('titleSafeT'), bottom: g('titleSafeB') };
+    return { left: globalTitleSafe.left, right: globalTitleSafe.right, top: globalTitleSafe.top, bottom: globalTitleSafe.bottom };
   }
   // Нормализует объект titleSafe (защита от частичных/нечисловых значений из state).
   function normTitleSafe(s) {
@@ -448,14 +450,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   // Ограничение доли в [0, 0.9] (для drag краёв safe-зоны).
   const clampSafe = v => Math.max(0, Math.min(0.9, v));
-
-  // Пишет 4 поля L/R/T/B (в %) из объекта titleSafe (доли). Без dispatch event —
-  // обновление превью/кегля вызывающий запускает сам (updatePreview+refit).
-  function writeSafeInputs(ts) {
-    const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = Math.round(v * 100); };
-    set('titleSafeL', ts.left); set('titleSafeR', ts.right);
-    set('titleSafeT', ts.top);  set('titleSafeB', ts.bottom);
-  }
 
   // Позиционирует прямоугольник редактора (.safe-rect) по текущим долям titleSafe.
   // inset — в % от .wobbler-header. Нет элемента/режима — тихо пропускает.
@@ -729,7 +723,7 @@ document.addEventListener('DOMContentLoaded', () => {
       subtitle: '100гр',
       titleFont: "Arial, sans-serif",
       titleColor: '#ffffff',
-      titleSize: 22,
+      titleSize: 25,
       titleWeight: '800',
       titleItalic: false,
       titleAlign: 'center',
@@ -744,7 +738,7 @@ document.addEventListener('DOMContentLoaded', () => {
       priceWeight: '800',
       priceColor: '#000000',
       priceAlign: 'center',
-      priceOffsetY: 2,
+      priceOffsetY: 1,
       price: '300',
       currency: '₽',
       headerBg: '#000000',
@@ -753,9 +747,9 @@ document.addEventListener('DOMContentLoaded', () => {
       headerHeight: 90,
       // Safe-зона названия Рыбы (выставлена вручную в визуальном редакторе границ
       // поверх ryba_bg.jpg): не наезжать на логотип «МЕСТОПИВО» сверху (top 0.29),
-      // на колосья/печать по бокам (left 0.17, right 0.16) и на белые декор-
+      // на колосья/печать по бокам (left ≈0.198, right ≈0.190) и на белые декор-
       // прямоугольники внизу (bottom 0.4). Доли от сторон шапки.
-      titleSafe: { left: 0.17, right: 0.16, top: 0.29, bottom: 0.4 },
+      titleSafe: { left: 0.197711156045666, right: 0.18955861343090596, top: 0.29, bottom: 0.4 },
       layout: 'full',
       priceInBottom: false,
       subtitleCorner: true,
@@ -785,7 +779,7 @@ document.addEventListener('DOMContentLoaded', () => {
       decorBottomColor: '#ffffff',
       decorBottomFontSize: 14,
       decorBottomHeight: 12,
-      labelPos: { title: { x: -0.6, y: -0.1 }, subtitle: { x: -0.6, y: -1 }, price: { x: 0, y: 0 }, priceDigits: [ { x: -5.5, y: 0.2 }, { x: -1.1, y: 0 }, { x: 3.6, y: 0 } ], currency: { x: 5.5, y: 0.6 } }
+      labelPos: { title: { x: 0, y: -1.1 }, subtitle: { x: -0.6, y: -1 }, price: { x: 0, y: 0 }, priceDigits: [ { x: -5.5, y: 0.2 }, { x: -1.1, y: 0 }, { x: 3.6, y: 0 } ], currency: { x: 5.5, y: 0.6 } }
     },
     // Снеки — копия Рыбы, масштабированная под размер 6,5×3,5 см (вместо 9,2×5,5).
     // Коэффициенты: по ширине sx=0.71 (x-смещения), по высоте sy=0.64 (кегли,
@@ -799,7 +793,7 @@ document.addEventListener('DOMContentLoaded', () => {
       subtitle: '100гр',
       titleFont: "Arial, sans-serif",
       titleColor: '#ffffff',
-      titleSize: 14,
+      titleSize: 28,
       titleWeight: '800',
       titleItalic: false,
       titleAlign: 'center',
@@ -821,7 +815,7 @@ document.addEventListener('DOMContentLoaded', () => {
       bgImage: 'ryba_bg.jpg',
       customBgData: null,
       headerHeight: 90,
-      titleSafe: { left: 0.17, right: 0.16, top: 0.29, bottom: 0.4 },
+      titleSafe: { left: 0.22736126270890838, right: 0.16, top: 0.29, bottom: 0.4 },
       layout: 'full',
       priceInBottom: false,
       subtitleCorner: true,
@@ -851,7 +845,7 @@ document.addEventListener('DOMContentLoaded', () => {
       decorBottomColor: '#ffffff',
       decorBottomFontSize: 14,
       decorBottomHeight: 12,
-      labelPos: { title: { x: -0.4, y: -0.1 }, subtitle: { x: -2.1, y: -0.6 }, price: { x: 0, y: 0 }, priceDigits: [ { x: -5.3, y: 0.5 }, { x: -1, y: 0.4 }, { x: 2.3, y: 0.4 } ], currency: { x: 5, y: 0.3 } }
+      labelPos: { title: { x: -0.2, y: -0.7 }, subtitle: { x: -2.1, y: -0.6 }, price: { x: 0, y: 0 }, priceDigits: [ { x: -5.3, y: 0.5 }, { x: -1, y: 0.4 }, { x: 2.3, y: 0.4 } ], currency: { x: 5, y: 0.3 } }
     }
   };
 
@@ -1112,19 +1106,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // Нижний пол кегля. Абсолютный минимум читаемости — минимум слайдера (7pt).
     const ABS_MIN = 7;
     // Для встроенных шаблонов «Снеки» (6,5×3,5 см) и «Рыба» (9,2×5,5 см)
-    // (subtitleCorner:true, layout:'full') пол вычисляем из РЕАЛЬНОЙ высоты зоны
-    // budgetH — кегль, при котором 2 строки названия уложатся в зону:
-    // 1pt ≈ 1.333px (96 DPI), line-height 1.1 → высота строки ≈ 1.467px/pt,
-    // две строки ≈ 2.93px/pt → floor = budgetH / 2.93.
-    // Прежний захардкоженный пол 22pt подходил Рыбе (зона ~64px → 2×22≈44px ✓),
-    // но в Снеках (зона ~41px) 2×22≈44px вылезало за границы. Адаптивная формула
-    // даёт ≈13pt для Снеки и ≈21pt для Рыбы — оба помещаются.
+    // пол НЕ привязываем к допущению «максимум 2 строки»: длинные названия
+    // переносятся на 3+ строк, и прежняя формула budgetH/2.93 (кегль для 2 строк)
+    // не давала бинарному поиску опуститься достаточно — 3-строчный текст обрезался
+    // overflow:hidden и становился невидимым. Фиксированный эстетический минимум
+    // 10pt: бинарный поиск находит НАИБОЛЬШИЙ кегль в [10, 32], при котором
+    // ИЗМЕРЕННАЯ высота перенесённого текста (любого числа строк) ≤ зоны (budgetH).
+    // Приоритет — читаемость: всегда максимально крупный шрифт, помещающийся целиком.
     // Кастомные копии (kind === 'custom') остаются на старом фиксированном поле.
     const isBuiltinRybaFamily = activeTemplateRef
       && activeTemplateRef.kind === 'builtin'
       && (activeTemplateRef.key === 'sneki' || activeTemplateRef.key === 'ryba');
+    const RYBA_FAMILY_MIN = 10;
     const floor = isBuiltinRybaFamily
-      ? Math.max(ABS_MIN, Math.floor(budgetH / 2.93))
+      ? RYBA_FAMILY_MIN
       : (subtitleCorner ? 22 : ABS_MIN);
 
     const probe = getTitleProbe(budgetW);
@@ -1138,7 +1133,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const mid = (lo + hi) >> 1;
       probe.style.fontSize = `${mid}pt`;
       // Текст помещается, если его реальная высота не превышает зону названия.
-      if (probe.offsetHeight <= budgetH + 1) { best = mid; lo = mid + 1; }
+      // Слабину +1px убрали: при overflow:hidden даже 1px превышения обрезается.
+      if (probe.offsetHeight <= budgetH) { best = mid; lo = mid + 1; }
       else { hi = mid - 1; }
     }
     return best;
@@ -2017,12 +2013,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     headerHeightRange.value = state.headerHeight || 100;
 
-    // Safe-зона названия (отступы от графики фона, в %). Дефолт — нули.
+    // Safe-зона названия (доли 0..0.45). Источник истины — JS-переменная, т.к.
+    // числовые поля L/R/T/B убраны из UI (drag-редактор границ тоже пишет сюда).
     {
       const ts = normTitleSafe(state.titleSafe);
-      const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = Math.round(v * 100); };
-      set('titleSafeL', ts.left); set('titleSafeR', ts.right);
-      set('titleSafeT', ts.top);  set('titleSafeB', ts.bottom);
+      globalTitleSafe = { left: ts.left, right: ts.right, top: ts.top, bottom: ts.bottom };
     }
 
     // Декоративные блоки «Оформление» (внешний + внутренний).
@@ -2149,7 +2144,7 @@ document.addEventListener('DOMContentLoaded', () => {
       bgImage: bgImageSelect.value,
       customBgData: bgImageSelect.value === 'custom' ? uploadedDataUrl : null,
       headerHeight: headerHeightRange.value,
-      titleSafe: readGlobalTitleSafe(),
+      titleSafe: normTitleSafe(globalTitleSafe),
       layout: currentLayout,
       priceInBottom: rybaPriceInBottom,
       subtitleCorner: subtitleCorner,
@@ -2835,8 +2830,6 @@ document.addEventListener('DOMContentLoaded', () => {
     subtitleColor, subtitleSize, subtitleWeight,
     showPriceToggle, priceFont, priceSize, priceWeight, priceColor, priceOffsetY, inputPrice, inputCurrency, pricePlateToggle,
     headerBgColor, bgImageSelect, headerHeightRange,
-    document.getElementById('titleSafeL'), document.getElementById('titleSafeR'),
-    document.getElementById('titleSafeT'), document.getElementById('titleSafeB'),
     sheetCount, singleRepeatCount, showCropMarks,
     // Декоративные блоки «Оформление»
     decorOutsideShow, decorOutsideText, decorOutsideBg, decorOutsideBgImg, decorOutsideColor, decorOutsideFontSize, decorOutsideHeight,
@@ -2869,16 +2862,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (el) {
       el.addEventListener('input', updatePreview);
       el.addEventListener('change', updatePreview);
-    }
-  });
-
-  // Изменение safe-зоны названия меняет ширину/высоту бокса → кегль нужно
-  // пересчитать под новый бюджет. refitActiveTitle сам зовёт updatePreview.
-  ['titleSafeL', 'titleSafeR', 'titleSafeT', 'titleSafeB'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.addEventListener('input', refitActiveTitle);
-      el.addEventListener('change', refitActiveTitle);
     }
   });
 
@@ -3104,7 +3087,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (drag.edge === 'top')         ts.top    = 0.9 - ts.bottom;
         else if (drag.edge === 'bottom') ts.bottom = 0.9 - ts.top;
       }
-      writeSafeInputs(ts);          // 4 поля (%), без dispatch
+      globalTitleSafe = { left: ts.left, right: ts.right, top: ts.top, bottom: ts.bottom };  // без dispatch
       positionSafeRect(ts);         // прямоугольник следует за мышью
       updatePreview();              // применяет доли к названию + CSS-переменные
       refitActiveTitle();           // пересчёт кегля под новый бокс
