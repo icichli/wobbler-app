@@ -1840,7 +1840,7 @@ body.is-printing #printArea {
     background: #ffffff !important;
     color: #000000 !important;
     width: 210mm !important;
-    height: 297mm !important;
+    height: auto !important;
     margin: 0 !important;
     padding: 0 !important;
     overflow: visible !important;
@@ -1864,7 +1864,7 @@ body.is-printing #printArea {
 
   .print-page {
     width: 210mm !important;
-    height: 297mm !important;
+    min-height: 297mm !important;
     padding: 2mm !important;
     box-sizing: border-box !important;
     display: grid !important;
@@ -1873,6 +1873,11 @@ body.is-printing #printArea {
     justify-content: start !important;
     page-break-after: always !important;
     background: #ffffff !important;
+  }
+
+  /* Не выбрасывать пустой лист после последней страницы. */
+  .print-page:last-child {
+    page-break-after: auto !important;
   }
 
   .print-wobbler-wrapper {

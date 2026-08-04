@@ -976,20 +976,25 @@ document.addEventListener('DOMContentLoaded', () => {
   // сбрасывать фокус/каретку при вводе). Вызывается из input-обработчиков строки.
   function syncRowExtent(idx) {
     if (idx < 0 || idx >= itemsData.length) return;
-    const last = itemsData.length - 1;
-    if (idx === last && isItemFilled(itemsData[idx])) {
-      // Ввели данные в последнюю рабочую строку → добавляем новую пустую ниже.
-      itemsData.push(freshItem());
-      itemsListContainer.appendChild(createItemRow(itemsData.length - 1));
-    } else if (isItemEmpty(itemsData[idx])) {
-      // Очистили товар: убираем дублирующие пустые в хвосте (≥2 подряд пустых),
-      // не трогая строку с фокусом. Оставляем одну рабочую пустую.
+    // 1) Схлопываем лишние пустые в хвосте (≥2 подряд пустых) при очистке строки.
+    //    Строку с фокусом не удаляем — убираем только дублирующие пустые ниже.
+    if (isItemEmpty(itemsData[idx])) {
       while (itemsData.length > 1 && isItemEmpty(itemsData[itemsData.length - 1])
                                    && isItemEmpty(itemsData[itemsData.length - 2])) {
         itemsData.pop();
         const rows = itemsListContainer.querySelectorAll('.item-row');
         if (rows[rows.length - 1]) rows[rows.length - 1].remove();
       }
+    }
+    // 2) Гарантируем ОДНУ рабочую пустую строку внизу после любого ввода.
+    //    Ввели товар в любую строку (включая среднюю «дыру» после очистки) и
+    //    последний элемент оказался заполненным — добавляем новую пустую для
+    //    ввода следующего товара. labelPos копируем с ценника №1 (база шаблона).
+    if (itemsData.length === 0 || isItemFilled(itemsData[itemsData.length - 1])) {
+      const newItem = freshItem();
+      newItem.labelPos = sharedLabelPosForNewItem();
+      itemsData.push(newItem);
+      itemsListContainer.appendChild(createItemRow(itemsData.length - 1));
     }
   }
 
@@ -1179,6 +1184,17 @@ document.addEventListener('DOMContentLoaded', () => {
       it.labelPos.currency = JSON.parse(JSON.stringify(srcCurrency));
     });
     updatePreview();
+  }
+
+  // Эталонные позиции надписей для НОВОЙ строки «Разных товаров»: глубокий клон
+  // labelPos ценника №1 — именно туда applyState/applySharedPosFromFirstToAll
+  // кладёт базу активного шаблона. Без этого новая строка получала бы defaultLabelPos()
+  // (всё по нулям) и теряла настройки расположения шаблона. Если у [0] ещё нет
+  // labelPos — возвращаем дефолт.
+  function sharedLabelPosForNewItem() {
+    const src = itemsData[0];
+    if (src && src.labelPos) return JSON.parse(JSON.stringify(src.labelPos));
+    return defaultLabelPos();
   }
 
   // «Протолкнуть» общие позиции (вес + цена) с АКТИВНОГО ценника в ценник №1,
@@ -1469,7 +1485,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // Применяет тексты товара и его ручные позиции (labelPos) к клону вобблера
   // (используется в превью листа и печати, чтобы каждый ценник нёс свои позиции).
   function applyItemToClone(clone, item, titleOffsetYVal, priceOffsetYVal) {
-    const lp = (item && item.labelPos) ? item.labelPos : defaultLabelPos();
+    // Позиции надписей товара. Если у товара нет своего labelPos (старые данные /
+    // edge-кейсы), берём эталон с ценника №1 (база активного шаблона), а не дефолт,
+    // — иначе такой ценник отрисуется со смещениями 0,0 вместо настроек шаблона.
+    const lp = (item && item.labelPos)
+      ? item.labelPos
+      : (itemsData[0] && itemsData[0].labelPos) ? itemsData[0].labelPos : defaultLabelPos();
     const digits = String((item && item.price) || '').split('');
 
     const tElem = clone.querySelector('.wobbler-title');
