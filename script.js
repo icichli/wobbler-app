@@ -114,6 +114,17 @@ document.addEventListener('DOMContentLoaded', () => {
   // Index of the item currently shown in the single preview (multi mode)
   let activePreviewIndex = 0;
 
+  // === Per-item шрифты/цвета ===
+  // templateFonts — источник истины для оформления всего шаблона (title/price/subtitle
+  // шрифты/цвета/размеры/толщина/выравнивание/offset/валюта). Инпуты DOM — это только
+  // UI активного контекста; логика рендера читает fontOf()/templateFonts, а не .value.
+  // fontApplyMode: 'item' (правим выбранный ценник) | 'template' (правим весь шаблон).
+  // В single-режиме всегда 'template'; сегмент переключателя скрыт.
+  let fontApplyMode = 'item';
+  let templateFonts = null;
+  const fontApplyModeWrap = document.getElementById('fontApplyModeWrap');
+  const resetItemFontsBtn = document.getElementById('resetItemFontsBtn');
+
   // DOM Inputs - Size
   const wobblerWidthInput = document.getElementById('wobblerWidthInput');
   const wobblerHeightInput = document.getElementById('wobblerHeightInput');
@@ -374,15 +385,22 @@ document.addEventListener('DOMContentLoaded', () => {
     return singleLabelPos;
   }
 
-  // Per-item размер шрифта наименования. В multi каждый ценник хранит свой кегль
-  // в itemsData[i].titleSize; в single — значение глобального слайдера titleSize.
-  // Гарантирует числовое значение (по умолчанию берётся текущий слайдер).
+  // Per-item размер шрифта наименования. В multi ценник хранит свой кегль в
+  // itemsData[i].fonts.titleSize (старое поле itemsData[i].titleSize — обратно
+  // совместимо); в single / без override — templateFonts.titleSize.
+  // Гарантирует числовое значение.
   function activeItemTitleSize(item) {
-    if (item && item.titleSize != null && item.titleSize !== '') {
-      const v = parseFloat(item.titleSize);
+    let raw = null;
+    if (item) {
+      if (item.fonts && item.fonts.titleSize != null) raw = item.fonts.titleSize;
+      else if (item.titleSize != null && item.titleSize !== '') raw = item.titleSize; // legacy
+    }
+    if (raw != null && raw !== '') {
+      const v = parseFloat(raw);
       if (!isNaN(v)) return v;
     }
-    return parseFloat(titleSize.value) || 13;
+    const fb = templateFonts && templateFonts.titleSize;
+    return parseFloat(fb) || 13;
   }
 
   // === Per-item оформление и фон (кнопка ⚙ в строке таблицы) ===
@@ -412,6 +430,116 @@ document.addEventListener('DOMContentLoaded', () => {
       return it[field] != null ? it[field] : globalVal;
     }
     return globalVal;
+  }
+
+  // === Per-item шрифты/цвета (для блока «Настройки шрифтов и текста») ===
+  // Каждый ценник в multi-режиме может переопределить ВСЕ шрифтовые настройки
+  // одним снимком: itemsData[i].fontsCustomized + itemsData[i].fonts = {...}.
+  // Если override нет — ценник наследует оформление шаблона (templateFonts).
+  // Список всех полей, редактируемых в Section 3 (title/subtitle/price).
+  const FONT_FIELDS = [
+    'titleFont', 'titleColor', 'titleSize', 'titleWeight', 'titleItalic', 'titleAlign', 'titleOffsetY',
+    'subtitleColor', 'subtitleSize', 'subtitleWeight', 'subtitleAlign',
+    'priceFont', 'priceColor', 'priceSize', 'priceWeight', 'priceAlign', 'priceOffsetY', 'currency'
+  ];
+
+  // Возвращает значение шрифтового поля для ценника: per-item override, иначе fallback
+  // (обычно templateFonts[field]). itItalic хранится как boolean.
+  function fontOf(item, field, fallback) {
+    if (item && item.fontsCustomized && item.fonts && item.fonts[field] != null) {
+      return item.fonts[field];
+    }
+    return fallback;
+  }
+
+  // Снимок всех 17 шрифтовых полей из текущих значений инпутов DOM.
+  // Это «редактируемое» состояние, которое затем пишется в templateFonts
+  // или в itemsData[active].fonts в зависимости от fontApplyMode.
+  function readFontSnapshotFromInputs() {
+    return {
+      titleFont:      titleFont ? titleFont.value : 'Arial, sans-serif',
+      titleColor:     titleColor ? titleColor.value : '#ffffff',
+      titleSize:      titleSize ? titleSize.value : 13,
+      titleWeight:    titleWeight ? titleWeight.value : '800',
+      titleItalic:    !!(titleItalic && titleItalic.checked),
+      titleAlign:     alignState.title || 'center',
+      titleOffsetY:   titleOffsetY ? titleOffsetY.value : 0,
+      subtitleColor:  subtitleColor ? subtitleColor.value : '#ffffff',
+      subtitleSize:   subtitleSize ? subtitleSize.value : 11,
+      subtitleWeight: subtitleWeight ? subtitleWeight.value : '700',
+      subtitleAlign:  alignState.subtitle || 'left',
+      priceFont:      priceFont ? priceFont.value : 'Arial, sans-serif',
+      priceColor:     priceColor ? priceColor.value : '#ffffff',
+      priceSize:      priceSize ? priceSize.value : 40,
+      priceWeight:    priceWeight ? priceWeight.value : '700',
+      priceAlign:     alignState.price || 'center',
+      priceOffsetY:   priceOffsetY ? priceOffsetY.value : 0,
+      currency:       inputCurrency ? inputCurrency.value : '₽'
+    };
+  }
+
+  // Записывает снимок из объекта (templateFonts или item.fonts) обратно в инпуты DOM
+  // и активные align-кнопки. Без вызова updatePreview — вызывает вызывающая сторона.
+  function writeFontSnapshotToInputs(snap) {
+    if (!snap) return;
+    if (titleFont) titleFont.value = snap.titleFont;
+    if (titleColor) titleColor.value = snap.titleColor;
+    if (titleSize) titleSize.value = snap.titleSize;
+    if (titleWeight) titleWeight.value = snap.titleWeight;
+    if (titleItalic) titleItalic.checked = !!snap.titleItalic;
+    if (titleOffsetY) titleOffsetY.value = snap.titleOffsetY;
+    alignState.title = snap.titleAlign || 'center';
+    if (subtitleColor) subtitleColor.value = snap.subtitleColor;
+    if (subtitleSize) subtitleSize.value = snap.subtitleSize;
+    if (subtitleWeight) subtitleWeight.value = snap.subtitleWeight;
+    alignState.subtitle = snap.subtitleAlign || 'left';
+    if (priceFont) priceFont.value = snap.priceFont;
+    if (priceColor) priceColor.value = snap.priceColor;
+    if (priceSize) priceSize.value = snap.priceSize;
+    if (priceWeight) priceWeight.value = snap.priceWeight;
+    if (priceOffsetY) priceOffsetY.value = snap.priceOffsetY;
+    if (inputCurrency) inputCurrency.value = snap.currency;
+    alignState.price = snap.priceAlign || 'center';
+    // Обновляем текстовые индикаторы и дублирующий слайдер.
+    if (titleSizeVal) titleSizeVal.textContent = titleSize ? titleSize.value : '';
+    if (titleOffsetYVal) titleOffsetYVal.textContent = titleOffsetY ? titleOffsetY.value : '';
+    if (subtitleSizeVal) subtitleSizeVal.textContent = subtitleSize ? subtitleSize.value : '';
+    if (priceSizeVal) priceSizeVal.textContent = priceSize ? priceSize.value : '';
+    if (priceOffsetYVal) priceOffsetYVal.textContent = priceOffsetY ? priceOffsetY.value : '';
+    syncTitleSizePreview();
+    // Реактивируем кнопки выравнивания под новым состоянием.
+    ['title', 'subtitle', 'price'].forEach(target => {
+      document.querySelectorAll(`.align-btn[data-target="${target}"]`).forEach(b => {
+        b.classList.toggle('active', b.getAttribute('data-align') === (alignState[target] || 'center'));
+      });
+    });
+  }
+
+  // Переводит инпуты DOM в состояние активного контекста (item vs template) и
+  // обновляет вид сегмента переключателя. Не зовёт updatePreview — это делает
+  // вызывающая сторона (кроме внутренних мест, где синхронизация сама по себе
+  // не требует немедленного ре-рендера, например перед updatePreview).
+  function syncFontControlsToContext() {
+    const isMulti = isMultiModeNow();
+    if (!isMulti) {
+      // Single-режим: сегмент скрыт, режим всегда template, инпуты = templateFonts.
+      fontApplyMode = 'template';
+      if (fontApplyModeWrap) fontApplyModeWrap.style.display = 'none';
+      writeFontSnapshotToInputs(templateFonts);
+      return;
+    }
+    if (fontApplyModeWrap) fontApplyModeWrap.style.display = '';
+    // Подсветка активной кнопки сегмента.
+    document.querySelectorAll('[data-font-mode]').forEach(b => {
+      b.classList.toggle('active', b.getAttribute('data-font-mode') === fontApplyMode);
+    });
+    if (fontApplyMode === 'item') {
+      const it = itemsData[activePreviewIndex];
+      const snap = (it && it.fontsCustomized && it.fonts) ? it.fonts : templateFonts;
+      writeFontSnapshotToInputs(snap);
+    } else {
+      writeFontSnapshotToInputs(templateFonts);
+    }
   }
 
   // Возвращает полный «снимок» оформления блока (outside/inside) для ценника i
@@ -1015,10 +1143,12 @@ document.addEventListener('DOMContentLoaded', () => {
       <textarea class="item-subtitle-input" rows="1" placeholder="Вес" data-index="${i}">${safeSub}</textarea>
       <textarea class="item-price-input" rows="1" placeholder="Цена" data-index="${i}">${safePrice}</textarea>
       <button type="button" class="item-settings-btn" data-index="${i}" title="Оформление и фон ценника №${i + 1}">⚙</button>
+      <button type="button" class="item-delete-btn" data-index="${i}" title="Удалить товар №${i + 1}">✕</button>
     `;
 
     row.querySelector('.item-title-input').addEventListener('focus', () => {
       activePreviewIndex = i;
+      syncFontControlsToContext();
       updatePreview();
     });
 
@@ -1047,6 +1177,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (subInput) {
       subInput.addEventListener('focus', () => {
         activePreviewIndex = i;
+        syncFontControlsToContext();
         updatePreview();
       });
       subInput.addEventListener('input', (e) => {
@@ -1062,6 +1193,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     row.querySelector('.item-price-input').addEventListener('focus', () => {
       activePreviewIndex = i;
+      syncFontControlsToContext();
       updatePreview();
     });
 
@@ -1078,7 +1210,27 @@ document.addEventListener('DOMContentLoaded', () => {
     if (settingsBtn) {
       settingsBtn.addEventListener('click', () => {
         activePreviewIndex = i;
+        syncFontControlsToContext();
         openItemSettings(i);
+      });
+    }
+
+    // Кнопка ✕ удаляет строку товара целиком (с перенумерацией нижних).
+    // Мутируем массив на месте (splice), чтобы сохранить ссылку templateItems[key].
+    const deleteBtn = row.querySelector('.item-delete-btn');
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', () => {
+        const idx = parseInt(deleteBtn.getAttribute('data-index'), 10);
+        if (isNaN(idx) || idx < 0 || idx >= itemsData.length) return;
+        // Не даём удалить единственную рабочую строку — иначе список опустеет.
+        if (itemsData.length <= 1) return;
+        itemsData.splice(idx, 1);
+        // Корректируем активный индекс под новый состав списка.
+        if (idx < activePreviewIndex) activePreviewIndex--;
+        if (activePreviewIndex >= itemsData.length) activePreviewIndex = Math.max(0, itemsData.length - 1);
+        renderItemsListInputs();   // полный re-render с перенумерацией
+        syncFontControlsToContext();
+        updatePreview();
       });
     }
 
@@ -1501,12 +1653,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (tElem) {
       tElem.textContent = (item && item.title) || '';
-      // Per-item кегль наименования: каждый ценник несёт свой размер шрифта.
+      // === Per-item шрифты/цвета на клоне ===
+      // Клон унаследовал стили активного ценника от живого #wobblerPreview,
+      // поэтому здесь перезаписываем ВСЕ шрифтовые поля под этот товар.
+      const tf = templateFonts || {};
+      tElem.style.fontFamily = fontOf(item, 'titleFont', tf.titleFont);
+      tElem.style.color = fontOf(item, 'titleColor', tf.titleColor);
       tElem.style.fontSize = `${activeItemTitleSize(item)}pt`;
-      tElem.style.transform = `translate(${lp.title.x}mm, ${(parseFloat(titleOffsetYVal) || 0) + lp.title.y}mm)`;
+      tElem.style.fontWeight = fontOf(item, 'titleWeight', tf.titleWeight);
+      tElem.style.fontStyle = fontOf(item, 'titleItalic', tf.titleItalic) ? 'italic' : 'normal';
+      tElem.style.textAlign = fontOf(item, 'titleAlign', tf.titleAlign);
+      const tOff = parseFloat(fontOf(item, 'titleOffsetY', tf.titleOffsetY != null ? tf.titleOffsetY : titleOffsetYVal)) || 0;
+      tElem.style.transform = `translate(${lp.title.x}mm, ${tOff + lp.title.y}mm)`;
     }
     if (sElem) {
+      const tf2 = templateFonts || {};
       sElem.textContent = (item && item.subtitle != null) ? item.subtitle : '';
+      sElem.style.fontFamily = fontOf(item, 'titleFont', tf2.titleFont);
+      sElem.style.color = fontOf(item, 'subtitleColor', tf2.subtitleColor);
+      sElem.style.fontSize = `${fontOf(item, 'subtitleSize', tf2.subtitleSize != null ? tf2.subtitleSize : 11)}pt`;
+      sElem.style.fontWeight = fontOf(item, 'subtitleWeight', tf2.subtitleWeight);
+      sElem.style.textAlign = fontOf(item, 'subtitleAlign', tf2.subtitleAlign);
       sElem.style.transform = `translate(${lp.subtitle.x}mm, ${lp.subtitle.y}mm)`;
     }
     // Цена: пересобираем по цифрам с позициями priceDigits.
@@ -1524,9 +1691,27 @@ document.addEventListener('DOMContentLoaded', () => {
         pElem.appendChild(span);
       });
     }
-    if (curr) curr.style.transform = `translate(${lp.currency.x}mm, ${lp.currency.y}mm)`;
+    if (curr) {
+      const tf3 = templateFonts || {};
+      curr.textContent = (fontOf(item, 'currency', tf3.currency != null ? tf3.currency : '') || '').trim();
+      curr.style.fontFamily = fontOf(item, 'priceFont', tf3.priceFont);
+      curr.style.fontSize = `${fontOf(item, 'priceSize', tf3.priceSize != null ? tf3.priceSize : 40)}pt`;
+      curr.style.fontWeight = fontOf(item, 'priceWeight', tf3.priceWeight);
+      curr.style.color = fontOf(item, 'priceColor', tf3.priceColor);
+      curr.style.transform = `translate(${lp.currency.x}mm, ${lp.currency.y}mm)`;
+    }
+    if (pElem) {
+      const tf4 = templateFonts || {};
+      pElem.style.fontFamily = fontOf(item, 'priceFont', tf4.priceFont);
+      pElem.style.fontSize = `${fontOf(item, 'priceSize', tf4.priceSize != null ? tf4.priceSize : 40)}pt`;
+      pElem.style.fontWeight = fontOf(item, 'priceWeight', tf4.priceWeight);
+      pElem.style.color = fontOf(item, 'priceColor', tf4.priceColor);
+    }
     if (box) {
-      const yOffset = (parseFloat(priceOffsetYVal) || 0) + lp.price.y;
+      const tf5 = templateFonts || {};
+      const priceAlign = fontOf(item, 'priceAlign', tf5.priceAlign || 'center');
+      box.style.justifyContent = priceAlign === 'left' ? 'flex-start' : (priceAlign === 'right' ? 'flex-end' : 'center');
+      const yOffset = (parseFloat(fontOf(item, 'priceOffsetY', tf5.priceOffsetY != null ? tf5.priceOffsetY : priceOffsetYVal)) || 0) + lp.price.y;
       box.style.transform = `translate(${lp.price.x}mm, ${yOffset}mm)`;
     }
 
@@ -1676,17 +1861,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const activeTitleText = isMultiMode
       ? (activeItem.title || `Товар №${activePreviewIndex + 1}`)
       : (inputTitle.value.trim() || 'ЗАГОЛОВОК');
-    // Per-item размер шрифта наименования: в multi каждый ценник хранит свой кегль.
-    // Слайдер отражает размер активного товара (см. activeItemTitleSize()).
-    const effTitleSize = isMultiMode ? activeItemTitleSize(activeItem) : titleSize.value;
+    // Шрифтовые значения — из активного контекста (per-item override ценника,
+    // иначе templateFonts). Инпуты DOM синхронизированы с этим контекстом
+    // отдельно (syncFontControlsToContext); здесь только читаем источник истины.
+    const tf = templateFonts || {};
+    const effTitleSize = activeItemTitleSize(activeItem);
     previewTitle.textContent = activeTitleText;
-    previewTitle.style.fontFamily = titleFont.value;
-    previewTitle.style.color = titleColor.value;
+    previewTitle.style.fontFamily = fontOf(activeItem, 'titleFont', tf.titleFont || titleFont.value);
+    previewTitle.style.color = fontOf(activeItem, 'titleColor', tf.titleColor || titleColor.value);
     previewTitle.style.fontSize = `${effTitleSize}pt`;
-    previewTitle.style.fontWeight = titleWeight.value;
-    previewTitle.style.fontStyle = (titleItalic && titleItalic.checked) ? 'italic' : 'normal';
-    previewTitle.style.textAlign = alignState.title;
-    previewTitle.style.transform = `translate(${lp.title.x}mm, ${(parseFloat(titleOffsetY.value) || 0) + lp.title.y}mm)`;
+    previewTitle.style.fontWeight = fontOf(activeItem, 'titleWeight', tf.titleWeight || titleWeight.value);
+    previewTitle.style.fontStyle = fontOf(activeItem, 'titleItalic', tf.titleItalic != null ? tf.titleItalic : !!(titleItalic && titleItalic.checked)) ? 'italic' : 'normal';
+    previewTitle.style.textAlign = fontOf(activeItem, 'titleAlign', tf.titleAlign || alignState.title);
+    const tOffsetY = parseFloat(fontOf(activeItem, 'titleOffsetY', tf.titleOffsetY != null ? tf.titleOffsetY : titleOffsetY.value)) || 0;
+    previewTitle.style.transform = `translate(${lp.title.x}mm, ${tOffsetY + lp.title.y}mm)`;
     // Держим слайдер и индикатор в синхроне с активным товаром.
     if (titleSize.value != effTitleSize) titleSize.value = String(effTitleSize);
     titleSizeVal.textContent = titleSize.value;
@@ -1700,12 +1888,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const subText = isMultiMode ? (activeItem?.subtitle || '') : (inputSubtitle?.value || '');
       previewSubtitle.textContent = subText || '';
       previewSubtitle.style.display = subText ? 'block' : 'none';
-      const subPt = subtitleSize ? subtitleSize.value : 11;
-      previewSubtitle.style.fontFamily = titleFont.value;
-      previewSubtitle.style.color = subtitleColor ? subtitleColor.value : '#ffffff';
+      const subPt = fontOf(activeItem, 'subtitleSize', tf.subtitleSize != null ? tf.subtitleSize : (subtitleSize ? subtitleSize.value : 11));
+      // Шрифт подзаголовка наследуется от шрифта наименования (исторически).
+      previewSubtitle.style.fontFamily = fontOf(activeItem, 'titleFont', tf.titleFont || titleFont.value);
+      previewSubtitle.style.color = fontOf(activeItem, 'subtitleColor', tf.subtitleColor || (subtitleColor ? subtitleColor.value : '#ffffff'));
       previewSubtitle.style.fontSize = `${subPt}pt`;
-      previewSubtitle.style.fontWeight = subtitleWeight ? subtitleWeight.value : '700';
-      previewSubtitle.style.textAlign = alignState.subtitle || 'left';
+      previewSubtitle.style.fontWeight = fontOf(activeItem, 'subtitleWeight', tf.subtitleWeight || (subtitleWeight ? subtitleWeight.value : '700'));
+      previewSubtitle.style.textAlign = fontOf(activeItem, 'subtitleAlign', tf.subtitleAlign || alignState.subtitle || 'left');
       // Ручное смещение (перетаскивание) поверх углового позиционирования
       previewSubtitle.style.transform = `translate(${lp.subtitle.x}mm, ${lp.subtitle.y}mm)`;
       if (subtitleSizeVal) subtitleSizeVal.textContent = subPt;
@@ -1744,21 +1933,21 @@ document.addEventListener('DOMContentLoaded', () => {
         span.style.transform = `translate(${dp.x}mm, ${dp.y}mm)`;
         previewPrice.appendChild(span);
       });
-      previewPrice.style.fontFamily = priceFont.value;
-      previewPrice.style.fontSize = `${priceSize.value}pt`;
-      previewPrice.style.fontWeight = priceWeight.value;
-      previewPrice.style.color = priceColor.value;
+      previewPrice.style.fontFamily = fontOf(activeItem, 'priceFont', tf.priceFont || priceFont.value);
+      previewPrice.style.fontSize = `${fontOf(activeItem, 'priceSize', tf.priceSize != null ? tf.priceSize : priceSize.value)}pt`;
+      previewPrice.style.fontWeight = fontOf(activeItem, 'priceWeight', tf.priceWeight || priceWeight.value);
+      previewPrice.style.color = fontOf(activeItem, 'priceColor', tf.priceColor || priceColor.value);
 
-      previewCurrency.textContent = inputCurrency.value.trim();
-      previewCurrency.style.fontFamily = priceFont.value;
-      previewCurrency.style.fontSize = `${priceSize.value}pt`;
-      previewCurrency.style.fontWeight = priceWeight.value;
-      previewCurrency.style.color = priceColor.value;
+      previewCurrency.textContent = (fontOf(activeItem, 'currency', tf.currency != null ? tf.currency : inputCurrency.value) || '').trim();
+      previewCurrency.style.fontFamily = fontOf(activeItem, 'priceFont', tf.priceFont || priceFont.value);
+      previewCurrency.style.fontSize = `${fontOf(activeItem, 'priceSize', tf.priceSize != null ? tf.priceSize : priceSize.value)}pt`;
+      previewCurrency.style.fontWeight = fontOf(activeItem, 'priceWeight', tf.priceWeight || priceWeight.value);
+      previewCurrency.style.color = fontOf(activeItem, 'priceColor', tf.priceColor || priceColor.value);
       previewCurrency.style.transform = `translate(${lp.currency.x}mm, ${lp.currency.y}mm)`;
 
-      const priceAlign = alignState.price || 'center';
+      const priceAlign = fontOf(activeItem, 'priceAlign', tf.priceAlign || alignState.price || 'center');
       previewPriceBox.style.justifyContent = priceAlign === 'left' ? 'flex-start' : (priceAlign === 'right' ? 'flex-end' : 'center');
-      const yOffset = (parseFloat(priceOffsetY.value) || 0) + lp.price.y;
+      const yOffset = (parseFloat(fontOf(activeItem, 'priceOffsetY', tf.priceOffsetY != null ? tf.priceOffsetY : priceOffsetY.value)) || 0) + lp.price.y;
       previewPriceBox.style.transform = `translate(${lp.price.x}mm, ${yOffset}mm)`;
 
       priceSizeVal.textContent = priceSize.value;
@@ -1984,6 +2173,8 @@ document.addEventListener('DOMContentLoaded', () => {
   setupDecorUpload(decorBottomCustomUpload, decorBottomCustomOption, decorBottomUploadStatus, 'bottom');
 
   // Alignment Buttons Click Handler
+  // В multi+item-режиме выравнивание пишется в per-item override ценника,
+  // иначе — в alignState + templateFonts (оформление всего шаблона).
   document.querySelectorAll('.align-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const target = btn.getAttribute('data-target');
@@ -1993,11 +2184,55 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.classList.add('active');
 
       alignState[target] = align;
+      if (isMultiModeNow() && fontApplyMode === 'item') {
+        const it = itemsData[activePreviewIndex] || (itemsData[activePreviewIndex] = {});
+        if (!it.fonts) it.fonts = Object.assign({}, templateFonts);
+        it.fonts[target + 'Align'] = align;
+        it.fontsCustomized = true;
+      } else if (templateFonts) {
+        templateFonts[target + 'Align'] = align;
+      }
       updatePreview();
     });
   });
 
-  // Render Mini A4 Sheet Grid Preview (with Multi-Item support)
+  // === Сегментированный переключатель «Этот ценник / Весь шаблон» ===
+  // В multi-режиме определяет, куда пишутся шрифтовые инпуты: в выбранный ценник
+  // (per-item override) или в templateFonts (весь шаблон). При переключении
+  // инпуты перерисовываются под новый контекст.
+  document.querySelectorAll('[data-font-mode]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      fontApplyMode = btn.getAttribute('data-font-mode');
+      document.querySelectorAll('[data-font-mode]').forEach(b => {
+        b.classList.toggle('active', b.getAttribute('data-font-mode') === fontApplyMode);
+      });
+      syncFontControlsToContext();
+      updatePreview();
+    });
+  });
+
+  // «↺ К шаблону» — снимает per-item override шрифтов у выбранного ценника,
+  // после чего ценник снова наследует оформление шаблона.
+  if (resetItemFontsBtn) {
+    resetItemFontsBtn.addEventListener('click', () => {
+      const it = itemsData[activePreviewIndex];
+      if (it) {
+        delete it.fontsCustomized;
+        delete it.fonts;
+        // Очищаем и legacy per-item кегль (старое поле itemsData[i].titleSize),
+        // иначе activeItemTitleSize продолжит брать значение из него.
+        delete it.titleSize;
+      }
+      // Возвращаемся в per-item режим и показываем значения шаблона.
+      fontApplyMode = 'item';
+      document.querySelectorAll('[data-font-mode]').forEach(b => {
+        b.classList.toggle('active', b.getAttribute('data-font-mode') === fontApplyMode);
+      });
+      syncFontControlsToContext();
+      updatePreview();
+    });
+  }
+
   function renderSheetPreview(wMm, hMm) {
     sheetGridPreview.innerHTML = '';
     const effH = effectiveCardHeight(hMm); // с учётом внешнего декор-блока
@@ -2167,30 +2402,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
     inputTitle.value = state.title || '';
     if (inputSubtitle) inputSubtitle.value = state.subtitle || '';
-    titleFont.value = state.titleFont || "Arial, sans-serif";
-    titleColor.value = state.titleColor || '#ffffff';
-    titleSize.value = state.titleSize || 13;
-    syncTitleSizePreview();
-    titleWeight.value = state.titleWeight || '800';
-    if (titleItalic) titleItalic.checked = !!state.titleItalic;
-    titleOffsetY.value = state.titleOffsetY || 0;
+    // Инициализируем templateFonts из state (источник истины для шрифтов шаблона),
+    // затем синхронизируем инпуты DOM под этот снимок. alignState тоже наполняем,
+    // т.к. readFontSnapshotFromInputs() его использует.
     alignState.title = state.titleAlign || 'center';
-    // Subtitle (Вес / доп. текст) — собственные параметры слоя.
-    if (subtitleColor) subtitleColor.value = state.subtitleColor || '#ffffff';
-    if (subtitleSize) subtitleSize.value = state.subtitleSize != null ? state.subtitleSize : 11;
-    if (subtitleWeight) subtitleWeight.value = state.subtitleWeight || '700';
     alignState.subtitle = state.subtitleAlign || 'left';
-
-    showPriceToggle.checked = !!state.showPrice;
-    priceFont.value = state.priceFont || "Arial, sans-serif";
-    priceSize.value = state.priceSize !== undefined ? state.priceSize : 40;
-    priceWeight.value = state.priceWeight || '700';
-    priceColor.value = state.priceColor || '#ffffff';
-    priceOffsetY.value = state.priceOffsetY || 0;
     alignState.price = state.priceAlign || 'center';
-
+    templateFonts = {
+      titleFont: state.titleFont || "Arial, sans-serif",
+      titleColor: state.titleColor || '#ffffff',
+      titleSize: state.titleSize || 13,
+      titleWeight: state.titleWeight || '800',
+      titleItalic: !!state.titleItalic,
+      titleAlign: state.titleAlign || 'center',
+      titleOffsetY: state.titleOffsetY != null ? state.titleOffsetY : 0,
+      subtitleColor: state.subtitleColor || '#ffffff',
+      subtitleSize: state.subtitleSize != null ? state.subtitleSize : 11,
+      subtitleWeight: state.subtitleWeight || '700',
+      subtitleAlign: state.subtitleAlign || 'left',
+      priceFont: state.priceFont || "Arial, sans-serif",
+      priceColor: state.priceColor || '#ffffff',
+      priceSize: state.priceSize !== undefined ? state.priceSize : 40,
+      priceWeight: state.priceWeight || '700',
+      priceAlign: state.priceAlign || 'center',
+      priceOffsetY: state.priceOffsetY != null ? state.priceOffsetY : 0,
+      currency: state.currency || '₽'
+    };
+    // inputCurrency/inputPrice — это текстовые поля ценника, а не шрифтовые настройки;
+    // синхронизируем их напрямую из state.
+    inputCurrency.value = templateFonts.currency;
     inputPrice.value = state.price || '350';
-    inputCurrency.value = state.currency || '₽';
+    syncTitleSizePreview();
 
     headerBgColor.value = state.headerBg || '#18181b';
     
@@ -2305,38 +2547,46 @@ document.addEventListener('DOMContentLoaded', () => {
     // автоматически — подгоняем высоту под новое содержимое.
     document.querySelectorAll('textarea').forEach(autoGrowTextarea);
 
+    // Шрифтовые инпуты показывают состояние активного контекста (template или
+    // per-item ценника). После применения state — пересинхронизируем их.
+    syncFontControlsToContext();
+
     updatePreview();
   }
 
   // Get Current State Object from Inputs
   function getCurrentState() {
+    // Шрифтовые поля берём из templateFonts (источник истины шаблона), а НЕ из
+    // инпутов DOM — в multi+item-режиме инпуты могут показывать per-item override
+    // выбранного ценника, и нам нельзя сохранять его как оформление шаблона.
+    const tf = templateFonts || readFontSnapshotFromInputs();
     return {
       widthCm: parseFloat(wobblerWidthInput.value) || 6.5,
       heightCm: parseFloat(wobblerHeightInput.value) || 4.5,
 
       title: inputTitle.value,
       subtitle: inputSubtitle ? inputSubtitle.value : '',
-      titleFont: titleFont.value,
-      titleColor: titleColor.value,
-      titleSize: titleSize.value,
-      titleWeight: titleWeight.value,
-      titleItalic: titleItalic ? titleItalic.checked : false,
-      titleAlign: alignState.title,
-      titleOffsetY: titleOffsetY.value,
-      subtitleColor: subtitleColor ? subtitleColor.value : '#ffffff',
-      subtitleSize: subtitleSize ? subtitleSize.value : 11,
-      subtitleWeight: subtitleWeight ? subtitleWeight.value : '700',
-      subtitleAlign: alignState.subtitle || 'left',
+      titleFont: tf.titleFont,
+      titleColor: tf.titleColor,
+      titleSize: tf.titleSize,
+      titleWeight: tf.titleWeight,
+      titleItalic: !!tf.titleItalic,
+      titleAlign: tf.titleAlign,
+      titleOffsetY: tf.titleOffsetY,
+      subtitleColor: tf.subtitleColor,
+      subtitleSize: tf.subtitleSize,
+      subtitleWeight: tf.subtitleWeight,
+      subtitleAlign: tf.subtitleAlign,
 
       showPrice: showPriceToggle.checked,
-      priceFont: priceFont.value,
-      priceSize: priceSize.value,
-      priceWeight: priceWeight.value,
-      priceColor: priceColor.value,
-      priceAlign: alignState.price,
-      priceOffsetY: priceOffsetY.value,
+      priceFont: tf.priceFont,
+      priceSize: tf.priceSize,
+      priceWeight: tf.priceWeight,
+      priceColor: tf.priceColor,
+      priceAlign: tf.priceAlign,
+      priceOffsetY: tf.priceOffsetY,
       price: inputPrice.value,
-      currency: inputCurrency.value,
+      currency: tf.currency,
 
       headerBg: headerBgColor.value,
       bgImage: bgImageSelect.value,
@@ -3024,11 +3274,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Event Listeners for Input Changes
+  // ВНИМАНИЕ: шрифтовые инпуты (titleFont/Color/Size/Weight/Italic/OffsetY,
+  // subtitle*, price Font/Color/Size/Weight/OffsetY, inputCurrency) сюда НЕ входят —
+  // они обрабатываются отдельным onFontInputChange (per-item/template логика).
   const allInputs = [
     wobblerWidthInput, wobblerHeightInput,
-    inputTitle, inputSubtitle, titleFont, titleColor, titleSize, titleWeight, titleItalic, titleOffsetY,
-    subtitleColor, subtitleSize, subtitleWeight,
-    showPriceToggle, priceFont, priceSize, priceWeight, priceColor, priceOffsetY, inputPrice, inputCurrency, pricePlateToggle,
+    inputTitle, inputSubtitle,
+    showPriceToggle, inputPrice, pricePlateToggle,
     headerBgColor, bgImageSelect, headerHeightRange,
     sheetCount, singleRepeatCount, showCropMarks, gapInput,
     // Декоративные блоки «Оформление»
@@ -3037,18 +3289,32 @@ document.addEventListener('DOMContentLoaded', () => {
     decorBottomShow, decorBottomText, decorBottomBg, decorBottomBgImg, decorBottomColor, decorBottomFontSize, decorBottomHeight
   ];
 
-  // Per-item размер шрифта наименования в режиме «Разные товары»: изменение
-  // слайдера записывает кегль в активный товар. В single — обычное поведение.
-  if (titleSize) {
-    const writeTitleSize = () => {
-      if (document.querySelector('input[name="printMode"]:checked').value === 'multi') {
-        const it = itemsData[activePreviewIndex] || (itemsData[activePreviewIndex] = {});
-        it.titleSize = parseFloat(titleSize.value) || 13;
-      }
-    };
-    titleSize.addEventListener('input', writeTitleSize);
-    titleSize.addEventListener('change', writeTitleSize);
+  // Единый обработчик изменения любого шрифтового инпута: снимает текущие значения
+  // и пишет их в активный контекст — per-item (выбранный ценник) в multi+item-режиме,
+  // иначе в templateFonts. После — updatePreview.
+  function onFontInputChange() {
+    const snap = readFontSnapshotFromInputs();
+    if (isMultiModeNow() && fontApplyMode === 'item') {
+      const it = itemsData[activePreviewIndex] || (itemsData[activePreviewIndex] = {});
+      it.fonts = snap;
+      it.fontsCustomized = true;
+    } else {
+      templateFonts = snap;
+    }
+    updatePreview();
   }
+
+  // Все шрифтовые контролы → onFontInputChange.
+  const fontInputs = [
+    titleFont, titleColor, titleSize, titleWeight, titleItalic, titleOffsetY,
+    subtitleColor, subtitleSize, subtitleWeight,
+    priceFont, priceSize, priceWeight, priceColor, priceOffsetY, inputCurrency
+  ];
+  fontInputs.forEach(el => {
+    if (!el) return;
+    el.addEventListener('input', onFontInputChange);
+    el.addEventListener('change', onFontInputChange);
+  });
 
   // === Ползунок размера наименования в тулбаре предпросмотра ===
   // Дублирует #titleSize: двусторонняя синхронизация. syncTitleSizePreview()
@@ -3065,12 +3331,9 @@ document.addEventListener('DOMContentLoaded', () => {
       titleSize.value = titleSizePreview.value;
       if (titleSizeVal) titleSizeVal.textContent = titleSizePreview.value;
       if (titleSizePreviewVal) titleSizePreviewVal.textContent = titleSizePreview.value;
-      // per-item запись в multi-режиме (повторяет writeTitleSize).
-      if (document.querySelector('input[name="printMode"]:checked').value === 'multi') {
-        const it = itemsData[activePreviewIndex] || (itemsData[activePreviewIndex] = {});
-        it.titleSize = parseFloat(titleSizePreview.value) || 13;
-      }
-      updatePreview();
+      // Программная установка titleSize.value не порождает событие input —
+      // поэтому per-item/template запись делегируем явно.
+      onFontInputChange();
     };
     titleSizePreview.addEventListener('input', onPreviewInput);
     titleSizePreview.addEventListener('change', onPreviewInput);
@@ -3328,8 +3591,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Подписка на смену режима печати (single/multi). Переключатель раскладки
   // (layoutType) убран из UI — раскладка задаётся выбранным шаблоном.
+  // При смене режима пересинхронизируем шрифтовые инпуты: в single сегмент
+  // скрыт и режим = template; в multi возвращаем per-item режим по умолчанию.
   document.querySelectorAll('input[name="printMode"]').forEach(r => {
-    r.addEventListener('change', updatePreview);
+    r.addEventListener('change', () => {
+      const isMulti = document.querySelector('input[name="printMode"]:checked').value === 'multi';
+      if (!isMulti) fontApplyMode = 'template';
+      else if (fontApplyMode !== 'template') fontApplyMode = 'item';
+      syncFontControlsToContext();
+      updatePreview();
+    });
   });
 
   // Print Handlers

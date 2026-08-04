@@ -264,6 +264,17 @@
         <h3 class="card-toggle" data-section="section3"><span class="card-num">3</span> Настройки шрифтов и текста <span class="toggle-arrow">▲</span></h3>
         <div class="card-body">
 
+        <!-- Переключатель области применения: только для режима «Разные товары».
+             По умолчанию (single) скрыт; управляется из JS (syncFontControlsToContext). -->
+        <div class="font-apply-mode" id="fontApplyModeWrap" style="display:none;">
+          <span class="fam-label">Применить к:</span>
+          <div class="seg-control" role="group">
+            <button type="button" class="seg-btn active" data-font-mode="item">Этот ценник</button>
+            <button type="button" class="seg-btn" data-font-mode="template">Весь шаблон</button>
+          </div>
+          <button type="button" id="resetItemFontsBtn" class="btn btn-secondary btn-sm" title="Сбросить шрифты выбранного ценника к настройкам шаблона">↺ К шаблону</button>
+        </div>
+
         <!-- Main Title Settings -->
         <div class="field-settings-group">
           <div class="group-header" style="display: flex; justify-content: space-between; align-items: center;">
