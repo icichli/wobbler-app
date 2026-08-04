@@ -404,8 +404,14 @@ html, body {
   flex-shrink: 0;
 }
 
-.preset-color.dots-black { 
-  background-image: url('dots_bg.jpg'); 
+.preset-color.dots-black {
+  background-image: url('dots_bg.jpg');
+  background-size: cover;
+  background-position: center;
+  border: 1px solid #3f3f46;
+}
+.preset-color.yellow-tag {
+  background-image: url('yellow_bg.jpg');
   background-size: cover;
   background-position: center;
   border: 1px solid #3f3f46;

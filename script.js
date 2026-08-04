@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Массив растёт прогрессивно: стартует с 1 пустой строки; при вводе в последнее
   // поле появляется следующая пустая (см. syncRowExtent / normalizeItemsArray).
   const MAX_ITEMS = 100; // мягкий защитный потолок (только для вставки больших таблиц)
-  const TEMPLATE_KEYS = ['alaska_dots', 'ryba', 'sneki', 'novy_vkus', 'novinka', 'tomat', 'sladko'];
+  const TEMPLATE_KEYS = ['alaska_dots', 'yellow_tag', 'ryba', 'sneki', 'novy_vkus', 'novinka', 'tomat', 'sladko'];
   const templateItems = {};
   function freshItem() {
     return { title: '', price: '', subtitle: '', subtitleManual: false };
@@ -624,6 +624,75 @@ document.addEventListener('DOMContentLoaded', () => {
       // Зазор между ценниками на листе А4 для «Бутылок» — 0,5 мм (под аккуратный рез).
       gapMm: 0.5,
       labelPos: { title: { x: -0.4, y: 1 }, subtitle: { x: -4.9, y: -0.3 }, price: { x: 0.2, y: 1.7 }, priceDigits: [ { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 } ], currency: { x: 0, y: 0 } }
+    },
+    // «Желтый ценник» — копия «Бутылок» (alaska_dots), но со своим файлом фона
+    // yellow_bg.jpg и настроенными вручную цветами/расположением надписей
+    // (импортировано из шаблона «Желтый ценник (изменён)»): текст/цена — чёрные,
+    // цена смещена вниз на 2 мм, название — на 4,9 мм.
+    yellow_tag: {
+      name: 'Желтый ценник',
+      widthCm: 6.5,
+      heightCm: 3.5,
+      title: 'Alaska Фейхоа 0,45 ж/б',
+      subtitle: '',
+      titleFont: "Arial, sans-serif",
+      titleColor: '#000000',
+      titleSize: 10,
+      titleWeight: '800',
+      titleItalic: false,
+      titleAlign: 'center',
+      titleOffsetY: 0,
+      subtitleColor: '#000000',
+      subtitleSize: 13,
+      subtitleWeight: '400',
+      subtitleAlign: 'left',
+      showPrice: true,
+      priceFont: "Arial, sans-serif",
+      priceSize: 40,
+      priceWeight: '400',
+      priceColor: '#000000',
+      priceAlign: 'center',
+      priceOffsetY: 2,
+      price: '350',
+      currency: '₽',
+      headerBg: '#18181b',
+      bgImage: 'yellow_bg.jpg',
+      customBgData: null,
+      headerHeight: 90,
+      // Safe-зона названия как у Бутылок (точечный фон идентичен по геометрии).
+      titleSafe: { left: 0, right: 0, top: 0.32, bottom: 0.45 },
+      layout: 'full',
+      priceInBottom: false,
+      subtitleCorner: false,
+      pricePlate: false,
+      decorOutsideShow: false,
+      decorOutsideText: 'НОВИНКА',
+      decorOutsideBg: '#e63946',
+      decorOutsideBgImg: 'none',
+      decorOutsideCustomBg: null,
+      decorOutsideColor: '#ffffff',
+      decorOutsideFontSize: 14,
+      decorOutsideHeight: 12,
+      decorInsideShow: false,
+      decorInsideText: 'НОВИНКА',
+      decorInsideBg: '#e63946',
+      decorInsideBgImg: 'none',
+      decorInsideCustomBg: null,
+      decorInsideColor: '#ffffff',
+      decorInsideFontSize: 11,
+      decorInsideHeight: 8,
+      decorInsideWidth: 50,
+      decorBottomShow: false,
+      decorBottomText: 'НОВИНКА',
+      decorBottomBg: '#e63946',
+      decorBottomBgImg: 'none',
+      decorBottomCustomBg: null,
+      decorBottomColor: '#ffffff',
+      decorBottomFontSize: 14,
+      decorBottomHeight: 12,
+      // Зазор между ценниками на листе А4 — 0,5 мм (как у Бутылок).
+      gapMm: 0.5,
+      labelPos: { title: { x: -0.4, y: 4.9 }, subtitle: { x: -4.9, y: -0.3 }, price: { x: 0.2, y: 1.7 }, priceDigits: [ { x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 } ], currency: { x: 0, y: 0 } }
     },
     novy_vkus: {
       name: 'Новый вкус',
@@ -1524,6 +1593,10 @@ document.addEventListener('DOMContentLoaded', () => {
       el.style.backgroundImage = "url('ryba_bg.jpg')";
       el.style.backgroundSize = "cover";
       el.style.backgroundPosition = "center";
+    } else if (bgVal === 'yellow_bg.jpg') {
+      el.style.backgroundImage = "url('yellow_bg.jpg')";
+      el.style.backgroundSize = "cover";
+      el.style.backgroundPosition = "center";
     } else if (bgVal === 'ryba_scales') {
       el.style.backgroundImage =
         "radial-gradient(circle at 50% 0%, rgba(125,211,252,0.55) 0%, rgba(125,211,252,0) 55%)," +
@@ -2294,7 +2367,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // шаблон работал даже на другом устройстве без этих файлов.
 
   // Встроенные фоны, которые умеем встраивать в экспорт.
-  const EMBEDDABLE_BGS = ['dots_bg.jpg', 'ryba_bg.jpg'];
+  const EMBEDDABLE_BGS = ['dots_bg.jpg', 'ryba_bg.jpg', 'yellow_bg.jpg'];
 
   // Читает встроенный файл фона как data:URL (base64). null при ошибке/отсутствии.
   async function fetchBgAsDataUrl(filename) {
