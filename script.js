@@ -1196,7 +1196,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Снеки — копия Рыбы, масштабированная под размер 6,5×3,5 см (вместо 9,2×5,5).
     // Коэффициенты: по ширине sx=0.71 (x-смещения), по высоте sy=0.64 (кегли,
     // y-смещения, высоты декора). titleSafe — доли от шапки, без изменений.
-    // Фон ryba_bg.jpg, цвета, шрифты, layout — те же, что у Рыбы.
+    // Собственный фон sneki_bg.jpg (отдельный от Рыбы), цвета/шрифты/layout — как у Рыбы.
     sneki: {
       name: 'Снеки',
       widthCm: 6.5,
@@ -1224,7 +1224,7 @@ document.addEventListener('DOMContentLoaded', () => {
       price: '300',
       currency: '₽',
       headerBg: '#000000',
-      bgImage: 'ryba_bg.jpg',
+      bgImage: 'sneki_bg.jpg',
       customBgData: null,
       headerHeight: 90,
       titleSafe: { left: 0.22736126270890838, right: 0.16, top: 0.29, bottom: 0.4 },
@@ -1257,7 +1257,7 @@ document.addEventListener('DOMContentLoaded', () => {
       decorBottomColor: '#ffffff',
       decorBottomFontSize: 14,
       decorBottomHeight: 12,
-      labelPos: { title: { x: -0.2, y: -0.7 }, subtitle: { x: -2.1, y: -0.6 }, price: { x: 0, y: 0 }, priceDigits: [ { x: -5.3, y: 0.5 }, { x: -1, y: 0.4 }, { x: 2.3, y: 0.4 } ], currency: { x: 5, y: 0.3 } }
+      labelPos: { title: { x: -0.2, y: -0.7 }, subtitle: { x: -2.1, y: -0.6 }, price: { x: 0, y: 0 }, priceDigits: [ { x: -3.9, y: 0.5 }, { x: -0.8, y: 0.4 }, { x: 1.7, y: 0.4 } ], currency: { x: 3.7, y: 0.3 } }
     }
   };
 
@@ -1606,16 +1606,36 @@ document.addEventListener('DOMContentLoaded', () => {
     return __titleProbe;
   }
 
-  // Ширина цифры «7» в заданном шрифте цены — чтобы все цифры цены были
-  // одинаковой ширины (как 7). Замер через canvas measureText (без DOM),
-  // учитывает реально загруженный веб-шрифт. Возвращает ширину в px.
-  let __priceDigitCtx = null;
-  function priceDigitWidth(fontFamily, fontWeight, fontSizePt) {
+  // Максимальная ширина цифры (0–9) в шрифте цены эталонного элемента — чтобы
+  // все цифры цены (и пробел) занимали одинаковое место. Берём максимум: широкая
+  // «0»/«8» помещается без обрезки, узкие цифры и пробел равны ей по ширине.
+  // Замеряем настоящие <span class="price-digit"> (10 штук, 0–9), добавленные в
+  // refEl вне потока (position:absolute). Берём scrollWidth — это полная ширина
+  // содержимого глифа (включая выступающие за advance части «0»/«8»), поэтому
+  // пробел получит ту же ширину, что и самая широкая цифра, а сами цифры (без
+  // overflow:hidden) не обрежутся.
+  function maxPriceDigitWidth(refEl) {
     try {
-      const ctx = __priceDigitCtx || (__priceDigitCtx = document.createElement('canvas').getContext('2d'));
-      const px = (parseFloat(fontSizePt) || 28) * (96 / 72); // pt → px
-      ctx.font = `${fontWeight || 400} ${px}px ${fontFamily || 'Montserrat'}`;
-      return ctx.measureText('7').width; // px
+      if (!refEl) return null;
+      const probes = [];
+      let max = 0;
+      for (let i = 0; i <= 9; i++) {
+        const span = document.createElement('span');
+        span.className = 'price-digit';
+        span.setAttribute('aria-hidden', 'true');
+        // Вне потока, скрыт; min-width снимаем, чтобы замерить чистую ширину
+        // глифа, а не запас из CSS-переменной.
+        span.style.cssText =
+          'position:absolute;left:-99999px;top:0;visibility:hidden;' +
+          'min-width:0 !important;width:auto !important;overflow:visible !important;';
+        span.textContent = String(i);
+        refEl.appendChild(span);
+        probes.push(span);
+        const w = span.scrollWidth;
+        if (w > max) max = w;
+      }
+      probes.forEach(p => p.remove());
+      return max > 0 ? max : null; // px
     } catch (e) {
       return null;
     }
@@ -1912,10 +1932,9 @@ document.addEventListener('DOMContentLoaded', () => {
       pElem.style.fontSize = `${fontOf(item, 'priceSize', tf4.priceSize != null ? tf4.priceSize : 40)}pt`;
       pElem.style.fontWeight = fontOf(item, 'priceWeight', tf4.priceWeight);
       pElem.style.color = fontOf(item, 'priceColor', tf4.priceColor);
-      // Все цифры цены одной ширины — как «7» (свой размер на каждый item).
+      // Все цифры цены одинаковой ширины — как самая широкая (свой размер на каждый item).
       {
-        const __psz4 = fontOf(item, 'priceSize', tf4.priceSize != null ? tf4.priceSize : 40);
-        const __pw4 = priceDigitWidth(pElem.style.fontFamily, pElem.style.fontWeight, __psz4);
+        const __pw4 = maxPriceDigitWidth(pElem);
         if (__pw4) pElem.style.setProperty('--price-digit-w', `${__pw4}px`);
       }
     }
@@ -2009,6 +2028,10 @@ document.addEventListener('DOMContentLoaded', () => {
       el.style.backgroundPosition = "center";
     } else if (bgVal === 'ryba_bg.jpg') {
       el.style.backgroundImage = "url('ryba_bg.jpg')";
+      el.style.backgroundSize = "cover";
+      el.style.backgroundPosition = "center";
+    } else if (bgVal === 'sneki_bg.jpg') {
+      el.style.backgroundImage = "url('sneki_bg.jpg')";
       el.style.backgroundSize = "cover";
       el.style.backgroundPosition = "center";
     } else if (bgVal === 'yellow_bg.jpg') {
@@ -2149,11 +2172,10 @@ document.addEventListener('DOMContentLoaded', () => {
       previewPrice.style.fontSize = `${fontOf(activeItem, 'priceSize', tf.priceSize != null ? tf.priceSize : priceSize.value)}pt`;
       previewPrice.style.fontWeight = fontOf(activeItem, 'priceWeight', tf.priceWeight || priceWeight.value);
       previewPrice.style.color = fontOf(activeItem, 'priceColor', tf.priceColor || priceColor.value);
-      // Все цифры цены одной ширины — ровно как «7». Замеряем глиф «7» и
-      // кладём в CSS-переменную, которую использует .price-digit { min-width }.
+      // Все цифры цены одинаковой ширины — как самая широкая. Замеряем max по 0–9
+      // и кладём в CSS-переменную, которую использует .price-digit { width }.
       {
-        const __psz = fontOf(activeItem, 'priceSize', tf.priceSize != null ? tf.priceSize : priceSize.value);
-        const __pw = priceDigitWidth(previewPrice.style.fontFamily, previewPrice.style.fontWeight, __psz);
+        const __pw = maxPriceDigitWidth(previewPrice);
         if (__pw) previewPrice.style.setProperty('--price-digit-w', `${__pw}px`);
       }
 
@@ -2919,7 +2941,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // шаблон работал даже на другом устройстве без этих файлов.
 
   // Встроенные фоны, которые умеем встраивать в экспорт.
-  const EMBEDDABLE_BGS = ['dots_bg.jpg', 'ryba_bg.jpg', 'yellow_bg.jpg'];
+  const EMBEDDABLE_BGS = ['dots_bg.jpg', 'ryba_bg.jpg', 'yellow_bg.jpg', 'sneki_bg.jpg'];
 
   // Читает встроенный файл фона как data:URL (base64). null при ошибке/отсутствии.
   async function fetchBgAsDataUrl(filename) {
