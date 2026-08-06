@@ -343,10 +343,28 @@ document.addEventListener('DOMContentLoaded', () => {
       currency: { x: 0, y: 0 }
     };
   }
+  // Глубокая копия позиций надписей (для сброса/копирования без ссылок).
+  function cloneLabelPos(src) {
+    const base = defaultLabelPos();
+    if (!src) return base;
+    return {
+      title: { x: (src.title && src.title.x) || 0, y: (src.title && src.title.y) || 0 },
+      subtitle: { x: (src.subtitle && src.subtitle.x) || 0, y: (src.subtitle && src.subtitle.y) || 0 },
+      price: { x: (src.price && src.price.x) || 0, y: (src.price && src.price.y) || 0 },
+      priceDigits: Array.isArray(src.priceDigits) ? src.priceDigits.map(d => ({ x: (d && d.x) || 0, y: (d && d.y) || 0 })) : [],
+      currency: { x: (src.currency && src.currency.x) || 0, y: (src.currency && src.currency.y) || 0 }
+    };
+  }
+
   // Глобальный labelPos используется только как база/совместимость (пресеты).
   let labelPos = defaultLabelPos();
   // Позиции для одиночного режима (один ценник).
   let singleLabelPos = defaultLabelPos();
+
+  // Рассылать ли позиции перетаскивания на все ценники. true — обычный режим
+  // «Двигать надписи» (положение разносится на все), false — «Двигать отдельно»
+  // (двигается только выбранный ценник, остальные не меняются).
+  let dragBroadcast = true;
 
   // Возвращает объект позиций, актуальный для текущего режима и активного товара.
   // Это единая точка чтения/записи для ручного перетаскивания.
@@ -843,6 +861,20 @@ document.addEventListener('DOMContentLoaded', () => {
     delete it.bg;
     // Legacy cleanup (старые плоские bg-поля).
     PER_ITEM_FIELDS.bg.forEach(f => delete it[f]);
+  }
+
+  // Полный сброс per-item ОФОРМЛЕНИЯ ценника i к шаблону: декор, фон и шрифты
+  // (снимает per-item overrides — ценник снова наследует templateFonts/templateDecor/
+  // templateBg). Текст товара (title/price/subtitle) не трогает.
+  function resetItemVisuals(i) {
+    const it = itemsData[i];
+    if (!it) return;
+    resetItemDecor(i);
+    resetItemBg(i);
+    delete it.fontsCustomized;
+    delete it.fonts;
+    // Legacy per-item кегль наименования — иначе он перекрывает templateFonts.titleSize.
+    delete it.titleSize;
   }
 
   // Built-in presets (Default font for Alaska is Arial)
@@ -1573,6 +1605,22 @@ document.addEventListener('DOMContentLoaded', () => {
     if (budgetW) __titleProbe.style.width = `${budgetW}px`;
     return __titleProbe;
   }
+
+  // Ширина цифры «7» в заданном шрифте цены — чтобы все цифры цены были
+  // одинаковой ширины (как 7). Замер через canvas measureText (без DOM),
+  // учитывает реально загруженный веб-шрифт. Возвращает ширину в px.
+  let __priceDigitCtx = null;
+  function priceDigitWidth(fontFamily, fontWeight, fontSizePt) {
+    try {
+      const ctx = __priceDigitCtx || (__priceDigitCtx = document.createElement('canvas').getContext('2d'));
+      const px = (parseFloat(fontSizePt) || 28) * (96 / 72); // pt → px
+      ctx.font = `${fontWeight || 400} ${px}px ${fontFamily || 'Montserrat'}`;
+      return ctx.measureText('7').width; // px
+    } catch (e) {
+      return null;
+    }
+  }
+
   function fitTitleSize(text, family, weight) {
     if (!text || !text.trim()) return null;
     if (!previewTitle) return null;
@@ -1864,6 +1912,12 @@ document.addEventListener('DOMContentLoaded', () => {
       pElem.style.fontSize = `${fontOf(item, 'priceSize', tf4.priceSize != null ? tf4.priceSize : 40)}pt`;
       pElem.style.fontWeight = fontOf(item, 'priceWeight', tf4.priceWeight);
       pElem.style.color = fontOf(item, 'priceColor', tf4.priceColor);
+      // Все цифры цены одной ширины — как «7» (свой размер на каждый item).
+      {
+        const __psz4 = fontOf(item, 'priceSize', tf4.priceSize != null ? tf4.priceSize : 40);
+        const __pw4 = priceDigitWidth(pElem.style.fontFamily, pElem.style.fontWeight, __psz4);
+        if (__pw4) pElem.style.setProperty('--price-digit-w', `${__pw4}px`);
+      }
     }
     if (box) {
       const tf5 = templateFonts || {};
@@ -2095,6 +2149,13 @@ document.addEventListener('DOMContentLoaded', () => {
       previewPrice.style.fontSize = `${fontOf(activeItem, 'priceSize', tf.priceSize != null ? tf.priceSize : priceSize.value)}pt`;
       previewPrice.style.fontWeight = fontOf(activeItem, 'priceWeight', tf.priceWeight || priceWeight.value);
       previewPrice.style.color = fontOf(activeItem, 'priceColor', tf.priceColor || priceColor.value);
+      // Все цифры цены одной ширины — ровно как «7». Замеряем глиф «7» и
+      // кладём в CSS-переменную, которую использует .price-digit { min-width }.
+      {
+        const __psz = fontOf(activeItem, 'priceSize', tf.priceSize != null ? tf.priceSize : priceSize.value);
+        const __pw = priceDigitWidth(previewPrice.style.fontFamily, previewPrice.style.fontWeight, __psz);
+        if (__pw) previewPrice.style.setProperty('--price-digit-w', `${__pw}px`);
+      }
 
       previewCurrency.textContent = (fontOf(activeItem, 'currency', tf.currency != null ? tf.currency : inputCurrency.value) || '').trim();
       previewCurrency.style.fontFamily = fontOf(activeItem, 'priceFont', tf.priceFont || priceFont.value);
@@ -3095,6 +3156,12 @@ document.addEventListener('DOMContentLoaded', () => {
           renderItemsListInputs();
         }
         applyState(p);
+        // Авто-подгон размеров названий под геометрию нового шаблона. Двойной RAF:
+        // первый кадр применяет стили applyState (размер/раскладка/шрифты), второй —
+        // гарантирует, что layout пересчитан и previewTitle.clientWidth/clientHeight
+        // актуальны для fitTitleSize. Если превью скрыто (бюджет 0), fitTitleSize
+        // вернёт null и размер останется от templateFonts.
+        requestAnimationFrame(() => requestAnimationFrame(autoFitFontSize));
       }
     });
   });
@@ -3127,6 +3194,20 @@ document.addEventListener('DOMContentLoaded', () => {
       return p ? p.name : '';
     }
     return '';
+  }
+
+  // Объект пресета активного шаблона (для сброса к виду шаблона).
+  // Встроенный — builtInPresets[key], пользовательский — customTemplates[index].state.
+  function currentPresetState() {
+    if (!activeTemplateRef) return null;
+    if (activeTemplateRef.kind === 'custom') {
+      const t = customTemplates[activeTemplateRef.index];
+      return t ? t.state : null;
+    }
+    if (activeTemplateRef.kind === 'builtin') {
+      return builtInPresets[activeTemplateRef.key] || null;
+    }
+    return null;
   }
 
   // Обновить состояние кнопки/подсказки «Обновить» в модалке сохранения
@@ -3211,10 +3292,23 @@ document.addEventListener('DOMContentLoaded', () => {
   if (confirmCopyItems) confirmCopyItems.addEventListener('click', () => {
     const targets = [...copyItemsTargets.querySelectorAll('input[type=checkbox]:checked')].map(cb => cb.value);
     if (!targets.length) { alert('Выберите хотя бы один шаблон'); return; }
-    // Глубокий клон активного массива — каждый приёмник получает независимую копию
-    // (включая per-item labelPos и оформление, если они заданы).
-    const sourceCopy = itemsData.map(it => it ? JSON.parse(JSON.stringify(it)) : { title: '', price: '', subtitle: '', subtitleManual: false });
+    // Копируем ТОЛЬКО текстовые поля (название/вес/цена). Per-item оформление
+    // (шрифты/декор/фон/позиции) НЕ переносится — каждый ценник в новом шаблоне
+    // наследует оформление этого шаблона (templateFonts/templateDecor/templateBg),
+    // а размер названий пересчитается автоподгоном под геометрию нового шаблона.
+    // labelPos — стандарт нового шаблона (через sharedLabelPosForNewItem при создании).
+    const sourceCopy = itemsData.map(it => {
+      if (!it) return { title: '', price: '', subtitle: '', subtitleManual: false };
+      return {
+        title: it.title || '',
+        price: it.price || '',
+        subtitle: it.subtitle || '',
+        subtitleManual: !!it.subtitleManual
+      };
+    });
     targets.forEach(k => {
+      // Каждый приёмник получает независимую копию; labelPos проставится стандартом
+      // шаблона-приёмника в renderItemsListInputs/normalizeItemsArray.
       templateItems[k] = sourceCopy.map(it => JSON.parse(JSON.stringify(it)));
     });
     copyItemsModal.classList.remove('active');
@@ -3471,15 +3565,35 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // === Ручное перетаскивание надписей в предпросмотре ===
-  // Тумблер «Двигать надписи» включает режим drag-mode на превью.
-  // Взаимоисключающе с режимом редактора границ (safe-edit-mode).
+  const dragModeSoloToggle = document.getElementById('dragModeSoloToggle');
+
+  // Тумблер «Двигать надписи» включает общий режим drag-mode: положение
+  // перетаскиваемой надписи разносится на все ценники листа.
   if (dragModeToggle) {
     dragModeToggle.addEventListener('click', () => {
       const on = wobblerPreview.classList.toggle('drag-mode');
       dragModeToggle.classList.toggle('active', on);
-      if (on) {   // выключаем редактор границ, если был включён
+      if (on) {   // выключаем взаимоисключающие режимы
         wobblerPreview.classList.remove('safe-edit-mode');
         if (safeEditToggle) safeEditToggle.classList.remove('active');
+        wobblerPreview.classList.remove('drag-mode-solo');
+        if (dragModeSoloToggle) dragModeSoloToggle.classList.remove('active');
+        dragBroadcast = true;   // общий режим — рассылка на все ценники
+      }
+    });
+  }
+  // Тумблер «Двигать отдельно» — двигается только выбранный ценник,
+  // остальные ценники листа не меняются (рассылка отключена).
+  if (dragModeSoloToggle) {
+    dragModeSoloToggle.addEventListener('click', () => {
+      const on = wobblerPreview.classList.toggle('drag-mode-solo');
+      dragModeSoloToggle.classList.toggle('active', on);
+      if (on) {
+        wobblerPreview.classList.remove('safe-edit-mode');
+        if (safeEditToggle) safeEditToggle.classList.remove('active');
+        wobblerPreview.classList.remove('drag-mode');
+        if (dragModeToggle) dragModeToggle.classList.remove('active');
+        dragBroadcast = false;   // раздельный режим — без рассылки
       }
     });
   }
@@ -3489,37 +3603,83 @@ document.addEventListener('DOMContentLoaded', () => {
     safeEditToggle.addEventListener('click', () => {
       const on = wobblerPreview.classList.toggle('safe-edit-mode');
       safeEditToggle.classList.toggle('active', on);
-      if (on) {   // выключаем перетаскивание надписей
+      if (on) {   // выключаем оба режима перетаскивания надписей
         wobblerPreview.classList.remove('drag-mode');
         if (dragModeToggle) dragModeToggle.classList.remove('active');
+        wobblerPreview.classList.remove('drag-mode-solo');
+        if (dragModeSoloToggle) dragModeSoloToggle.classList.remove('active');
         // Сразу позиционируем прямоугольник по текущим долям.
         positionSafeRect(resolveItemBg(activePreviewIndex).titleSafe);
       }
     });
   }
 
-  // Сброс смещений АКТИВНОГО ценника (текущий товар в мульти-режиме / одиночный).
-  if (resetLabelPosBtn) {
-    resetLabelPosBtn.addEventListener('click', () => {
-      const lp = activeLabelPos();
-      // Сброс = возврат к значениям по умолчанию (вес/доп.текст остаётся на -2мм).
-      const def = defaultLabelPos();
-      lp.title = def.title;
-      lp.subtitle = def.subtitle;
-      lp.price = def.price;
-      lp.priceDigits = def.priceDigits;
-      lp.currency = def.currency;
-      updatePreview();
-    });
+  // Сброс смещений АКТИВНОГО ценника к виду шаблона: расположение надписей,
+  // индивидуальные шрифты/цвета/декор/фон → к шаблону, границы текста → к шаблону.
+  // Текст товара (наименование/вес/цена) сохраняется.
+  function resetActiveToTemplate() {
+    const preset = currentPresetState();
+    if (!preset) { updatePreview(); return; }
+    const lp = activeLabelPos();
+    const src = cloneLabelPos(preset.labelPos);
+    lp.title = src.title; lp.subtitle = src.subtitle; lp.price = src.price;
+    lp.priceDigits = src.priceDigits; lp.currency = src.currency;
+    // Снимаем per-item переопределения оформления активного ценника → шаблон.
+    resetItemVisuals(activePreviewIndex);
+    // Границы текста — свойство шаблона (глобальны), возвращаем к пресету.
+    const ts = normTitleSafe(preset.titleSafe);
+    globalTitleSafe = { left: ts.left, right: ts.right, top: ts.top, bottom: ts.bottom };
+    // Сбрасываем активные режимы перетаскивания/границ.
+    wobblerPreview.classList.remove('drag-mode', 'drag-mode-solo', 'safe-edit-mode');
+    if (dragModeToggle) dragModeToggle.classList.remove('active');
+    if (dragModeSoloToggle) dragModeSoloToggle.classList.remove('active');
+    if (safeEditToggle) safeEditToggle.classList.remove('active');
+    fontApplyMode = 'item';
+    decorApplyMode = 'item';
+    bgApplyMode = 'item';
+    syncFontControlsToContext();
+    syncDecorControlsToContext();
+    syncBgControlsToContext();
+    updatePreview();
   }
-  // Сброс смещений ВСЕХ ценников (все товары + одиночный).
+
+  // Сброс ВСЕГО внешнего вида к шаблону: позиции + шрифты/цвета/границы/раскладка/
+  // декор/фон для всех ценников. Товары (наименование/вес/цена) сохраняются.
+  function resetAllToTemplate() {
+    const preset = currentPresetState();
+    if (!preset) { updatePreview(); return; }
+    // Сохраняем single-mode текстовые поля — applyState затирает их значениями пресета.
+    const savedTitle = inputTitle.value;
+    const savedSubtitle = inputSubtitle ? inputSubtitle.value : '';
+    const savedPrice = inputPrice.value;
+    const savedCurrency = inputCurrency.value;
+    // applyState восстанавливает шрифты/цвета/раскладку/декор/фон/границы/позиции
+    // из пресета; товары (itemsData[i].title/price/subtitle) он не трогает.
+    applyState(preset);
+    // Возвращаем сохранённые single-mode поля.
+    inputTitle.value = savedTitle;
+    if (inputSubtitle) inputSubtitle.value = savedSubtitle;
+    inputPrice.value = savedPrice;
+    inputCurrency.value = savedCurrency;
+    // Снимаем per-item переопределения оформления у всех ценников → шаблон.
+    itemsData.forEach((it, i) => { if (it) resetItemVisuals(i); });
+    fontApplyMode = 'item';
+    decorApplyMode = 'item';
+    bgApplyMode = 'item';
+    syncFontControlsToContext();
+    syncDecorControlsToContext();
+    syncBgControlsToContext();
+    updatePreview();
+  }
+
+  // Сброс АКТИВНОГО ценника к виду шаблона (расположение + оформление + границы).
+  if (resetLabelPosBtn) {
+    resetLabelPosBtn.addEventListener('click', resetActiveToTemplate);
+  }
+  // Сброс ВСЕХ ценников к виду шаблона (весь внешний вид; товары сохраняются).
   const resetAllLabelPosBtn = document.getElementById('resetAllLabelPosBtn');
   if (resetAllLabelPosBtn) {
-    resetAllLabelPosBtn.addEventListener('click', () => {
-      singleLabelPos = defaultLabelPos();
-      itemsData.forEach(it => { if (it) it.labelPos = defaultLabelPos(); });
-      updatePreview();
-    });
+    resetAllLabelPosBtn.addEventListener('click', resetAllToTemplate);
   }
   // Дубликат кнопки «💴 Цена по №1» в панели превью.
   const syncPricePosPreviewBtn = document.getElementById('syncPricePosPreviewBtn');
@@ -3567,7 +3727,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     wobblerPreview.addEventListener('pointerdown', (e) => {
-      if (!wobblerPreview.classList.contains('drag-mode')) return;
+      // Оба режима перетаскивания: общий (drag-mode) и «отдельно» (drag-mode-solo).
+      if (!wobblerPreview.classList.contains('drag-mode')
+          && !wobblerPreview.classList.contains('drag-mode-solo')) return;
       const target = resolveTarget(e.target);
       if (!target) return;
       e.preventDefault();
@@ -3585,11 +3747,13 @@ document.addEventListener('DOMContentLoaded', () => {
       ref.x = Math.round((drag.baseX + dx) * 10) / 10;
       ref.y = Math.round((drag.baseY + dy) * 10) / 10;
       updatePreview();
-      // Наименование, вес и цена общие для всех ценников: движение на активном
-      // мгновенно разносится на все (включая №1).
-      if (drag.target.kind === 'title' || drag.target.kind === 'subtitle'
-          || drag.target.kind === 'price'
-          || drag.target.kind === 'digit' || drag.target.kind === 'currency') {
+      // В общем режиме (dragBroadcast=true) положение надписи разносится на все
+      // ценники (включая №1). В режиме «Двигать отдельно» (dragBroadcast=false)
+      // двигается только активный ценник, остальные не меняются.
+      if (dragBroadcast &&
+          (drag.target.kind === 'title' || drag.target.kind === 'subtitle'
+           || drag.target.kind === 'price'
+           || drag.target.kind === 'digit' || drag.target.kind === 'currency')) {
         syncSharedPosFromActive();
       }
     });
@@ -3806,4 +3970,10 @@ document.addEventListener('DOMContentLoaded', () => {
        document.body.dataset.verifyPriceW = document.getElementById('priceWeight').value;
      });
    })();
+
+  // Пересчитать ширину цифр цены, когда веб-шрифты точно загружены:
+  // первый замер мог снять метрики фолбэка (например, для Lobster/Pacifico).
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => updatePreview());
+  }
  });

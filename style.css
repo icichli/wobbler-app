@@ -1043,12 +1043,15 @@ input[type="range"] {
 }
 .price-digit {
   display: inline-block;
+  /* Все цифры одной ширины — ровно как цифра 7. Значение --price-digit-w
+     выставляется в JS через canvas-замер глифа «7» текущего шрифта цены.
+     Запас 0.55em — пока переменная не задана (или шрифт ещё не загружен). */
+  min-width: var(--price-digit-w, 0.55em);
+  text-align: center;
 }
 /* Пробел в цене — полноценный символ шириной с цифру (nbsp не схлопывается
-   в inline-flex; min-width ≈ ширина табличной цифры 4/5). */
+   в inline-flex). min-width/text-align наследуются от .price-digit. */
 .price-digit.price-space {
-  min-width: 0.55em;
-  text-align: center;
 }
 
 /* Режим перетаскивания надписей: надписи выделяются и становятся «хватаемыми» */
@@ -1069,6 +1072,28 @@ input[type="range"] {
   outline-offset: 2px;
 }
 .wobbler-element.drag-mode .price-val {
+  outline: none;
+}
+
+/* Режим «Двигать отдельно»: тот же захват, но контур зелёный — чтобы отличить
+   от обычного режима, где положение разносится на все ценники. Здесь двигается
+   только выбранный ценник, остальные не меняются. */
+.wobbler-element.drag-mode-solo .wobbler-title,
+.wobbler-element.drag-mode-solo .wobbler-subtitle,
+.wobbler-element.drag-mode-solo .wobbler-price-box {
+  cursor: move;
+  touch-action: none;
+  outline: 1px dashed rgba(34, 197, 94, 0.9);
+  outline-offset: 3px;
+}
+.wobbler-element.drag-mode-solo .price-digit,
+.wobbler-element.drag-mode-solo .price-curr {
+  cursor: move;
+  touch-action: none;
+  outline: 1px dashed rgba(132, 204, 22, 0.95);
+  outline-offset: 2px;
+}
+.wobbler-element.drag-mode-solo .price-val {
   outline: none;
 }
 
