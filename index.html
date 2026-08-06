@@ -276,11 +276,15 @@
         </div>
 
         <!-- Main Title Settings -->
-        <div class="field-settings-group">
-          <div class="group-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="field-settings-group sub-group">
+          <div class="group-header sub-toggle" data-subgroup="font-title" style="display: flex; justify-content: space-between; align-items: center;">
             <h4>1. Шрифт наименования</h4>
-            <button type="button" id="autoFitFontBtn" class="btn btn-secondary" style="padding: 3px 8px; font-size: 0.72rem;">✨ Подогнать</button>
+            <span style="display:flex; align-items:center; gap:8px;">
+              <button type="button" id="autoFitFontBtn" class="btn btn-secondary" style="padding: 3px 8px; font-size: 0.72rem;">✨ Подогнать</button>
+              <span class="sub-arrow">▼</span>
+            </span>
           </div>
+          <div class="sub-body">
           <div class="form-row">
             <div class="form-group flex-2">
               <select id="titleFont" class="font-dropdown">
@@ -318,28 +322,21 @@
             </div>
           </div>
 
-          <!-- Title Position & Alignment -->
-          <div class="form-row">
-            <div class="form-group flex-1">
-              <label>Выравнивание</label>
-              <div class="align-btn-group">
-                <button type="button" class="align-btn active" data-target="title" data-align="center">↔ Центр</button>
-                <button type="button" class="align-btn" data-target="title" data-align="left">← Слева</button>
-                <button type="button" class="align-btn" data-target="title" data-align="right">Справа →</button>
-              </div>
-            </div>
-          </div>
+          <!-- Title Position & Alignment (выравнивание убрано из UI; осталось смещение) -->
           <div class="form-group">
             <label>Смещение по вертикали: <span id="titleOffsetYVal">0</span> мм</label>
             <input type="range" id="titleOffsetY" min="-20" max="20" value="0">
           </div>
+          </div><!-- /.sub-body -->
         </div>
 
         <!-- Subtitle (Вес / доп. текст) Settings -->
-        <div class="field-settings-group">
-          <div class="group-header" style="margin-bottom: 8px;">
+        <div class="field-settings-group sub-group">
+          <div class="group-header sub-toggle" data-subgroup="font-subtitle" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
             <h4>Вес / доп. текст</h4>
+            <span class="sub-arrow">▼</span>
           </div>
+          <div class="sub-body">
           <div class="form-row">
             <div class="form-group flex-1">
               <label>Размер: <span id="subtitleSizeVal">11</span>pt</label>
@@ -359,25 +356,19 @@
               <input type="color" id="subtitleColor" value="#ffffff">
             </div>
           </div>
-          <div class="form-group">
-            <label>Выравнивание</label>
-            <div class="align-btn-group">
-              <button type="button" class="align-btn active" data-target="subtitle" data-align="left">← Слева</button>
-              <button type="button" class="align-btn" data-target="subtitle" data-align="center">↔ Центр</button>
-              <button type="button" class="align-btn" data-target="subtitle" data-align="right">Справа →</button>
-            </div>
-          </div>
+          </div><!-- /.sub-body -->
         </div>
 
-        <!-- Full Price Block Customization (Font, Size, Weight, Alignment, Offset) -->
-        <div class="field-settings-group">
-          <div class="checkbox-option" style="margin-bottom: 8px;">
+        <!-- Full Price Block Customization (Font, Size, Weight, Offset) -->
+        <div class="field-settings-group sub-group">
+          <div class="checkbox-option sub-toggle" data-subgroup="font-price" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
             <label>
               <input type="checkbox" id="showPriceToggle" checked>
               <strong>2. Настройки блока цены</strong>
             </label>
+            <span class="sub-arrow">▼</span>
           </div>
-          <div id="priceFieldsBlock">
+          <div class="sub-body" id="priceFieldsBlock">
             <div class="form-row">
               <div class="form-group flex-2">
                 <label>Шрифт цены и значка ₽</label>
@@ -416,17 +407,6 @@
               </div>
             </div>
 
-            <div class="form-row">
-              <div class="form-group flex-1">
-                <label>Выравнивание цены</label>
-                <div class="align-btn-group">
-                  <button type="button" class="align-btn active" data-target="price" data-align="center">↔ Центр</button>
-                  <button type="button" class="align-btn" data-target="price" data-align="left">← Слева</button>
-                  <button type="button" class="align-btn" data-target="price" data-align="right">Справа →</button>
-                </div>
-              </div>
-            </div>
-
             <div class="form-group">
               <label>Смещение цены по вертикали: <span id="priceOffsetYVal">0</span> мм</label>
               <input type="range" id="priceOffsetY" min="-20" max="20" value="0">
@@ -440,7 +420,18 @@
       <section class="control-card" id="section4">
         <h3 class="card-toggle collapsed" data-section="section4"><span class="card-num">4</span> Фоны и заливка <span class="toggle-arrow">▼</span></h3>
         <div class="card-body" style="display:none;">
-        
+
+        <!-- Переключатель области применения фона (только для «Разные товары»).
+             Независим от переключателя Оформления (#5). -->
+        <div class="font-apply-mode" id="bgApplyModeWrap" style="display:none;">
+          <span class="fam-label">Применить к:</span>
+          <div class="seg-control" role="group">
+            <button type="button" class="seg-btn active" data-bg-mode="item">Этот ценник</button>
+            <button type="button" class="seg-btn" data-bg-mode="template">Весь шаблон</button>
+          </div>
+          <button type="button" id="resetItemBgBtn" class="btn btn-secondary btn-sm" title="Сбросить фон ценника к настройкам шаблона">↺ К шаблону</button>
+        </div>
+
         <div class="form-group">
           <label for="headerBgColor">Цвет заливки воблера</label>
           <input type="color" id="headerBgColor" value="#18181b">
@@ -482,12 +473,25 @@
         <h3 class="card-toggle collapsed" data-section="section5"><span class="card-num">5</span> Оформление <span class="toggle-arrow">▼</span></h3>
         <div class="card-body" style="display:none;">
 
-          <div class="form-group">
+        <!-- Переключатель области применения оформления (фон #4 + блоки #5).
+             Только для режима «Разные товары»; управляется из JS. -->
+        <div class="font-apply-mode" id="decorApplyModeWrap" style="display:none;">
+          <span class="fam-label">Применить к:</span>
+          <div class="seg-control" role="group">
+            <button type="button" class="seg-btn active" data-decor-mode="item">Этот ценник</button>
+            <button type="button" class="seg-btn" data-decor-mode="template">Весь шаблон</button>
+          </div>
+          <button type="button" id="resetItemDecorBtn" class="btn btn-secondary btn-sm" title="Сбросить фон и оформление ценника к настройкам шаблона">↺ К шаблону</button>
+        </div>
+
+          <div class="sub-group">
+          <div class="form-group sub-toggle" data-subgroup="decor-outside" style="display: flex; justify-content: space-between; align-items: center;">
             <label class="checkbox-label">
               <input type="checkbox" id="decorOutsideShow"> Блок СВЕРХУ над ценником (не входит в размер)
             </label>
+            <span class="sub-arrow">▼</span>
           </div>
-          <div id="decorOutsideGroup">
+          <div class="sub-body" id="decorOutsideGroup">
             <div class="form-group">
               <label for="decorOutsideText">Текст блока:</label>
               <textarea id="decorOutsideText" rows="1" placeholder="Например: НОВИНКА, АКЦИЯ, -20%">НОВИНКА</textarea>
@@ -526,16 +530,19 @@
               <label for="decorOutsideHeight">Высота блока (мм): <span id="decorOutsideHeightVal">12</span></label>
               <input type="range" id="decorOutsideHeight" min="5" max="30" value="12">
             </div>
-          </div>
+          </div><!-- /.sub-body -->
+          </div><!-- /.sub-group -->
 
           <hr style="border:none;border-top:1px solid var(--border-color);margin:12px 0;">
 
-          <div class="form-group">
+          <div class="sub-group">
+          <div class="form-group sub-toggle" data-subgroup="decor-inside" style="display: flex; justify-content: space-between; align-items: center;">
             <label class="checkbox-label">
               <input type="checkbox" id="decorInsideShow"> Блок ВНУТРИ ценника (сверху, входит в размер)
             </label>
+            <span class="sub-arrow">▼</span>
           </div>
-          <div id="decorInsideGroup">
+          <div class="sub-body" id="decorInsideGroup">
             <div class="form-group">
               <label for="decorInsideText">Текст блока:</label>
               <textarea id="decorInsideText" rows="1" placeholder="Например: НОВИНКА, АКЦИЯ, -20%">НОВИНКА</textarea>
@@ -578,16 +585,19 @@
               <label for="decorInsideWidth">Ширина блока: <span id="decorInsideWidthVal">50</span>%</label>
               <input type="range" id="decorInsideWidth" min="20" max="100" value="50">
             </div>
-          </div>
+          </div><!-- /.sub-body -->
+          </div><!-- /.sub-group -->
 
           <hr style="border:none;border-top:1px solid var(--border-color);margin:12px 0;">
 
-          <div class="form-group">
+          <div class="sub-group">
+          <div class="form-group sub-toggle" data-subgroup="decor-bottom" style="display: flex; justify-content: space-between; align-items: center;">
             <label class="checkbox-label">
               <input type="checkbox" id="decorBottomShow"> Блок СНИЗУ под ценником (не входит в размер)
             </label>
+            <span class="sub-arrow">▼</span>
           </div>
-          <div id="decorBottomGroup">
+          <div class="sub-body" id="decorBottomGroup">
             <div class="form-group">
               <label for="decorBottomText">Текст блока:</label>
               <textarea id="decorBottomText" rows="1" placeholder="Например: НОВИНКА, АКЦИЯ, -20%">НОВИНКА</textarea>
@@ -626,7 +636,8 @@
               <label for="decorBottomHeight">Высота блока (мм): <span id="decorBottomHeightVal">12</span></label>
               <input type="range" id="decorBottomHeight" min="5" max="30" value="12">
             </div>
-          </div>
+          </div><!-- /.sub-body -->
+          </div><!-- /.sub-group -->
 
         </div><!-- /.card-body section5 Оформление -->
       </section>
@@ -796,208 +807,7 @@
     </div>
   </div>
 
-  <!-- Modal: per-item decoration & background (кнопка ⚙ в строке) -->
-  <div id="itemSettingsModal" class="modal-backdrop no-print">
-    <div class="modal-box modal-box-wide">
-      <h3 id="itemSettingsTitle">Настройки ценника</h3>
-      <p class="item-settings-hint">Эти настройки применяются только к выбранному ценнику. Поля, которые вы не меняете, берутся из общих секций «Фоны» и «Оформление».</p>
-
-      <!-- Фон ценника -->
-      <div class="is-group">
-        <h4 class="is-group-title">Фон ценника</h4>
-        <div class="form-group">
-          <label class="checkbox-label">
-            <input type="checkbox" id="isBgEnabled"> Свой фон для этого ценника
-          </label>
-        </div>
-        <div class="is-group-body" data-is-bg>
-          <div class="form-group">
-            <label for="isHeaderBgColor">Цвет заливки фона:</label>
-            <input type="color" id="isHeaderBgColor" value="#ffffff">
-          </div>
-          <div class="form-group">
-            <label for="isBgImage">Фоновая картинка:</label>
-            <select id="isBgImage">
-              <option value="none" selected>Без картинки (заливка цветом)</option>
-              <option value="dots_bg.jpg">📷 Точечный фон</option>
-              <option value="ryba_bg.jpg">🐟 Чёрный фон с рамкой</option>
-              <option value="ryba_scales">🐟 Рыбья чешуя</option>
-              <option value="custom" id="isBgCustomOption" style="display:none;">Загруженное фото</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Или загрузить свою картинку:</label>
-            <div class="upload-btn-wrapper">
-              <label for="isBgCustomUpload" class="btn btn-secondary upload-btn">📁 Выбрать файл…</label>
-              <input type="file" id="isBgCustomUpload" accept="image/*">
-            </div>
-            <div id="isBgUploadStatus" class="upload-status"></div>
-          </div>
-        </div>
-      </div>
-
-      <hr class="is-sep">
-
-      <!-- Блок СВЕРХУ -->
-      <div class="is-group">
-        <h4 class="is-group-title">Блок СВЕРХУ над ценником</h4>
-        <div class="form-group">
-          <label class="checkbox-label">
-            <input type="checkbox" id="isOutsideShow"> Показать блок СВЕРХУ для этого ценника
-          </label>
-        </div>
-        <div class="is-group-body" data-is-outside>
-          <div class="form-group">
-            <label for="isOutsideText">Текст блока:</label>
-            <textarea id="isOutsideText" rows="1" placeholder="Например: НОВИНКА, АКЦИЯ, -20%">НОВИНКА</textarea>
-          </div>
-          <div class="form-group">
-            <label for="isOutsideBg">Цвет заливки блока:</label>
-            <input type="color" id="isOutsideBg" value="#e63946">
-          </div>
-          <div class="form-group">
-            <label for="isOutsideBgImg">Фоновая картинка блока:</label>
-            <select id="isOutsideBgImg">
-              <option value="none" selected>Без картинки (заливка цветом)</option>
-              <option value="dots_bg.jpg">📷 Точечный фон</option>
-              <option value="ryba_bg.jpg">🐟 Чёрный фон с рамкой</option>
-              <option value="ryba_scales">🐟 Рыбья чешуя</option>
-              <option value="custom" id="isOutsideCustomOption" style="display:none;">Загруженное фото</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Или загрузить свою картинку:</label>
-            <div class="upload-btn-wrapper">
-              <label for="isOutsideCustomUpload" class="btn btn-secondary upload-btn">📁 Выбрать файл…</label>
-              <input type="file" id="isOutsideCustomUpload" accept="image/*">
-            </div>
-            <div id="isOutsideUploadStatus" class="upload-status"></div>
-          </div>
-          <div class="form-group">
-            <label for="isOutsideColor">Цвет текста:</label>
-            <input type="color" id="isOutsideColor" value="#ffffff">
-          </div>
-          <div class="form-group">
-            <label for="isOutsideFontSize">Размер шрифта (pt):</label>
-            <input type="range" id="isOutsideFontSize" min="6" max="30" value="14">
-          </div>
-          <div class="form-group">
-            <label for="isOutsideHeight">Высота блока (мм):</label>
-            <input type="range" id="isOutsideHeight" min="5" max="30" value="12">
-          </div>
-        </div>
-      </div>
-
-      <hr class="is-sep">
-
-      <!-- Блок ВНУТРИ -->
-      <div class="is-group">
-        <h4 class="is-group-title">Блок ВНУТРИ ценника</h4>
-        <div class="form-group">
-          <label class="checkbox-label">
-            <input type="checkbox" id="isInsideShow"> Показать блок ВНУТРИ для этого ценника
-          </label>
-        </div>
-        <div class="is-group-body" data-is-inside>
-          <div class="form-group">
-            <label for="isInsideText">Текст блока:</label>
-            <textarea id="isInsideText" rows="1" placeholder="Например: НОВИНКА, АКЦИЯ, -20%">НОВИНКА</textarea>
-          </div>
-          <div class="form-group">
-            <label for="isInsideBg">Цвет заливки блока:</label>
-            <input type="color" id="isInsideBg" value="#e63946">
-          </div>
-          <div class="form-group">
-            <label for="isInsideBgImg">Фоновая картинка блока:</label>
-            <select id="isInsideBgImg">
-              <option value="none" selected>Без картинки (заливка цветом)</option>
-              <option value="dots_bg.jpg">📷 Точечный фон</option>
-              <option value="ryba_bg.jpg">🐟 Чёрный фон с рамкой</option>
-              <option value="ryba_scales">🐟 Рыбья чешуя</option>
-              <option value="custom" id="isInsideCustomOption" style="display:none;">Загруженное фото</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Или загрузить свою картинку:</label>
-            <div class="upload-btn-wrapper">
-              <label for="isInsideCustomUpload" class="btn btn-secondary upload-btn">📁 Выбрать файл…</label>
-              <input type="file" id="isInsideCustomUpload" accept="image/*">
-            </div>
-            <div id="isInsideUploadStatus" class="upload-status"></div>
-          </div>
-          <div class="form-group">
-            <label for="isInsideColor">Цвет текста:</label>
-            <input type="color" id="isInsideColor" value="#ffffff">
-          </div>
-          <div class="form-group">
-            <label for="isInsideFontSize">Размер шрифта (pt):</label>
-            <input type="range" id="isInsideFontSize" min="6" max="22" value="11">
-          </div>
-          <div class="form-group">
-            <label for="isInsideHeight">Высота блока (мм):</label>
-            <input type="range" id="isInsideHeight" min="3" max="15" value="8">
-          </div>
-        </div>
-      </div>
-
-      <hr class="is-sep">
-
-      <!-- Блок СНИЗУ -->
-      <div class="is-group">
-        <h4 class="is-group-title">Блок СНИЗУ под ценником</h4>
-        <div class="form-group">
-          <label class="checkbox-label">
-            <input type="checkbox" id="isBottomShow"> Показать блок СНИЗУ для этого ценника
-          </label>
-        </div>
-        <div class="is-group-body" data-is-bottom>
-          <div class="form-group">
-            <label for="isBottomText">Текст блока:</label>
-            <textarea id="isBottomText" rows="1" placeholder="Например: НОВИНКА, АКЦИЯ, -20%">НОВИНКА</textarea>
-          </div>
-          <div class="form-group">
-            <label for="isBottomBg">Цвет заливки блока:</label>
-            <input type="color" id="isBottomBg" value="#e63946">
-          </div>
-          <div class="form-group">
-            <label for="isBottomBgImg">Фоновая картинка блока:</label>
-            <select id="isBottomBgImg">
-              <option value="none" selected>Без картинки (заливка цветом)</option>
-              <option value="dots_bg.jpg">📷 Точечный фон</option>
-              <option value="ryba_bg.jpg">🐟 Чёрный фон с рамкой</option>
-              <option value="ryba_scales">🐟 Рыбья чешуя</option>
-              <option value="custom" id="isBottomCustomOption" style="display:none;">Загруженное фото</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Или загрузить свою картинку:</label>
-            <div class="upload-btn-wrapper">
-              <label for="isBottomCustomUpload" class="btn btn-secondary upload-btn">📁 Выбрать файл…</label>
-              <input type="file" id="isBottomCustomUpload" accept="image/*">
-            </div>
-            <div id="isBottomUploadStatus" class="upload-status"></div>
-          </div>
-          <div class="form-group">
-            <label for="isBottomColor">Цвет текста:</label>
-            <input type="color" id="isBottomColor" value="#ffffff">
-          </div>
-          <div class="form-group">
-            <label for="isBottomFontSize">Размер шрифта (pt):</label>
-            <input type="range" id="isBottomFontSize" min="6" max="30" value="14">
-          </div>
-          <div class="form-group">
-            <label for="isBottomHeight">Высота блока (мм):</label>
-            <input type="range" id="isBottomHeight" min="5" max="30" value="12">
-          </div>
-        </div>
-      </div>
-
-      <div class="modal-actions">
-        <button id="cancelItemSettings" class="btn btn-secondary">Готово</button>
-        <button id="resetItemSettings" class="btn btn-secondary">↩ Сбросить к общему</button>
-      </div>
-    </div>
-  </div>
+  <!-- Modal: per-item decoration был удалён — заменён основным блоком Оформления -->
 
   <!-- PRINT ONLY CONTAINER -->
   <div id="printArea" class="print-only">

@@ -741,6 +741,33 @@ html, body {
   margin-bottom: 8px;
 }
 
+/* Сворачиваемые подсекции (блоки внутри секций #3 Шрифты и #5 Оформление).
+   Переиспользует is-collapsed паттерн (как preset-subgroup): клик по .sub-toggle
+   переключает класс на родителе .sub-group, CSS прячет .sub-body. */
+.sub-toggle {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  transition: color 0.2s ease;
+}
+.sub-toggle:hover { color: var(--accent-blue); }
+.sub-toggle .sub-arrow {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  transition: transform 0.25s ease;
+  flex-shrink: 0;
+}
+.sub-group.is-collapsed .sub-body { display: none; }
+.sub-group.is-collapsed .sub-arrow { transform: rotate(-90deg); }
+.sub-group.is-collapsed .sub-toggle { margin-bottom: 0; }
+.sub-body { width: 100%; }
+/* Цена: чекбокс «показать блок цены» скрывает тело через класс price-off
+   (вместо инлайн-display, чтобы не конфликтовать с is-collapsed сворачиванием). */
+.sub-body.price-off { display: none !important; }
+
 /* Radio Options */
 .radio-group {
   display: flex;
