@@ -791,8 +791,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Объектный вариант резолвера блока: работает по самому item (для клонов листа/печати).
-  function decorBlockFromItem(item, kind) {
-    const td = templateDecor || {};
+  // Параметризованная версия — принимает decor-snapshot td (форма как templateDecor)
+  // и insideWidth-значение, чтобы работать с ЛЮБЫМ preset, а не только активным.
+  function decorBlockFromItemCtx(item, kind, td, insideWidthVal) {
+    td = td || {};
     if (kind === 'outside') {
       return {
         show:     decorOf(item, 'outsideShow',   td.outsideShow != null ? td.outsideShow : false),
@@ -826,17 +828,36 @@ document.addEventListener('DOMContentLoaded', () => {
       color:    decorOf(item, 'insideColor',  td.insideColor || '#ffffff'),
       fontSize: decorOf(item, 'insideFontSize', td.insideFontSize != null ? td.insideFontSize : 11),
       height:   decorOf(item, 'insideHeight', td.insideHeight != null ? td.insideHeight : 8),
-      width:    decorInsideWidth ? decorInsideWidth.value : 50
+      width:    insideWidthVal != null ? insideWidthVal : 50
     };
   }
-  function bgFromItem(item) {
-    const tb = templateBg || {};
+  function decorBlockFromItem(item, kind) {
+    return decorBlockFromItemCtx(item, kind, templateDecor, decorInsideWidth ? decorInsideWidth.value : 50);
+  }
+  function bgFromItemCtx(item, tb, titleSafe) {
+    tb = tb || {};
     return {
       headerBg: bgOf(item, 'headerBg',     tb.headerBg || '#ffffff'),
       bgImage:  bgOf(item, 'bgImage',      tb.bgImage || 'none'),
       customBg: bgOf(item, 'customBgData', tb.customBgData != null ? tb.customBgData : null),
-      titleSafe: normTitleSafe(readGlobalTitleSafe())
+      titleSafe: normTitleSafe(titleSafe || readGlobalTitleSafe())
     };
+  }
+  function bgFromItem(item) {
+    return bgFromItemCtx(item, templateBg, readGlobalTitleSafe());
+  }
+  // Per-item кегль названия с явным fallback (для рендера под произвольный preset).
+  function titleSizeForCtx(item, fbSize) {
+    let raw = null;
+    if (item) {
+      if (item.fonts && item.fonts.titleSize != null) raw = item.fonts.titleSize;
+      else if (item.titleSize != null && item.titleSize !== '') raw = item.titleSize; // legacy
+    }
+    if (raw != null && raw !== '') {
+      const v = parseFloat(raw);
+      if (!isNaN(v)) return v;
+    }
+    return parseFloat(fbSize) || 13;
   }
 
   // Сбрасывает per-item ОФОРМЛЕНИЕ ценника i (декор-блоки; фон не трогает).
@@ -1587,7 +1608,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // переносит текст по словам. Бинарным поиском находим максимальный целый pt,
   // при котором высота зонируемого текста ≤ бюджету (--title-zone-h).
   // Возвращает null, если замер невозможен (нет бюджета/текста).
-  const TITLE_FIT_MAX = 32;   // верх слайдера titleSize
+  const TITLE_FIT_MAX = 72;   // верх слайдера titleSize
   let __titleProbe = null;
   function getTitleProbe(budgetW) {
     if (!__titleProbe) {
@@ -1797,14 +1818,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   autoFitFontBtn.addEventListener('click', autoFitFontSize);
 
-  // Calculate maximum fitting wobblers on A4 (поля печати по 2 мм со всех сторон,
-  // зазор между ценниками gapMm задаётся слайдером; при 0 ценники печатаются встык).
+  // Calculate maximum fitting wobblers on A4 (поля печати: 5 мм сверху, по 2 мм
+  // снизу/слева/справа; зазор между ценниками gapMm задаётся слайдером; при 0
+  // ценники печатаются встык).
   // Формула числа ячеек в ряду: n*w + (n-1)*g ≤ pageW  →  n = floor((pageW + g)/(w + g)).
   function calcA4Grid(wMm, hMm) {
-    const margin = 2; // 2 мм со всех сторон — умолчание печати для всех шаблонов
+    const mTop = 5, mBottom = 2, mSide = 2; // верх 5 мм, низ/бока 2 мм
     const g = gapMm();
-    const pageW = 210 - margin * 2;
-    const pageH = 297 - margin * 2;
+    const pageW = 210 - mSide * 2;       // 206
+    const pageH = 297 - mTop - mBottom;  // 290
     const cols = Math.max(1, Math.floor((pageW + g) / (wMm + g)));
     const rows = Math.max(1, Math.floor((pageH + g) / (hMm + g)));
     return { cols, rows, maxCount: cols * rows };
@@ -2014,6 +2036,261 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Декоративные блоки (СВЕРХУ / ВНУТРИ / СНИЗУ) отрисованы выше через
     // applyCloneDecorBlock() — единый хелпер для всех трёх блоков клона.
+  }
+
+  // ===== Мульти-печать: рендер ценника под ПРОИЗВОЛЬНЫЙ preset =====
+  // В отличие от applyItemToClone (который читает глобальные templateFonts/Decor/Bg
+  // активного шаблона), эти функции принимают snapshot из ЛЮБОГО preset — так клон
+  // одевается под шаблон, к которому принадлежит товар, независимо от активного.
+
+  // Строит { tf, td, tb, ts, layout, headerH, rybaPib, insideWidth, labelPos } из preset.
+  // Форма tf/td/tb совпадает с templateFonts/templateDecor/templateBg (см. applyState).
+  function buildPresetSnapshots(preset) {
+    const tf = {
+      titleFont:      preset.titleFont || "Arial, sans-serif",
+      titleColor:     preset.titleColor || '#ffffff',
+      titleSize:      preset.titleSize || 13,
+      titleWeight:    preset.titleWeight || '800',
+      titleItalic:    !!preset.titleItalic,
+      titleAlign:     preset.titleAlign || 'center',
+      titleOffsetY:   preset.titleOffsetY != null ? preset.titleOffsetY : 0,
+      subtitleColor:  preset.subtitleColor || '#ffffff',
+      subtitleSize:   preset.subtitleSize != null ? preset.subtitleSize : 11,
+      subtitleWeight: preset.subtitleWeight || '700',
+      subtitleAlign:  preset.subtitleAlign || 'left',
+      priceFont:      preset.priceFont || "Arial, sans-serif",
+      priceColor:     preset.priceColor || '#ffffff',
+      priceSize:      preset.priceSize !== undefined ? preset.priceSize : 40,
+      priceWeight:    preset.priceWeight || '700',
+      priceAlign:     preset.priceAlign || 'center',
+      priceOffsetY:   preset.priceOffsetY != null ? preset.priceOffsetY : 0,
+      currency:       preset.currency || '₽'
+    };
+    const td = {
+      outsideShow:     !!preset.decorOutsideShow,
+      outsideText:     preset.decorOutsideText != null ? preset.decorOutsideText : 'НОВИНКА',
+      outsideBg:       preset.decorOutsideBg || '#e63946',
+      outsideBgImg:    preset.decorOutsideBgImg || 'none',
+      outsideCustomBg: preset.decorOutsideCustomBg || null,
+      outsideColor:    preset.decorOutsideColor || '#ffffff',
+      outsideFontSize: preset.decorOutsideFontSize != null ? preset.decorOutsideFontSize : 14,
+      outsideHeight:   preset.decorOutsideHeight != null ? preset.decorOutsideHeight : 12,
+      insideShow:      !!preset.decorInsideShow,
+      insideText:      preset.decorInsideText != null ? preset.decorInsideText : 'НОВИНКА',
+      insideBg:        preset.decorInsideBg || '#e63946',
+      insideBgImg:     preset.decorInsideBgImg || 'none',
+      insideCustomBg:  preset.decorInsideCustomBg || null,
+      insideColor:     preset.decorInsideColor || '#ffffff',
+      insideFontSize:  preset.decorInsideFontSize != null ? preset.decorInsideFontSize : 11,
+      insideHeight:    preset.decorInsideHeight != null ? preset.decorInsideHeight : 8,
+      bottomShow:      !!preset.decorBottomShow,
+      bottomText:      preset.decorBottomText != null ? preset.decorBottomText : 'НОВИНКА',
+      bottomBg:        preset.decorBottomBg || '#e63946',
+      bottomBgImg:     preset.decorBottomBgImg || 'none',
+      bottomCustomBg:  preset.decorBottomCustomBg || null,
+      bottomColor:     preset.decorBottomColor || '#ffffff',
+      bottomFontSize:  preset.decorBottomFontSize != null ? preset.decorBottomFontSize : 14,
+      bottomHeight:    preset.decorBottomHeight != null ? preset.decorBottomHeight : 12
+    };
+    const tb = {
+      headerBg:     preset.headerBg || '#18181b',
+      bgImage:      preset.bgImage || 'none',
+      customBgData: preset.customBgData || null
+    };
+    // labelPos preset (merge как в applyState).
+    const base = defaultLabelPos();
+    const src = preset.labelPos || null;
+    const labelPos = src ? {
+      title: Object.assign({}, base.title, src.title || {}),
+      subtitle: Object.assign({}, base.subtitle, src.subtitle || {}),
+      price: Object.assign({}, base.price, src.price || {}),
+      priceDigits: Array.isArray(src.priceDigits) ? src.priceDigits.map(d => ({ x: (d && d.x) || 0, y: (d && d.y) || 0 })) : [],
+      currency: Object.assign({}, base.currency, src.currency || {})
+    } : base;
+    return {
+      tf, td, tb,
+      ts: normTitleSafe(preset.titleSafe),
+      layout: preset.layout === 'split' ? 'split' : 'full',
+      headerH: preset.headerHeight || 100,
+      rybaPib: !!preset.priceInBottom,
+      insideWidth: preset.decorInsideWidth != null ? preset.decorInsideWidth : 50,
+      labelPos
+    };
+  }
+
+  // Применяет к клону шрифты/decor/bg/positions под конкретный preset (а не активный).
+  // Контракт тот же, что у applyItemToClone, но все глобальные чтения заменены на ctx.
+  function applyTemplateStyleToClone(clone, item, ctx) {
+    const { tf, td, tb, ts, layout, headerH, rybaPib, insideWidth, labelPos: presetLp } = ctx;
+    const lp = (item && item.labelPos) ? item.labelPos : presetLp;
+    const digits = String((item && item.price) || '').split('');
+
+    const tElem = clone.querySelector('.wobbler-title');
+    const pElem = clone.querySelector('.price-val');
+    const sElem = clone.querySelector('.wobbler-subtitle');
+    const box = clone.querySelector('.wobbler-price-box');
+    const curr = clone.querySelector('.price-curr');
+
+    if (tElem) {
+      tElem.textContent = (item && item.title) || '';
+      tElem.style.fontFamily = fontOf(item, 'titleFont', tf.titleFont);
+      tElem.style.color = fontOf(item, 'titleColor', tf.titleColor);
+      tElem.style.fontSize = `${titleSizeForCtx(item, tf.titleSize)}pt`;
+      tElem.style.fontWeight = fontOf(item, 'titleWeight', tf.titleWeight);
+      tElem.style.fontStyle = fontOf(item, 'titleItalic', tf.titleItalic) ? 'italic' : 'normal';
+      tElem.style.textAlign = fontOf(item, 'titleAlign', tf.titleAlign);
+      const tOff = parseFloat(fontOf(item, 'titleOffsetY', tf.titleOffsetY)) || 0;
+      tElem.style.transform = `translate(${lp.title.x}mm, ${tOff + lp.title.y}mm)`;
+    }
+    if (sElem) {
+      sElem.textContent = (item && item.subtitle != null) ? item.subtitle : '';
+      sElem.style.fontFamily = fontOf(item, 'titleFont', tf.titleFont);
+      sElem.style.color = fontOf(item, 'subtitleColor', tf.subtitleColor);
+      sElem.style.fontSize = `${fontOf(item, 'subtitleSize', tf.subtitleSize)}pt`;
+      sElem.style.fontWeight = fontOf(item, 'subtitleWeight', tf.subtitleWeight);
+      sElem.style.textAlign = fontOf(item, 'subtitleAlign', tf.subtitleAlign);
+      sElem.style.transform = `translate(${lp.subtitle.x}mm, ${lp.subtitle.y}mm)`;
+    }
+    if (pElem) {
+      while (lp.priceDigits.length < digits.length) lp.priceDigits.push({ x: 0, y: 0 });
+      pElem.innerHTML = '';
+      digits.forEach((d, idx) => {
+        const span = document.createElement('span');
+        const isSpace = d === ' ';
+        span.className = 'price-digit' + (isSpace ? ' price-space' : '');
+        span.textContent = isSpace ? '\u00A0' : d;
+        const dp = lp.priceDigits[idx];
+        span.style.transform = `translate(${dp.x}mm, ${dp.y}mm)`;
+        pElem.appendChild(span);
+      });
+    }
+    if (curr) {
+      curr.textContent = (fontOf(item, 'currency', tf.currency) || '').trim();
+      curr.style.fontFamily = fontOf(item, 'priceFont', tf.priceFont);
+      curr.style.fontSize = `${fontOf(item, 'priceSize', tf.priceSize)}pt`;
+      curr.style.fontWeight = fontOf(item, 'priceWeight', tf.priceWeight);
+      curr.style.color = fontOf(item, 'priceColor', tf.priceColor);
+      curr.style.transform = `translate(${lp.currency.x}mm, ${lp.currency.y}mm)`;
+    }
+    if (pElem) {
+      pElem.style.fontFamily = fontOf(item, 'priceFont', tf.priceFont);
+      pElem.style.fontSize = `${fontOf(item, 'priceSize', tf.priceSize)}pt`;
+      pElem.style.fontWeight = fontOf(item, 'priceWeight', tf.priceWeight);
+      pElem.style.color = fontOf(item, 'priceColor', tf.priceColor);
+      const __pw = maxPriceDigitWidth(pElem);
+      if (__pw) pElem.style.setProperty('--price-digit-w', `${__pw}px`);
+    }
+    if (box) {
+      const priceAlign = fontOf(item, 'priceAlign', tf.priceAlign || 'center');
+      box.style.justifyContent = priceAlign === 'left' ? 'flex-start' : (priceAlign === 'right' ? 'flex-end' : 'center');
+      const yOffset = (parseFloat(fontOf(item, 'priceOffsetY', tf.priceOffsetY)) || 0) + lp.price.y;
+      box.style.transform = `translate(${lp.price.x}mm, ${yOffset}mm)`;
+    }
+
+    // Decor/bg через параметризованные резолверы (fallback = preset, не активный).
+    const outSnap = decorBlockFromItemCtx(item, 'outside', td, insideWidth);
+    const inSnap = decorBlockFromItemCtx(item, 'inside', td, insideWidth);
+    const botSnap = decorBlockFromItemCtx(item, 'bottom', td, insideWidth);
+    const bgSnap = bgFromItemCtx(item, tb, ts);
+
+    const cloneHeader = clone.querySelector('.wobbler-header');
+    if (cloneHeader) applyBackgroundTo(cloneHeader, bgSnap.bgImage, bgSnap.customBg, bgSnap.headerBg);
+
+    const outH = parseFloat(outSnap.height) || 0;
+    const inH = parseFloat(inSnap.height) || 0;
+    const botH = parseFloat(botSnap.height) || 0;
+    clone.style.setProperty('--outside-top-h', `${outH.toFixed(2)}mm`);
+    clone.style.setProperty('--inside-top-h', `${inH.toFixed(2)}mm`);
+    clone.style.setProperty('--outside-bottom-h', `${botH.toFixed(2)}mm`);
+    clone.style.setProperty('--inside-top-w', `${inSnap.width != null ? inSnap.width : 50}%`);
+    clone.classList.toggle('has-outside-top', !!outSnap.show);
+    clone.classList.toggle('has-inside-top', !!inSnap.show);
+    clone.classList.toggle('has-outside-bottom', !!botSnap.show);
+
+    function applyCloneDecorBlock(blockEl, snap) {
+      if (!blockEl) return;
+      if (snap.show) {
+        blockEl.style.display = 'flex';
+        applyBackgroundTo(blockEl, snap.bgImg, snap.customBg, snap.bg);
+        const txt = blockEl.querySelector('.block-text');
+        if (txt) {
+          txt.textContent = snap.text || '';
+          txt.style.color = snap.color || '#ffffff';
+          txt.style.fontSize = `${snap.fontSize || 12}pt`;
+        }
+      } else {
+        blockEl.style.display = 'none';
+      }
+    }
+    applyCloneDecorBlock(clone.querySelector('.wobbler-outside-top'), outSnap);
+    applyCloneDecorBlock(clone.querySelector('.wobbler-inside-top'), inSnap);
+    applyCloneDecorBlock(clone.querySelector('.wobbler-outside-bottom'), botSnap);
+
+    // Safe-зона названия — по геометрии preset (не активного).
+    const wMm = ctx.wMm;
+    const hMm = ctx.hMm;
+    const _hh = layout === 'full' ? hMm : hMm * (headerH / 100);
+    const _pib = rybaPib && layout === 'split';
+    const _bySafeH = _hh * Math.max(0, 1 - ts.top - ts.bottom);
+    const _tz = Math.min(_hh * (_pib ? 0.85 : 0.45), _bySafeH);
+    clone.style.setProperty('--title-zone-h', `${_tz.toFixed(2)}mm`);
+    {
+      const _hw = wMm;
+      const _cw = Math.max(1, _hw - 6);
+      const _tw = _hw * (1 - ts.left - ts.right);
+      const _swf = Math.max(0, Math.min(1, _tw / _cw));
+      clone.style.setProperty('--title-safe-w', `${(_swf * 100).toFixed(2)}%`);
+    }
+  }
+
+  // Строит клон ценника, одетый под preset (геометрия/layout/стили из preset,
+  // per-item overrides из item). Возвращает { node, wMm, effH } для упаковки.
+  function renderWobblerForTemplate(item, preset) {
+    const ctx = buildPresetSnapshots(preset);
+    const wMm = (preset.widthCm || 6.5) * 10;
+    const hMm = (preset.heightCm || 4.5) * 10;
+    ctx.wMm = wMm;
+    ctx.hMm = hMm;
+
+    const clone = wobblerPreview.cloneNode(true);
+    clone.removeAttribute('id');
+    clone.style.boxShadow = 'none';
+    clone.classList.remove('drag-mode');
+
+    // Геометрия инлайн на клоне (CSS vars наследуются потомками — см. style.css).
+    clone.style.setProperty('--wobbler-width', `${wMm}mm`);
+    clone.style.setProperty('--wobbler-height', `${hMm}mm`);
+    // Layout + header height + bottom display локально на клоне.
+    clone.classList.toggle('layout-full', ctx.layout === 'full');
+    clone.classList.toggle('layout-split', ctx.layout === 'split');
+    const cHeader = clone.querySelector('.wobbler-header');
+    if (cHeader) cHeader.style.height = ctx.layout === 'full' ? '100%' : `${ctx.headerH}%`;
+    const cBottom = clone.querySelector('.wobbler-bottom');
+    if (cBottom) cBottom.style.display = ctx.layout === 'split' ? 'flex' : 'none';
+    // price-in-bottom: переместить price-box в bottom внутри клона.
+    const pib = ctx.rybaPib && ctx.layout === 'split';
+    clone.classList.toggle('price-in-bottom', pib);
+    if (pib) {
+      const cPriceBox = clone.querySelector('.wobbler-price-box');
+      const cBot = clone.querySelector('.wobbler-bottom');
+      if (cPriceBox && cBot && cPriceBox.parentElement !== cBot) cBot.appendChild(cPriceBox);
+    }
+
+    // Стили шрифтов/decor/bg/positions под preset.
+    applyTemplateStyleToClone(clone, item, ctx);
+
+    // Метки для реза — скроем по умолчанию, caller решает.
+    const guides = clone.querySelector('.crop-guides');
+    if (guides) guides.style.display = 'none';
+
+    // Эффективная высота: ценник + decor СВЕРХУ/СНИЗУ (per-item, через ctx).
+    const outSnap = decorBlockFromItemCtx(item, 'outside', ctx.td, ctx.insideWidth);
+    const botSnap = decorBlockFromItemCtx(item, 'bottom', ctx.td, ctx.insideWidth);
+    let effH = hMm;
+    if (outSnap.show) effH += parseFloat(outSnap.height) || 0;
+    if (botSnap.show) effH += parseFloat(botSnap.height) || 0;
+
+    return { node: clone, wMm, effH };
   }
 
   // Применение фона (имя встроенной картинки / custom data-URL / none) к любому
@@ -2692,6 +2969,120 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.classList.remove('is-printing');
       }, 500);
     }, 150);
+  }
+
+  // ===== Мульти-печать: shelf-packer и сборка листов =====
+  // items: [{ node, wMm, effH }] — уже одетые под свои preset клоны.
+  // Жадный shelf-packing: набираем ряд пока сумма ширин+gap ≤ pageW; высота ряда =
+  // max(effH в ряду); если новый ряд не влезает по высоте — новая страница.
+  // Возвращает [{ rows: [[ {item}...], ...] }] — массив страниц (каждая rows).
+  function packIntoPages(items, pageW, pageH, gap) {
+    const pages = [];
+    let curRows = [], curY = 0, curRow = [], curRowH = 0, curRowW = 0;
+    const flushRow = () => {
+      if (curRow.length) { curRows.push({ items: curRow, h: curRowH }); curY += curRowH + gap; }
+      curRow = []; curRowH = 0; curRowW = 0;
+    };
+    for (const it of items) {
+      // Помещается ли в текущий ряд по ширине?
+      const addW = it.wMm + (curRow.length ? gap : 0);
+      if (curRow.length && curRowW + addW > pageW + 0.01) flushRow();
+      // Помещается ли ряд по высоте (если ряд пуст — стартуем на текущем curY)?
+      const projRowH = Math.max(curRowH, it.effH);
+      const projRowW2 = curRow.length ? curRowW + addW : it.wMm;
+      if (curRow.length === 0) {
+        // новый ряд: проверяем, влезет ли он на текущей странице
+        if (curY + projRowH > pageH + 0.01 && pages.length > 0) {
+          // текущая страница закончилась — но curRows может быть пустой (очень tall item)
+          if (curRows.length) { pages.push({ rows: curRows }); curRows = []; }
+          curY = 0;
+        }
+      }
+      curRow.push(it);
+      curRowH = projRowH;
+      curRowW = curRow.length === 1 ? it.wMm : curRowW + addW;
+    }
+    flushRow();
+    if (curRows.length) pages.push({ rows: curRows });
+    return pages.length ? pages : (items.length ? [{ rows: [] }] : []);
+  }
+
+  // Собирает очередь ценников из отмеченных шаблонов, рендерит каждый под свой preset,
+  // упаковывает и строит DOM в #printArea. gap — зазор между ценниками (мм).
+  function prepareMultiPrintArea(selected, gap, showCrop) {
+    printArea.innerHTML = '';
+    // selected: [{ key, copies }] — copies='auto' = все заполненные.
+    const queue = [];
+    for (const sel of selected) {
+      const preset = builtInPresets[sel.key];
+      const arr = templateItems[sel.key] || [];
+      const filled = arr.filter(it => it && it.title && it.title.trim());
+      const n = (sel.copies === 'auto' || !sel.copies) ? filled.length : Math.min(parseInt(sel.copies, 10) || 0, filled.length);
+      for (let i = 0; i < n; i++) {
+        // copies считает количество разных товаров; если copies > filled.length, добиваем последним.
+        const item = filled[i] || filled[filled.length - 1];
+        if (item) queue.push({ item, preset });
+      }
+    }
+    if (!queue.length) return { count: 0, pages: 0 };
+
+    // Рендерим каждый ценник под свой preset.
+    const rendered = queue.map(q => renderWobblerForTemplate(q.item, q.preset));
+
+    // Рабочая зона А4 (те же поля, что в обычной печати: 5 мм верх, 2 мм низ/бока).
+    const mTop = 5, mBottom = 2, mSide = 2;
+    const pageW = 210 - mSide * 2;
+    const pageH = 297 - mTop - mBottom;
+    const pages = packIntoPages(rendered, pageW, pageH, gap);
+
+    // Строим DOM: страница → строки (flex) → обёртки ценников с явными размерами.
+    for (const page of pages) {
+      const pageEl = document.createElement('div');
+      pageEl.className = 'print-page multi-print-page';
+      // padding соответствует полям calcA4Grid.
+      pageEl.style.padding = `${mTop}mm ${mSide}mm ${mBottom}mm ${mSide}mm`;
+      for (const row of page.rows) {
+        const rowEl = document.createElement('div');
+        rowEl.className = 'multi-print-row';
+        rowEl.style.height = `${row.h}mm`;
+        rowEl.style.marginBottom = `${gap}mm`;
+        for (const it of row.items) {
+          const wrap = document.createElement('div');
+          wrap.className = 'print-wobbler-wrapper multi-print-cell';
+          wrap.style.width = `${it.wMm}mm`;
+          wrap.style.height = `${it.effH}mm`;
+          wrap.style.marginRight = `${gap}mm`;
+          const node = it.node;
+          const guides = node.querySelector('.crop-guides');
+          if (guides) guides.style.display = showCrop ? '' : 'none';
+          wrap.appendChild(node);
+          if (showCrop) {
+            const crop = document.createElement('div');
+            crop.className = 'print-crop-marks';
+            wrap.appendChild(crop);
+          }
+          rowEl.appendChild(wrap);
+        }
+        pageEl.appendChild(rowEl);
+      }
+      printArea.appendChild(pageEl);
+    }
+    return { count: rendered.length, pages: pages.length };
+  }
+
+  // Аналог triggerPrint для мульти-печати. selected — список отмеченных шаблонов.
+  function triggerMultiPrint(selected, gap, showCrop) {
+    const res = prepareMultiPrintArea(selected, gap, showCrop);
+    if (!res.count) { alert('Нет заполненных ценников в выбранных шаблонах.'); return; }
+    document.body.classList.add('is-printing');
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => {
+        document.body.classList.remove('is-printing');
+        printArea.innerHTML = '';   // очищаем мульти-печать после диалога
+      }, 500);
+    }, 150);
+    return res;
   }
 
   // Apply State to Form Inputs
@@ -3868,8 +4259,223 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Print Handlers
-  if (printBtn) printBtn.addEventListener('click', triggerPrint);
+  // Верхняя кнопка: в зависимости от режима printJob зовёт одиночную или мульти-печать.
+  if (printBtn) printBtn.addEventListener('click', () => {
+    const jobMode = document.querySelector('input[name="printJob"]:checked');
+    if (jobMode && jobMode.value === 'multi') {
+      runMultiPrintFromUI();
+    } else {
+      triggerPrint();
+    }
+  });
   if (printBtnSidebar) printBtnSidebar.addEventListener('click', triggerPrint);
+
+  // ===== Мульти-печать: UI-логика =====
+  const multiPrintPanel = document.getElementById('multiPrintPanel');
+  const singlePrintPanel = document.getElementById('singlePrintPanel');
+  const multiPrintTemplatesEl = document.getElementById('multiPrintTemplates');
+  const multiPrintGapInput = document.getElementById('multiPrintGap');
+  const multiPrintGapVal = document.getElementById('multiPrintGapVal');
+  const multiPrintCropChk = document.getElementById('multiPrintCrop');
+  const multiPrintSummaryEl = document.getElementById('multiPrintSummary');
+  const multiPrintBtn = document.getElementById('multiPrintBtn');
+  const multiPrintDrawer = document.getElementById('multiPrintDrawer');
+  const multiPrintDrawerBackdrop = document.getElementById('multiPrintDrawerBackdrop');
+  const multiPrintDrawerClose = document.getElementById('multiPrintDrawerClose');
+
+  // Размер каждого builtin-шаблона для подписи в панели.
+  function presetSizeLabel(key) {
+    const p = builtInPresets[key];
+    if (!p) return '';
+    return `${(p.widthCm || 0).toString().replace('.', ',')}×${(p.heightCm || 0).toString().replace('.', ',')} см`;
+  }
+  // Число заполненных ценников шаблона.
+  function presetFilledCount(key) {
+    const arr = templateItems[key] || [];
+    return arr.filter(it => it && it.title && it.title.trim()).length;
+  }
+
+  // Строит список чекбоксов шаблонов с выбором числа копий.
+  function renderMultiPrintTemplates() {
+    if (!multiPrintTemplatesEl) return;
+    multiPrintTemplatesEl.innerHTML = TEMPLATE_KEYS.map(k => {
+      const p = builtInPresets[k];
+      const name = p ? p.name : k;
+      const filled = presetFilledCount(k);
+      return `<div class="multi-print-row-item">
+        <label class="checkbox-label" style="display:flex; align-items:center; gap:6px; flex:1;">
+          <input type="checkbox" value="${k}" data-mpi-chk>
+          <span class="mpi-name">${name}</span>
+        </label>
+        <span class="mpi-size">${presetSizeLabel(k)}</span>
+        <span class="mpi-filled">${filled} тов.</span>
+        <select data-mpi-copies>
+          <option value="auto" selected>все${filled ? ` (${filled})` : ''}</option>
+          <option value="1">1×</option>
+          <option value="2">2×</option>
+          <option value="3">3×</option>
+          <option value="4">4×</option>
+          <option value="6">6×</option>
+          <option value="12">12×</option>
+        </select>
+      </div>`;
+    }).join('');
+    // Обновлять сводку при любом изменении.
+    multiPrintTemplatesEl.querySelectorAll('input[data-mpi-chk], select[data-mpi-copies]').forEach(el => {
+      el.addEventListener('change', updateMultiPrintSummary);
+    });
+  }
+
+  // Считает сводку (число ценников / листов) по отмеченным шаблонам и показывает её.
+  function updateMultiPrintSummary() {
+    if (!multiPrintSummaryEl) return;
+    const selected = collectMultiSelection();
+    if (!selected.length) {
+      multiPrintSummaryEl.textContent = 'Шаблоны не выбраны';
+      return;
+    }
+    let count = 0;
+    for (const sel of selected) {
+      const filled = presetFilledCount(sel.key);
+      const n = (sel.copies === 'auto' || !sel.copies) ? filled : Math.min(parseInt(sel.copies, 10) || 0, filled);
+      count += n;
+    }
+    // Грубая оценка числа листов: по среднему числу на лист — не точная, но информативная.
+    const gap = multiPrintGapInput ? parseFloat(multiPrintGapInput.value) || 0 : 0;
+    const pages = count > 0 ? Math.max(1, Math.ceil(count / 24)) : 0;
+    multiPrintSummaryEl.textContent = `${count} ценник${count === 1 ? '' : (count < 5 ? 'а' : 'ов')} · ≈ ${pages} лист${pages === 1 ? '' : 'ев'}`;
+  }
+
+  // Собирает отмеченные шаблоны: [{ key, copies }].
+  function collectMultiSelection() {
+    if (!multiPrintTemplatesEl) return [];
+    const rows = multiPrintTemplatesEl.querySelectorAll('.multi-print-row-item');
+    const out = [];
+    rows.forEach(row => {
+      const chk = row.querySelector('input[data-mpi-chk]');
+      if (!chk || !chk.checked) return;
+      const copiesSel = row.querySelector('select[data-mpi-copies]');
+      out.push({ key: chk.value, copies: copiesSel ? copiesSel.value : 'auto' });
+    });
+    return out;
+  }
+
+  // Запуск мульти-печати из UI (кнопка или верхняя кнопка в мульти-режиме).
+  function runMultiPrintFromUI() {
+    const selected = collectMultiSelection();
+    if (!selected.length) { alert('Отметьте хотя бы один шаблон для мульти-печати.'); return; }
+    const gap = multiPrintGapInput ? parseFloat(multiPrintGapInput.value) || 0 : 0;
+    const showCrop = !(multiPrintCropChk && !multiPrintCropChk.checked);
+    triggerMultiPrint(selected, gap, showCrop);
+  }
+
+  // Переключение printJob.
+  // Источник истины — radio name="printJob" в шапке (только там, чтобы браузер
+  // держал один :checked без конфликтов). В секции #6 — зеркало (input[data-print-job]
+  // без name): его клик переключает шапку-radio, а checked выставляется синхронно.
+  function getPrintJobVal() {
+    const checked = document.querySelector('input[name="printJob"]:checked');
+    return checked ? checked.value : 'single';
+  }
+  function applyPrintJob(val) {
+    const isMulti = val === 'multi';
+    // Синхронизируем зеркало в section #6.
+    document.querySelectorAll('input[data-print-job]').forEach(r => {
+      r.checked = (r.getAttribute('data-print-job') === val);
+    });
+    if (singlePrintPanel) singlePrintPanel.style.display = isMulti ? 'none' : '';
+    if (multiPrintPanel) multiPrintPanel.style.display = isMulti ? '' : 'none';
+    if (isMulti) {
+      openMultiPrintDrawer();
+    } else {
+      closeMultiPrintDrawer();
+    }
+  }
+
+  // Открытие выдвижной панели мульти-печати: рендер шаблонов, дефолт-отметка
+  // активного шаблона, обновление сводки.
+  function openMultiPrintDrawer() {
+    if (!multiPrintDrawer) return;
+    renderMultiPrintTemplates();
+    // Дефолт: отметить активный встроенный шаблон, чтобы «Печать» работала сразу.
+    const activeKey = (activeTemplateRef && activeTemplateRef.kind === 'builtin') ? activeTemplateRef.key : null;
+    if (activeKey && multiPrintTemplatesEl) {
+      const chk = multiPrintTemplatesEl.querySelector('input[data-mpi-chk][value="' + activeKey + '"]');
+      if (chk && !chk.checked) {
+        chk.checked = true;
+        // Если у активного шаблона нет заполненных товаров — снимем отметку, иначе
+        // пользователь получит alert «Нет заполненных». Отмечиваем только если есть товары.
+        if (presetFilledCount(activeKey) === 0) chk.checked = false;
+      }
+    }
+    updateMultiPrintSummary();
+    multiPrintDrawer.classList.add('open');
+    if (multiPrintDrawerBackdrop) multiPrintDrawerBackdrop.classList.add('open');
+  }
+
+  // Закрытие панели (без переключения режима — режим остаётся, если caller не сменил).
+  function closeMultiPrintDrawer() {
+    if (multiPrintDrawer) multiPrintDrawer.classList.remove('open');
+    if (multiPrintDrawerBackdrop) multiPrintDrawerBackdrop.classList.remove('open');
+  }
+  // Шапка-radio → источник истины.
+  document.querySelectorAll('input[name="printJob"]').forEach(r => {
+    r.addEventListener('change', () => applyPrintJob(getPrintJobVal()));
+  });
+  // Клик на pill «Мульти» должен ОТКРЫВАТЬ панель, даже если режим уже multi
+  // (radio change не сработает при повторном клике на активный radio — поэтому
+  // вешаем явный click на label, который открывает drawer при значении multi).
+  document.querySelectorAll('input[name="printJob"][value="multi"]').forEach(r => {
+    const label = r.closest('label');
+    if (label) {
+      label.addEventListener('click', () => {
+        // Небольшая задержка — чтобы сначала отработал change (если режим сменился).
+        setTimeout(() => {
+          if (getPrintJobVal() === 'multi') openMultiPrintDrawer();
+        }, 0);
+      });
+    }
+  });
+  // Зеркало в section #6 → клик переключает шапку-radio (что вызовет change → applyPrintJob).
+  document.querySelectorAll('input[data-print-job]').forEach(r => {
+    r.addEventListener('change', () => {
+      const val = r.getAttribute('data-print-job');
+      const headerRadio = document.querySelector('input[name="printJob"][value="' + val + '"]');
+      if (headerRadio && !headerRadio.checked) {
+        headerRadio.checked = true;
+        applyPrintJob(val);
+      }
+    });
+  });
+  if (multiPrintGapInput) {
+    multiPrintGapInput.addEventListener('input', () => {
+      if (multiPrintGapVal) multiPrintGapVal.textContent = multiPrintGapInput.value;
+      updateMultiPrintSummary();
+    });
+  }
+  if (multiPrintBtn) multiPrintBtn.addEventListener('click', runMultiPrintFromUI);
+
+  // Закрытие/сворачивание drawer: кнопка ✕, клик по затемнению, Esc.
+  // Сворачиваем только саму панель — мульти-режим остаётся активным (pill в шапке
+  // остаётся на «🖨️ Мульти»), чтобы кнопка «Печать» в шапке продолжала звать
+  // мульти-печать. Выход из мульти-режима — только через pill «📄 Один».
+  if (multiPrintDrawerClose) multiPrintDrawerClose.addEventListener('click', closeMultiPrintDrawer);
+  if (multiPrintDrawerBackdrop) multiPrintDrawerBackdrop.addEventListener('click', closeMultiPrintDrawer);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && multiPrintDrawer && multiPrintDrawer.classList.contains('open')) {
+      closeMultiPrintDrawer();
+    }
+  });
+
+  // Обновлять число заполненных ценников в панели при переключении шаблона/редактировании.
+  // (Перестроение панели — если она открыта.)
+  function refreshMultiPrintPanelIfOpen() {
+    const isMulti = document.querySelector('input[name="printJob"]:checked');
+    if (isMulti && isMulti.value === 'multi' && multiPrintPanel && multiPrintPanel.style.display !== 'none') {
+      renderMultiPrintTemplates();
+      updateMultiPrintSummary();
+    }
+  }
 
   // --- Accordion / Collapsible Section Toggles ---
   document.querySelectorAll('.card-toggle').forEach(toggle => {

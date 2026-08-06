@@ -35,6 +35,18 @@
         <button id="deviceDesktopBtn" class="device-btn" title="Экран ПК">🖥️ ПК</button>
       </div>
 
+      <!-- Переключатель режима печати (синхронизирован с radio name="printJob" в секции #6) -->
+      <div class="header-toggle-group" title="Режим печати">
+        <label title="Один шаблон (текущий)">
+          <input type="radio" name="printJob" value="single" checked>
+          <span class="header-toggle-btn">📄 Один</span>
+        </label>
+        <label title="Мульти-печать (несколько шаблонов на одном листе)">
+          <input type="radio" name="printJob" value="multi">
+          <span class="header-toggle-btn">🖨️ Мульти</span>
+        </label>
+      </div>
+
       <button id="saveTemplateBtn" class="btn btn-secondary btn-icon-only-mobile">
         <span class="icon">💾</span> <span class="btn-text">Сохранить</span>
       </button>
@@ -43,6 +55,33 @@
       </button>
     </div>
   </header>
+
+  <!-- Выдвижная панель мульти-печати под шапкой. Открывается при переключении
+       pill «🖨️ Мульти» в шапке. Контролы перенесены из section #6 (id сохранены). -->
+  <div id="multiPrintDrawerBackdrop" class="multi-print-drawer-backdrop no-print"></div>
+  <div id="multiPrintDrawer" class="multi-print-drawer no-print">
+    <div class="multi-print-drawer-inner">
+      <div class="multi-print-drawer-head">
+        <h3>🖨️ Мульти-печать</h3>
+        <button type="button" id="multiPrintDrawerClose" class="btn btn-secondary btn-sm" title="Свернуть панель (мульти-режим остаётся)">▲ Свернуть</button>
+      </div>
+      <p class="multi-print-hint">Отметьте шаблоны. Каждый заполненный ценник попадёт на общий лист А4.</p>
+      <div id="multiPrintTemplates" class="multi-print-templates"><!-- JS: чекбокс + копии на каждый builtin --></div>
+      <div class="multi-print-drawer-options">
+        <div class="form-group">
+          <label for="multiPrintGap">Зазор (мм): <span id="multiPrintGapVal">0</span></label>
+          <input type="range" id="multiPrintGap" min="0" max="5" step="0.5" value="0">
+        </div>
+        <label class="checkbox-label">
+          <input type="checkbox" id="multiPrintCrop" checked> Метки для реза
+        </label>
+      </div>
+      <div id="multiPrintSummary" class="multi-print-summary"></div>
+      <button id="multiPrintBtn" class="btn btn-primary" style="width: 100%; justify-content: center;">
+        🖨️ Печать выбранных шаблонов
+      </button>
+    </div>
+  </div>
 
   <!-- Mobile View Switcher (Tab navigation on smartphones) -->
   <div class="mobile-tab-bar no-print">
@@ -305,7 +344,7 @@
           <div class="form-row">
             <div class="form-group flex-1">
               <label>Размер: <span id="titleSizeVal">13</span>pt</label>
-              <input type="range" id="titleSize" min="7" max="32" value="13">
+              <input type="range" id="titleSize" min="7" max="72" value="13">
             </div>
             <div class="form-group flex-1">
               <label>Толщина / стиль</label>
@@ -647,6 +686,30 @@
       <section class="control-card" id="section6">
         <h3 class="card-toggle collapsed" data-section="section6"><span class="card-num">6</span> Печать на А4 <span class="toggle-arrow">▼</span></h3>
         <div class="card-body" style="display:none;">
+
+        <!-- Режим печати: один шаблон или мульти (несколько шаблонов на общий лист).
+             Источник истины — radio name="printJob" в шапке; здесь — визуальное зеркало.
+             Клик переключает шапку-radio, checked выставляется синхронизацией из JS. -->
+        <div class="radio-group print-job-mirror" style="margin-bottom: 12px;">
+          <label class="radio-option">
+            <input type="radio" data-print-job="single" checked>
+            <span class="radio-custom"></span>
+            <div class="radio-text">
+              <strong>📄 Один шаблон (текущий)</strong>
+              <small>Обычная печать с активного шаблона</small>
+            </div>
+          </label>
+          <label class="radio-option">
+            <input type="radio" data-print-job="multi">
+            <span class="radio-custom"></span>
+            <div class="radio-text">
+              <strong>🖨️ Мульти-печать</strong>
+              <small>Несколько шаблонов (разных размеров) на одном листе</small>
+            </div>
+          </label>
+        </div>
+
+        <div id="singlePrintPanel">
         <div class="form-group">
           <label for="sheetCount">Количество на листе:</label>
           <select id="sheetCount">
@@ -670,6 +733,12 @@
         <button id="printBtnSidebar" class="btn btn-primary" style="width: 100%; justify-content: center;">
           🖨️ Запустить печать (Печать на А4)
         </button>
+        </div><!-- /#singlePrintPanel -->
+
+        <!-- Мульти-печать: выбор шаблонов + копий -->
+        <div id="multiPrintPanel" style="display:none;">
+          <p class="multi-print-hint">Выбор шаблонов для мульти-печати — в панели сверху (откроется автоматически при переключении «🖨️ Мульти»).</p>
+        </div>
         </div><!-- /.card-body section6 -->
       </section>
 
@@ -699,7 +768,7 @@
         <!-- Ползунок размера шрифта наименования (дублирует #titleSize из настроек) -->
         <div class="preview-title-size" title="Размер шрифта наименования">
           <span class="preview-title-size-label">Аа</span>
-          <input type="range" id="titleSizePreview" min="7" max="32" value="13">
+            <input type="range" id="titleSizePreview" min="7" max="72" value="13">
           <span class="preview-title-size-val" id="titleSizePreviewVal">13</span>
         </div>
 
