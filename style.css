@@ -510,6 +510,7 @@ html, body {
 .preset-color.red { background: linear-gradient(135deg, #e63946, #c1121f); }
 .preset-color.tomato { background: linear-gradient(135deg, #e63946, #800f2f); }
 .preset-color.purple { background: linear-gradient(135deg, #7b2cbf, #5a189a); }
+.preset-color.sort-nedeli { background: linear-gradient(135deg, #E30613, #b00510); }
 .preset-color.ryba { background: linear-gradient(135deg, #0f172a, #1e3a5f); border: 1px solid #334155; }
 .preset-color.sneki { background: linear-gradient(135deg, #1a1a2e, #16213e); border: 1px solid #334155; }
 .preset-color.custom { background: linear-gradient(135deg, #38bdf8, #818cf8); }
@@ -1470,6 +1471,14 @@ input[type="range"] {
   display: none;
 }
 
+/* Белая рамка вокруг графики фона (запас под обрез, напр. 4мм у «Сорт недели»).
+   padding + background-clip: content-box оставляют внешнюю полосу цветом заливки
+   шапки (по умолчанию белой), а картинка режется по внутренней области. */
+.wobbler-element.has-border .wobbler-header {
+  background-origin: content-box;
+  background-clip: content-box;
+}
+
 .wobbler-header {
   width: 100%;
   background-color: #18181b;
@@ -2211,4 +2220,38 @@ body.is-printing #printArea {
     box-shadow: none !important;
     border-radius: 0 !important;
   }
+}
+
+/* ==========================================================================
+   Графические (объёмные / декоративные) шрифты — локальная загрузка.
+   Файлы лежат в каталоге /fonts рядом с index.html.
+
+   ВАЖНО по лицензии и кириллице:
+   - Эти шрифты распространяются на условиях «Personal Use» / бесплатны только
+     для личных целей. Для коммерческого применения (печать воблеров на продажу)
+     необходимо приобрести коммерческую лицензию у автора каждого шрифта либо
+     заменить на свободный аналог (OFL/SIL).
+   - Проверяйте поддержку кириллицы: если шрифт содержит только латиницу,
+     русские буквы отобразятся системным фолбэком.
+   ========================================================================== */
+@font-face {
+  font-family: 'Duo Dunkel';
+  src: url('fonts/DuoDunkel.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Duo Licht';
+  src: url('fonts/DuoLicht.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'SortefaxNo2Turquoise';
+  src: url('fonts/Sortefaxno2turquoise.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
 }

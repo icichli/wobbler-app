@@ -1,18 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // Telegram WebApp Integration & Platform Detection
-  const tg = window.Telegram ? window.Telegram.WebApp : null;
-  let isTelegramMobile = false;
-
-  if (tg) {
-    try {
-      tg.expand();
-      tg.ready();
-      if (['android', 'ios', 'mobile'].includes(tg.platform)) {
-        isTelegramMobile = true;
-      }
-    } catch(e) {}
-  }
-
   // Device Mode Toggle Buttons
   const deviceAutoBtn = document.getElementById('deviceAutoBtn');
   const deviceMobileBtn = document.getElementById('deviceMobileBtn');
@@ -90,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Массив растёт прогрессивно: стартует с 1 пустой строки; при вводе в последнее
   // поле появляется следующая пустая (см. syncRowExtent / normalizeItemsArray).
   const MAX_ITEMS = 100; // мягкий защитный потолок (только для вставки больших таблиц)
-  const TEMPLATE_KEYS = ['alaska_dots', 'yellow_tag', 'ryba', 'sneki', 'novy_vkus', 'novinka', 'tomat', 'sladko'];
+  const TEMPLATE_KEYS = ['alaska_dots', 'yellow_tag', 'ryba', 'sneki', 'novy_vkus', 'novinka', 'tomat', 'sladko', 'sort_nedeli'];
   const templateItems = {};
   function freshItem() {
     return { title: '', price: '', subtitle: '', subtitleManual: false };
@@ -173,6 +159,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const titleItalic = document.getElementById('titleItalic');
   const titleOffsetY = document.getElementById('titleOffsetY');
   const titleOffsetYVal = document.getElementById('titleOffsetYVal');
+  const titleShadow = document.getElementById('titleShadow');
+  const titleShadowColor = document.getElementById('titleShadowColor');
+  const titleShadowVal = document.getElementById('titleShadowVal');
 
   // Subtitle (Вес / доп. текст) — собственные параметры слоя.
   const subtitleColor = document.getElementById('subtitleColor');
@@ -190,27 +179,25 @@ document.addEventListener('DOMContentLoaded', () => {
   const priceColor = document.getElementById('priceColor');
   const priceOffsetY = document.getElementById('priceOffsetY');
   const priceOffsetYVal = document.getElementById('priceOffsetYVal');
+  const priceShadow = document.getElementById('priceShadow');
+  const priceShadowColor = document.getElementById('priceShadowColor');
+  const priceShadowVal = document.getElementById('priceShadowVal');
   const inputCurrency = document.getElementById('inputCurrency');
   const pricePlateToggle = document.getElementById('pricePlateToggle');
 
-  // Цена вводится по одной цифре в 4 клетки. inputPrice — прокси-объект с .value,
-  // совместимый со старым API (чтение/запись/событие 'input'), чтобы не ломать
-  // остальные части (preview, печать, сохранение шаблона).
-  const priceCellsContainer = document.getElementById('priceCells');
-  const priceCellEls = priceCellsContainer ? Array.from(priceCellsContainer.querySelectorAll('.price-cell')) : [];
-  const priceCellListeners = [];
-  // Прокси: value = склеенное содержимое 4 клеток (пустые клетки пропускаются).
+  // Цена вводится свободным текстом в одно поле. inputPrice — прокси-объект с
+  // .value, совместимый со старым API (чтение/запись/событие 'input'), чтобы не
+  // ломать остальные части (preview, печать, сохранение шаблона).
+  const priceFreeInput = document.getElementById('inputPriceFree');
   const inputPrice = {
     get value() {
-      return priceCellEls.map(el => el.value).join('');
+      return priceFreeInput ? priceFreeInput.value : '';
     },
     set value(v) {
-      const chars = String(v || '').split('');
-      priceCellEls.forEach((el, i) => { el.value = chars[i] || ''; });
+      if (priceFreeInput) priceFreeInput.value = String(v != null ? v : '');
     },
     addEventListener(type, fn) {
-      priceCellListeners.push({ type, fn });
-      priceCellEls.forEach(el => el.addEventListener(type, fn));
+      if (priceFreeInput) priceFreeInput.addEventListener(type, fn);
     }
   };
 
@@ -220,6 +207,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const customBgUpload = document.getElementById('customBgUpload');
   const uploadStatus = document.getElementById('uploadStatus');
   const customBgOption = document.getElementById('customBgOption');
+  const extraBgDirInput = document.getElementById('extraBgDirInput');
+  const extraBgStatus = document.getElementById('extraBgStatus');
   const headerHeightRange = document.getElementById('headerHeightRange');
   const headerHeightVal = document.getElementById('headerHeightVal');
 
@@ -331,6 +320,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // Текущая раскладка воблера ('full' | 'split'). Источник правды вместо
   // убранной radio-группы «Формат воблера» — задаётся выбранным шаблоном.
   let currentLayout = 'full';
+  // Белая рамка вокруг графики фона (мм). 0 = фон до самых краёв ценника.
+  // Реализуется как padding контента фона + background-clip: content-box, чтобы
+  // внешняя полоса оставалась цветом заливки (по умолчанию белой) — запас под обрез.
+  let borderMm = 0;
+  // Наклон текстовых слоёв (название + цена), в градусах. 0 = без наклона.
+  // Для шаблонов с наклонённой графикой (напр. «Сорт недели») слои повторяют угол.
+  let layerRotate = 0;
 
   // Ручные смещения надписей (перетаскивание мышью), в мм.
   // priceDigits — массив позиций по одной на цифру цены; currency — символ валюты.
@@ -430,9 +426,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Если override нет — ценник наследует оформление шаблона (templateFonts).
   // Список всех полей, редактируемых в Section 3 (title/subtitle/price).
   const FONT_FIELDS = [
-    'titleFont', 'titleColor', 'titleSize', 'titleWeight', 'titleItalic', 'titleAlign', 'titleOffsetY',
+    'titleFont', 'titleColor', 'titleSize', 'titleWeight', 'titleItalic', 'titleAlign', 'titleOffsetY', 'titleShadow',
     'subtitleColor', 'subtitleSize', 'subtitleWeight', 'subtitleAlign',
-    'priceFont', 'priceColor', 'priceSize', 'priceWeight', 'priceAlign', 'priceOffsetY', 'currency'
+    'priceFont', 'priceColor', 'priceSize', 'priceWeight', 'priceAlign', 'priceOffsetY', 'currency', 'priceShadow'
   ];
 
   // Возвращает значение шрифтового поля для ценника: per-item override, иначе fallback
@@ -442,6 +438,40 @@ document.addEventListener('DOMContentLoaded', () => {
       return item.fonts[field];
     }
     return fallback;
+  }
+
+  // Собирает CSS-строку text-shadow из силы (0..10) и цвета.
+  // strength=0 → '' (нет тени). Иначе многослойная диагональная тень, дающая
+  // объёмный «3D»-эффект: N жестких слоёв со смещением 1..N + одно мягкое
+  // размытие на ту же глубину. Цвет берётся как есть (HEX).
+  function buildShadow(strength, color) {
+    const s = parseInt(strength, 10);
+    if (!s || s <= 0) return '';
+    const c = color || '#000000';
+    const layers = [];
+    for (let i = 1; i <= s; i++) layers.push(`${i}px ${i}px 0 ${c}`);
+    layers.push(`${s}px ${s}px ${s * 2}px ${c}`);
+    return layers.join(', ');
+  }
+
+  // Обратное преобразование сохранённой CSS-строки text-shadow в силу и цвет
+  // для ползунка/палитры UI. Действует «лучшее усилие»: если строка не наша —
+  // сила = 0, цвет = #000000.
+  function parseShadow(shadowStr) {
+    if (!shadowStr) return { strength: 0, color: '#000000' };
+    // Цвет: первый найденный HEX в строке.
+    const hexMatch = String(shadowStr).match(/#([0-9a-fA-F]{3,8})\b/);
+    const color = hexMatch ? hexMatch[0] : '#000000';
+    // Сила: максимальное значение смещения среди слоёв вида "Npx Npx".
+    let strength = 0;
+    const re = /(\d+)px\s+(\d+)px/g;
+    let m;
+    while ((m = re.exec(shadowStr)) !== null) {
+      const off = Math.max(parseInt(m[1], 10), parseInt(m[2], 10));
+      if (off > strength) strength = off;
+    }
+    if (strength > 10) strength = 10; // ограничиваем диапазоном ползунка
+    return { strength, color };
   }
 
   // Снимок всех 17 шрифтовых полей из текущих значений инпутов DOM.
@@ -456,6 +486,7 @@ document.addEventListener('DOMContentLoaded', () => {
       titleItalic:    !!(titleItalic && titleItalic.checked),
       titleAlign:     alignState.title || 'center',
       titleOffsetY:   titleOffsetY ? titleOffsetY.value : 0,
+      titleShadow:    buildShadow(titleShadow ? titleShadow.value : 0, titleShadowColor ? titleShadowColor.value : '#000000'),
       subtitleColor:  subtitleColor ? subtitleColor.value : '#ffffff',
       subtitleSize:   subtitleSize ? subtitleSize.value : 11,
       subtitleWeight: subtitleWeight ? subtitleWeight.value : '700',
@@ -466,6 +497,7 @@ document.addEventListener('DOMContentLoaded', () => {
       priceWeight:    priceWeight ? priceWeight.value : '700',
       priceAlign:     alignState.price || 'center',
       priceOffsetY:   priceOffsetY ? priceOffsetY.value : 0,
+      priceShadow:    buildShadow(priceShadow ? priceShadow.value : 0, priceShadowColor ? priceShadowColor.value : '#000000'),
       currency:       inputCurrency ? inputCurrency.value : '₽'
     };
   }
@@ -480,6 +512,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (titleWeight) titleWeight.value = snap.titleWeight;
     if (titleItalic) titleItalic.checked = !!snap.titleItalic;
     if (titleOffsetY) titleOffsetY.value = snap.titleOffsetY;
+    {
+      const tsh = parseShadow(snap.titleShadow);
+      if (titleShadow) titleShadow.value = tsh.strength;
+      if (titleShadowColor) titleShadowColor.value = tsh.color;
+    }
     alignState.title = snap.titleAlign || 'center';
     if (subtitleColor) subtitleColor.value = snap.subtitleColor;
     if (subtitleSize) subtitleSize.value = snap.subtitleSize;
@@ -490,6 +527,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (priceSize) priceSize.value = snap.priceSize;
     if (priceWeight) priceWeight.value = snap.priceWeight;
     if (priceOffsetY) priceOffsetY.value = snap.priceOffsetY;
+    {
+      const psh = parseShadow(snap.priceShadow);
+      if (priceShadow) priceShadow.value = psh.strength;
+      if (priceShadowColor) priceShadowColor.value = psh.color;
+    }
     if (inputCurrency) inputCurrency.value = snap.currency;
     alignState.price = snap.priceAlign || 'center';
     // Обновляем текстовые индикаторы и дублирующий слайдер.
@@ -498,6 +540,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (subtitleSizeVal) subtitleSizeVal.textContent = subtitleSize ? subtitleSize.value : '';
     if (priceSizeVal) priceSizeVal.textContent = priceSize ? priceSize.value : '';
     if (priceOffsetYVal) priceOffsetYVal.textContent = priceOffsetY ? priceOffsetY.value : '';
+    if (titleShadowVal) titleShadowVal.textContent = titleShadow ? titleShadow.value : '';
+    if (priceShadowVal) priceShadowVal.textContent = priceShadow ? priceShadow.value : '';
     syncTitleSizePreview();
     // Реактивируем кнопки выравнивания под новым состоянием.
     ['title', 'subtitle', 'price'].forEach(target => {
@@ -661,6 +705,126 @@ document.addEventListener('DOMContentLoaded', () => {
       return item.bg[field];
     }
     return fallback;
+  }
+
+  // ===== Дополнительные фоны из папки «bg other» =====
+  // Механизм: один раз выбираем папку через <input webkitdirectory>; файлы
+  // читаются как data:URL и кэшируются в IndexedDB. При следующих открытиях
+  // страницы фоны подгружаются из IndexedDB автоматически — без повторного
+  // выбора папки и без сервера. Работает и на file://, и на http://.
+  //
+  // extraBgMap: маркер 'bgother:<имя файла>' → data:URL картинки.
+  // applyBackgroundTo() применяет выбранный доп. фон по этой карте.
+  let extraBgMap = {};
+  let extraBgOrder = [];   // имена в порядке выбора (для стабильного порядка в UI)
+
+  const EXTRA_BG_DB = 'wobbler_extra_bgs';
+  const EXTRA_BG_STORE = 'bgs';
+
+  // Промис-обёртка над открытием IndexedDB. Возвращает null, если IndexedDB
+  // недоступен (приватный режим и т.п.) — тогда механизм просто отключается.
+  function openExtraBgDb() {
+    return new Promise(resolve => {
+      if (!window.indexedDB) { resolve(null); return; }
+      try {
+        const req = indexedDB.open(EXTRA_BG_DB, 1);
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains(EXTRA_BG_STORE)) {
+            db.createObjectStore(EXTRA_BG_STORE); // key = имя файла, value = data:URL
+          }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => resolve(null);
+      } catch (e) { resolve(null); }
+    });
+  }
+
+  // Читает все сохранённые ранее фоны из IndexedDB и наполняет подменю.
+  // Вызывается при загрузке страницы. Ошибки/пустое хранилище не выбрасывает.
+  async function loadExtraBackgrounds() {
+    const group = document.getElementById('extraBgGroup');
+    if (!group) return;
+    const db = await openExtraBgDb();
+    if (!db) return;
+    try {
+      const tx = db.transaction(EXTRA_BG_STORE, 'readonly');
+      const store = tx.objectStore(EXTRA_BG_STORE);
+      const allReq = store.getAllKeys();
+      allReq.onsuccess = async () => {
+        const names = (allReq.result || []).slice().sort((a, b) =>
+          String(a).toLowerCase().localeCompare(String(b).toLowerCase()));
+        if (!names.length) { db.close(); return; }
+        // Дочитаем значения по ключам.
+        const tx2 = db.transaction(EXTRA_BG_STORE, 'readonly');
+        const store2 = tx2.objectStore(EXTRA_BG_STORE);
+        let loaded = 0;
+        names.forEach(name => {
+          const getReq = store2.get(name);
+          getReq.onsuccess = () => {
+            const dataUrl = getReq.result;
+            if (dataUrl) {
+              const marker = 'bgother:' + name;
+              extraBgMap[marker] = dataUrl;
+              const opt = document.createElement('option');
+              opt.value = marker;
+              opt.textContent = name;
+              group.appendChild(opt);
+            }
+            loaded++;
+            if (loaded === names.length) {
+              db.close();
+              extraBgOrder = names;
+              // Если активный фон — доп. и его option появился только сейчас,
+              // повторно синхронизируем контролы, чтобы селект его отобразил.
+              try { syncBgControlsToContext(); } catch (e) {}
+            }
+          };
+          getReq.onerror = () => {
+            loaded++;
+            if (loaded === names.length) { db.close(); }
+          };
+        });
+      };
+      allReq.onerror = () => db.close();
+    } catch (e) { try { db.close(); } catch (_) {} }
+  }
+
+  // Сохраняет массив {name, dataUrl} в IndexedDB (заменяя всё содержимое),
+  // затем обновляет extraBgMap/extraBgOrder и подменю. Возвращает Promise.
+  async function saveExtraBackgrounds(entries) {
+    const db = await openExtraBgDb();
+    if (!db) return;
+    try {
+      const tx = db.transaction(EXTRA_BG_STORE, 'readwrite');
+      const store = tx.objectStore(EXTRA_BG_STORE);
+      store.clear();
+      entries.forEach(e => store.put(e.dataUrl, e.name));
+      tx.oncomplete = () => db.close();
+      tx.onerror = () => db.close();
+    } catch (e) { try { db.close(); } catch (_) {} }
+
+    // Обновляем карту и подменю в памяти.
+    extraBgMap = {};
+    const group = document.getElementById('extraBgGroup');
+    if (group) {
+      Array.from(group.querySelectorAll('option')).forEach(o => o.remove());
+    }
+    extraBgOrder = entries.map(e => e.name)
+      .sort((a, b) => String(a).toLowerCase().localeCompare(String(b).toLowerCase()));
+    extraBgOrder.forEach(name => {
+      const dataUrl = (entries.find(e => e.name === name) || {}).dataUrl;
+      if (!dataUrl) return;
+      const marker = 'bgother:' + name;
+      extraBgMap[marker] = dataUrl;
+      if (group) {
+        const opt = document.createElement('option');
+        opt.value = marker;
+        opt.textContent = name;
+        group.appendChild(opt);
+      }
+    });
+    try { syncBgControlsToContext(); } catch (e) {}
   }
 
   // Снимок полей фона из DOM-контролов + загруженной data-URL картинки.
@@ -1148,6 +1312,56 @@ document.addEventListener('DOMContentLoaded', () => {
       layout: 'split',
       titleSafe: { left: 0, right: 0, top: 0, bottom: 0 }
     },
+    // «Сорт недели»: крупный воблер с готовой графикой (красный фон, волнистый
+    // верх, белый блок под цену вверху). Графика JPG уже несёт белый блок — цену
+    // накладываем поверх. Белые поля 4 мм вокруг графики = запас под обрез.
+    // Слои (цена + текст акции) наклонены под тем же углом, что и графика.
+    // Дефолтные позиции/границы/кегли сняты с визуально выверенного шаблона.
+    sort_nedeli: {
+      name: 'Сорт недели',
+      widthCm: 16.3,   // 15,5 см графика + 4 мм поля ×2
+      heightCm: 9.1,   // 8,3 см графика + 4 мм поля ×2
+      title: 'СОРТ НЕДЕЛИ!',
+      titleFont: "'Montserrat', sans-serif",
+      titleColor: '#ffffff',
+      titleSize: 50,
+      titleWeight: '800',
+      titleItalic: true,
+      titleAlign: 'center',
+      titleOffsetY: 0,
+      showPrice: true,
+      priceFont: "'Montserrat', sans-serif",
+      priceSize: 60,
+      priceWeight: '800',
+      priceColor: '#000000',   // чёрная на белом блоке
+      priceAlign: 'center',
+      priceOffsetY: 0,
+      price: '',
+      currency: '',            // пустая по умолчанию — пользователь введёт сам
+      subtitleColor: '#ffffff',
+      subtitleSize: 13,
+      subtitleWeight: '700',
+      subtitleAlign: 'left',
+      headerBg: '#ffffff',     // белый фон шапки = поля 4 мм вокруг графики
+      bgImage: 'sort_nedeli_bg.jpg',
+      customBgData: null,
+      headerHeight: 90,
+      layout: 'full',
+      borderMm: 4,             // белая рамка 4 мм вокруг графики (поля под обрез)
+      layerRotate: -2.45,      // наклон цены и текста акции как у графики
+      // Позиции слоёв (мм, относительно базовой flex-раскладки header-content):
+      // цена сдвинута ВВЕРХ — на белый блок (верхняя треть ценника),
+      // название акции — ВНИЗ, в красную зону под белым блоком.
+      labelPos: {
+        title: { x: -1.2, y: 22 },
+        subtitle: { x: 0, y: 0 },
+        price: { x: -7.3, y: -41.6 },
+        priceDigits: [],
+        currency: { x: 0, y: 0 }
+      },
+      // Safe-зона названия — красная зона под белым блоком. Доли от сторон шапки.
+      titleSafe: { left: 0.010129539709908075, right: 0.04710601613004029, top: 0.45, bottom: 0.06 }
+    },
     ryba: {
       name: 'Рыба',
       widthCm: 9.2,
@@ -1580,10 +1794,8 @@ document.addEventListener('DOMContentLoaded', () => {
     applySharedPosFromFirstToAll();
   }
 
-  const syncPricePosBtn = document.getElementById('syncPricePosBtn');
-  if (syncPricePosBtn) {
-    syncPricePosBtn.addEventListener('click', applySharedPosFromFirstToAll);
-  }
+  // Кнопка «Выровнять цену по №1» убрана из блока «Разные товары».
+  // Дубликат в панели превью (syncPricePosPreviewBtn) остаётся.
 
   // Размер шрифта наименования по количеству символов (эмпирическая шкала).
   // Короткое название → крупный кегль, длинное → уменьшаем до минимума 8pt.
@@ -1910,9 +2122,10 @@ document.addEventListener('DOMContentLoaded', () => {
       tElem.style.fontSize = `${activeItemTitleSize(item)}pt`;
       tElem.style.fontWeight = fontOf(item, 'titleWeight', tf.titleWeight);
       tElem.style.fontStyle = fontOf(item, 'titleItalic', tf.titleItalic) ? 'italic' : 'normal';
+      tElem.style.textShadow = fontOf(item, 'titleShadow', tf.titleShadow);
       tElem.style.textAlign = fontOf(item, 'titleAlign', tf.titleAlign);
       const tOff = parseFloat(fontOf(item, 'titleOffsetY', tf.titleOffsetY != null ? tf.titleOffsetY : titleOffsetYVal)) || 0;
-      tElem.style.transform = `translate(${lp.title.x}mm, ${tOff + lp.title.y}mm)`;
+      tElem.style.transform = `translate(${lp.title.x}mm, ${tOff + lp.title.y}mm) rotate(${layerRotate}deg)`;
     }
     if (sElem) {
       const tf2 = templateFonts || {};
@@ -1946,6 +2159,7 @@ document.addEventListener('DOMContentLoaded', () => {
       curr.style.fontSize = `${fontOf(item, 'priceSize', tf3.priceSize != null ? tf3.priceSize : 40)}pt`;
       curr.style.fontWeight = fontOf(item, 'priceWeight', tf3.priceWeight);
       curr.style.color = fontOf(item, 'priceColor', tf3.priceColor);
+      curr.style.textShadow = fontOf(item, 'priceShadow', tf3.priceShadow);
       curr.style.transform = `translate(${lp.currency.x}mm, ${lp.currency.y}mm)`;
     }
     if (pElem) {
@@ -1954,6 +2168,7 @@ document.addEventListener('DOMContentLoaded', () => {
       pElem.style.fontSize = `${fontOf(item, 'priceSize', tf4.priceSize != null ? tf4.priceSize : 40)}pt`;
       pElem.style.fontWeight = fontOf(item, 'priceWeight', tf4.priceWeight);
       pElem.style.color = fontOf(item, 'priceColor', tf4.priceColor);
+      pElem.style.textShadow = fontOf(item, 'priceShadow', tf4.priceShadow);
       // Все цифры цены одинаковой ширины — как самая широкая (свой размер на каждый item).
       {
         const __pw4 = maxPriceDigitWidth(pElem);
@@ -1965,7 +2180,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const priceAlign = fontOf(item, 'priceAlign', tf5.priceAlign || 'center');
       box.style.justifyContent = priceAlign === 'left' ? 'flex-start' : (priceAlign === 'right' ? 'flex-end' : 'center');
       const yOffset = (parseFloat(fontOf(item, 'priceOffsetY', tf5.priceOffsetY != null ? tf5.priceOffsetY : priceOffsetYVal)) || 0) + lp.price.y;
-      box.style.transform = `translate(${lp.price.x}mm, ${yOffset}mm)`;
+      box.style.transform = `translate(${lp.price.x}mm, ${yOffset}mm) rotate(${layerRotate}deg)`;
     }
 
     // === Per-item оформление и фон ===
@@ -1979,6 +2194,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Фон ценника (хедер).
     const cloneHeader = clone.querySelector('.wobbler-header');
     if (cloneHeader) applyBackgroundTo(cloneHeader, bgSnap.bgImage, bgSnap.customBg, bgSnap.headerBg);
+    // Белая рамка вокруг графики фона (borderMm мм) — для клонов раскладки/печати.
+    if (borderMm > 0) {
+      cloneHeader.style.padding = `${borderMm}mm`;
+      cloneHeader.style.backgroundOrigin = 'content-box';
+      cloneHeader.style.backgroundClip = 'content-box';
+      clone.classList.add('has-border');
+    }
 
     // CSS-переменные высот блоков — на самом клоне (локально, не глобально).
     const outH = parseFloat(outSnap.height) || 0;
@@ -2054,6 +2276,7 @@ document.addEventListener('DOMContentLoaded', () => {
       titleItalic:    !!preset.titleItalic,
       titleAlign:     preset.titleAlign || 'center',
       titleOffsetY:   preset.titleOffsetY != null ? preset.titleOffsetY : 0,
+      titleShadow:    preset.titleShadow || '',
       subtitleColor:  preset.subtitleColor || '#ffffff',
       subtitleSize:   preset.subtitleSize != null ? preset.subtitleSize : 11,
       subtitleWeight: preset.subtitleWeight || '700',
@@ -2064,7 +2287,8 @@ document.addEventListener('DOMContentLoaded', () => {
       priceWeight:    preset.priceWeight || '700',
       priceAlign:     preset.priceAlign || 'center',
       priceOffsetY:   preset.priceOffsetY != null ? preset.priceOffsetY : 0,
-      currency:       preset.currency || '₽'
+      priceShadow:    preset.priceShadow || '',
+      currency:       preset.currency != null ? preset.currency : '₽'
     };
     const td = {
       outsideShow:     !!preset.decorOutsideShow,
@@ -2114,6 +2338,8 @@ document.addEventListener('DOMContentLoaded', () => {
       headerH: preset.headerHeight || 100,
       rybaPib: !!preset.priceInBottom,
       insideWidth: preset.decorInsideWidth != null ? preset.decorInsideWidth : 50,
+      borderMm: Math.max(0, parseFloat(preset.borderMm) || 0),
+      layerRotate: parseFloat(preset.layerRotate) || 0,
       labelPos
     };
   }
@@ -2138,9 +2364,10 @@ document.addEventListener('DOMContentLoaded', () => {
       tElem.style.fontSize = `${titleSizeForCtx(item, tf.titleSize)}pt`;
       tElem.style.fontWeight = fontOf(item, 'titleWeight', tf.titleWeight);
       tElem.style.fontStyle = fontOf(item, 'titleItalic', tf.titleItalic) ? 'italic' : 'normal';
+      tElem.style.textShadow = fontOf(item, 'titleShadow', tf.titleShadow);
       tElem.style.textAlign = fontOf(item, 'titleAlign', tf.titleAlign);
       const tOff = parseFloat(fontOf(item, 'titleOffsetY', tf.titleOffsetY)) || 0;
-      tElem.style.transform = `translate(${lp.title.x}mm, ${tOff + lp.title.y}mm)`;
+      tElem.style.transform = `translate(${lp.title.x}mm, ${tOff + lp.title.y}mm) rotate(${ctx.layerRotate || 0}deg)`;
     }
     if (sElem) {
       sElem.textContent = (item && item.subtitle != null) ? item.subtitle : '';
@@ -2170,6 +2397,7 @@ document.addEventListener('DOMContentLoaded', () => {
       curr.style.fontSize = `${fontOf(item, 'priceSize', tf.priceSize)}pt`;
       curr.style.fontWeight = fontOf(item, 'priceWeight', tf.priceWeight);
       curr.style.color = fontOf(item, 'priceColor', tf.priceColor);
+      curr.style.textShadow = fontOf(item, 'priceShadow', tf.priceShadow);
       curr.style.transform = `translate(${lp.currency.x}mm, ${lp.currency.y}mm)`;
     }
     if (pElem) {
@@ -2177,6 +2405,7 @@ document.addEventListener('DOMContentLoaded', () => {
       pElem.style.fontSize = `${fontOf(item, 'priceSize', tf.priceSize)}pt`;
       pElem.style.fontWeight = fontOf(item, 'priceWeight', tf.priceWeight);
       pElem.style.color = fontOf(item, 'priceColor', tf.priceColor);
+      pElem.style.textShadow = fontOf(item, 'priceShadow', tf.priceShadow);
       const __pw = maxPriceDigitWidth(pElem);
       if (__pw) pElem.style.setProperty('--price-digit-w', `${__pw}px`);
     }
@@ -2184,7 +2413,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const priceAlign = fontOf(item, 'priceAlign', tf.priceAlign || 'center');
       box.style.justifyContent = priceAlign === 'left' ? 'flex-start' : (priceAlign === 'right' ? 'flex-end' : 'center');
       const yOffset = (parseFloat(fontOf(item, 'priceOffsetY', tf.priceOffsetY)) || 0) + lp.price.y;
-      box.style.transform = `translate(${lp.price.x}mm, ${yOffset}mm)`;
+      box.style.transform = `translate(${lp.price.x}mm, ${yOffset}mm) rotate(${ctx.layerRotate || 0}deg)`;
     }
 
     // Decor/bg через параметризованные резолверы (fallback = preset, не активный).
@@ -2195,6 +2424,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const cloneHeader = clone.querySelector('.wobbler-header');
     if (cloneHeader) applyBackgroundTo(cloneHeader, bgSnap.bgImage, bgSnap.customBg, bgSnap.headerBg);
+    // Белая рамка вокруг графики фона (borderMm мм) — для клонов печати/раскладки
+    // под произвольный preset.
+    if (ctx.borderMm > 0) {
+      cloneHeader.style.padding = `${ctx.borderMm}mm`;
+      cloneHeader.style.backgroundOrigin = 'content-box';
+      cloneHeader.style.backgroundClip = 'content-box';
+      clone.classList.add('has-border');
+    }
 
     const outH = parseFloat(outSnap.height) || 0;
     const inH = parseFloat(inSnap.height) || 0;
@@ -2315,6 +2552,10 @@ document.addEventListener('DOMContentLoaded', () => {
       el.style.backgroundImage = "url('yellow_bg.jpg')";
       el.style.backgroundSize = "cover";
       el.style.backgroundPosition = "center";
+    } else if (bgVal === 'sort_nedeli_bg.jpg') {
+      el.style.backgroundImage = "url('sort_nedeli_bg.jpg')";
+      el.style.backgroundSize = "cover";
+      el.style.backgroundPosition = "center";
     } else if (bgVal === 'ryba_scales') {
       el.style.backgroundImage =
         "radial-gradient(circle at 50% 0%, rgba(125,211,252,0.55) 0%, rgba(125,211,252,0) 55%)," +
@@ -2323,6 +2564,18 @@ document.addEventListener('DOMContentLoaded', () => {
         "repeating-radial-gradient(circle at 50% 120%, rgba(255,255,255,0.18) 0 3mm, rgba(255,255,255,0) 3mm 6mm)";
       el.style.backgroundSize = "auto";
       el.style.backgroundPosition = "center";
+    } else if (typeof bgVal === 'string' && bgVal.indexOf('bgother:') === 0) {
+      // Дополнительный фон из папки «bg other». data:URL берётся из extraBgMap
+      // (наполняется из IndexedDB при загрузке страницы или при выборе папки).
+      // Если маркер неизвестен (например, файл ещё не выбран) — фон не ставим.
+      const dataUrl = extraBgMap[bgVal];
+      if (dataUrl) {
+        el.style.backgroundImage = `url('${dataUrl}')`;
+        el.style.backgroundSize = "cover";
+        el.style.backgroundPosition = "center";
+      } else {
+        el.style.backgroundImage = 'none';
+      }
     } else if (bgVal === 'custom' && customDataUrl) {
       el.style.backgroundImage = `url('${customDataUrl}')`;
       el.style.backgroundSize = "cover";
@@ -2384,14 +2637,16 @@ document.addEventListener('DOMContentLoaded', () => {
     previewTitle.style.fontSize = `${effTitleSize}pt`;
     previewTitle.style.fontWeight = fontOf(activeItem, 'titleWeight', tf.titleWeight || titleWeight.value);
     previewTitle.style.fontStyle = fontOf(activeItem, 'titleItalic', tf.titleItalic != null ? tf.titleItalic : !!(titleItalic && titleItalic.checked)) ? 'italic' : 'normal';
+    previewTitle.style.textShadow = fontOf(activeItem, 'titleShadow', tf.titleShadow != null ? tf.titleShadow : buildShadow(titleShadow ? titleShadow.value : 0, titleShadowColor ? titleShadowColor.value : '#000000'));
     previewTitle.style.textAlign = fontOf(activeItem, 'titleAlign', tf.titleAlign || alignState.title);
     const tOffsetY = parseFloat(fontOf(activeItem, 'titleOffsetY', tf.titleOffsetY != null ? tf.titleOffsetY : titleOffsetY.value)) || 0;
-    previewTitle.style.transform = `translate(${lp.title.x}mm, ${tOffsetY + lp.title.y}mm)`;
+    previewTitle.style.transform = `translate(${lp.title.x}mm, ${tOffsetY + lp.title.y}mm) rotate(${layerRotate}deg)`;
     // Держим слайдер и индикатор в синхроне с активным товаром.
     if (titleSize.value != effTitleSize) titleSize.value = String(effTitleSize);
     titleSizeVal.textContent = titleSize.value;
     syncTitleSizePreview();
     titleOffsetYVal.textContent = titleOffsetY.value;
+    if (titleShadowVal && titleShadow) titleShadowVal.textContent = titleShadow.value;
 
     // Подзаголовок (вес/доп. инфо) — всегда в нижнем левом углу ценника.
     // Независимый слой: собственные размер/цвет/толщина/выравнивание
@@ -2449,6 +2704,7 @@ document.addEventListener('DOMContentLoaded', () => {
       previewPrice.style.fontSize = `${fontOf(activeItem, 'priceSize', tf.priceSize != null ? tf.priceSize : priceSize.value)}pt`;
       previewPrice.style.fontWeight = fontOf(activeItem, 'priceWeight', tf.priceWeight || priceWeight.value);
       previewPrice.style.color = fontOf(activeItem, 'priceColor', tf.priceColor || priceColor.value);
+      previewPrice.style.textShadow = fontOf(activeItem, 'priceShadow', tf.priceShadow != null ? tf.priceShadow : buildShadow(priceShadow ? priceShadow.value : 0, priceShadowColor ? priceShadowColor.value : '#000000'));
       // Все цифры цены одинаковой ширины — как самая широкая. Замеряем max по 0–9
       // и кладём в CSS-переменную, которую использует .price-digit { width }.
       {
@@ -2461,15 +2717,17 @@ document.addEventListener('DOMContentLoaded', () => {
       previewCurrency.style.fontSize = `${fontOf(activeItem, 'priceSize', tf.priceSize != null ? tf.priceSize : priceSize.value)}pt`;
       previewCurrency.style.fontWeight = fontOf(activeItem, 'priceWeight', tf.priceWeight || priceWeight.value);
       previewCurrency.style.color = fontOf(activeItem, 'priceColor', tf.priceColor || priceColor.value);
+      previewCurrency.style.textShadow = fontOf(activeItem, 'priceShadow', tf.priceShadow != null ? tf.priceShadow : buildShadow(priceShadow ? priceShadow.value : 0, priceShadowColor ? priceShadowColor.value : '#000000'));
       previewCurrency.style.transform = `translate(${lp.currency.x}mm, ${lp.currency.y}mm)`;
 
       const priceAlign = fontOf(activeItem, 'priceAlign', tf.priceAlign || alignState.price || 'center');
       previewPriceBox.style.justifyContent = priceAlign === 'left' ? 'flex-start' : (priceAlign === 'right' ? 'flex-end' : 'center');
       const yOffset = (parseFloat(fontOf(activeItem, 'priceOffsetY', tf.priceOffsetY != null ? tf.priceOffsetY : priceOffsetY.value)) || 0) + lp.price.y;
-      previewPriceBox.style.transform = `translate(${lp.price.x}mm, ${yOffset}mm)`;
+      previewPriceBox.style.transform = `translate(${lp.price.x}mm, ${yOffset}mm) rotate(${layerRotate}deg)`;
 
       priceSizeVal.textContent = priceSize.value;
       priceOffsetYVal.textContent = priceOffsetY.value;
+      if (priceShadowVal && priceShadow) priceShadowVal.textContent = priceShadow.value;
     } else {
       priceFieldsBlock.classList.add('price-off');
       previewPriceBox.style.display = 'none';
@@ -2479,6 +2737,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // (в single-режиме хелпер возвращает глобальные значения как раньше).
     const activeBgSnap = resolveItemBg(activePreviewIndex);
     applyBackgroundTo(wobblerHeader, activeBgSnap.bgImage, activeBgSnap.customBg, activeBgSnap.headerBg);
+    // Белая рамка вокруг графики (borderMm мм): графика режется по content-box,
+    // а внешняя полоса padding остаётся цветом заливки шапки = поля под обрез.
+    if (borderMm > 0) {
+      wobblerHeader.style.padding = `${borderMm}mm`;
+      wobblerHeader.style.backgroundOrigin = 'content-box';
+      wobblerHeader.style.backgroundClip = 'content-box';
+      wobblerPreview.classList.add('has-border');
+    } else {
+      wobblerHeader.style.padding = '';
+      wobblerHeader.style.backgroundOrigin = '';
+      wobblerHeader.style.backgroundClip = '';
+      wobblerPreview.classList.remove('has-border');
+    }
 
     // Layout Fix
     headerHeightVal.textContent = headerHeightRange.value;
@@ -2665,6 +2936,37 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     reader.readAsDataURL(file);
   });
+
+  // Выбор папки с доп. фонами («bg other»). Файлы читаются как data:URL и
+  // кэшируются в IndexedDB, после чего появляются в подменю «Дополнительно».
+  // При следующих открытиях страницы фоны берутся из кэша — папку выбирать
+  // снова нужно только при изменении её содержимого.
+  if (extraBgDirInput) {
+    extraBgDirInput.addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files || []);
+      const imgFiles = files.filter(f => /\.(jpe?g|png|webp|gif|bmp|svg)$/i.test(f.name));
+      if (imgFiles.length === 0) {
+        if (extraBgStatus) extraBgStatus.textContent = 'В папке нет изображений.';
+        return;
+      }
+      if (extraBgStatus) extraBgStatus.textContent = `Чтение ${imgFiles.length} файлов…`;
+      // Читаем каждый файл как data:URL (параллельно).
+      const readFile = (file) => new Promise(resolve => {
+        const r = new FileReader();
+        r.onload = () => resolve({ name: file.name, dataUrl: r.result });
+        r.onerror = () => resolve(null);
+        r.readAsDataURL(file);
+      });
+      const results = (await Promise.all(imgFiles.map(readFile))).filter(Boolean);
+      await saveExtraBackgrounds(results);
+      if (extraBgStatus) {
+        extraBgStatus.textContent = results.length
+          ? `✓ Загружено фонов: ${results.length}. Они появятся в подменю «Дополнительно».`
+          : 'Не удалось прочитать файлы.';
+      }
+      e.target.value = ''; // разрешить повторный выбор той же папки
+    });
+  }
 
   // Загрузка своих фонов для декоративных блоков (обобщённый хелпер).
   // Пишет data-URL в соответствующую переменную, переключает select блока на
@@ -3111,6 +3413,7 @@ document.addEventListener('DOMContentLoaded', () => {
       titleItalic: !!state.titleItalic,
       titleAlign: state.titleAlign || 'center',
       titleOffsetY: state.titleOffsetY != null ? state.titleOffsetY : 0,
+      titleShadow: state.titleShadow || '',
       subtitleColor: state.subtitleColor || '#ffffff',
       subtitleSize: state.subtitleSize != null ? state.subtitleSize : 11,
       subtitleWeight: state.subtitleWeight || '700',
@@ -3121,7 +3424,8 @@ document.addEventListener('DOMContentLoaded', () => {
       priceWeight: state.priceWeight || '700',
       priceAlign: state.priceAlign || 'center',
       priceOffsetY: state.priceOffsetY != null ? state.priceOffsetY : 0,
-      currency: state.currency || '₽'
+      priceShadow: state.priceShadow || '',
+      currency: state.currency != null ? state.currency : '₽'
     };
     // inputCurrency/inputPrice — это текстовые поля ценника, а не шрифтовые настройки;
     // синхронизируем их напрямую из state.
@@ -3183,6 +3487,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Раскладка берётся из шаблона (раньше была radio-группа «Формат воблера»).
     currentLayout = (state.layout === 'split') ? 'split' : 'full';
+    // Белая рамка вокруг графики фона (мм). Применяется в updatePreview к шапке.
+    borderMm = Math.max(0, parseFloat(state.borderMm) || 0);
+    // Наклон текстовых слоёв (градусы). Применяется в updatePreview/печати.
+    layerRotate = parseFloat(state.layerRotate) || 0;
 
     // Размещение цены: в нижнем блоке (для шаблонов типа «Рыба») или в верхнем
     rybaPriceInBottom = !!state.priceInBottom;
@@ -3264,6 +3572,7 @@ document.addEventListener('DOMContentLoaded', () => {
       titleItalic: !!tf.titleItalic,
       titleAlign: tf.titleAlign,
       titleOffsetY: tf.titleOffsetY,
+      titleShadow: tf.titleShadow,
       subtitleColor: tf.subtitleColor,
       subtitleSize: tf.subtitleSize,
       subtitleWeight: tf.subtitleWeight,
@@ -3276,6 +3585,7 @@ document.addEventListener('DOMContentLoaded', () => {
       priceColor: tf.priceColor,
       priceAlign: tf.priceAlign,
       priceOffsetY: tf.priceOffsetY,
+      priceShadow: tf.priceShadow,
       price: inputPrice.value,
       currency: tf.currency,
 
@@ -3288,6 +3598,8 @@ document.addEventListener('DOMContentLoaded', () => {
       headerHeight: headerHeightRange.value,
       titleSafe: normTitleSafe(globalTitleSafe),
       layout: currentLayout,
+      borderMm: borderMm,
+      layerRotate: layerRotate,
       priceInBottom: rybaPriceInBottom,
       subtitleCorner: subtitleCorner,
       pricePlate: pricePlateToggle ? pricePlateToggle.checked : false,
@@ -3332,7 +3644,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // шаблон работал даже на другом устройстве без этих файлов.
 
   // Встроенные фоны, которые умеем встраивать в экспорт.
-  const EMBEDDABLE_BGS = ['dots_bg.jpg', 'ryba_bg.jpg', 'yellow_bg.jpg', 'sneki_bg.jpg'];
+  const EMBEDDABLE_BGS = ['dots_bg.jpg', 'ryba_bg.jpg', 'yellow_bg.jpg', 'sneki_bg.jpg', 'sort_nedeli_bg.jpg'];
 
   // Читает встроенный файл фона как data:URL (base64). null при ошибке/отсутствии.
   async function fetchBgAsDataUrl(filename) {
@@ -3838,9 +4150,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Все шрифтовые контролы → onFontInputChange.
   const fontInputs = [
-    titleFont, titleColor, titleSize, titleWeight, titleItalic, titleOffsetY,
+    titleFont, titleColor, titleSize, titleWeight, titleItalic, titleOffsetY, titleShadow, titleShadowColor,
     subtitleColor, subtitleSize, subtitleWeight,
-    priceFont, priceSize, priceWeight, priceColor, priceOffsetY, inputCurrency
+    priceFont, priceSize, priceWeight, priceColor, priceOffsetY, priceShadow, priceShadowColor, inputCurrency
   ];
   fontInputs.forEach(el => {
     if (!el) return;
@@ -3946,36 +4258,10 @@ document.addEventListener('DOMContentLoaded', () => {
     el.addEventListener('input', () => autoGrowTextarea(el));
   });
 
-  // 4 клетки цены: автопереход, удаление назад, вставка нескольких цифр.
-  priceCellEls.forEach((el, i) => {
-    el.addEventListener('input', (e) => {
-      // Оставляем только цифры, берём последний введённый символ.
-      const digits = e.target.value.replace(/\D/g, '');
-      e.target.value = digits.slice(-1);
-      if (e.target.value && i < priceCellEls.length - 1) {
-        priceCellEls[i + 1].focus();
-      }
-    });
-    el.addEventListener('keydown', (e) => {
-      if (e.key === 'Backspace' && !el.value && i > 0) {
-        priceCellEls[i - 1].focus();
-      } else if (e.key === 'ArrowRight' && i < priceCellEls.length - 1) {
-        priceCellEls[i + 1].focus();
-      } else if (e.key === 'ArrowLeft' && i > 0) {
-        priceCellEls[i - 1].focus();
-      }
-    });
-    el.addEventListener('paste', (e) => {
-      e.preventDefault();
-      const text = (e.clipboardData || window.clipboardData).getData('text');
-      const digits = text.replace(/\D/g, '').split('');
-      priceCellEls.forEach((cell, ci) => { cell.value = digits[ci] || ''; });
-      const focusIdx = Math.min(digits.length, priceCellEls.length - 1);
-      priceCellEls[focusIdx].focus();
-      updatePreview();
-    });
-    el.addEventListener('focus', (e) => e.target.select());
-  });
+  // Свободный ввод цены: любое событие 'input' в поле сразу обновляет предпросмотр.
+  if (priceFreeInput) {
+    priceFreeInput.addEventListener('input', () => updatePreview());
+  }
 
   // === Ручное перетаскивание надписей в предпросмотре ===
   const dragModeSoloToggle = document.getElementById('dragModeSoloToggle');
@@ -4583,6 +4869,10 @@ document.addEventListener('DOMContentLoaded', () => {
    renderSavedTemplates();
    activeTemplateRef = { kind: 'builtin', key: 'alaska_dots' };
    applyState(builtInPresets.alaska_dots);
+
+   // Подгружаем дополнительные фоны из «bg other» (из IndexedDB-кэша) и
+   // наполняем подменю выбора фона. Асинхронно — не блокирует старт рендера.
+   loadExtraBackgrounds();
 
    // TEMP TEST HOOK — remove after verification
    (function(){
