@@ -4,9 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Конструктор ценников и воблеров</title>
-  
-  <!-- Telegram Web App SDK -->
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -186,6 +183,13 @@
                   <span class="preset-title">Сладко</span>
                 </div>
               </button>
+
+              <button class="preset-card" data-preset="sort_nedeli">
+                <div class="preset-color sort-nedeli"></div>
+                <div class="preset-info">
+                  <span class="preset-title">Сорт недели</span>
+                </div>
+              </button>
             </div>
           </div>
         </div>
@@ -271,13 +275,8 @@
           </div>
           <div class="form-row">
             <div class="form-group flex-2">
-              <label>Значение цены — по одной цифре в клетке:</label>
-              <div class="price-cells" id="priceCells">
-                <input type="text" class="price-cell" maxlength="1" inputmode="numeric" value="" data-pos="0">
-                <input type="text" class="price-cell" maxlength="1" inputmode="numeric" value="" data-pos="1">
-                <input type="text" class="price-cell" maxlength="1" inputmode="numeric" value="" data-pos="2">
-                <input type="text" class="price-cell" maxlength="1" inputmode="numeric" value="" data-pos="3">
-              </div>
+              <label for="inputPriceFree">Значение цены:</label>
+              <input type="text" id="inputPriceFree" placeholder="напр. 350 (или 350 / 1л)">
             </div>
             <div class="form-group flex-1">
               <label>Значок валюты</label>
@@ -327,13 +326,20 @@
           <div class="form-row">
             <div class="form-group flex-2">
               <select id="titleFont" class="font-dropdown">
-                <option value="Arial, sans-serif" selected>Arial (Стандартный)</option>
-                <option value="'Montserrat', sans-serif">Montserrat (Современный)</option>
-                <option value="'Russo One', sans-serif">Russo One (Мощный)</option>
-                <option value="'Bebas Neue', cursive">Bebas Neue (Высокий)</option>
-                <option value="'Rubik', sans-serif">Rubik (Плотный)</option>
-                <option value="'Oswald', sans-serif">Oswald (Акцентный)</option>
-                <option value="'Playfair Display', serif">Playfair Display</option>
+                <optgroup label="Обычные">
+                  <option value="Arial, sans-serif" selected>Arial (Стандартный)</option>
+                  <option value="'Montserrat', sans-serif">Montserrat (Современный)</option>
+                  <option value="'Russo One', sans-serif">Russo One (Мощный)</option>
+                  <option value="'Bebas Neue', cursive">Bebas Neue (Высокий)</option>
+                  <option value="'Rubik', sans-serif">Rubik (Плотный)</option>
+                  <option value="'Oswald', sans-serif">Oswald (Акцентный)</option>
+                  <option value="'Playfair Display', serif">Playfair Display</option>
+                </optgroup>
+                <optgroup label="Графические (объёмные)">
+                  <option value="'Duo Dunkel', sans-serif">Duo Dunkel (Тень)</option>
+                  <option value="'Duo Licht', sans-serif">Duo Licht (Контур)</option>
+                  <option value="'SortefaxNo2Turquoise', sans-serif">Sortefax (Декор)</option>
+                </optgroup>
               </select>
             </div>
             <div class="form-group flex-1">
@@ -365,6 +371,15 @@
           <div class="form-group">
             <label>Смещение по вертикали: <span id="titleOffsetYVal">0</span> мм</label>
             <input type="range" id="titleOffsetY" min="-20" max="20" value="0">
+          </div>
+
+          <!-- Тень / объём заголовка -->
+          <div class="form-group">
+            <label>Тень / объём: <span id="titleShadowVal">0</span></label>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <input type="range" id="titleShadow" min="0" max="10" value="0" step="1" style="flex:1;">
+              <input type="color" id="titleShadowColor" value="#000000" title="Цвет тени" style="width:38px; height:30px; padding:0; border:none; background:none; cursor:pointer;">
+            </div>
           </div>
           </div><!-- /.sub-body -->
         </div>
@@ -412,13 +427,20 @@
               <div class="form-group flex-2">
                 <label>Шрифт цены и значка ₽</label>
                 <select id="priceFont" class="font-dropdown">
-                  <option value="Arial, sans-serif" selected>Arial (Стандартный)</option>
-                  <option value="'Montserrat', sans-serif">Montserrat</option>
-                  <option value="'Russo One', sans-serif">Russo One</option>
-                  <option value="'Bebas Neue', cursive">Bebas Neue</option>
-                  <option value="'Rubik', sans-serif">Rubik</option>
-                  <option value="'Oswald', sans-serif">Oswald</option>
-                  <option value="'Playfair Display', serif">Playfair Display</option>
+                  <optgroup label="Обычные">
+                    <option value="Arial, sans-serif" selected>Arial (Стандартный)</option>
+                    <option value="'Montserrat', sans-serif">Montserrat</option>
+                    <option value="'Russo One', sans-serif">Russo One</option>
+                    <option value="'Bebas Neue', cursive">Bebas Neue</option>
+                    <option value="'Rubik', sans-serif">Rubik</option>
+                    <option value="'Oswald', sans-serif">Oswald</option>
+                    <option value="'Playfair Display', serif">Playfair Display</option>
+                  </optgroup>
+                  <optgroup label="Графические (объёмные)">
+                    <option value="'Duo Dunkel', sans-serif">Duo Dunkel</option>
+                    <option value="'Duo Licht', sans-serif">Duo Licht</option>
+                    <option value="'SortefaxNo2Turquoise', sans-serif">Sortefax</option>
+                  </optgroup>
                 </select>
               </div>
               <div class="form-group flex-1">
@@ -449,6 +471,15 @@
             <div class="form-group">
               <label>Смещение цены по вертикали: <span id="priceOffsetYVal">0</span> мм</label>
               <input type="range" id="priceOffsetY" min="-20" max="20" value="0">
+            </div>
+
+            <!-- Тень / объём цены -->
+            <div class="form-group">
+              <label>Тень / объём цены: <span id="priceShadowVal">0</span></label>
+              <div style="display:flex; gap:8px; align-items:center;">
+                <input type="range" id="priceShadow" min="0" max="10" value="0" step="1" style="flex:1;">
+                <input type="color" id="priceShadowColor" value="#000000" title="Цвет тени" style="width:38px; height:30px; padding:0; border:none; background:none; cursor:pointer;">
+              </div>
             </div>
           </div>
         </div>
@@ -483,6 +514,7 @@
             <option value="yellow_bg.jpg">🟡 Желтый ценник (точечный фон)</option>
             <option value="ryba_bg.jpg">🐟 Рыба (чёрный фон с белой рамкой)</option>
             <option value="sneki_bg.jpg">🥨 Снеки (собственный фон)</option>
+            <option value="sort_nedeli_bg.jpg">🏷️ Сорт недели (красный воблер)</option>
             <option value="ryba_scales">🐟 Рыбья чешуя (синий узор)</option>
             <option value="none">Без картинки (Однотонная заливка цветом)</option>
             <option value="custom" id="customBgOption" style="display:none;">Загруженное фото пользователем</option>
