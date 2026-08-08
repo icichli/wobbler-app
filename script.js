@@ -741,8 +741,59 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Читает все сохранённые ранее фоны из IndexedDB и наполняет подменю.
+  // Общий хелпер: наполняет extraBgMap и <optgroup> подменю списка пар
+  // {name, ref}, где ref — это либо data:URL (локальный кэш из IndexedDB),
+  // либо путь к файлу (онлайн: 'bg other/foo.png'). applyBackgroundTo()
+  // использует extraBgMap[marker] как есть, поэтому оба варианта работают.
+  // НЕ очищает подменю — вызывающая сторона при необходимости чистит сама.
+  function populateExtraBgOptions(items) {
+    const group = document.getElementById('extraBgGroup');
+    extraBgOrder = items.map(e => e.name)
+      .sort((a, b) => String(a).toLowerCase().localeCompare(String(b).toLowerCase()));
+    extraBgOrder.forEach(name => {
+      const entry = items.find(e => e.name === name);
+      if (!entry || !entry.ref) return;
+      const marker = 'bgother:' + name;
+      extraBgMap[marker] = entry.ref;
+      if (group) {
+        const opt = document.createElement('option');
+        opt.value = marker;
+        opt.textContent = name;
+        group.appendChild(opt);
+      }
+    });
+    // Если активный фон — доп. и его option появился только сейчас,
+    // повторно синхронизируем контролы, чтобы селект его отобразил.
+    try { syncBgControlsToContext(); } catch (e) {}
+  }
+
+  // Онлайн-режим (http/https): читает bg_index.json (генерируется скриптом
+  // gen_bg_index.py и заливается на сервер рядом с index.html) и наполняет
+  // подменю ссылками на файлы в «bg other». На file:// НЕ вызывается — там
+  // fetch локальных файлов заблокирован, используется IndexedDB-кэш.
+  // Ошибки/отсутствие файла молча пропускаются (graceful degradation).
+  async function loadExtraBackgroundsOnline() {
+    const group = document.getElementById('extraBgGroup');
+    if (group) Array.from(group.querySelectorAll('option')).forEach(o => o.remove());
+    let index;
+    try {
+      const resp = await fetch('bg_index.json', { cache: 'no-cache' });
+      if (!resp.ok) return;
+      index = await resp.json();
+    } catch (e) { return; }
+    if (!index || !Array.isArray(index.files) || index.files.length === 0) return;
+    const dir = index.dir || 'bg other';
+    populateExtraBgOptions(index.files.map(name => ({ name: name, ref: dir + '/' + name })));
+  }
+
   // Вызывается при загрузке страницы. Ошибки/пустое хранилище не выбрасывает.
   async function loadExtraBackgrounds() {
+    // Онлайн: фоны из «bg other» грузятся автоматически по bg_index.json.
+    if (location.protocol === 'http:' || location.protocol === 'https:') {
+      await loadExtraBackgroundsOnline();
+      return;
+    }
+    // Локально (file://): из кэша IndexedDB (наполняется одним ручным выбором папки).
     const group = document.getElementById('extraBgGroup');
     if (!group) return;
     const db = await openExtraBgDb();
@@ -755,34 +806,24 @@ document.addEventListener('DOMContentLoaded', () => {
         const names = (allReq.result || []).slice().sort((a, b) =>
           String(a).toLowerCase().localeCompare(String(b).toLowerCase()));
         if (!names.length) { db.close(); return; }
-        // Дочитаем значения по ключам.
+        // Дочитаем значения по ключам и наполняем подменю через общий хелпер.
         const tx2 = db.transaction(EXTRA_BG_STORE, 'readonly');
         const store2 = tx2.objectStore(EXTRA_BG_STORE);
         let loaded = 0;
+        const items = [];
         names.forEach(name => {
           const getReq = store2.get(name);
           getReq.onsuccess = () => {
-            const dataUrl = getReq.result;
-            if (dataUrl) {
-              const marker = 'bgother:' + name;
-              extraBgMap[marker] = dataUrl;
-              const opt = document.createElement('option');
-              opt.value = marker;
-              opt.textContent = name;
-              group.appendChild(opt);
-            }
+            if (getReq.result) items.push({ name: name, ref: getReq.result });
             loaded++;
             if (loaded === names.length) {
               db.close();
-              extraBgOrder = names;
-              // Если активный фон — доп. и его option появился только сейчас,
-              // повторно синхронизируем контролы, чтобы селект его отобразил.
-              try { syncBgControlsToContext(); } catch (e) {}
+              populateExtraBgOptions(items);
             }
           };
           getReq.onerror = () => {
             loaded++;
-            if (loaded === names.length) { db.close(); }
+            if (loaded === names.length) { db.close(); populateExtraBgOptions(items); }
           };
         });
       };
@@ -1570,6 +1611,13 @@ document.addEventListener('DOMContentLoaded', () => {
       <textarea class="item-title-input" rows="1" placeholder="Наименование товара №${i + 1}" data-index="${i}">${safeTitle}</textarea>
       <textarea class="item-subtitle-input" rows="1" placeholder="Вес" data-index="${i}">${safeSub}</textarea>
       <textarea class="item-price-input" rows="1" placeholder="Цена" data-index="${i}">${safePrice}</textarea>
+      <select class="item-bg-select" data-index="${i}" title="Фон этого ценника">
+        <option value="">Как в шаблоне</option>
+        <option value="bgother:ostryi.png">Остро</option>
+        <option value="bgother:tomatnyj.png">Томатный</option>
+        <option value="bgother:medovyj.png">Медовый</option>
+        <option value="bgother:yablochnyj.png">Яблочный</option>
+      </select>
       <button type="button" class="item-delete-btn" data-index="${i}" title="Удалить товар №${i + 1}">✕</button>
     `;
 
@@ -1656,6 +1704,36 @@ document.addEventListener('DOMContentLoaded', () => {
         syncDecorControlsToContext();
         syncBgControlsToContext();
         updatePreview();
+      });
+    }
+
+    // Compact-выбор фона конкретного ценника (рядом с ✕). Значение "" —
+    // «Как в шаблоне» (наследуется), иначе это маркер bgother:<имя файла>,
+    // data:URL для которого берётся из extraBgMap внутри applyBackgroundTo.
+    const bgSelect = row.querySelector('.item-bg-select');
+    if (bgSelect) {
+      // Инициализация текущего значения из itemsData[i].
+      const cur = (itemsData[i].bgCustomized && itemsData[i].bg) ? itemsData[i].bg.bgImage : '';
+      bgSelect.value = (cur && cur.indexOf('bgother:') === 0) ? cur : '';
+      bgSelect.addEventListener('change', () => {
+        const idx = parseInt(bgSelect.getAttribute('data-index'), 10);
+        if (isNaN(idx) || idx < 0 || idx >= itemsData.length) return;
+        const val = bgSelect.value;
+        const it = itemsData[idx] || (itemsData[idx] = {});
+        if (!val) {
+          // «Как в шаблоне» — снимаем per-item override фона.
+          delete it.bgCustomized;
+          delete it.bg;
+        } else {
+          // Сохраняем текущий цвет шапки, меняем только картинку фона.
+          const prevHeader = bgOf(it, 'headerBg', templateBg.headerBg);
+          it.bg = { headerBg: prevHeader, bgImage: val, customBgData: null };
+          it.bgCustomized = true;
+        }
+        activePreviewIndex = idx;
+        updatePreview();
+        // Держим главные контролы фона в синхроне с этой строкой.
+        try { syncBgControlsToContext(); } catch (e) {}
       });
     }
 

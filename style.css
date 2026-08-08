@@ -685,6 +685,25 @@ html, body {
 .item-settings-btn:hover { background: rgba(37, 99, 235, 0.4); }
 .item-settings-btn:active { transform: scale(0.92); }
 
+/* Compact-выбор фона конкретного ценника в строке списка товаров.
+   flex-shrink:0 + фиксированная ширина, чтобы не ломать пропорции textareas. */
+.item-bg-select {
+  flex-shrink: 0;
+  width: 96px;
+  min-width: 96px;
+  height: 30px;
+  padding: 0 4px;
+  font-size: 0.72rem;
+  border-radius: 6px;
+  background: rgba(30, 41, 59, 0.9);
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.item-bg-select:hover { border-color: var(--accent-blue); background: rgba(37, 99, 235, 0.25); }
+.item-bg-select:focus { outline: none; border-color: var(--accent-blue); }
+
 /* Кнопка ✕ в строке таблицы — удаляет товар (mirror .item-settings-btn,
    но красный акцент). flex-shrink:0 + фиксированная ширина. */
 .item-delete-btn {
