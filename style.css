@@ -1,5 +1,6 @@
 /* Core CSS Tokens & Reset */
 :root {
+  color-scheme: dark;          /* нативные элементы форм (<select>/<option>, скроллбары) — тёмные */
   --bg-dark: #0f172a;
   --bg-card: #1e293b;
   --bg-card-hover: #334155;
@@ -703,6 +704,15 @@ html, body {
 }
 .item-bg-select:hover { border-color: var(--accent-blue); background: rgba(37, 99, 235, 0.25); }
 .item-bg-select:focus { outline: none; border-color: var(--accent-blue); }
+/* Подстрахуем нативный popup <option> тёмным фоном/светлым текстом на тех
+   сборках Chromium, где color-scheme:dark не перекрашивает список опций. */
+.item-bg-select option,
+#bgImageSelect option,
+.font-dropdown option,
+select option {
+  background: var(--bg-card);
+  color: var(--text-main);
+}
 
 /* Кнопка ✕ в строке таблицы — удаляет товар (mirror .item-settings-btn,
    но красный акцент). flex-shrink:0 + фиксированная ширина. */

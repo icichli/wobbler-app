@@ -1467,12 +1467,21 @@ document.addEventListener('DOMContentLoaded', () => {
       decorBottomColor: '#ffffff',
       decorBottomFontSize: 14,
       decorBottomHeight: 12,
+      // Авто-вес при вводе наименования (пока вес не правили вручную) и
+      // минимальный кегль автоподгона названия (длинные названия переносятся
+      // на 3+ строки, а не обрезаются). Настройки самого шаблона — общие
+      // механизмы читают их по полям, без привязки к другим шаблонам.
+      autoSubtitle: '100гр',
+      titleFitFloor: 10,
       labelPos: { title: { x: 0, y: -1.1 }, subtitle: { x: -0.6, y: -1 }, price: { x: 0, y: 0 }, priceDigits: [ { x: -5.5, y: 0.2 }, { x: -1.1, y: 0 }, { x: 3.6, y: 0 } ], currency: { x: 5.5, y: 0.6 } }
     },
-    // Снеки — копия Рыбы, масштабированная под размер 6,5×3,5 см (вместо 9,2×5,5).
-    // Коэффициенты: по ширине sx=0.71 (x-смещения), по высоте sy=0.64 (кегли,
-    // y-смещения, высоты декора). titleSafe — доли от шапки, без изменений.
-    // Собственный фон sneki_bg.jpg (отдельный от Рыбы), цвета/шрифты/layout — как у Рыбы.
+    // Снеки — независимый шаблон: собственная геометрия 6,5×3,5 см, собственный
+    // фон sneki_bg.jpg и собственные настройки ниже. Исторически значения
+    // масштабированы с крупного воблера, но в коде нет никакой связи с другими
+    // шаблонами: все особые правила заданы полями этого пресета.
+    //  - autoSubtitle: авто-вес при вводе наименования (пока вес не правили вручную);
+    //  - titleFitFloor: минимальный кегль автоподгона (перенос на 3+ строки);
+    //  - autofitTitleOnly: кнопка «✨ Подогнать» меняет только кегль наименования.
     sneki: {
       name: 'Снеки',
       widthCm: 6.5,
@@ -1533,16 +1542,59 @@ document.addEventListener('DOMContentLoaded', () => {
       decorBottomColor: '#ffffff',
       decorBottomFontSize: 14,
       decorBottomHeight: 12,
+      autoSubtitle: '100гр',
+      titleFitFloor: 10,
+      autofitTitleOnly: true,
       labelPos: { title: { x: -0.2, y: -0.7 }, subtitle: { x: -2.1, y: -0.6 }, price: { x: 0, y: 0 }, priceDigits: [ { x: -3.9, y: 0.5 }, { x: -0.8, y: 0.4 }, { x: 1.7, y: 0.4 } ], currency: { x: 3.7, y: 0.3 } }
     }
   };
 
-  let customTemplates = JSON.parse(localStorage.getItem('wobbler_custom_templates_gas') || '[]');
+  // Повреждённое хранилище не должно «убивать» всё приложение: читаем с защитой.
+  let customTemplates = [];
+  try {
+    const parsed = JSON.parse(localStorage.getItem('wobbler_custom_templates_gas') || '[]');
+    if (Array.isArray(parsed)) customTemplates = parsed;
+  } catch (e) {
+    console.warn('Сохранённые шаблоны повреждены и были сброшены:', e);
+  }
   // Индекс выбранного пользовательского шаблона (для «Обновить») или null
   let activeTemplateId = null;
   // Расширенная ссылка на выбранный шаблон: { kind: 'builtin'|'custom', key: <presetKey>|<index> }.
   // Позволяет «Обновить» работать и для встроенных пресетов (создаётся пользовательская копия).
   let activeTemplateRef = null;
+
+  // Сохранение шаблонов с защитой от переполнения квоты localStorage
+  // (шаблоны со встроенными фонами base64 легко превышают ~5 МБ).
+  function persistCustomTemplates() {
+    try {
+      localStorage.setItem('wobbler_custom_templates_gas', JSON.stringify(customTemplates));
+      return true;
+    } catch (e) {
+      alert('Не удалось сохранить шаблоны в localStorage (вероятно, превышен объём хранилища — например, из-за встроенных фонов-картинок).\nИзменения шаблонов не сохранятся между сессиями.\n' + (e && e.message ? e.message : ''));
+      return false;
+    }
+  }
+
+  // Проверка, что ссылка на активный пользовательский шаблон ещё валидна
+  // (после импорта/удаления индекс может «уехать» или стать вне диапазона).
+  function revalidateActiveTemplateRef() {
+    if (activeTemplateRef && activeTemplateRef.kind === 'custom') {
+      if (!customTemplates[activeTemplateRef.index]) {
+        activeTemplateRef = null;
+        activeTemplateId = null;
+      }
+    }
+  }
+
+  // Настройка-флаг активного ВСТРОЕННОГО пресета (autoSubtitle, titleFitFloor,
+  // autofitTitleOnly…). Каждый шаблон описывает свои особые правила сам — в коде
+  // нет проверок по имени ключа и связей между шаблонами. Кастомные копии
+  // флаги не наследуют (fallback), как и в прежних проверках kind === 'builtin'.
+  function builtinPresetFlag(name, fallback) {
+    if (!activeTemplateRef || activeTemplateRef.kind !== 'builtin') return fallback;
+    const p = builtInPresets[activeTemplateRef.key];
+    return (p && p[name] !== undefined) ? p[name] : fallback;
+  }
 
   // Прогрессивные строки «Разных товаров»: показываем столько строк, сколько
   // заполнено, + одну рабочую пустую снизу. При вводе в рабочую пустую строку
@@ -1626,20 +1678,23 @@ document.addEventListener('DOMContentLoaded', () => {
       syncFontControlsToContext();
       syncDecorControlsToContext();
       syncBgControlsToContext();
-      updatePreview();
+      // Клик в строку — сразу подогнать кегль её названия под геометрию шаблона:
+      // лечит устаревший размер (например, у товаров, перенесённых с другого
+      // шаблона) без необходимости что-то дописывать. refitActiveTitle сам
+      // вызывает updatePreview.
+      refitActiveTitle();
     });
 
     row.querySelector('.item-title-input').addEventListener('input', (e) => {
       const idx = parseInt(e.target.getAttribute('data-index'), 10);
       itemsData[idx].title = e.target.value;
-    // Авто-вес «100гр»: пока пользователь не правил вес вручную,
-    // подставляем дефолт при наличии наименования (и очищаем при пустом).
-    // Действует ТОЛЬКО для встроенных шаблонов «Рыба» и «Снеки» — у прочих
-    // (Бутылки, Воблеры) поле веса остаётся пустым до ручного ввода.
-    const isRybaFamily = activeTemplateRef && activeTemplateRef.kind === 'builtin'
-      && (activeTemplateRef.key === 'ryba' || activeTemplateRef.key === 'sneki');
-    if (isRybaFamily && !itemsData[idx].subtitleManual) {
-      itemsData[idx].subtitle = e.target.value.trim() ? '100гр' : '';
+    // Авто-вес: пока пользователь не правил вес вручную, подставляем дефолт
+    // пресета при наличии наименования (и очищаем при пустом). Задаётся полем
+    // autoSubtitle самого пресета («Рыба»/«Снеки» — «100гр»); у шаблонов без
+    // поля вес остаётся пустым до ручного ввода.
+    const autoSub = builtinPresetFlag('autoSubtitle', '');
+    if (autoSub && !itemsData[idx].subtitleManual) {
+      itemsData[idx].subtitle = e.target.value.trim() ? autoSub : '';
       const si = row.querySelector('.item-subtitle-input');
       if (si) si.value = itemsData[idx].subtitle;
     }
@@ -1961,21 +2016,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Нижний пол кегля. Абсолютный минимум читаемости — минимум слайдера (7pt).
     const ABS_MIN = 7;
-    // Для встроенных шаблонов «Снеки» (6,5×3,5 см) и «Рыба» (9,2×5,5 см)
-    // пол НЕ привязываем к допущению «максимум 2 строки»: длинные названия
-    // переносятся на 3+ строк, и прежняя формула budgetH/2.93 (кегль для 2 строк)
-    // не давала бинарному поиску опуститься достаточно — 3-строчный текст обрезался
-    // overflow:hidden и становился невидимым. Фиксированный эстетический минимум
-    // 10pt: бинарный поиск находит НАИБОЛЬШИЙ кегль в [10, 32], при котором
-    // ИЗМЕРЕННАЯ высота перенесённого текста (любого числа строк) ≤ зоны (budgetH).
-    // Приоритет — читаемость: всегда максимально крупный шрифт, помещающийся целиком.
+    // Нижний пол кегля. По умолчанию — минимум слайдера (7pt), для шаблонов с
+    // subtitleCorner («Рыба»-подобная раскладка) — 22pt. Пресет может задать
+    // свой пол полем titleFitFloor («Рыба»/«Снеки» — 10): длинные названия
+    // переносятся на 3+ строк, и прежняя формула «кегль для 2 строк» не давала
+    // бинарному поиску опуститься достаточно — 3-строчный текст обрезался
+    // overflow:hidden и становился невидимым. Приоритет — читаемость: всегда
+    // максимально крупный шрифт, помещающийся целиком.
     // Кастомные копии (kind === 'custom') остаются на старом фиксированном поле.
-    const isBuiltinRybaFamily = activeTemplateRef
-      && activeTemplateRef.kind === 'builtin'
-      && (activeTemplateRef.key === 'sneki' || activeTemplateRef.key === 'ryba');
-    const RYBA_FAMILY_MIN = 10;
-    const floor = isBuiltinRybaFamily
-      ? RYBA_FAMILY_MIN
+    const presetFloor = builtinPresetFlag('titleFitFloor', null);
+    const floor = presetFloor != null
+      ? presetFloor
       : (subtitleCorner ? 22 : ABS_MIN);
 
     const probe = getTitleProbe(budgetW);
@@ -2010,7 +2061,10 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       const fit = fitTitleSize(inputTitle ? inputTitle.value : '', family, weight);
       if (fit != null) {
-        titleSize.value = String(fit);
+        // Пишем в модель: слайдер/рендер синхронизирует updatePreview, а модель
+        // остаётся источником истины (DOM-запись тоже «запекалась» бы при
+        // следующей правке шрифтового контрола).
+        templateFonts = Object.assign({}, templateFonts, { titleSize: fit });
         if (titleSizeVal) titleSizeVal.textContent = String(fit);
         syncTitleSizePreview();
       }
@@ -2038,59 +2092,49 @@ document.addEventListener('DOMContentLoaded', () => {
   // наименование, вес/доп.текст и цену — независимо друг от друга.
   // Наименование в режиме «Разные товары» получает СВОЙ размер (per-item) по
   // длине названия; вес и цена — глобальный размер по активному товару.
-  function autoFitFontSize() {
+  //
+  // titleOnly=true — подгоняет ТОЛЬКО кегль наименования под геометрию (вызов
+  // при смене шаблона и после загрузки шрифтов). Вес/кегли веса и цены пресета
+  // не трогает. Полный прогон (кнопка «✨ Подогнать») применяет эвристики
+  // (вес 800, размеры по длине) ЧЕРЕЗ модель templateFonts — раньше они
+  // писались только в DOM-инпуты, расходились с моделью и «запекались» в
+  // шаблон при следующей правке любого шрифтового контрола.
+  function autoFitFontSize(titleOnly) {
     const isMultiMode = document.querySelector('input[name="printMode"]:checked').value === 'multi';
-    // Для встроенного шаблона «Снеки» кнопка умная: подбирает ТОЛЬКО кегль
-    // наименования. Толщину шрифта и цену она больше не меняет
-    // (кастомные копии Снеки на это не подпадают — только встроенный).
-    const isSneki = activeTemplateRef && activeTemplateRef.kind === 'builtin' && activeTemplateRef.key === 'sneki';
+    // Пресеты с полем autofitTitleOnly (у встроенных «Снеков»): кнопка умная —
+    // подбирает ТОЛЬКО кегль наименования, толщину шрифта и цену не меняет.
+    // Кастомные копии на это не подпадают (флаг не наследуется).
+    const titleOnlyPreset = !!builtinPresetFlag('autofitTitleOnly', false);
+    // titleOnly !== true: обработчик кнопки передаёт event первым аргументом —
+    // считаем titleOnly-режимом только явный true.
+    const applyGlobals = titleOnly !== true && !titleOnlyPreset;
 
-    if (!isSneki) {
-      // Наименование — Bold (800), доп. сдвиг не нужен (зона фиксирована).
-      // Для шаблона «Рыба» (subtitleCorner) наименование не мельче 22pt —
-      // этот пол зашит внутри fitTitleSize().
-      titleWeight.value = '800';
-      titleOffsetY.value = 0;
-      titleOffsetYVal.textContent = '0';
-    }
-
+    // Кегль наименования: per-item в multi (свой под перенос каждого названия),
+    // шаблонный в single. Пишем в модель, а не только в слайдер.
     if (isMultiMode) {
-      // Per-item: каждому товару — свой кегль под перенос его названия по словам.
-      // fitTitleSize измеряет на превью активного ценника; для прочих берём
-      // их текст с тем же шрифтом/толщиной — бюджет зоны одинаков у всех ценников.
       const family = titleFont ? titleFont.value : '';
       itemsData.forEach(it => {
         if (!it) return;
         const fit = fitTitleSize(it.title, family, '800');
-        if (fit != null) it.titleSize = fit;
+        if (fit == null) return;
+        it.titleSize = fit;
+        // У ценника есть шрифтовой override — обновляем и его, иначе старое
+        // значение fonts.titleSize замаскирует freshly-подогнанный кегль.
+        if (it.fontsCustomized && it.fonts) it.fonts.titleSize = fit;
       });
-      // Активный товар отражаем в слайдере.
-      const active = itemsData[activePreviewIndex];
-      if (active) {
-        const sz = activeItemTitleSize(active);
-        titleSize.value = String(sz);
-        titleSizeVal.textContent = String(sz);
-        syncTitleSizePreview();
-      }
     } else {
-      const fit = fitTitleSize(inputTitle.value, titleFont ? titleFont.value : '', '800');
+      const fit = fitTitleSize(inputTitle ? inputTitle.value : '', titleFont ? titleFont.value : '', '800');
       if (fit != null) {
-        titleSize.value = String(fit);
-        titleSizeVal.textContent = String(fit);
-        syncTitleSizePreview();
+        templateFonts = Object.assign({}, templateFonts, { titleSize: fit });
       }
     }
 
-    if (!isSneki) {
+    if (applyGlobals) {
       // Вес/доп.текст — глобальный размер по длине активного товара (независимо).
       const activeSub = isMultiMode
         ? ((itemsData[activePreviewIndex] && itemsData[activePreviewIndex].subtitle) || '')
         : (inputSubtitle ? inputSubtitle.value : '');
       const subOpt = subtitleSizeByLen(activeSub.trim().length);
-      if (subtitleSize) {
-        subtitleSize.value = String(subOpt);
-        if (subtitleSizeVal) subtitleSizeVal.textContent = String(subOpt);
-      }
 
       // Цена — глобальный размер по числу цифр активного товара (независимо).
       const activePrice = isMultiMode
@@ -2099,10 +2143,28 @@ document.addEventListener('DOMContentLoaded', () => {
       const priceOpt = priceSizeByLen(activePrice.replace(/\D/g, '').length);
       // Для шаблона «Рыба» (subtitleCorner) цена не крупнее 40pt.
       const priceOptCapped = subtitleCorner ? Math.min(priceOpt, 40) : priceOpt;
-      priceSize.value = String(priceOptCapped);
-      priceSizeVal.textContent = String(priceOptCapped);
+
+      // Наименование — Bold (800), доп. сдвиг не нужен (зона фиксирована).
+      // Для шаблона «Рыба» (subtitleCorner) наименование не мельче 22pt —
+      // этот пол зашит внутри fitTitleSize().
+      const patch = {
+        titleWeight: '800',
+        titleOffsetY: 0,
+        subtitleSize: subOpt,
+        priceSize: priceOptCapped
+      };
+      // Пишем в контекст, который редактирует панель шрифтов: per-item override
+      // активного ценника (иначе он замаскирует новые значения), иначе шаблон.
+      const act = itemsData[activePreviewIndex];
+      if (isMultiMode && fontApplyMode === 'item' && act && act.fontsCustomized && act.fonts) {
+        act.fonts = Object.assign({}, act.fonts, patch);
+      } else {
+        templateFonts = Object.assign({}, templateFonts, patch);
+      }
     }
 
+    // Инпуты перерисовываем ИЗ модели (источник истины), а не наоборот.
+    syncFontControlsToContext();
     updatePreview();
   }
 
@@ -2569,6 +2631,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const clone = wobblerPreview.cloneNode(true);
     clone.removeAttribute('id');
+    // Внутренние id (previewTitle, safeRect, …) в клоне дублируют живые —
+    // убираем, чтобы getElementById всегда попадал в оригинал.
+    clone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
     clone.style.boxShadow = 'none';
     clone.classList.remove('drag-mode');
 
@@ -3239,6 +3304,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const cloned = wobblerPreview.cloneNode(true);
       cloned.removeAttribute('id');
+      // Дубликаты внутренних id ломают getElementById — см. renderWobblerForTemplate.
+      cloned.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
       cloned.classList.remove('drag-mode');
 
       // Применяем тексты и позиции конкретного товара к клону.
@@ -3314,6 +3381,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const cleanWobbler = wobblerPreview.cloneNode(true);
         cleanWobbler.removeAttribute('id');
+        // Дубликаты внутренних id ломают getElementById — см. renderWobblerForTemplate.
+        cleanWobbler.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
         cleanWobbler.style.boxShadow = 'none';
         cleanWobbler.classList.remove('drag-mode');
 
@@ -3592,20 +3661,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     labelPos = mergeLabelPos(state.labelPos);
     singleLabelPos = mergeLabelPos(state.labelPos);
-    // В мультирежиме применяем базу к активному товару
+    // В мультирежиме применяем базу позиций пресета к ценнику №1 и разносим на
+    // все остальные. Раньше база писалась в «активный» товар: при устаревшем
+    // activePreviewIndex (после переключения шаблона) её было некуда писать, и
+    // все надписи получали нулевые смещения вместо настроек пресета.
     if (document.querySelector('input[name="printMode"]:checked').value === 'multi') {
-      const it = itemsData[activePreviewIndex];
-      if (it) it.labelPos = mergeLabelPos(state.labelPos);
-      // Вес и цена общие для всех ценников: разносим базу пресета с активного
-      // ценника на все остальные (включая №1).
-      const src = itemsData[activePreviewIndex];
-      if (src && src.labelPos && itemsData[0]) {
-        if (!itemsData[0].labelPos) itemsData[0].labelPos = defaultLabelPos();
-        itemsData[0].labelPos.subtitle = JSON.parse(JSON.stringify(src.labelPos.subtitle));
-        itemsData[0].labelPos.price = JSON.parse(JSON.stringify(src.labelPos.price));
-        itemsData[0].labelPos.priceDigits = JSON.parse(JSON.stringify(src.labelPos.priceDigits));
-        itemsData[0].labelPos.currency = JSON.parse(JSON.stringify(src.labelPos.currency));
-      }
+      if (!itemsData[0]) itemsData[0] = freshItem();
+      itemsData[0].labelPos = mergeLabelPos(state.labelPos);
       applySharedPosFromFirstToAll();
     }
 
@@ -3868,7 +3930,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    localStorage.setItem('wobbler_custom_templates_gas', JSON.stringify(customTemplates));
+    persistCustomTemplates();
+    // Индексы пользовательских шаблонов могли измениться — проверяем ссылку.
+    revalidateActiveTemplateRef();
     renderSavedTemplates();
     alert('Импорт завершён.\nДобавлено/обновлено: ' + added + '\nПропущено: ' + skipped);
   }
@@ -3907,6 +3971,9 @@ document.addEventListener('DOMContentLoaded', () => {
         card.classList.add('active');
         activeTemplateId = index;   // выбранный пользовательский шаблон — цель для «Обновить»
         activeTemplateRef = { kind: 'custom', index };
+        // Смена шаблона всегда возвращает превью к ценнику №1: активный индекс
+        // мог остаться на строке прошлого шаблона и не существовать в новом.
+        activePreviewIndex = 0;
         applyState(item.state);
       });
 
@@ -3925,7 +3992,8 @@ document.addEventListener('DOMContentLoaded', () => {
               activeTemplateRef.index -= 1;
             }
           }
-          localStorage.setItem('wobbler_custom_templates_gas', JSON.stringify(customTemplates));
+          persistCustomTemplates();
+          revalidateActiveTemplateRef();
           renderSavedTemplates();
         }
       });
@@ -3952,6 +4020,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (p) {
         // Запоминаем выбранный встроенный пресет — «Обновить» создаст пользовательскую копию.
         activeTemplateRef = { kind: 'builtin', key };
+        // Смена шаблона всегда возвращает превью к ценнику №1: активный индекс
+        // мог остаться на строке прошлого шаблона и не существовать в новом.
+        activePreviewIndex = 0;
         // Per-template товары: переключаем активный массив товаров этого шаблона.
         // Каждый пресет хранит свой список независимо (см. templateItems).
         if (templateItems[key]) {
@@ -3959,12 +4030,13 @@ document.addEventListener('DOMContentLoaded', () => {
           renderItemsListInputs();
         }
         applyState(p);
-        // Авто-подгон размеров названий под геометрию нового шаблона. Двойной RAF:
+        // Авто-подгон кегля названий под геометрию нового шаблона. Двойной RAF:
         // первый кадр применяет стили applyState (размер/раскладка/шрифты), второй —
         // гарантирует, что layout пересчитан и previewTitle.clientWidth/clientHeight
         // актуальны для fitTitleSize. Если превью скрыто (бюджет 0), fitTitleSize
         // вернёт null и размер останется от templateFonts.
-        requestAnimationFrame(() => requestAnimationFrame(autoFitFontSize));
+        // titleOnly: вес/размеры цены и веса пресета НЕ перезаписываются.
+        requestAnimationFrame(() => requestAnimationFrame(() => autoFitFontSize(true)));
       }
     });
   });
@@ -4054,7 +4126,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const state = getCurrentState();
     customTemplates.push({ name, state });
-    localStorage.setItem('wobbler_custom_templates_gas', JSON.stringify(customTemplates));
+    persistCustomTemplates();
 
     // Только что созданный шаблон становится активным (можно сразу обновлять)
     activeTemplateId = customTemplates.length - 1;
@@ -4173,7 +4245,7 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
         t.state = state;
-        localStorage.setItem('wobbler_custom_templates_gas', JSON.stringify(customTemplates));
+        persistCustomTemplates();
         saveModal.classList.remove('active');
         renderSavedTemplates();
         document.querySelector('.tab-btn[data-tab="userSaved"]').click();
@@ -4186,7 +4258,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const baseName = preset ? preset.name : 'Шаблон';
         const name = (newTemplateNameInput.value.trim()) || (baseName + ' (изменён)');
         customTemplates.push({ name, state });
-        localStorage.setItem('wobbler_custom_templates_gas', JSON.stringify(customTemplates));
+        persistCustomTemplates();
         const newIndex = customTemplates.length - 1;
         activeTemplateRef = { kind: 'custom', index: newIndex };
         activeTemplateId = newIndex;
@@ -4967,9 +5039,13 @@ document.addEventListener('DOMContentLoaded', () => {
      });
    })();
 
-  // Пересчитать ширину цифр цены, когда веб-шрифты точно загружены:
-  // первый замер мог снять метрики фолбэка (например, для Lobster/Pacifico).
+  // Пересчитать ширину цифр цены и кегли названий, когда веб-шрифты точно
+  // загружены: первый замер мог снять метрики фолбэка (например, для
+  // Lobster/Pacifico/Duo Dunkel) — и «залипнуть» в per-item titleSize.
   if (document.fonts && document.fonts.ready) {
-    document.fonts.ready.then(() => updatePreview());
+    document.fonts.ready.then(() => {
+      updatePreview();
+      refitActiveTitle();
+    });
   }
  });
