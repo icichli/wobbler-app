@@ -1596,6 +1596,193 @@ document.addEventListener('DOMContentLoaded', () => {
     return (p && p[name] !== undefined) ? p[name] : fallback;
   }
 
+  // ===== Автосохранение сессии =====
+  // Снимок всего заполненного (таблицы товаров ВСЕХ шаблонов + активный шаблон
+  // с его текущим визуальным состоянием + режим заполнения) кладётся в
+  // localStorage и восстанавливается при загрузке страницы. Работает одинаково
+  // локально (file://, http://127.0.0.1) и на GitHub Pages — localStorage
+  // привязан к домену, на каждом хостинге свой независимый экземпляр.
+  const SESSION_KEY = 'wobbler_session_v1';
+  let __sessionSaveTimer = null;
+  let __sessionQuotaWarned = false;
+
+  function saveSessionNow() {
+    try {
+      // Чей массив товаров сейчас активен (для custom-шаблона таблица остаётся
+      // от последнего встроенного — сохраняем ссылку по имени ключа).
+      const activeItemsKey = TEMPLATE_KEYS.find(k => templateItems[k] === itemsData) || 'alaska_dots';
+      const session = {
+        app: 'wobbler_designer_session',
+        version: 1,
+        savedAt: new Date().toISOString(),
+        printMode: (document.querySelector('input[name="printMode"]:checked') || {}).value || 'multi',
+        activeTemplate: activeTemplateRef ? JSON.parse(JSON.stringify(activeTemplateRef)) : null,
+        activeItemsKey: activeItemsKey,
+        state: getCurrentState(),
+        items: {}
+      };
+      TEMPLATE_KEYS.forEach(k => {
+        session.items[k] = JSON.parse(JSON.stringify(templateItems[k] || []));
+      });
+      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    } catch (e) {
+      console.warn('Автосохранение сессии не удалось:', e);
+      if (!__sessionQuotaWarned) {
+        __sessionQuotaWarned = true;
+        alert('Автосохранение сессии не работает: превышен объём localStorage (вероятно, из-за больших загруженных фонов). Данные не восстановятся после перезагрузки.');
+      }
+    }
+  }
+
+  // Дебаунс: любые изменения (ввод в таблице, смена шаблона, шрифты/фон/позиции)
+  // завершаются вызовом updatePreview — оттуда и планируем сохранение.
+  function scheduleSessionSave() {
+    if (__sessionSaveTimer) clearTimeout(__sessionSaveTimer);
+    __sessionSaveTimer = setTimeout(() => {
+      __sessionSaveTimer = null;
+      saveSessionNow();
+    }, 600);
+  }
+
+  function readSession() {
+    try {
+      const s = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+      if (!s || s.app !== 'wobbler_designer_session' || typeof s.items !== 'object' || s.items === null) return null;
+      if (!s.state || typeof s.state !== 'object') return null;
+      return s;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Восстановление сессии при загрузке. true — сессия применена (init тогда
+  // пропускает дефолтное включение «Бутылок»).
+  function restoreSession() {
+    const s = readSession();
+    if (!s) return false;
+
+    // 1) Режим заполнения (Разные товары / Одинаковый текст).
+    if (s.printMode === 'single' || s.printMode === 'multi') {
+      const radio = document.querySelector('input[name="printMode"][value="' + s.printMode + '"]');
+      if (radio) radio.checked = true;
+    }
+
+    // 2) Таблицы товаров всех шаблонов (с их per-item настройками).
+    TEMPLATE_KEYS.forEach(k => {
+      if (Array.isArray(s.items[k])) {
+        templateItems[k] = s.items[k].map(it => (it && typeof it === 'object') ? it : freshItem());
+      }
+    });
+
+    // 3) Активный шаблон и его таблица.
+    let applied = false;
+    const at = s.activeTemplate;
+    if (at && at.kind === 'builtin' && builtInPresets[at.key]) {
+      activeTemplateRef = { kind: 'builtin', key: at.key };
+      itemsData = templateItems[at.key];
+      applied = true;
+    } else if (at && at.kind === 'custom' && customTemplates[at.index]) {
+      activeTemplateRef = { kind: 'custom', index: at.index };
+      activeTemplateId = at.index;
+      // У пользовательского шаблона нет своего массива товаров — берём таблицу
+      // последнего встроенного (как при обычном клике по его карточке).
+      itemsData = templateItems[s.activeItemsKey] || templateItems.alaska_dots;
+      applied = true;
+    }
+    if (!applied) {
+      activeTemplateRef = { kind: 'builtin', key: 'alaska_dots' };
+      itemsData = templateItems.alaska_dots;
+    }
+    activePreviewIndex = 0;
+
+    // 4) Полное визуальное состояние активного шаблона (шрифты/фон/декор/размеры).
+    applyState(s.state);
+
+    // 5) Персональные позиции/переопределения каждого товара: applyState разнёс
+    //    labelPos активного товара на всех — возвращаем сохранённые per-item
+    //    значения и таблицу.
+    const itemsKey = (at && at.kind === 'builtin') ? at.key : (s.activeItemsKey || 'alaska_dots');
+    itemsData = templateItems[itemsKey] || templateItems.alaska_dots;
+    renderItemsListInputs();
+    updatePreview();
+
+    // 6) Подсветить карточку активного шаблона в панели слева.
+    document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('active'));
+    if (activeTemplateRef.kind === 'builtin') {
+      const card = document.querySelector('#builtInTemplates .preset-card[data-preset="' + activeTemplateRef.key + '"]');
+      if (card) card.classList.add('active');
+    } else {
+      const card = userTemplatesContainer.children[activeTemplateRef.index];
+      if (card && card.classList.contains('preset-card')) card.classList.add('active');
+    }
+    return true;
+  }
+
+  // Перезагрузка/закрытие вкладки/переход в фон — сохранить немедленно,
+  // дебаунс может не успеть сработать.
+  window.addEventListener('beforeunload', () => {
+    if (__sessionSaveTimer) { clearTimeout(__sessionSaveTimer); __sessionSaveTimer = null; saveSessionNow(); }
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden' && __sessionSaveTimer) {
+      clearTimeout(__sessionSaveTimer); __sessionSaveTimer = null; saveSessionNow();
+    }
+  });
+
+  // ===== Полный сброс к исходному состоянию =====
+  // Кнопка «♻️ Полный сброс» в секции «Шаблоны»: очищает сессию, сохранённые
+  // пользовательские шаблоны, кэш доп. фонов и настройки вида — приложение
+  // возвращается к состоянию первого запуска.
+  const resetAllBtn = document.getElementById('resetAllBtn');
+  if (resetAllBtn) {
+    resetAllBtn.addEventListener('click', () => {
+      const ok = confirm(
+        'Полный сброс к исходному состоянию?\n\n' +
+        'Будет очищено:\n' +
+        '• заполненные товары всех шаблонов, активный шаблон и режим;\n' +
+        '• сохранённые пользовательские шаблоны («Мои шаблоны»);\n' +
+        '• загруженные дополнительные фоны и настройки вида.\n\n' +
+        'Действие необратимо. «Отмена» — ничего не менять.'
+      );
+      if (!ok) return;
+
+      // 1) Хранилища: все ключи приложения в localStorage + кэш фонов в IndexedDB.
+      try {
+        Object.keys(localStorage)
+          .filter(k => k.indexOf('wobbler_') === 0)
+          .forEach(k => localStorage.removeItem(k));
+      } catch (e) {
+        console.warn('Не удалось очистить localStorage:', e);
+      }
+      if (window.indexedDB) {
+        try { window.indexedDB.deleteDatabase(EXTRA_BG_DB); } catch (e) { /* приватный режим и т.п. */ }
+      }
+
+      // 2) Память: шаблоны, таблицы товаров, активный выбор, кэш фонов.
+      customTemplates = [];
+      TEMPLATE_KEYS.forEach(k => { templateItems[k] = freshItems(); });
+      activeTemplateRef = { kind: 'builtin', key: 'alaska_dots' };
+      activeTemplateId = null;
+      activePreviewIndex = 0;
+      itemsData = templateItems.alaska_dots;
+      extraBgMap = {};
+      extraBgOrder = [];
+      const pmMulti = document.querySelector('input[name="printMode"][value="multi"]');
+      if (pmMulti) pmMulti.checked = true;
+
+      // 3) Пере-инициализация интерфейса под чистое состояние.
+      renderSavedTemplates();
+      renderItemsListInputs();
+      applyState(builtInPresets.alaska_dots);
+      document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('active'));
+      const alaskaCard = document.querySelector('#builtInTemplates .preset-card[data-preset="alaska_dots"]');
+      if (alaskaCard) alaskaCard.classList.add('active');
+      const extraGroup = document.getElementById('extraBgGroup');
+      if (extraGroup) extraGroup.innerHTML = '';
+      // Следующий updatePreview (из applyState) сохранит уже чистую сессию.
+    });
+  }
+
   // Прогрессивные строки «Разных товаров»: показываем столько строк, сколько
   // заполнено, + одну рабочую пустую снизу. При вводе в рабочую пустую строку
   // появляется следующая; при очистке — лишние пустые хвосты схлопываются.
@@ -3047,6 +3234,10 @@ document.addEventListener('DOMContentLoaded', () => {
     wobblerPreview.classList.toggle('price-plate', !!(pricePlateToggle && pricePlateToggle.checked));
 
     renderSheetPreview(widthMm, heightMm);
+
+    // Любое значимое изменение завершается этим рендером — планируем
+    // автосохранение сессии (дебаунс внутри).
+    scheduleSessionSave();
   }
 
   // Handle Size Presets
@@ -3934,6 +4125,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Индексы пользовательских шаблонов могли измениться — проверяем ссылку.
     revalidateActiveTemplateRef();
     renderSavedTemplates();
+    scheduleSessionSave();   // активный шаблон мог смениться — фиксируем в сессии
     alert('Импорт завершён.\nДобавлено/обновлено: ' + added + '\nПропущено: ' + skipped);
   }
 
@@ -3995,6 +4187,7 @@ document.addEventListener('DOMContentLoaded', () => {
           persistCustomTemplates();
           revalidateActiveTemplateRef();
           renderSavedTemplates();
+          scheduleSessionSave();   // активный шаблон мог смениться — фиксируем в сессии
         }
       });
 
@@ -5017,8 +5210,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
    renderItemsListInputs();
    renderSavedTemplates();
-   activeTemplateRef = { kind: 'builtin', key: 'alaska_dots' };
-   applyState(builtInPresets.alaska_dots);
+   // Автосохранённая сессия (таблицы, активный шаблон, режим) — или чистый старт.
+   if (!restoreSession()) {
+     activeTemplateRef = { kind: 'builtin', key: 'alaska_dots' };
+     applyState(builtInPresets.alaska_dots);
+   }
 
    // Подгружаем дополнительные фоны из «bg other» (из IndexedDB-кэша) и
    // наполняем подменю выбора фона. Асинхронно — не блокирует старт рендера.
