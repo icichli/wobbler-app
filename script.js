@@ -1834,6 +1834,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // ===== Фон «Б/А» (bg other/ba.jpg): светлый шаблон → чёрный текст =====
+  const BA_BG_MARKER = 'bgother:ba.jpg';
+  const BA_AUTO_COLORS = { titleColor: '#000000', subtitleColor: '#000000', priceColor: '#000000' };
+
+  // Ставит чёрные цвета Б/А поверх существующих per-item шрифтов
+  // (прочие поля — шрифт, размеры и т.д. — не трогает).
+  function applyBaAutoColors(it) {
+    it.fonts = Object.assign({}, (it.fontsCustomized && it.fonts) ? it.fonts : {}, BA_AUTO_COLORS);
+    it.fontsCustomized = true;
+  }
+
+  // Снимает 3 цветовых поля → цвета возвращаются к шаблонным (fontOf уйдёт
+  // в fallback к templateFonts). Если после удаления per-item шрифтов не
+  // осталось совсем — снимает и override целиком.
+  function resetItemFontColors(it) {
+    if (it.fonts) {
+      delete it.fonts.titleColor;
+      delete it.fonts.subtitleColor;
+      delete it.fonts.priceColor;
+      if (Object.keys(it.fonts).length === 0) {
+        delete it.fonts;
+        delete it.fontsCustomized;
+      }
+    }
+  }
+
   // Создаёт один DOM-элемент строки .item-row для индекса i (со всеми
   // обработчиками фокуса/ввода, авто-ростом textarea и кнопкой ⚙).
   function createItemRow(i) {
@@ -1856,6 +1882,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <option value="bgother:tomatnyj.png">Томатный</option>
         <option value="bgother:medovyj.png">Медовый</option>
         <option value="bgother:yablochnyj.png">Яблочный</option>
+        <option value="bgother:ba.jpg">Б/А</option>
       </select>
       <button type="button" class="item-delete-btn" data-index="${i}" title="Удалить товар №${i + 1}">✕</button>
     `;
@@ -1963,19 +1990,29 @@ document.addEventListener('DOMContentLoaded', () => {
         const val = bgSelect.value;
         const it = itemsData[idx] || (itemsData[idx] = {});
         if (!val) {
-          // «Как в шаблоне» — снимаем per-item override фона.
+          // «Как в шаблоне» — снимаем per-item override фона и возвращаем
+          // цвета шрифта к шаблонным.
           delete it.bgCustomized;
           delete it.bg;
+          resetItemFontColors(it);
         } else {
           // Сохраняем текущий цвет шапки, меняем только картинку фона.
           const prevHeader = bgOf(it, 'headerBg', templateBg.headerBg);
           it.bg = { headerBg: prevHeader, bgImage: val, customBgData: null };
           it.bgCustomized = true;
+          if (val === BA_BG_MARKER) {
+            // Светлый фон Б/А → чёрный текст наименования/веса/цены.
+            applyBaAutoColors(it);
+          } else {
+            // Любой другой фон → цвета шрифта возвращаются к стандартным.
+            resetItemFontColors(it);
+          }
         }
         activePreviewIndex = idx;
         updatePreview();
-        // Держим главные контролы фона в синхроне с этой строкой.
+        // Держим главные контролы фона и шрифтов в синхроне с этой строкой.
         try { syncBgControlsToContext(); } catch (e) {}
+        try { syncFontControlsToContext(); } catch (e) {}
       });
     }
 
