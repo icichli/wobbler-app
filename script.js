@@ -1897,14 +1897,93 @@ document.addEventListener('DOMContentLoaded', () => {
         insideFontSize: 13, insideHeight: 4, insideWidth: 37
       }
     },
-    { id: 'decor2', label: 'Оформление 2', decor: { /* TODO: параметры */ } },
-    { id: 'decor3', label: 'Оформление 3', decor: { /* TODO: параметры */ } }
+    {
+      id: 'tomatnoe',
+      label: 'Томатное',
+      // Внутри-блок «ТОМАТНОЕ»: томатная заливка RGB(188,33,35),
+      // белый текст, 14pt, высота 7мм, ширина 55%. Автоприменяется при
+      // выборе фона «Томатный» (см. BG_DECOR_AUTOLINK).
+      decor: {
+        outsideShow: false,
+        bottomShow: false,
+        insideShow: true, insideText: 'ТОМАТНОЕ', insideBg: '#BC2123',
+        insideBgImg: 'none', insideCustomBg: null, insideColor: '#ffffff',
+        insideFontSize: 14, insideHeight: 7, insideWidth: 55
+      }
+    },
+    {
+      id: 'medovuha',
+      label: 'Медовуха',
+      // Внутри-блок «МЕДОВУХА»: медовая заливка RGB(220,151,65),
+      // белый текст, 13pt, высота 7мм, ширина 55%. Автоприменяется при
+      // выборе фона «Медовый» (см. BG_DECOR_AUTOLINK).
+      decor: {
+        outsideShow: false,
+        bottomShow: false,
+        insideShow: true, insideText: 'МЕДОВУХА', insideBg: '#DC9741',
+        insideBgImg: 'none', insideCustomBg: null, insideColor: '#ffffff',
+        insideFontSize: 13, insideHeight: 7, insideWidth: 55
+      }
+    },
+    {
+      id: 'sidr',
+      label: 'Сидр',
+      // Внутри-блок «СИДР»: оливковая заливка RGB(112,113,61),
+      // белый текст, 20pt, высота 7мм, ширина 55%. Автоприменяется при
+      // выборе фона «Яблочный» (см. BG_DECOR_AUTOLINK).
+      decor: {
+        outsideShow: false,
+        bottomShow: false,
+        insideShow: true, insideText: 'СИДР', insideBg: '#70713D',
+        insideBgImg: 'none', insideCustomBg: null, insideColor: '#ffffff',
+        insideFontSize: 20, insideHeight: 7, insideWidth: 55
+      }
+    }
   ];
 
-  // Автосвязка: фон «Остро» → пресет оформления «Остро» (и сброс оформления
-  // при выборе любого другого фона — симметрично правилу Б/А для шрифтов).
-  const OSTRYI_BG_MARKER = 'bgother:ostryi.png';
-  const OSTRYI_DECOR_ID = 'ostryi';
+  // Автосвязка «фон → пресет оформления»: выбор фона-ключа применяет
+  // одноимённый пресет оформления; выбор любого другого фона / «Как в шаблоне»
+  // сбрасывает оформление к шаблонному (симметрично правилу Б/А для шрифтов).
+  // Пополнение: добавьте пару «маркер фона → id пресета из DECOR_PRESETS».
+  // Действует только когда включён переключатель 🔗 (bgDecorAutolinkEnabled).
+  const BG_DECOR_AUTOLINK = {
+    'bgother:ostryi.png':    'ostryi',
+    'bgother:tomatnyj.png':  'tomatnoe',
+    'bgother:medovyj.png':   'medovuha',
+    'bgother:yablochnyj.png': 'sidr'
+  };
+
+  // ===== Глобальный переключатель автоприменения оформления (🔗) =====
+  // ВКЛ: выбор фона из BG_DECOR_AUTOLINK применяет пресет, другой фон —
+  // сбрасывает оформление. ВЫКЛ: выбор фона вообще не трогает оформление.
+  // Состояние глобальное, сохраняется в localStorage, по умолчанию ВКЛ.
+  const AUTOLINK_LS_KEY = 'wobbler_bg_decor_autolink';
+  let bgDecorAutolinkEnabled = (localStorage.getItem(AUTOLINK_LS_KEY) ?? '1') === '1';
+
+  // Подсвечивает обе кнопки-переключателя (в заголовке секции и у кнопок
+  // вставки) в соответствии с текущим состоянием.
+  function refreshAutolinkBtns() {
+    document.querySelectorAll('.autolink-toggle').forEach(b => {
+      b.classList.toggle('active', bgDecorAutolinkEnabled);
+      b.title = 'Автоприменение оформления при выборе фона: ' +
+        (bgDecorAutolinkEnabled ? 'ВКЛ (клик — выключить)' : 'ВЫКЛ (клик — включить)');
+    });
+  }
+
+  function toggleBgDecorAutolink() {
+    bgDecorAutolinkEnabled = !bgDecorAutolinkEnabled;
+    try {
+      localStorage.setItem(AUTOLINK_LS_KEY, bgDecorAutolinkEnabled ? '1' : '0');
+    } catch (e) {}
+    refreshAutolinkBtns();
+  }
+
+  // Обе кнопки-переключателя (в заголовке секции и у кнопок вставки)
+  // управляют одним состоянием и подсвечиваются синхронно.
+  document.querySelectorAll('.autolink-toggle').forEach(b => {
+    b.addEventListener('click', toggleBgDecorAutolink);
+  });
+  refreshAutolinkBtns();
 
   // Применяет пресет оформления к товару idx (полный снимок поверх шаблона:
   // все 24 поля заполнены, незаданные в пресете возьмутся из templateDecor).
@@ -2121,11 +2200,12 @@ document.addEventListener('DOMContentLoaded', () => {
           const it = itemsData[idx] || (itemsData[idx] = {});
           if (!val) {
             // «Как в шаблоне» — снимаем per-item override фона и возвращаем
-            // цвета шрифта к шаблонным; оформление тоже возвращаем к шаблонному.
+            // цвета шрифта к шаблонным; оформление тоже возвращаем к шаблонному
+            // (если автосвязка включена переключателем 🔗).
             delete it.bgCustomized;
             delete it.bg;
             resetItemFontColors(it);
-            resetDecorPresetByIdx(idx);
+            if (bgDecorAutolinkEnabled) resetDecorPresetByIdx(idx);
           } else {
             // Сохраняем текущий цвет шапки, меняем только картинку фона.
             const prevHeader = bgOf(it, 'headerBg', templateBg.headerBg);
@@ -2138,12 +2218,15 @@ document.addEventListener('DOMContentLoaded', () => {
               // Любой другой фон → цвета шрифта возвращаются к стандартным.
               resetItemFontColors(it);
             }
-            // Автосвязка фон ↔ оформление: «Остро» применяет одноимённый
-            // пресет, любой другой фон — сбрасывает оформление к шаблонному.
-            if (val === OSTRYI_BG_MARKER) {
-              applyDecorPresetByIdx(idx, OSTRYI_DECOR_ID);
-            } else {
-              resetDecorPresetByIdx(idx);
+            // Автосвязка фон ↔ оформление (BG_DECOR_AUTOLINK, только при 🔗 ВКЛ):
+            // фон с пресетом применяет его, любой другой — сбрасывает к шаблонному.
+            if (bgDecorAutolinkEnabled) {
+              const autoDecorId = BG_DECOR_AUTOLINK[val];
+              if (autoDecorId) {
+                applyDecorPresetByIdx(idx, autoDecorId);
+              } else {
+                resetDecorPresetByIdx(idx);
+              }
             }
           }
           activePreviewIndex = idx;
@@ -2386,15 +2469,21 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!refEl) return null;
       const probes = [];
       let max = 0;
+      const fs = refEl.style.fontSize || '';
+      const ff = refEl.style.fontFamily || '';
+      const fw = refEl.style.fontWeight || '';
       for (let i = 0; i <= 9; i++) {
         const span = document.createElement('span');
         span.className = 'price-digit';
         span.setAttribute('aria-hidden', 'true');
         // Вне потока, скрыт; min-width снимаем, чтобы замерить чистую ширину
-        // глифа, а не запас из CSS-переменной.
+        // глифа, а не запас из CSS-переменной. Явно задаём font-size/font-family/weight.
         span.style.cssText =
           'position:absolute;left:-99999px;top:0;visibility:hidden;' +
-          'min-width:0 !important;width:auto !important;overflow:visible !important;';
+          'min-width:0 !important;width:auto !important;overflow:visible !important;' +
+          (fs ? `font-size:${fs} !important;` : '') +
+          (ff ? `font-family:${ff} !important;` : '') +
+          (fw ? `font-weight:${fw} !important;` : '');
         span.textContent = String(i);
         refEl.appendChild(span);
         probes.push(span);
@@ -2410,9 +2499,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function fitTitleSize(text, family, weight) {
     if (!text || !text.trim()) return null;
-    if (!previewTitle) return null;
-    const budgetW = previewTitle.clientWidth;
-    const budgetH = previewTitle.clientHeight;
+    
+    // Определяем доступный бюджет зоны заголовка (в px).
+    // Если DOM-элемент previewTitle доступен и отрисован — берём clientWidth/clientHeight.
+    // Если превью скрыто или временно не скомпоновано — рассчитываем из миллиметровых параметров воблера.
+    let budgetW = previewTitle ? previewTitle.clientWidth : 0;
+    let budgetH = previewTitle ? previewTitle.clientHeight : 0;
+    if (!budgetW || !budgetH) {
+      const wCm = parseFloat(wobblerWidthInput ? wobblerWidthInput.value : 6.5) || 6.5;
+      const hCm = parseFloat(wobblerHeightInput ? wobblerHeightInput.value : 4.5) || 4.5;
+      const wMm = wCm * 10;
+      const hMm = hCm * 10;
+      const ts = resolveItemBg(activePreviewIndex).titleSafe;
+      const headerHm = currentLayout === 'full' ? hMm : hMm * (parseInt(headerHeightRange ? headerHeightRange.value : 50, 10) || 50) / 100;
+      const bySafeH = headerHm * Math.max(0, 1 - ts.top - ts.bottom);
+      const mult = (rybaPriceInBottom && currentLayout === 'split') ? 0.85 : 0.45;
+      const tzMm = Math.min(headerHm * mult, bySafeH);
+      const titleW_mm = wMm * (1 - ts.left - ts.right);
+      const pxPerMm = (previewStage && previewStage.offsetWidth && wobblerPreview && wobblerPreview.offsetWidth) ? (wobblerPreview.offsetWidth / (wMm || 1)) : (96 / 25.4);
+      budgetW = titleW_mm * pxPerMm;
+      budgetH = tzMm * pxPerMm;
+    }
     if (!budgetW || !budgetH) return null;
 
     // Нижний пол кегля. Абсолютный минимум читаемости — минимум слайдера (7pt).
@@ -4381,6 +4488,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // мог остаться на строке прошлого шаблона и не существовать в новом.
         activePreviewIndex = 0;
         applyState(item.state);
+        autoFitFontSize(true);
       });
 
       const delBtn = card.querySelector('.btn-delete-template');
@@ -4437,13 +4545,9 @@ document.addEventListener('DOMContentLoaded', () => {
           renderItemsListInputs();
         }
         applyState(p);
-        // Авто-подгон кегля названий под геометрию нового шаблона. Двойной RAF:
-        // первый кадр применяет стили applyState (размер/раскладка/шрифты), второй —
-        // гарантирует, что layout пересчитан и previewTitle.clientWidth/clientHeight
-        // актуальны для fitTitleSize. Если превью скрыто (бюджет 0), fitTitleSize
-        // вернёт null и размер останется от templateFonts.
-        // titleOnly: вес/размеры цены и веса пресета НЕ перезаписываются.
-        requestAnimationFrame(() => requestAnimationFrame(() => autoFitFontSize(true)));
+        // Авто-подгон кегля названий под геометрию нового шаблона:
+        // выполняется синхронно, т.к. CSS-анимации отключены и размеры применены сразу.
+        autoFitFontSize(true);
       }
     });
   });

@@ -686,6 +686,31 @@ html, body {
 .item-settings-btn:hover { background: rgba(37, 99, 235, 0.4); }
 .item-settings-btn:active { transform: scale(0.92); }
 
+/* Глобальный переключатель автоприменения оформления при выборе фона (🔗).
+   Находится среди быстрых кнопок вставки (📋 🗑 ⧉ 🔗).
+   Активен = подсвечен рамкой. */
+.autolink-toggle {
+  flex-shrink: 0;
+  min-width: 30px;
+  height: 28px;
+  padding: 0 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(30, 41, 59, 0.9);
+  color: #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color .15s, background .15s, opacity .15s;
+  opacity: 0.55;               /* ВЫКЛ: приглушённая */
+}
+.autolink-toggle:hover { opacity: 0.85; }
+.autolink-toggle.active {
+  opacity: 1;                  /* ВКЛ: яркая + акцентная рамка */
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 1px var(--accent-blue) inset;
+}
+
 /* Compact-выбор фона конкретного ценника в строке списка товаров.
    flex-shrink:0 + фиксированная ширина, чтобы не ломать пропорции textareas. */
 /* Иконка-кнопка 🖼 быстрого выбора фона ценника (меню — .item-quick-menu). */
@@ -1388,7 +1413,6 @@ input[type="range"] {
   border-radius: 0 !important;
   user-select: none;
   border: 1px solid rgba(0,0,0,0.15);
-  transition: width 0.2s ease, height 0.2s ease;
 }
 
 /* === Декоративные блоки «Оформление» ===
@@ -1577,7 +1601,6 @@ input[type="range"] {
   padding: 3mm;
   color: #fff;
   border-radius: 0 !important;
-  transition: height 0.3s ease;
 }
 
 .header-bg-overlay {
@@ -1617,7 +1640,6 @@ input[type="range"] {
      кегль под новую ширину. Дефолт 100% — фон без графики. */
   width: var(--title-safe-w, 100%);
   text-align: center;
-  transition: transform 0.1s ease, font-size 0.1s ease;
   /* Фиксированная зона названия: блок всегда занимает --title-zone-h, а текст
      центрируется внутри неё. Так при переносе строк / разной длине название
      НЕ сдвигает блок цены и веса — слои независимы по вертикали. */
@@ -1642,7 +1664,6 @@ input[type="range"] {
   font-weight: 700;
   line-height: 1.1;
   white-space: pre-line;
-  transition: transform 0.1s ease;
 }
 
 .wobbler-price-box {
@@ -1651,7 +1672,6 @@ input[type="range"] {
   justify-content: center;
   margin-top: 1mm;
   width: 100%;
-  transition: transform 0.1s ease, justify-content 0.1s ease;
 }
 
 /* Светлая плашка под ценой — для шаблона «Рыба» (цена чёрная на чёрном фоне).
@@ -1691,13 +1711,11 @@ input[type="range"] {
   font-size: 28pt;
   font-weight: 900;
   line-height: 0.9;
-  transition: font-family 0.1s ease, font-size 0.1s ease, font-weight 0.1s ease, color 0.1s ease;
 }
 
 .price-curr {
   margin-left: 1mm;
   line-height: 0.9;
-  transition: font-family 0.1s ease, font-size 0.1s ease, font-weight 0.1s ease, color 0.1s ease;
 }
 
 .wobbler-bottom {
