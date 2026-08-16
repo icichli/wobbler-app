@@ -686,6 +686,31 @@ html, body {
 .item-settings-btn:hover { background: rgba(37, 99, 235, 0.4); }
 .item-settings-btn:active { transform: scale(0.92); }
 
+/* Глобальный переключатель автоприменения оформления при выборе фона (🔗).
+   Находится среди быстрых кнопок вставки (📋 🗑 ⧉ 🔗).
+   Активен = подсвечен рамкой. */
+.autolink-toggle {
+  flex-shrink: 0;
+  min-width: 30px;
+  height: 28px;
+  padding: 0 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(30, 41, 59, 0.9);
+  color: #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color .15s, background .15s, opacity .15s;
+  opacity: 0.55;               /* ВЫКЛ: приглушённая */
+}
+.autolink-toggle:hover { opacity: 0.85; }
+.autolink-toggle.active {
+  opacity: 1;                  /* ВКЛ: яркая + акцентная рамка */
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 1px var(--accent-blue) inset;
+}
+
 /* Compact-выбор фона конкретного ценника в строке списка товаров.
    flex-shrink:0 + фиксированная ширина, чтобы не ломать пропорции textareas. */
 /* Иконка-кнопка 🖼 быстрого выбора фона ценника (меню — .item-quick-menu). */

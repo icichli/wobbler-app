@@ -1897,14 +1897,93 @@ document.addEventListener('DOMContentLoaded', () => {
         insideFontSize: 13, insideHeight: 4, insideWidth: 37
       }
     },
-    { id: 'decor2', label: 'Оформление 2', decor: { /* TODO: параметры */ } },
-    { id: 'decor3', label: 'Оформление 3', decor: { /* TODO: параметры */ } }
+    {
+      id: 'tomatnoe',
+      label: 'Томатное',
+      // Внутри-блок «ТОМАТНОЕ»: томатная заливка RGB(188,33,35),
+      // белый текст, 14pt, высота 7мм, ширина 55%. Автоприменяется при
+      // выборе фона «Томатный» (см. BG_DECOR_AUTOLINK).
+      decor: {
+        outsideShow: false,
+        bottomShow: false,
+        insideShow: true, insideText: 'ТОМАТНОЕ', insideBg: '#BC2123',
+        insideBgImg: 'none', insideCustomBg: null, insideColor: '#ffffff',
+        insideFontSize: 14, insideHeight: 7, insideWidth: 55
+      }
+    },
+    {
+      id: 'medovuha',
+      label: 'Медовуха',
+      // Внутри-блок «МЕДОВУХА»: медовая заливка RGB(220,151,65),
+      // белый текст, 13pt, высота 7мм, ширина 55%. Автоприменяется при
+      // выборе фона «Медовый» (см. BG_DECOR_AUTOLINK).
+      decor: {
+        outsideShow: false,
+        bottomShow: false,
+        insideShow: true, insideText: 'МЕДОВУХА', insideBg: '#DC9741',
+        insideBgImg: 'none', insideCustomBg: null, insideColor: '#ffffff',
+        insideFontSize: 13, insideHeight: 7, insideWidth: 55
+      }
+    },
+    {
+      id: 'sidr',
+      label: 'Сидр',
+      // Внутри-блок «СИДР»: оливковая заливка RGB(112,113,61),
+      // белый текст, 20pt, высота 7мм, ширина 55%. Автоприменяется при
+      // выборе фона «Яблочный» (см. BG_DECOR_AUTOLINK).
+      decor: {
+        outsideShow: false,
+        bottomShow: false,
+        insideShow: true, insideText: 'СИДР', insideBg: '#70713D',
+        insideBgImg: 'none', insideCustomBg: null, insideColor: '#ffffff',
+        insideFontSize: 20, insideHeight: 7, insideWidth: 55
+      }
+    }
   ];
 
-  // Автосвязка: фон «Остро» → пресет оформления «Остро» (и сброс оформления
-  // при выборе любого другого фона — симметрично правилу Б/А для шрифтов).
-  const OSTRYI_BG_MARKER = 'bgother:ostryi.png';
-  const OSTRYI_DECOR_ID = 'ostryi';
+  // Автосвязка «фон → пресет оформления»: выбор фона-ключа применяет
+  // одноимённый пресет оформления; выбор любого другого фона / «Как в шаблоне»
+  // сбрасывает оформление к шаблонному (симметрично правилу Б/А для шрифтов).
+  // Пополнение: добавьте пару «маркер фона → id пресета из DECOR_PRESETS».
+  // Действует только когда включён переключатель 🔗 (bgDecorAutolinkEnabled).
+  const BG_DECOR_AUTOLINK = {
+    'bgother:ostryi.png':    'ostryi',
+    'bgother:tomatnyj.png':  'tomatnoe',
+    'bgother:medovyj.png':   'medovuha',
+    'bgother:yablochnyj.png': 'sidr'
+  };
+
+  // ===== Глобальный переключатель автоприменения оформления (🔗) =====
+  // ВКЛ: выбор фона из BG_DECOR_AUTOLINK применяет пресет, другой фон —
+  // сбрасывает оформление. ВЫКЛ: выбор фона вообще не трогает оформление.
+  // Состояние глобальное, сохраняется в localStorage, по умолчанию ВКЛ.
+  const AUTOLINK_LS_KEY = 'wobbler_bg_decor_autolink';
+  let bgDecorAutolinkEnabled = (localStorage.getItem(AUTOLINK_LS_KEY) ?? '1') === '1';
+
+  // Подсвечивает обе кнопки-переключателя (в заголовке секции и у кнопок
+  // вставки) в соответствии с текущим состоянием.
+  function refreshAutolinkBtns() {
+    document.querySelectorAll('.autolink-toggle').forEach(b => {
+      b.classList.toggle('active', bgDecorAutolinkEnabled);
+      b.title = 'Автоприменение оформления при выборе фона: ' +
+        (bgDecorAutolinkEnabled ? 'ВКЛ (клик — выключить)' : 'ВЫКЛ (клик — включить)');
+    });
+  }
+
+  function toggleBgDecorAutolink() {
+    bgDecorAutolinkEnabled = !bgDecorAutolinkEnabled;
+    try {
+      localStorage.setItem(AUTOLINK_LS_KEY, bgDecorAutolinkEnabled ? '1' : '0');
+    } catch (e) {}
+    refreshAutolinkBtns();
+  }
+
+  // Обе кнопки-переключателя (в заголовке секции и у кнопок вставки)
+  // управляют одним состоянием и подсвечиваются синхронно.
+  document.querySelectorAll('.autolink-toggle').forEach(b => {
+    b.addEventListener('click', toggleBgDecorAutolink);
+  });
+  refreshAutolinkBtns();
 
   // Применяет пресет оформления к товару idx (полный снимок поверх шаблона:
   // все 24 поля заполнены, незаданные в пресете возьмутся из templateDecor).
@@ -2121,11 +2200,12 @@ document.addEventListener('DOMContentLoaded', () => {
           const it = itemsData[idx] || (itemsData[idx] = {});
           if (!val) {
             // «Как в шаблоне» — снимаем per-item override фона и возвращаем
-            // цвета шрифта к шаблонным; оформление тоже возвращаем к шаблонному.
+            // цвета шрифта к шаблонным; оформление тоже возвращаем к шаблонному
+            // (если автосвязка включена переключателем 🔗).
             delete it.bgCustomized;
             delete it.bg;
             resetItemFontColors(it);
-            resetDecorPresetByIdx(idx);
+            if (bgDecorAutolinkEnabled) resetDecorPresetByIdx(idx);
           } else {
             // Сохраняем текущий цвет шапки, меняем только картинку фона.
             const prevHeader = bgOf(it, 'headerBg', templateBg.headerBg);
@@ -2138,12 +2218,15 @@ document.addEventListener('DOMContentLoaded', () => {
               // Любой другой фон → цвета шрифта возвращаются к стандартным.
               resetItemFontColors(it);
             }
-            // Автосвязка фон ↔ оформление: «Остро» применяет одноимённый
-            // пресет, любой другой фон — сбрасывает оформление к шаблонному.
-            if (val === OSTRYI_BG_MARKER) {
-              applyDecorPresetByIdx(idx, OSTRYI_DECOR_ID);
-            } else {
-              resetDecorPresetByIdx(idx);
+            // Автосвязка фон ↔ оформление (BG_DECOR_AUTOLINK, только при 🔗 ВКЛ):
+            // фон с пресетом применяет его, любой другой — сбрасывает к шаблонному.
+            if (bgDecorAutolinkEnabled) {
+              const autoDecorId = BG_DECOR_AUTOLINK[val];
+              if (autoDecorId) {
+                applyDecorPresetByIdx(idx, autoDecorId);
+              } else {
+                resetDecorPresetByIdx(idx);
+              }
             }
           }
           activePreviewIndex = idx;
