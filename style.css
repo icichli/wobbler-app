@@ -688,25 +688,80 @@ html, body {
 
 /* Compact-выбор фона конкретного ценника в строке списка товаров.
    flex-shrink:0 + фиксированная ширина, чтобы не ломать пропорции textareas. */
-.item-bg-select {
+/* Иконка-кнопка 🖼 быстрого выбора фона ценника (меню — .item-quick-menu). */
+.item-bg-btn {
   flex-shrink: 0;
-  width: 96px;
-  min-width: 96px;
+  width: 30px;
+  min-width: 30px;
   height: 30px;
-  padding: 0 4px;
-  font-size: 0.72rem;
-  border-radius: 6px;
-  background: rgba(30, 41, 59, 0.9);
-  color: #e2e8f0;
+  padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(37, 99, 235, 0.18);
+  color: #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  line-height: 1;
   cursor: pointer;
-  transition: border-color .15s, background .15s;
+  transition: background .15s, transform .1s, border-color .15s;
 }
-.item-bg-select:hover { border-color: var(--accent-blue); background: rgba(37, 99, 235, 0.25); }
-.item-bg-select:focus { outline: none; border-color: var(--accent-blue); }
+.item-bg-btn:hover { background: rgba(37, 99, 235, 0.4); }
+.item-bg-btn:active { transform: scale(0.92); }
+/* Подсветка, когда у ценника выбран не-шаблонный фон. */
+.item-bg-btn.active { border-color: var(--accent-blue); box-shadow: 0 0 0 1px var(--accent-blue) inset; }
+
+/* Иконка-кнопка 🎨 быстрого выбора пресета оформления ценника. */
+.item-decor-btn {
+  flex-shrink: 0;
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(147, 51, 234, 0.18);
+  color: #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background .15s, transform .1s, border-color .15s;
+}
+.item-decor-btn:hover { background: rgba(147, 51, 234, 0.4); }
+.item-decor-btn:active { transform: scale(0.92); }
+.item-decor-btn.active { border-color: var(--accent-purple); box-shadow: 0 0 0 1px var(--accent-purple) inset; }
+
+/* Всплывающее меню быстрых опций строки товара (позиционируется из JS,
+   fixed — не зависит от скролла контейнера списка). */
+.item-quick-menu {
+  position: fixed;
+  z-index: 1000;
+  min-width: 150px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 4px;
+  background: var(--bg-card);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+.item-quick-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 6px 10px;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-main);
+  font-size: 0.78rem;
+  line-height: 1.25;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.item-quick-menu button:hover { background: rgba(56, 189, 248, 0.15); }
+.item-quick-menu button.active { color: var(--accent-yellow); font-weight: 700; }
+
 /* Подстрахуем нативный popup <option> тёмным фоном/светлым текстом на тех
    сборках Chromium, где color-scheme:dark не перекрашивает список опций. */
-.item-bg-select option,
 #bgImageSelect option,
 .font-dropdown option,
 select option {

@@ -585,8 +585,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const DECOR_FIELDS = [
     // СВЕРХУ
     'outsideShow','outsideText','outsideBg','outsideBgImg','outsideCustomBg','outsideColor','outsideFontSize','outsideHeight',
-    // ВНУТРИ (без insideWidth — он только шаблонный)
-    'insideShow','insideText','insideBg','insideBgImg','insideCustomBg','insideColor','insideFontSize','insideHeight',
+    // ВНУТРИ (insideWidth тоже per-item — переопределяет шаблонную ширину блока)
+    'insideShow','insideText','insideBg','insideBgImg','insideCustomBg','insideColor','insideFontSize','insideHeight','insideWidth',
     // СНИЗУ
     'bottomShow','bottomText','bottomBg','bottomBgImg','bottomCustomBg','bottomColor','bottomFontSize','bottomHeight'
   ];
@@ -618,6 +618,7 @@ document.addEventListener('DOMContentLoaded', () => {
       insideColor:       decorInsideColor ? decorInsideColor.value : '#ffffff',
       insideFontSize:    decorInsideFontSize ? decorInsideFontSize.value : 11,
       insideHeight:      decorInsideHeight ? decorInsideHeight.value : 8,
+      insideWidth:       decorInsideWidth ? decorInsideWidth.value : 50,
       bottomShow:        !!(decorBottomShow && decorBottomShow.checked),
       bottomText:        decorBottomText ? decorBottomText.value : '',
       bottomBg:          decorBottomBg ? decorBottomBg.value : '#e63946',
@@ -652,6 +653,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (decorInsideColor) decorInsideColor.value = snap.insideColor || '#ffffff';
     if (decorInsideFontSize) decorInsideFontSize.value = snap.insideFontSize != null ? snap.insideFontSize : 11;
     if (decorInsideHeight) decorInsideHeight.value = snap.insideHeight != null ? snap.insideHeight : 8;
+    if (decorInsideWidth) decorInsideWidth.value = snap.insideWidth != null ? snap.insideWidth : 50;
     uploadedDataUrl3 = snap.insideCustomBg || null;
     if (decorInsideCustomOption) decorInsideCustomOption.style.display = (snap.insideBgImg === 'custom' && snap.insideCustomBg) ? 'block' : 'none';
     if (decorInsideBgImg) decorInsideBgImg.value = (snap.insideBgImg === 'custom' && snap.insideCustomBg) ? 'custom' : (snap.insideBgImg || 'none');
@@ -939,7 +941,7 @@ document.addEventListener('DOMContentLoaded', () => {
         height:   decorOf(it, 'bottomHeight', td.bottomHeight != null ? td.bottomHeight : 12)
       };
     }
-    // inside. width — только шаблонный (не per-item): из DOM decorInsideWidth.
+    // inside. width — per-item (из it.decor.insideWidth), иначе шаблонный (DOM decorInsideWidth).
     return {
       show:     decorOf(it, 'insideShow',   td.insideShow != null ? td.insideShow : false),
       text:     decorOf(it, 'insideText',   td.insideText != null ? td.insideText : ''),
@@ -949,7 +951,7 @@ document.addEventListener('DOMContentLoaded', () => {
       color:    decorOf(it, 'insideColor',  td.insideColor || '#ffffff'),
       fontSize: decorOf(it, 'insideFontSize', td.insideFontSize != null ? td.insideFontSize : 11),
       height:   decorOf(it, 'insideHeight', td.insideHeight != null ? td.insideHeight : 8),
-      width:    decorInsideWidth ? decorInsideWidth.value : 50
+      width:    decorOf(it, 'insideWidth',  decorInsideWidth ? decorInsideWidth.value : 50)
     };
   }
 
@@ -1033,7 +1035,7 @@ document.addEventListener('DOMContentLoaded', () => {
       color:    decorOf(item, 'insideColor',  td.insideColor || '#ffffff'),
       fontSize: decorOf(item, 'insideFontSize', td.insideFontSize != null ? td.insideFontSize : 11),
       height:   decorOf(item, 'insideHeight', td.insideHeight != null ? td.insideHeight : 8),
-      width:    insideWidthVal != null ? insideWidthVal : 50
+      width:    decorOf(item, 'insideWidth',  insideWidthVal != null ? insideWidthVal : 50)
     };
   }
   function decorBlockFromItem(item, kind) {
@@ -1494,7 +1496,7 @@ document.addEventListener('DOMContentLoaded', () => {
       titleWeight: '800',
       titleItalic: false,
       titleAlign: 'center',
-      titleOffsetY: 0,
+      titleOffsetY: 1,
       subtitleColor: '#ffffff',
       subtitleSize: 9,
       subtitleWeight: '700',
@@ -1860,6 +1862,136 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // ===== Быстрые пресеты оформления для строки товара =====
+  // Пресет = именованный набор полей трёх декор-блоков (сверху/внутри/снизу),
+  // применяется per-item через иконку-кнопку 🎨 на строке товара.
+  //
+  // Формат полей (kind ∈ {outside, inside, bottom}):
+  //   <kind>Show      boolean   показать/скрыть блок
+  //   <kind>Text      строка    текст плашки (напр. 'НОВИНКА', 'АКЦИЯ')
+  //   <kind>Bg        hex-цвет  цвет заливки блока (напр. '#e63946')
+  //   <kind>BgImg     маркер    'none' | имя файла фона | 'ryba_scales' | 'custom'
+  //   <kind>CustomBg  data:URL  картинка блока (только при BgImg='custom', иначе null)
+  //   <kind>Color     hex-цвет  цвет текста блока (напр. '#ffffff')
+  //   <kind>FontSize  число pt  размер шрифта (outside/bottom 6-30, inside 6-22)
+  //   <kind>Height    число мм  высота блока (outside/bottom 5-30, inside 3-15)
+  //   insideWidth     число %   ширина блока «внутри» (20-100, только inside)
+  //
+  // Задавать можно ЛЮБОЕ подмножество полей — недостающие возьмутся из
+  // текущего шаблона (templateDecor) в момент применения.
+  //
+  // ПОПОЛНЕНИЕ: добавьте объект в массив. id — уникальная строка, label —
+  // подпись в селекте строки товара.
+  const DECOR_PRESETS = [
+    {
+      id: 'ostryi',
+      label: 'Остро',
+      // Внутри-блок «ОСТРО!»: тёмно-красная заливка RGB(90,20,15),
+      // белый текст, 13pt, высота 4мм, ширина 37%. Автоприменяется при
+      // выборе фона «Остро» (см. обработчик .item-bg-btn).
+      decor: {
+        outsideShow: false,
+        bottomShow: false,
+        insideShow: true, insideText: 'ОСТРО!', insideBg: '#5A140F',
+        insideBgImg: 'none', insideCustomBg: null, insideColor: '#ffffff',
+        insideFontSize: 13, insideHeight: 4, insideWidth: 37
+      }
+    },
+    { id: 'decor2', label: 'Оформление 2', decor: { /* TODO: параметры */ } },
+    { id: 'decor3', label: 'Оформление 3', decor: { /* TODO: параметры */ } }
+  ];
+
+  // Автосвязка: фон «Остро» → пресет оформления «Остро» (и сброс оформления
+  // при выборе любого другого фона — симметрично правилу Б/А для шрифтов).
+  const OSTRYI_BG_MARKER = 'bgother:ostryi.png';
+  const OSTRYI_DECOR_ID = 'ostryi';
+
+  // Применяет пресет оформления к товару idx (полный снимок поверх шаблона:
+  // все 24 поля заполнены, незаданные в пресете возьмутся из templateDecor).
+  function applyDecorPresetByIdx(idx, presetId) {
+    const it = itemsData[idx] || (itemsData[idx] = {});
+    const preset = DECOR_PRESETS.find(p => p.id === presetId);
+    if (!preset) return false;
+    it.decor = Object.assign({}, templateDecor || {}, preset.decor);
+    it.decorCustomized = true;
+    it.decorPreset = presetId;   // помним выбранный пресет для UI строки
+    return true;
+  }
+
+  // Снимает per-item override оформления целиком (+ сам пресет-маркер).
+  function resetDecorPresetByIdx(idx) {
+    resetItemDecor(idx);
+    const it = itemsData[idx];
+    if (it) delete it.decorPreset;
+  }
+
+  // Подсветка иконки 🎨: активна, если у товара выбран существующий пресет.
+  function refreshDecorBtnState(i, btn) {
+    if (!btn) return;
+    const cur = itemsData[i] && itemsData[i].decorPreset;
+    btn.classList.toggle('active', !!(cur && DECOR_PRESETS.some(p => p.id === cur)));
+  }
+
+  // Опции быстрого меню фона строки товара (иконка 🖼). Порядок = порядок в меню.
+  const ITEM_BG_OPTIONS = [
+    { value: '', label: 'Как в шаблоне' },
+    { value: 'bgother:ostryi.png', label: 'Остро' },
+    { value: 'bgother:tomatnyj.png', label: 'Томатный' },
+    { value: 'bgother:medovyj.png', label: 'Медовый' },
+    { value: 'bgother:yablochnyj.png', label: 'Яблочный' },
+    { value: 'bgother:ba.jpg', label: 'Б/А' }
+  ];
+
+  // ===== Всплывающее меню для иконок-кнопок строки товара =====
+  // Один переиспользуемый popover (singleton), позиционируется у кнопки
+  // (position:fixed — не зависит от скролла .items-table-wrapper).
+  // Закрывается кликом по пункту, кликом вне меню или Escape.
+  let __itemMenuEl = null;
+  function __itemMenuOnDocMouseDown(e) {
+    if (__itemMenuEl && !__itemMenuEl.contains(e.target)) closeItemQuickMenu();
+  }
+  function __itemMenuOnKeyDown(e) {
+    if (e.key === 'Escape') closeItemQuickMenu();
+  }
+  function closeItemQuickMenu() {
+    if (!__itemMenuEl) return;
+    __itemMenuEl.remove();
+    __itemMenuEl = null;
+    document.removeEventListener('mousedown', __itemMenuOnDocMouseDown, true);
+    document.removeEventListener('keydown', __itemMenuOnKeyDown);
+  }
+  // anchor: кнопка; options: [{value,label}]; current: value текущего пункта;
+  // onPick(value) вызывается после закрытия меню.
+  function showItemQuickMenu(anchor, options, current, onPick) {
+    closeItemQuickMenu();
+    const menu = document.createElement('div');
+    menu.className = 'item-quick-menu';
+    options.forEach(o => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = o.label;
+      if (o.value === current) b.classList.add('active');
+      b.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        closeItemQuickMenu();
+        onPick(o.value);
+      });
+      menu.appendChild(b);
+    });
+    document.body.appendChild(menu);
+    const r = anchor.getBoundingClientRect();
+    let left = Math.max(8, Math.min(r.left, window.innerWidth - menu.offsetWidth - 8));
+    let top = r.bottom + 4;
+    if (top + menu.offsetHeight > window.innerHeight - 8) {
+      top = Math.max(8, r.top - menu.offsetHeight - 4);
+    }
+    menu.style.left = left + 'px';
+    menu.style.top = top + 'px';
+    __itemMenuEl = menu;
+    document.addEventListener('mousedown', __itemMenuOnDocMouseDown, true);
+    document.addEventListener('keydown', __itemMenuOnKeyDown);
+  }
+
   // Создаёт один DOM-элемент строки .item-row для индекса i (со всеми
   // обработчиками фокуса/ввода, авто-ростом textarea и кнопкой ⚙).
   function createItemRow(i) {
@@ -1876,14 +2008,8 @@ document.addEventListener('DOMContentLoaded', () => {
       <textarea class="item-title-input" rows="1" placeholder="Наименование товара №${i + 1}" data-index="${i}">${safeTitle}</textarea>
       <textarea class="item-subtitle-input" rows="1" placeholder="Вес" data-index="${i}">${safeSub}</textarea>
       <textarea class="item-price-input" rows="1" placeholder="Цена" data-index="${i}">${safePrice}</textarea>
-      <select class="item-bg-select" data-index="${i}" title="Фон этого ценника">
-        <option value="">Как в шаблоне</option>
-        <option value="bgother:ostryi.png">Остро</option>
-        <option value="bgother:tomatnyj.png">Томатный</option>
-        <option value="bgother:medovyj.png">Медовый</option>
-        <option value="bgother:yablochnyj.png">Яблочный</option>
-        <option value="bgother:ba.jpg">Б/А</option>
-      </select>
+      <button type="button" class="item-bg-btn" data-index="${i}" title="Фон этого ценника">🖼</button>
+      <button type="button" class="item-decor-btn" data-index="${i}" title="Оформление этого ценника">🎨</button>
       <button type="button" class="item-delete-btn" data-index="${i}" title="Удалить товар №${i + 1}">✕</button>
     `;
 
@@ -1976,43 +2102,94 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // Compact-выбор фона конкретного ценника (рядом с ✕). Значение "" —
-    // «Как в шаблоне» (наследуется), иначе это маркер bgother:<имя файла>,
-    // data:URL для которого берётся из extraBgMap внутри applyBackgroundTo.
-    const bgSelect = row.querySelector('.item-bg-select');
-    if (bgSelect) {
-      // Инициализация текущего значения из itemsData[i].
-      const cur = (itemsData[i].bgCustomized && itemsData[i].bg) ? itemsData[i].bg.bgImage : '';
-      bgSelect.value = (cur && cur.indexOf('bgother:') === 0) ? cur : '';
-      bgSelect.addEventListener('change', () => {
-        const idx = parseInt(bgSelect.getAttribute('data-index'), 10);
-        if (isNaN(idx) || idx < 0 || idx >= itemsData.length) return;
-        const val = bgSelect.value;
-        const it = itemsData[idx] || (itemsData[idx] = {});
-        if (!val) {
-          // «Как в шаблоне» — снимаем per-item override фона и возвращаем
-          // цвета шрифта к шаблонным.
-          delete it.bgCustomized;
-          delete it.bg;
-          resetItemFontColors(it);
-        } else {
-          // Сохраняем текущий цвет шапки, меняем только картинку фона.
-          const prevHeader = bgOf(it, 'headerBg', templateBg.headerBg);
-          it.bg = { headerBg: prevHeader, bgImage: val, customBgData: null };
-          it.bgCustomized = true;
-          if (val === BA_BG_MARKER) {
-            // Светлый фон Б/А → чёрный текст наименования/веса/цены.
-            applyBaAutoColors(it);
-          } else {
-            // Любой другой фон → цвета шрифта возвращаются к стандартным.
+    // Иконка-кнопка 🖼 — быстрый выбор фона конкретного ценника. Клик открывает
+    // всплывающее меню (ITEM_BG_OPTIONS); значение "" — «Как в шаблоне»
+    // (наследуется), иначе маркер bgother:<имя файла>, data:URL для которого
+    // берётся из extraBgMap внутри applyBackgroundTo.
+    const bgBtn = row.querySelector('.item-bg-btn');
+    if (bgBtn) {
+      const currentBg = () => {
+        const cur = (itemsData[i].bgCustomized && itemsData[i].bg) ? itemsData[i].bg.bgImage : '';
+        return (cur && ITEM_BG_OPTIONS.some(o => o.value === cur)) ? cur : '';
+      };
+      const refreshBgBtn = () => bgBtn.classList.toggle('active', !!currentBg());
+      refreshBgBtn();
+      bgBtn.addEventListener('click', () => {
+        showItemQuickMenu(bgBtn, ITEM_BG_OPTIONS, currentBg(), (val) => {
+          const idx = parseInt(bgBtn.getAttribute('data-index'), 10);
+          if (isNaN(idx) || idx < 0 || idx >= itemsData.length) return;
+          const it = itemsData[idx] || (itemsData[idx] = {});
+          if (!val) {
+            // «Как в шаблоне» — снимаем per-item override фона и возвращаем
+            // цвета шрифта к шаблонным; оформление тоже возвращаем к шаблонному.
+            delete it.bgCustomized;
+            delete it.bg;
             resetItemFontColors(it);
+            resetDecorPresetByIdx(idx);
+          } else {
+            // Сохраняем текущий цвет шапки, меняем только картинку фона.
+            const prevHeader = bgOf(it, 'headerBg', templateBg.headerBg);
+            it.bg = { headerBg: prevHeader, bgImage: val, customBgData: null };
+            it.bgCustomized = true;
+            if (val === BA_BG_MARKER) {
+              // Светлый фон Б/А → чёрный текст наименования/веса/цены.
+              applyBaAutoColors(it);
+            } else {
+              // Любой другой фон → цвета шрифта возвращаются к стандартным.
+              resetItemFontColors(it);
+            }
+            // Автосвязка фон ↔ оформление: «Остро» применяет одноимённый
+            // пресет, любой другой фон — сбрасывает оформление к шаблонному.
+            if (val === OSTRYI_BG_MARKER) {
+              applyDecorPresetByIdx(idx, OSTRYI_DECOR_ID);
+            } else {
+              resetDecorPresetByIdx(idx);
+            }
           }
-        }
-        activePreviewIndex = idx;
-        updatePreview();
-        // Держим главные контролы фона и шрифтов в синхроне с этой строкой.
-        try { syncBgControlsToContext(); } catch (e) {}
-        try { syncFontControlsToContext(); } catch (e) {}
+          activePreviewIndex = idx;
+          updatePreview();
+          refreshBgBtn();
+          refreshDecorBtnState(idx, row.querySelector('.item-decor-btn'));
+          // Держим главные контролы фона, шрифтов и оформления в синхроне.
+          try { syncBgControlsToContext(); } catch (e) {}
+          try { syncFontControlsToContext(); } catch (e) {}
+          try { syncDecorControlsToContext(); } catch (e) {}
+        });
+      });
+    }
+
+    // Иконка-кнопка 🎨 — быстрый выбор пресета оформления ценника. Клик
+    // открывает меню («Как в шаблоне» + DECOR_PRESETS). Пресет применяется
+    // только к трём декор-блокам (сверху/внутри/снизу) этого ценника; фон и
+    // цвета шрифта не затрагивает.
+    const decorBtn = row.querySelector('.item-decor-btn');
+    if (decorBtn) {
+      const decorOptions = [{ value: '', label: 'Как в шаблоне' }]
+        .concat(DECOR_PRESETS.map(p => ({ value: p.id, label: p.label })));
+      const currentDecor = () => {
+        const cur = itemsData[i].decorPreset;
+        return (cur && DECOR_PRESETS.some(p => p.id === cur)) ? cur : '';
+      };
+      const refreshDecorBtn = () => refreshDecorBtnState(i, decorBtn);
+      refreshDecorBtn();
+      decorBtn.addEventListener('click', () => {
+        showItemQuickMenu(decorBtn, decorOptions, currentDecor(), (val) => {
+          const idx = parseInt(decorBtn.getAttribute('data-index'), 10);
+          if (isNaN(idx) || idx < 0 || idx >= itemsData.length) return;
+          if (!val) {
+            // «Как в шаблоне» — снимаем per-item override оформления целиком.
+            resetDecorPresetByIdx(idx);
+          } else {
+            // Полный снимок поверх шаблона (незаданные в пресете поля —
+            // из templateDecor).
+            applyDecorPresetByIdx(idx, val);
+          }
+          activePreviewIndex = idx;
+          updatePreview();
+          refreshDecorBtn();
+          // Держим главные контролы оформления (section5) в синхроне.
+          try { syncDecorControlsToContext(); } catch (e) {}
+        });
       });
     }
 
