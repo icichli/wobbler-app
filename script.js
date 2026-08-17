@@ -221,6 +221,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const decorOutsideCustomOption = document.getElementById('decorOutsideCustomOption');
   const decorOutsideUploadStatus = document.getElementById('decorOutsideUploadStatus');
   const decorOutsideColor = document.getElementById('decorOutsideColor');
+  const decorOutsideFont = document.getElementById('decorOutsideFont');
+  const decorOutsideItalic = document.getElementById('decorOutsideItalic');
+  const decorOutsideShadow = document.getElementById('decorOutsideShadow');
+  const decorOutsideShadowColor = document.getElementById('decorOutsideShadowColor');
   const decorOutsideFontSize = document.getElementById('decorOutsideFontSize');
   const decorOutsideFontSizeVal = document.getElementById('decorOutsideFontSizeVal');
   const decorOutsideHeight = document.getElementById('decorOutsideHeight');
@@ -236,6 +240,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const decorInsideCustomOption = document.getElementById('decorInsideCustomOption');
   const decorInsideUploadStatus = document.getElementById('decorInsideUploadStatus');
   const decorInsideColor = document.getElementById('decorInsideColor');
+  const decorInsideFont = document.getElementById('decorInsideFont');
+  const decorInsideItalic = document.getElementById('decorInsideItalic');
+  const decorInsideShadow = document.getElementById('decorInsideShadow');
+  const decorInsideShadowColor = document.getElementById('decorInsideShadowColor');
   const decorInsideFontSize = document.getElementById('decorInsideFontSize');
   const decorInsideFontSizeVal = document.getElementById('decorInsideFontSizeVal');
   const decorInsideHeight = document.getElementById('decorInsideHeight');
@@ -254,6 +262,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const decorBottomCustomOption = document.getElementById('decorBottomCustomOption');
   const decorBottomUploadStatus = document.getElementById('decorBottomUploadStatus');
   const decorBottomColor = document.getElementById('decorBottomColor');
+  const decorBottomFont = document.getElementById('decorBottomFont');
+  const decorBottomItalic = document.getElementById('decorBottomItalic');
+  const decorBottomShadow = document.getElementById('decorBottomShadow');
+  const decorBottomShadowColor = document.getElementById('decorBottomShadowColor');
   const decorBottomFontSize = document.getElementById('decorBottomFontSize');
   const decorBottomFontSizeVal = document.getElementById('decorBottomFontSizeVal');
   const decorBottomHeight = document.getElementById('decorBottomHeight');
@@ -585,10 +597,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const DECOR_FIELDS = [
     // СВЕРХУ
     'outsideShow','outsideText','outsideBg','outsideBgImg','outsideCustomBg','outsideColor','outsideFontSize','outsideHeight',
+    'outsideFont','outsideItalic','outsideShadow',
     // ВНУТРИ (insideWidth тоже per-item — переопределяет шаблонную ширину блока)
     'insideShow','insideText','insideBg','insideBgImg','insideCustomBg','insideColor','insideFontSize','insideHeight','insideWidth',
+    'insideFont','insideItalic','insideShadow',
     // СНИЗУ
-    'bottomShow','bottomText','bottomBg','bottomBgImg','bottomCustomBg','bottomColor','bottomFontSize','bottomHeight'
+    'bottomShow','bottomText','bottomBg','bottomBgImg','bottomCustomBg','bottomColor','bottomFontSize','bottomHeight',
+    'bottomFont','bottomItalic','bottomShadow'
   ];
 
   // Возвращает per-item значение поля оформления, иначе fallback (обычно templateDecor[field]).
@@ -608,6 +623,9 @@ document.addEventListener('DOMContentLoaded', () => {
       outsideBgImg:      decorOutsideBgImg ? decorOutsideBgImg.value : 'none',
       outsideCustomBg:   uploadedDataUrl2 || null,
       outsideColor:      decorOutsideColor ? decorOutsideColor.value : '#ffffff',
+      outsideFont:       decorOutsideFont ? decorOutsideFont.value : '',
+      outsideItalic:     !!(decorOutsideItalic && decorOutsideItalic.checked),
+      outsideShadow:     buildShadow(decorOutsideShadow ? decorOutsideShadow.value : 0, decorOutsideShadowColor ? decorOutsideShadowColor.value : '#000000'),
       outsideFontSize:   decorOutsideFontSize ? decorOutsideFontSize.value : 14,
       outsideHeight:     decorOutsideHeight ? decorOutsideHeight.value : 12,
       insideShow:        !!(decorInsideShow && decorInsideShow.checked),
@@ -616,6 +634,9 @@ document.addEventListener('DOMContentLoaded', () => {
       insideBgImg:       decorInsideBgImg ? decorInsideBgImg.value : 'none',
       insideCustomBg:    uploadedDataUrl3 || null,
       insideColor:       decorInsideColor ? decorInsideColor.value : '#ffffff',
+      insideFont:        decorInsideFont ? decorInsideFont.value : '',
+      insideItalic:      !!(decorInsideItalic && decorInsideItalic.checked),
+      insideShadow:      buildShadow(decorInsideShadow ? decorInsideShadow.value : 0, decorInsideShadowColor ? decorInsideShadowColor.value : '#000000'),
       insideFontSize:    decorInsideFontSize ? decorInsideFontSize.value : 11,
       insideHeight:      decorInsideHeight ? decorInsideHeight.value : 8,
       insideWidth:       decorInsideWidth ? decorInsideWidth.value : 50,
@@ -625,6 +646,9 @@ document.addEventListener('DOMContentLoaded', () => {
       bottomBgImg:       decorBottomBgImg ? decorBottomBgImg.value : 'none',
       bottomCustomBg:    uploadedDataUrl4 || null,
       bottomColor:       decorBottomColor ? decorBottomColor.value : '#ffffff',
+      bottomFont:        decorBottomFont ? decorBottomFont.value : '',
+      bottomItalic:      !!(decorBottomItalic && decorBottomItalic.checked),
+      bottomShadow:      buildShadow(decorBottomShadow ? decorBottomShadow.value : 0, decorBottomShadowColor ? decorBottomShadowColor.value : '#000000'),
       bottomFontSize:    decorBottomFontSize ? decorBottomFontSize.value : 14,
       bottomHeight:      decorBottomHeight ? decorBottomHeight.value : 12
     };
@@ -640,6 +664,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (decorOutsideText) decorOutsideText.value = snap.outsideText || '';
     if (decorOutsideBg) decorOutsideBg.value = snap.outsideBg || '#e63946';
     if (decorOutsideColor) decorOutsideColor.value = snap.outsideColor || '#ffffff';
+    if (decorOutsideFont) decorOutsideFont.value = snap.outsideFont || '';
+    if (decorOutsideItalic) decorOutsideItalic.checked = !!snap.outsideItalic;
+    {
+      const sh = parseShadow(snap.outsideShadow);
+      if (decorOutsideShadow) decorOutsideShadow.value = sh.strength;
+      if (decorOutsideShadowColor) decorOutsideShadowColor.value = sh.color;
+    }
     if (decorOutsideFontSize) decorOutsideFontSize.value = snap.outsideFontSize != null ? snap.outsideFontSize : 14;
     if (decorOutsideHeight) decorOutsideHeight.value = snap.outsideHeight != null ? snap.outsideHeight : 12;
     uploadedDataUrl2 = snap.outsideCustomBg || null;
@@ -651,6 +682,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (decorInsideText) decorInsideText.value = snap.insideText || '';
     if (decorInsideBg) decorInsideBg.value = snap.insideBg || '#e63946';
     if (decorInsideColor) decorInsideColor.value = snap.insideColor || '#ffffff';
+    if (decorInsideFont) decorInsideFont.value = snap.insideFont || '';
+    if (decorInsideItalic) decorInsideItalic.checked = !!snap.insideItalic;
+    {
+      const sh2 = parseShadow(snap.insideShadow);
+      if (decorInsideShadow) decorInsideShadow.value = sh2.strength;
+      if (decorInsideShadowColor) decorInsideShadowColor.value = sh2.color;
+    }
     if (decorInsideFontSize) decorInsideFontSize.value = snap.insideFontSize != null ? snap.insideFontSize : 11;
     if (decorInsideHeight) decorInsideHeight.value = snap.insideHeight != null ? snap.insideHeight : 8;
     if (decorInsideWidth) decorInsideWidth.value = snap.insideWidth != null ? snap.insideWidth : 50;
@@ -663,6 +701,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (decorBottomText) decorBottomText.value = snap.bottomText || '';
     if (decorBottomBg) decorBottomBg.value = snap.bottomBg || '#e63946';
     if (decorBottomColor) decorBottomColor.value = snap.bottomColor || '#ffffff';
+    if (decorBottomFont) decorBottomFont.value = snap.bottomFont || '';
+    if (decorBottomItalic) decorBottomItalic.checked = !!snap.bottomItalic;
+    {
+      const sh3 = parseShadow(snap.bottomShadow);
+      if (decorBottomShadow) decorBottomShadow.value = sh3.strength;
+      if (decorBottomShadowColor) decorBottomShadowColor.value = sh3.color;
+    }
     if (decorBottomFontSize) decorBottomFontSize.value = snap.bottomFontSize != null ? snap.bottomFontSize : 14;
     if (decorBottomHeight) decorBottomHeight.value = snap.bottomHeight != null ? snap.bottomHeight : 12;
     uploadedDataUrl4 = snap.bottomCustomBg || null;
@@ -913,7 +958,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Возвращает полный «снимок» оформления блока (outside/inside/bottom) для ценника i.
   // Per-item override берётся из itemsData[i].decor (если decorCustomized),
-  // иначе из templateDecor. Контракт прежний: {show,text,bg,bgImg,customBg,color,fontSize,height[,width]}.
+  // иначе из templateDecor. Контракт: {show,text,bg,bgImg,customBg,color,font,italic,shadow,fontSize,height[,width]}.
   function resolveDecorBlock(i, kind) {
     const it = itemsData[i];
     const td = templateDecor || {};
@@ -925,6 +970,9 @@ document.addEventListener('DOMContentLoaded', () => {
         bgImg:    decorOf(it, 'outsideBgImg',  td.outsideBgImg || 'none'),
         customBg: decorOf(it, 'outsideCustomBg', td.outsideCustomBg != null ? td.outsideCustomBg : null),
         color:    decorOf(it, 'outsideColor',  td.outsideColor || '#ffffff'),
+        font:     decorOf(it, 'outsideFont',   td.outsideFont || ''),
+        italic:   decorOf(it, 'outsideItalic', td.outsideItalic === true),
+        shadow:   decorOf(it, 'outsideShadow', td.outsideShadow || ''),
         fontSize: decorOf(it, 'outsideFontSize', td.outsideFontSize != null ? td.outsideFontSize : 14),
         height:   decorOf(it, 'outsideHeight', td.outsideHeight != null ? td.outsideHeight : 12)
       };
@@ -937,6 +985,9 @@ document.addEventListener('DOMContentLoaded', () => {
         bgImg:    decorOf(it, 'bottomBgImg',  td.bottomBgImg || 'none'),
         customBg: decorOf(it, 'bottomCustomBg', td.bottomCustomBg != null ? td.bottomCustomBg : null),
         color:    decorOf(it, 'bottomColor',  td.bottomColor || '#ffffff'),
+        font:     decorOf(it, 'bottomFont',   td.bottomFont || ''),
+        italic:   decorOf(it, 'bottomItalic', td.bottomItalic === true),
+        shadow:   decorOf(it, 'bottomShadow', td.bottomShadow || ''),
         fontSize: decorOf(it, 'bottomFontSize', td.bottomFontSize != null ? td.bottomFontSize : 14),
         height:   decorOf(it, 'bottomHeight', td.bottomHeight != null ? td.bottomHeight : 12)
       };
@@ -949,6 +1000,9 @@ document.addEventListener('DOMContentLoaded', () => {
       bgImg:    decorOf(it, 'insideBgImg',  td.insideBgImg || 'none'),
       customBg: decorOf(it, 'insideCustomBg', td.insideCustomBg != null ? td.insideCustomBg : null),
       color:    decorOf(it, 'insideColor',  td.insideColor || '#ffffff'),
+      font:     decorOf(it, 'insideFont',   td.insideFont || ''),
+      italic:   decorOf(it, 'insideItalic', td.insideItalic === true),
+      shadow:   decorOf(it, 'insideShadow', td.insideShadow || ''),
       fontSize: decorOf(it, 'insideFontSize', td.insideFontSize != null ? td.insideFontSize : 11),
       height:   decorOf(it, 'insideHeight', td.insideHeight != null ? td.insideHeight : 8),
       width:    decorOf(it, 'insideWidth',  decorInsideWidth ? decorInsideWidth.value : 50)
@@ -1010,6 +1064,9 @@ document.addEventListener('DOMContentLoaded', () => {
         bgImg:    decorOf(item, 'outsideBgImg',  td.outsideBgImg || 'none'),
         customBg: decorOf(item, 'outsideCustomBg', td.outsideCustomBg != null ? td.outsideCustomBg : null),
         color:    decorOf(item, 'outsideColor',  td.outsideColor || '#ffffff'),
+        font:     decorOf(item, 'outsideFont',   td.outsideFont || ''),
+        italic:   decorOf(item, 'outsideItalic', td.outsideItalic === true),
+        shadow:   decorOf(item, 'outsideShadow', td.outsideShadow || ''),
         fontSize: decorOf(item, 'outsideFontSize', td.outsideFontSize != null ? td.outsideFontSize : 14),
         height:   decorOf(item, 'outsideHeight', td.outsideHeight != null ? td.outsideHeight : 12)
       };
@@ -1022,6 +1079,9 @@ document.addEventListener('DOMContentLoaded', () => {
         bgImg:    decorOf(item, 'bottomBgImg',  td.bottomBgImg || 'none'),
         customBg: decorOf(item, 'bottomCustomBg', td.bottomCustomBg != null ? td.bottomCustomBg : null),
         color:    decorOf(item, 'bottomColor',  td.bottomColor || '#ffffff'),
+        font:     decorOf(item, 'bottomFont',   td.bottomFont || ''),
+        italic:   decorOf(item, 'bottomItalic', td.bottomItalic === true),
+        shadow:   decorOf(item, 'bottomShadow', td.bottomShadow || ''),
         fontSize: decorOf(item, 'bottomFontSize', td.bottomFontSize != null ? td.bottomFontSize : 14),
         height:   decorOf(item, 'bottomHeight', td.bottomHeight != null ? td.bottomHeight : 12)
       };
@@ -1033,6 +1093,9 @@ document.addEventListener('DOMContentLoaded', () => {
       bgImg:    decorOf(item, 'insideBgImg',  td.insideBgImg || 'none'),
       customBg: decorOf(item, 'insideCustomBg', td.insideCustomBg != null ? td.insideCustomBg : null),
       color:    decorOf(item, 'insideColor',  td.insideColor || '#ffffff'),
+      font:     decorOf(item, 'insideFont',   td.insideFont || ''),
+      italic:   decorOf(item, 'insideItalic', td.insideItalic === true),
+      shadow:   decorOf(item, 'insideShadow', td.insideShadow || ''),
       fontSize: decorOf(item, 'insideFontSize', td.insideFontSize != null ? td.insideFontSize : 11),
       height:   decorOf(item, 'insideHeight', td.insideHeight != null ? td.insideHeight : 8),
       width:    decorOf(item, 'insideWidth',  insideWidthVal != null ? insideWidthVal : 50)
@@ -1836,8 +1899,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // ===== Фон «Б/А» (bg other/ba.jpg): светлый шаблон → чёрный текст =====
-  const BA_BG_MARKER = 'bgother:ba.jpg';
+  // ===== Светлые фоны (Б/А, Живое): выбор → чёрный текст наименования/веса/цены =====
+  const BG_BLACK_TEXT = ['bgother:ba.jpg', 'bgother:zhivoe.jpg'];
   const BA_AUTO_COLORS = { titleColor: '#000000', subtitleColor: '#000000', priceColor: '#000000' };
 
   // Ставит чёрные цвета Б/А поверх существующих per-item шрифтов
@@ -1873,25 +1936,31 @@ document.addEventListener('DOMContentLoaded', () => {
   //   <kind>BgImg     маркер    'none' | имя файла фона | 'ryba_scales' | 'custom'
   //   <kind>CustomBg  data:URL  картинка блока (только при BgImg='custom', иначе null)
   //   <kind>Color     hex-цвет  цвет текста блока (напр. '#ffffff')
-  //   <kind>FontSize  число pt  размер шрифта (outside/bottom 6-30, inside 6-22)
+  //   <kind>FontSize  число pt  размер шрифта (диапазон слайдера 6-60)
   //   <kind>Height    число мм  высота блока (outside/bottom 5-30, inside 3-15)
   //   insideWidth     число %   ширина блока «внутри» (20-100, только inside)
+  //   <kind>Font      строка    font-family ('' = наследуется, напр. "'Russo One', sans-serif")
+  //   <kind>Italic    boolean   курсив текста блока
+  //   <kind>Shadow    строка    CSS text-shadow ('' = без тени; проще задавать силой+цветом
+  //                             в UI, строку генерирует buildShadow)
   //
   // Задавать можно ЛЮБОЕ подмножество полей — недостающие возьмутся из
   // текущего шаблона (templateDecor) в момент применения.
   //
   // ПОПОЛНЕНИЕ: добавьте объект в массив. id — уникальная строка, label —
   // подпись в селекте строки товара.
+  // ВНИМАНИЕ: каждый пресет задаёт ТОЛЬКО свойства своего целевого блока
+  // (внутри ИЛИ сверху/снизу). Он не должен выключать другие блоки, чтобы
+  // можно было свободно комбинировать оформление (например, «Остро» внутри + «Живое» сверху).
   const DECOR_PRESETS = [
     {
       id: 'ostryi',
       label: 'Остро',
+      kind: 'inside',
       // Внутри-блок «ОСТРО!»: тёмно-красная заливка RGB(90,20,15),
       // белый текст, 13pt, высота 4мм, ширина 37%. Автоприменяется при
       // выборе фона «Остро» (см. обработчик .item-bg-btn).
       decor: {
-        outsideShow: false,
-        bottomShow: false,
         insideShow: true, insideText: 'ОСТРО!', insideBg: '#5A140F',
         insideBgImg: 'none', insideCustomBg: null, insideColor: '#ffffff',
         insideFontSize: 13, insideHeight: 4, insideWidth: 37
@@ -1900,12 +1969,11 @@ document.addEventListener('DOMContentLoaded', () => {
     {
       id: 'tomatnoe',
       label: 'Томатное',
+      kind: 'inside',
       // Внутри-блок «ТОМАТНОЕ»: томатная заливка RGB(188,33,35),
       // белый текст, 14pt, высота 7мм, ширина 55%. Автоприменяется при
       // выборе фона «Томатный» (см. BG_DECOR_AUTOLINK).
       decor: {
-        outsideShow: false,
-        bottomShow: false,
         insideShow: true, insideText: 'ТОМАТНОЕ', insideBg: '#BC2123',
         insideBgImg: 'none', insideCustomBg: null, insideColor: '#ffffff',
         insideFontSize: 14, insideHeight: 7, insideWidth: 55
@@ -1914,12 +1982,11 @@ document.addEventListener('DOMContentLoaded', () => {
     {
       id: 'medovuha',
       label: 'Медовуха',
+      kind: 'inside',
       // Внутри-блок «МЕДОВУХА»: медовая заливка RGB(220,151,65),
       // белый текст, 13pt, высота 7мм, ширина 55%. Автоприменяется при
       // выборе фона «Медовый» (см. BG_DECOR_AUTOLINK).
       decor: {
-        outsideShow: false,
-        bottomShow: false,
         insideShow: true, insideText: 'МЕДОВУХА', insideBg: '#DC9741',
         insideBgImg: 'none', insideCustomBg: null, insideColor: '#ffffff',
         insideFontSize: 13, insideHeight: 7, insideWidth: 55
@@ -1928,15 +1995,44 @@ document.addEventListener('DOMContentLoaded', () => {
     {
       id: 'sidr',
       label: 'Сидр',
+      kind: 'inside',
       // Внутри-блок «СИДР»: оливковая заливка RGB(112,113,61),
       // белый текст, 20pt, высота 7мм, ширина 55%. Автоприменяется при
       // выборе фона «Яблочный» (см. BG_DECOR_AUTOLINK).
       decor: {
-        outsideShow: false,
-        bottomShow: false,
         insideShow: true, insideText: 'СИДР', insideBg: '#70713D',
         insideBgImg: 'none', insideCustomBg: null, insideColor: '#ffffff',
         insideFontSize: 20, insideHeight: 7, insideWidth: 55
+      }
+    },
+    {
+      id: 'zhivoe',
+      label: 'Живое',
+      dual: true,   // двухблочный: одинаковые блоки СВЕРХУ и СНИЗУ (вне размера
+                    // ценника); показывается один — по положению переключателя
+                    // decorPosToggle (глобальный «Блок: сверху/снизу»).
+      // Блок «ЖИВОЕ»: жёлтая заливка RGB(255,241,12), чёрный текст, 30pt, 9мм.
+      decor: {
+        outsideShow: true, outsideText: 'ЖИВОЕ', outsideBg: '#FFF10C',
+          outsideBgImg: 'none', outsideCustomBg: null, outsideColor: '#000000',
+          outsideFontSize: 30, outsideHeight: 9,
+        bottomShow: true, bottomText: 'ЖИВОЕ', bottomBg: '#FFF10C',
+          bottomBgImg: 'none', bottomCustomBg: null, bottomColor: '#000000',
+          bottomFontSize: 30, bottomHeight: 9
+      }
+    },
+    {
+      id: 'novinka',
+      label: 'Новинка',
+      dual: true,   // двухблочный, как «Живое» — положение через decorPosToggle.
+      // Блок «НОВИНКА»: красная заливка RGB(255,0,0), белый текст, 30pt, 9мм.
+      decor: {
+        outsideShow: true, outsideText: 'НОВИНКА', outsideBg: '#FF0000',
+          outsideBgImg: 'none', outsideCustomBg: null, outsideColor: '#ffffff',
+          outsideFontSize: 30, outsideHeight: 9,
+        bottomShow: true, bottomText: 'НОВИНКА', bottomBg: '#FF0000',
+          bottomBgImg: 'none', bottomCustomBg: null, bottomColor: '#ffffff',
+          bottomFontSize: 30, bottomHeight: 9
       }
     }
   ];
@@ -1950,7 +2046,8 @@ document.addEventListener('DOMContentLoaded', () => {
     'bgother:ostryi.png':    'ostryi',
     'bgother:tomatnyj.png':  'tomatnoe',
     'bgother:medovyj.png':   'medovuha',
-    'bgother:yablochnyj.png': 'sidr'
+    'bgother:yablochnyj.png': 'sidr',
+    'bgother:zhivoe.jpg':    'zhivoe'
   };
 
   // ===== Глобальный переключатель автоприменения оформления (🔗) =====
@@ -1985,30 +2082,112 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   refreshAutolinkBtns();
 
-  // Применяет пресет оформления к товару idx (полный снимок поверх шаблона:
-  // все 24 поля заполнены, незаданные в пресете возьмутся из templateDecor).
-  function applyDecorPresetByIdx(idx, presetId) {
+  // ===== Глобальное положение блока двухблочных пресетов (СВЕРХУ/СНИЗУ) =====
+  // Применяется к пресетам с dual:true («Живое», «Новинка», ...): у них блоки
+  // СВЕРХУ и СНИЗУ заданы одинаково; показывается ровно один — по этому
+  // положению. Кнопка-переключатель — на панели превью (#decorPosToggle).
+  // Состояние глобальное, сохраняется в сессию/шаблон (getCurrentState/applyState).
+  let decorBlockPos = 'top';
+
+  function refreshDecorPosBtn() {
+    const top = decorBlockPos !== 'bottom';
+    // Обе кнопки-переключателя (панель превью с подписью + иконка у кнопок
+    // вставки) управляют одним состоянием и обновляются синхронно.
+    document.querySelectorAll('.decor-pos-toggle').forEach(b => {
+      b.textContent = (b.id === 'decorPosToggle')
+        ? (top ? '⬆ Блок: сверху' : '⬇ Блок: снизу')
+        : (top ? '⬆' : '⬇');
+      b.title = 'Положение блока оформления для двухблочных пресетов (Живое, Новинка): ' +
+        (top ? 'СВЕРХУ ценника (клик — переключить снизу)' : 'СНИЗУ ценника (клик — переключить сверху)');
+    });
+  }
+
+  // Переключение: пере-применяем наборы пресетов, содержащие dual-пресеты,
+  // с новым положением блока и перерисовываем превью (автосейв сам).
+  function toggleDecorBlockPos() {
+    decorBlockPos = (decorBlockPos === 'bottom') ? 'top' : 'bottom';
+    refreshDecorPosBtn();
+    itemsData.forEach((it, i) => {
+      const ids = getItemDecorPresetIds(it);
+      const hasDual = ids.some(id => {
+        const p = DECOR_PRESETS.find(d => d.id === id);
+        return p && p.dual;
+      });
+      if (hasDual) applyDecorPresetsByIdx(i, ids);
+    });
+    updatePreview();
+    try { syncDecorControlsToContext(); } catch (e) {}
+  }
+
+  document.querySelectorAll('.decor-pos-toggle').forEach(b => {
+    b.addEventListener('click', toggleDecorBlockPos);
+  });
+  refreshDecorPosBtn();
+
+  // Выбранные пресеты оформления товара как массив id (порядок = порядок
+  // выбора). Legacy-поле decorPreset (строка, до мультивыбора) конвертируется
+  // на лету; при следующем применении перезапишется массивом decorPresets.
+  function getItemDecorPresetIds(it) {
+    if (!it) return [];
+    if (Array.isArray(it.decorPresets)) {
+      return it.decorPresets.filter(id => DECOR_PRESETS.some(p => p.id === id));
+    }
+    if (it.decorPreset && DECOR_PRESETS.some(p => p.id === it.decorPreset)) {
+      return [it.decorPreset];
+    }
+    return [];
+  }
+
+  // Применяет НАБОР пресетов оформления к товару idx: полный снимок поверх
+  // шаблона, пресеты объединяются без взаимного выключения разных блоков.
+  // При конфликте одного и того же блока побеждает последний выбранный пресет.
+  // Для dual-пресетов показывается один блок — по текущему decorBlockPos.
+  // Пустой набор = сброс оформления к шаблонному.
+  function applyDecorPresetsByIdx(idx, ids) {
     const it = itemsData[idx] || (itemsData[idx] = {});
-    const preset = DECOR_PRESETS.find(p => p.id === presetId);
-    if (!preset) return false;
-    it.decor = Object.assign({}, templateDecor || {}, preset.decor);
+    const valid = (Array.isArray(ids) ? ids : []).filter(id => DECOR_PRESETS.some(p => p.id === id));
+    if (!valid.length) {
+      resetDecorPresetByIdx(idx);
+      return false;
+    }
+    // Начинаем с копии templateDecor, но сбрасываем show-флаги всех трёх блоков:
+    // включены будут только те блоки, которые присутствуют в выбранных пресетах valid.
+    const effective = Object.assign({}, templateDecor || {}, {
+      outsideShow: false,
+      insideShow: false,
+      bottomShow: false
+    });
+    valid.forEach(id => {
+      const preset = DECOR_PRESETS.find(p => p.id === id);
+      if (!preset) return;
+      Object.assign(effective, preset.decor);
+      if (preset.dual) {
+        const top = (decorBlockPos !== 'bottom');
+        effective.outsideShow = top;
+        effective.bottomShow = !top;
+      }
+    });
+    it.decor = effective;
     it.decorCustomized = true;
-    it.decorPreset = presetId;   // помним выбранный пресет для UI строки
+    it.decorPresets = valid;      // помним набор для UI строки (галки)
+    delete it.decorPreset;        // legacy-поле больше не нужно
     return true;
   }
 
-  // Снимает per-item override оформления целиком (+ сам пресет-маркер).
+  // Снимает per-item override оформления целиком (+ набор пресетов).
   function resetDecorPresetByIdx(idx) {
     resetItemDecor(idx);
     const it = itemsData[idx];
-    if (it) delete it.decorPreset;
+    if (it) {
+      delete it.decorPreset;
+      delete it.decorPresets;
+    }
   }
 
-  // Подсветка иконки 🎨: активна, если у товара выбран существующий пресет.
+  // Подсветка иконки 🎨: активна, если у товара выбран хотя бы один пресет.
   function refreshDecorBtnState(i, btn) {
     if (!btn) return;
-    const cur = itemsData[i] && itemsData[i].decorPreset;
-    btn.classList.toggle('active', !!(cur && DECOR_PRESETS.some(p => p.id === cur)));
+    btn.classList.toggle('active', getItemDecorPresetIds(itemsData[i]).length > 0);
   }
 
   // Опции быстрого меню фона строки товара (иконка 🖼). Порядок = порядок в меню.
@@ -2018,7 +2197,8 @@ document.addEventListener('DOMContentLoaded', () => {
     { value: 'bgother:tomatnyj.png', label: 'Томатный' },
     { value: 'bgother:medovyj.png', label: 'Медовый' },
     { value: 'bgother:yablochnyj.png', label: 'Яблочный' },
-    { value: 'bgother:ba.jpg', label: 'Б/А' }
+    { value: 'bgother:ba.jpg', label: 'Б/А' },
+    { value: 'bgother:zhivoe.jpg', label: 'Живое' }
   ];
 
   // ===== Всплывающее меню для иконок-кнопок строки товара =====
@@ -2039,6 +2219,24 @@ document.addEventListener('DOMContentLoaded', () => {
     document.removeEventListener('mousedown', __itemMenuOnDocMouseDown, true);
     document.removeEventListener('keydown', __itemMenuOnKeyDown);
   }
+  // Позиционирует меню у кнопки-якоря (fixed, не зависит от скролла контейнера;
+  // при нехватке места снизу — открывается вверх).
+  function __positionMenu(menu, anchor) {
+    const r = anchor.getBoundingClientRect();
+    let left = Math.max(8, Math.min(r.left, window.innerWidth - menu.offsetWidth - 8));
+    let top = r.bottom + 4;
+    if (top + menu.offsetHeight > window.innerHeight - 8) {
+      top = Math.max(8, r.top - menu.offsetHeight - 4);
+    }
+    menu.style.left = left + 'px';
+    menu.style.top = top + 'px';
+  }
+  function __openItemMenu(menu) {
+    __itemMenuEl = menu;
+    document.addEventListener('mousedown', __itemMenuOnDocMouseDown, true);
+    document.addEventListener('keydown', __itemMenuOnKeyDown);
+  }
+
   // anchor: кнопка; options: [{value,label}]; current: value текущего пункта;
   // onPick(value) вызывается после закрытия меню.
   function showItemQuickMenu(anchor, options, current, onPick) {
@@ -2058,17 +2256,77 @@ document.addEventListener('DOMContentLoaded', () => {
       menu.appendChild(b);
     });
     document.body.appendChild(menu);
-    const r = anchor.getBoundingClientRect();
-    let left = Math.max(8, Math.min(r.left, window.innerWidth - menu.offsetWidth - 8));
-    let top = r.bottom + 4;
-    if (top + menu.offsetHeight > window.innerHeight - 8) {
-      top = Math.max(8, r.top - menu.offsetHeight - 4);
-    }
-    menu.style.left = left + 'px';
-    menu.style.top = top + 'px';
-    __itemMenuEl = menu;
-    document.addEventListener('mousedown', __itemMenuOnDocMouseDown, true);
-    document.addEventListener('keydown', __itemMenuOnKeyDown);
+    __positionMenu(menu, anchor);
+    __openItemMenu(menu);
+  }
+
+  // Чекбокс-меню оформления (🎨): мультивыбор пресетов с live-применением.
+  // Клик по пункту ставит/снимает галку (меню НЕ закрывается), «Как в шаблоне»
+  // сбрасывает все галки. Закрытие — клик вне меню или Escape. Выбранный
+  // набор применяется через applyDecorPresetsByIdx (merge по порядку выбора).
+  function showDecorMultiMenu(anchor, idx) {
+    closeItemQuickMenu();
+    const menu = document.createElement('div');
+    menu.className = 'item-quick-menu item-quick-menu-multi';
+
+    const afterChange = () => {
+      activePreviewIndex = idx;
+      updatePreview();
+      refreshDecorBtnState(idx, anchor);
+      try { syncDecorControlsToContext(); } catch (e) {}
+    };
+
+    const renderItems = () => {
+      menu.innerHTML = '';
+      const ids = getItemDecorPresetIds(itemsData[idx]);
+      const resetBtn = document.createElement('button');
+      resetBtn.type = 'button';
+      resetBtn.textContent = 'Как в шаблоне';
+      resetBtn.classList.toggle('active', ids.length === 0);
+      resetBtn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        resetDecorPresetByIdx(idx);
+        afterChange();
+        renderItems();
+      });
+      menu.appendChild(resetBtn);
+      DECOR_PRESETS.forEach(p => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = p.label;
+        const checked = ids.indexOf(p.id) !== -1;
+        if (checked) b.classList.add('active');   // галка — через CSS ::before
+        b.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          let next = getItemDecorPresetIds(itemsData[idx]);
+          const pos = next.indexOf(p.id);
+          if (pos >= 0) {
+            // Снятие текущей галки
+            next.splice(pos, 1);
+          } else {
+            // Заменяем пресет того же типа блока (inside заменяет inside, dual заменяет dual),
+            // но сохраняем пресет другого типа блока (например, inside + dual работают вместе).
+            const pKind = p.kind || (p.dual ? 'dual' : 'inside');
+            next = next.filter(existingId => {
+              const existingPreset = DECOR_PRESETS.find(x => x.id === existingId);
+              const exKind = existingPreset ? (existingPreset.kind || (existingPreset.dual ? 'dual' : 'inside')) : '';
+              return exKind !== pKind;
+            });
+            next.push(p.id);
+          }
+          if (next.length) applyDecorPresetsByIdx(idx, next);
+          else resetDecorPresetByIdx(idx);
+          afterChange();
+          renderItems();
+        });
+        menu.appendChild(b);
+      });
+    };
+
+    renderItems();
+    document.body.appendChild(menu);
+    __positionMenu(menu, anchor);
+    __openItemMenu(menu);
   }
 
   // Создаёт один DOM-элемент строки .item-row для индекса i (со всеми
@@ -2211,19 +2469,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const prevHeader = bgOf(it, 'headerBg', templateBg.headerBg);
             it.bg = { headerBg: prevHeader, bgImage: val, customBgData: null };
             it.bgCustomized = true;
-            if (val === BA_BG_MARKER) {
-              // Светлый фон Б/А → чёрный текст наименования/веса/цены.
+            if (BG_BLACK_TEXT.indexOf(val) !== -1) {
+              // Светлый фон (Б/А, Живое) → чёрный текст наименования/веса/цены.
               applyBaAutoColors(it);
             } else {
               // Любой другой фон → цвета шрифта возвращаются к стандартным.
               resetItemFontColors(it);
             }
             // Автосвязка фон ↔ оформление (BG_DECOR_AUTOLINK, только при 🔗 ВКЛ):
-            // фон с пресетом применяет его, любой другой — сбрасывает к шаблонному.
+            // фон с пресетом задаёт весь набор (заменяет выбранные), любой
+            // другой — сбрасывает оформление к шаблонному.
             if (bgDecorAutolinkEnabled) {
               const autoDecorId = BG_DECOR_AUTOLINK[val];
               if (autoDecorId) {
-                applyDecorPresetByIdx(idx, autoDecorId);
+                applyDecorPresetsByIdx(idx, [autoDecorId]);
               } else {
                 resetDecorPresetByIdx(idx);
               }
@@ -2241,38 +2500,17 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // Иконка-кнопка 🎨 — быстрый выбор пресета оформления ценника. Клик
-    // открывает меню («Как в шаблоне» + DECOR_PRESETS). Пресет применяется
-    // только к трём декор-блокам (сверху/внутри/снизу) этого ценника; фон и
-    // цвета шрифта не затрагивает.
+    // Иконка-кнопка 🎨 — быстрый выбор оформления ценника. Клик открывает
+    // чекбокс-меню (мультивыбор пресетов с live-применением): можно сочетать
+    // пресеты разных блоков (напр., «Остро» внутри + «Живое» сверху).
     const decorBtn = row.querySelector('.item-decor-btn');
     if (decorBtn) {
-      const decorOptions = [{ value: '', label: 'Как в шаблоне' }]
-        .concat(DECOR_PRESETS.map(p => ({ value: p.id, label: p.label })));
-      const currentDecor = () => {
-        const cur = itemsData[i].decorPreset;
-        return (cur && DECOR_PRESETS.some(p => p.id === cur)) ? cur : '';
-      };
       const refreshDecorBtn = () => refreshDecorBtnState(i, decorBtn);
       refreshDecorBtn();
       decorBtn.addEventListener('click', () => {
-        showItemQuickMenu(decorBtn, decorOptions, currentDecor(), (val) => {
-          const idx = parseInt(decorBtn.getAttribute('data-index'), 10);
-          if (isNaN(idx) || idx < 0 || idx >= itemsData.length) return;
-          if (!val) {
-            // «Как в шаблоне» — снимаем per-item override оформления целиком.
-            resetDecorPresetByIdx(idx);
-          } else {
-            // Полный снимок поверх шаблона (незаданные в пресете поля —
-            // из templateDecor).
-            applyDecorPresetByIdx(idx, val);
-          }
-          activePreviewIndex = idx;
-          updatePreview();
-          refreshDecorBtn();
-          // Держим главные контролы оформления (section5) в синхроне.
-          try { syncDecorControlsToContext(); } catch (e) {}
-        });
+        const idx = parseInt(decorBtn.getAttribute('data-index'), 10);
+        if (isNaN(idx) || idx < 0 || idx >= itemsData.length) return;
+        showDecorMultiMenu(decorBtn, idx);
       });
     }
 
@@ -2872,6 +3110,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (txt) {
           txt.textContent = snap.text || '';
           txt.style.color = snap.color || '#ffffff';
+          txt.style.fontFamily = snap.font || '';   // '' = наследуется
+          txt.style.fontStyle = snap.italic ? 'italic' : 'normal';
+          txt.style.textShadow = snap.shadow || '';
           txt.style.fontSize = `${snap.fontSize || 12}pt`;
         }
       } else {
@@ -2945,6 +3186,9 @@ document.addEventListener('DOMContentLoaded', () => {
       outsideBgImg:    preset.decorOutsideBgImg || 'none',
       outsideCustomBg: preset.decorOutsideCustomBg || null,
       outsideColor:    preset.decorOutsideColor || '#ffffff',
+      outsideFont:     preset.decorOutsideFont || '',
+      outsideItalic:   !!preset.decorOutsideItalic,
+      outsideShadow:   preset.decorOutsideShadow || '',
       outsideFontSize: preset.decorOutsideFontSize != null ? preset.decorOutsideFontSize : 14,
       outsideHeight:   preset.decorOutsideHeight != null ? preset.decorOutsideHeight : 12,
       insideShow:      !!preset.decorInsideShow,
@@ -2953,6 +3197,9 @@ document.addEventListener('DOMContentLoaded', () => {
       insideBgImg:     preset.decorInsideBgImg || 'none',
       insideCustomBg:  preset.decorInsideCustomBg || null,
       insideColor:     preset.decorInsideColor || '#ffffff',
+      insideFont:      preset.decorInsideFont || '',
+      insideItalic:    !!preset.decorInsideItalic,
+      insideShadow:    preset.decorInsideShadow || '',
       insideFontSize:  preset.decorInsideFontSize != null ? preset.decorInsideFontSize : 11,
       insideHeight:    preset.decorInsideHeight != null ? preset.decorInsideHeight : 8,
       bottomShow:      !!preset.decorBottomShow,
@@ -2961,6 +3208,9 @@ document.addEventListener('DOMContentLoaded', () => {
       bottomBgImg:     preset.decorBottomBgImg || 'none',
       bottomCustomBg:  preset.decorBottomCustomBg || null,
       bottomColor:     preset.decorBottomColor || '#ffffff',
+      bottomFont:      preset.decorBottomFont || '',
+      bottomItalic:    !!preset.decorBottomItalic,
+      bottomShadow:    preset.decorBottomShadow || '',
       bottomFontSize:  preset.decorBottomFontSize != null ? preset.decorBottomFontSize : 14,
       bottomHeight:    preset.decorBottomHeight != null ? preset.decorBottomHeight : 12
     };
@@ -3101,6 +3351,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (txt) {
           txt.textContent = snap.text || '';
           txt.style.color = snap.color || '#ffffff';
+          txt.style.fontFamily = snap.font || '';   // '' = наследуется
+          txt.style.fontStyle = snap.italic ? 'italic' : 'normal';
+          txt.style.textShadow = snap.shadow || '';
           txt.style.fontSize = `${snap.fontSize || 12}pt`;
         }
       } else {
@@ -3440,13 +3693,16 @@ document.addEventListener('DOMContentLoaded', () => {
     wobblerPreview.classList.toggle('has-inside-top', showInside);
     wobblerPreview.classList.toggle('has-outside-bottom', showBottom);
 
-    function applyDecorBlock(el, textEl, text, bgVal, customData, color, fontColor, fontSize) {
+    function applyDecorBlock(el, textEl, text, bgVal, customData, color, fontColor, fontSize, font, italic, shadow) {
       if (!el) return;
       el.style.display = 'flex';
       applyBackgroundTo(el, bgVal, customData, color);
       if (textEl) {
         textEl.textContent = text || '';
         textEl.style.color = fontColor || '#ffffff';
+        textEl.style.fontFamily = font || '';   // '' = наследуется (как до появления настройки)
+        textEl.style.fontStyle = italic ? 'italic' : 'normal';
+        textEl.style.textShadow = shadow || '';
         textEl.style.fontSize = `${fontSize || 12}pt`;
       }
     }
@@ -3455,7 +3711,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (showOutside) {
         applyDecorBlock(wobblerOutsideTop, outsideTopText,
           activeOutsideSnap.text, activeOutsideSnap.bgImg, activeOutsideSnap.customBg,
-          activeOutsideSnap.bg, activeOutsideSnap.color, activeOutsideSnap.fontSize);
+          activeOutsideSnap.bg, activeOutsideSnap.color, activeOutsideSnap.fontSize,
+          activeOutsideSnap.font, activeOutsideSnap.italic, activeOutsideSnap.shadow);
       } else {
         wobblerOutsideTop.style.display = 'none';
       }
@@ -3468,7 +3725,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (showInside) {
         applyDecorBlock(wobblerInsideTop, insideTopText,
           activeInsideSnap.text, activeInsideSnap.bgImg, activeInsideSnap.customBg,
-          activeInsideSnap.bg, activeInsideSnap.color, activeInsideSnap.fontSize);
+          activeInsideSnap.bg, activeInsideSnap.color, activeInsideSnap.fontSize,
+          activeInsideSnap.font, activeInsideSnap.italic, activeInsideSnap.shadow);
       } else {
         wobblerInsideTop.style.display = 'none';
       }
@@ -3482,7 +3740,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (showBottom) {
         applyDecorBlock(wobblerOutsideBottom, outsideBottomText,
           activeBottomSnap.text, activeBottomSnap.bgImg, activeBottomSnap.customBg,
-          activeBottomSnap.bg, activeBottomSnap.color, activeBottomSnap.fontSize);
+          activeBottomSnap.bg, activeBottomSnap.color, activeBottomSnap.fontSize,
+          activeBottomSnap.font, activeBottomSnap.italic, activeBottomSnap.shadow);
       } else {
         wobblerOutsideBottom.style.display = 'none';
       }
@@ -3555,6 +3814,9 @@ document.addEventListener('DOMContentLoaded', () => {
     wobblerPreview.classList.toggle('price-plate', !!(pricePlateToggle && pricePlateToggle.checked));
 
     renderSheetPreview(widthMm, heightMm);
+
+    // Синхронизируем индикаторы активности декор-блоков на суб-табах #5
+    if (typeof syncDecorTabDots === 'function') syncDecorTabDots();
 
     // Любое значимое изменение завершается этим рендером — планируем
     // автосохранение сессии (дебаунс внутри).
@@ -4107,6 +4369,9 @@ document.addEventListener('DOMContentLoaded', () => {
       outsideBgImg:    state.decorOutsideBgImg || 'none',
       outsideCustomBg: state.decorOutsideCustomBg || null,
       outsideColor:    state.decorOutsideColor || '#ffffff',
+      outsideFont:     state.decorOutsideFont || '',
+      outsideItalic:   !!state.decorOutsideItalic,
+      outsideShadow:   state.decorOutsideShadow || '',
       outsideFontSize: state.decorOutsideFontSize != null ? state.decorOutsideFontSize : 14,
       outsideHeight:   state.decorOutsideHeight != null ? state.decorOutsideHeight : 12,
       insideShow:      !!state.decorInsideShow,
@@ -4115,6 +4380,9 @@ document.addEventListener('DOMContentLoaded', () => {
       insideBgImg:     state.decorInsideBgImg || 'none',
       insideCustomBg:  state.decorInsideCustomBg || null,
       insideColor:     state.decorInsideColor || '#ffffff',
+      insideFont:      state.decorInsideFont || '',
+      insideItalic:    !!state.decorInsideItalic,
+      insideShadow:    state.decorInsideShadow || '',
       insideFontSize:  state.decorInsideFontSize != null ? state.decorInsideFontSize : 11,
       insideHeight:    state.decorInsideHeight != null ? state.decorInsideHeight : 8,
       bottomShow:      !!state.decorBottomShow,
@@ -4123,11 +4391,17 @@ document.addEventListener('DOMContentLoaded', () => {
       bottomBgImg:     state.decorBottomBgImg || 'none',
       bottomCustomBg:  state.decorBottomCustomBg || null,
       bottomColor:     state.decorBottomColor || '#ffffff',
+      bottomFont:      state.decorBottomFont || '',
+      bottomItalic:    !!state.decorBottomItalic,
+      bottomShadow:    state.decorBottomShadow || '',
       bottomFontSize:  state.decorBottomFontSize != null ? state.decorBottomFontSize : 14,
       bottomHeight:    state.decorBottomHeight != null ? state.decorBottomHeight : 12
     };
     // insideWidth — только шаблонный (не в snapshot), пишем напрямую в контрол.
     if (decorInsideWidth) decorInsideWidth.value = state.decorInsideWidth != null ? state.decorInsideWidth : 50;
+    // Глобальное положение блока двухблочных пресетов (СВЕРХУ/СНИЗУ).
+    decorBlockPos = state.decorBlockPos === 'bottom' ? 'bottom' : 'top';
+    refreshDecorPosBtn();
 
     headerHeightRange.value = state.headerHeight || 100;
 
@@ -4262,6 +4536,9 @@ document.addEventListener('DOMContentLoaded', () => {
       decorOutsideBgImg: td.outsideBgImg,
       decorOutsideCustomBg: td.outsideCustomBg,
       decorOutsideColor: td.outsideColor,
+      decorOutsideFont: td.outsideFont,
+      decorOutsideItalic: td.outsideItalic,
+      decorOutsideShadow: td.outsideShadow,
       decorOutsideFontSize: td.outsideFontSize,
       decorOutsideHeight: td.outsideHeight,
       decorInsideShow: td.insideShow,
@@ -4270,15 +4547,22 @@ document.addEventListener('DOMContentLoaded', () => {
       decorInsideBgImg: td.insideBgImg,
       decorInsideCustomBg: td.insideCustomBg,
       decorInsideColor: td.insideColor,
+      decorInsideFont: td.insideFont,
+      decorInsideItalic: td.insideItalic,
+      decorInsideShadow: td.insideShadow,
       decorInsideFontSize: td.insideFontSize,
       decorInsideHeight: td.insideHeight,
       decorInsideWidth: decorInsideWidth ? decorInsideWidth.value : 50,
+      decorBlockPos: decorBlockPos,
       decorBottomShow: td.bottomShow,
       decorBottomText: td.bottomText,
       decorBottomBg: td.bottomBg,
       decorBottomBgImg: td.bottomBgImg,
       decorBottomCustomBg: td.bottomCustomBg,
       decorBottomColor: td.bottomColor,
+      decorBottomFont: td.bottomFont,
+      decorBottomItalic: td.bottomItalic,
+      decorBottomShadow: td.bottomShadow,
       decorBottomFontSize: td.bottomFontSize,
       decorBottomHeight: td.bottomHeight,
       // Зазор между ценниками на листе А4 (мм); 0 = встык.
@@ -4838,9 +5122,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // Контролы декор-блоков → onDecorInputChange. insideWidth — только шаблонный,
   // но тоже проходит через обработчик (пишется в templateDecor через snapshot).
   const decorInputs = [
-    decorOutsideShow, decorOutsideText, decorOutsideBg, decorOutsideBgImg, decorOutsideColor, decorOutsideFontSize, decorOutsideHeight,
-    decorInsideShow, decorInsideText, decorInsideBg, decorInsideBgImg, decorInsideColor, decorInsideFontSize, decorInsideHeight, decorInsideWidth,
-    decorBottomShow, decorBottomText, decorBottomBg, decorBottomBgImg, decorBottomColor, decorBottomFontSize, decorBottomHeight
+    decorOutsideShow, decorOutsideText, decorOutsideBg, decorOutsideBgImg, decorOutsideColor,
+    decorOutsideFont, decorOutsideItalic, decorOutsideShadow, decorOutsideShadowColor, decorOutsideFontSize, decorOutsideHeight,
+    decorInsideShow, decorInsideText, decorInsideBg, decorInsideBgImg, decorInsideColor,
+    decorInsideFont, decorInsideItalic, decorInsideShadow, decorInsideShadowColor, decorInsideFontSize, decorInsideHeight, decorInsideWidth,
+    decorBottomShow, decorBottomText, decorBottomBg, decorBottomBgImg, decorBottomColor,
+    decorBottomFont, decorBottomItalic, decorBottomShadow, decorBottomShadowColor, decorBottomFontSize, decorBottomHeight
   ];
   decorInputs.forEach(el => {
     if (!el) return;
@@ -5424,6 +5711,158 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // --- Sidebar Category Tabs & View Mode Switcher (Табы / Все блоки) ---
+  const controlsSidebarEl = document.getElementById('controlsSidebar');
+  const sidebarTabBtns = document.querySelectorAll('.sidebar-tab-btn');
+  const sidebarViewModeBtn = document.getElementById('sidebarViewModeBtn');
+  const sidebarViewModeIcon = document.getElementById('sidebarViewModeIcon');
+  const sidebarViewModeText = document.getElementById('sidebarViewModeText');
+
+  function setSidebarTab(targetSectionId) {
+    if (!targetSectionId) return;
+    sidebarTabBtns.forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.target === targetSectionId);
+    });
+
+    const isTabsMode = controlsSidebarEl && controlsSidebarEl.classList.contains('sidebar-mode-tabs');
+    document.querySelectorAll('.controls-sidebar .control-card').forEach(card => {
+      const isTarget = card.id === targetSectionId;
+      card.classList.toggle('active-tab-section', isTarget);
+      if (isTabsMode && isTarget) {
+        const toggle = card.querySelector('.card-toggle');
+        const body = card.querySelector('.card-body');
+        if (toggle) toggle.classList.remove('collapsed');
+        if (body) body.style.display = '';
+      }
+    });
+
+    if (!isTabsMode) {
+      const targetCard = document.getElementById(targetSectionId);
+      if (targetCard) {
+        const toggle = targetCard.querySelector('.card-toggle');
+        const body = targetCard.querySelector('.card-body');
+        if (toggle) toggle.classList.remove('collapsed');
+        if (body) body.style.display = '';
+        targetCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+
+    localStorage.setItem('wobbler_active_sidebar_tab', targetSectionId);
+  }
+
+  sidebarTabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.target;
+      if (target) setSidebarTab(target);
+    });
+  });
+
+  function setSidebarViewMode(mode) {
+    if (!controlsSidebarEl) return;
+    const isTabs = mode === 'tabs';
+    controlsSidebarEl.classList.toggle('sidebar-mode-tabs', isTabs);
+    controlsSidebarEl.classList.toggle('sidebar-mode-all', !isTabs);
+    if (sidebarViewModeIcon) sidebarViewModeIcon.textContent = isTabs ? '📑' : '📜';
+    if (sidebarViewModeText) sidebarViewModeText.textContent = isTabs ? 'Табы' : 'Все блоки';
+    localStorage.setItem('wobbler_sidebar_view_mode', mode);
+
+    const savedTab = localStorage.getItem('wobbler_active_sidebar_tab') || 'section1';
+    setSidebarTab(savedTab);
+  }
+
+  if (sidebarViewModeBtn) {
+    sidebarViewModeBtn.addEventListener('click', () => {
+      const currentIsTabs = controlsSidebarEl && controlsSidebarEl.classList.contains('sidebar-mode-tabs');
+      setSidebarViewMode(currentIsTabs ? 'all' : 'tabs');
+    });
+  }
+
+  // Restore saved view mode or default to tabs
+  const savedSidebarMode = localStorage.getItem('wobbler_sidebar_view_mode') || 'tabs';
+  setSidebarViewMode(savedSidebarMode);
+
+  // --- Sub-Tabs for Section 3 (Шрифты: Название / Вес / Цена) ---
+  const fontSubTabBtns = document.querySelectorAll('[data-font-tab]');
+  function setFontSubTab(tabName) {
+    if (!tabName) return;
+    fontSubTabBtns.forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.fontTab === tabName);
+    });
+    const paneMap = {
+      title: 'fontTabTitle',
+      subtitle: 'fontTabSubtitle',
+      price: 'fontTabPrice'
+    };
+    Object.keys(paneMap).forEach(key => {
+      const pane = document.getElementById(paneMap[key]);
+      if (pane) pane.classList.toggle('active', key === tabName);
+    });
+    localStorage.setItem('wobbler_active_font_subtab', tabName);
+  }
+  fontSubTabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const t = btn.dataset.fontTab;
+      if (t) setFontSubTab(t);
+    });
+  });
+  const savedFontSubTab = localStorage.getItem('wobbler_active_font_subtab') || 'title';
+  setFontSubTab(savedFontSubTab);
+
+  // --- Sub-Tabs for Section 5 (Оформление: Сверху / Внутри / Снизу) ---
+  const decorSubTabBtns = document.querySelectorAll('[data-decor-tab]');
+  function setDecorSubTab(tabName) {
+    if (!tabName) return;
+    decorSubTabBtns.forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.decorTab === tabName);
+    });
+    const paneMap = {
+      outside: 'decorTabOutside',
+      inside: 'decorTabInside',
+      bottom: 'decorTabBottom'
+    };
+    Object.keys(paneMap).forEach(key => {
+      const pane = document.getElementById(paneMap[key]);
+      if (pane) pane.classList.toggle('active', key === tabName);
+    });
+    localStorage.setItem('wobbler_active_decor_subtab', tabName);
+  }
+  decorSubTabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const t = btn.dataset.decorTab;
+      if (t) setDecorSubTab(t);
+    });
+  });
+  const savedDecorSubTab = localStorage.getItem('wobbler_active_decor_subtab') || 'outside';
+  setDecorSubTab(savedDecorSubTab);
+
+  // Sync Decor Tab Active Dots (green dots when decor blocks are enabled)
+  function syncDecorTabDots() {
+    const outChk = document.getElementById('decorOutsideShow');
+    const inChk = document.getElementById('decorInsideShow');
+    const botChk = document.getElementById('decorBottomShow');
+    const outDot = document.getElementById('decorOutsideDot');
+    const inDot = document.getElementById('decorInsideDot');
+    const botDot = document.getElementById('decorBottomDot');
+    if (outDot && outChk) outDot.classList.toggle('active-dot', outChk.checked);
+    if (inDot && inChk) inDot.classList.toggle('active-dot', inChk.checked);
+    if (botDot && botChk) botDot.classList.toggle('active-dot', botChk.checked);
+  }
+  ['decorOutsideShow', 'decorInsideShow', 'decorBottomShow'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('change', syncDecorTabDots);
+  });
+  syncDecorTabDots();
+
+  // --- Collapsible Excel Quick-Paste Drawer ---
+  const toggleExcelPasteBtn = document.getElementById('toggleExcelPasteBtn');
+  const excelPasteDrawer = document.getElementById('excelPasteDrawer');
+  if (toggleExcelPasteBtn && excelPasteDrawer) {
+    toggleExcelPasteBtn.addEventListener('click', () => {
+      const isCollapsed = excelPasteDrawer.classList.toggle('is-collapsed');
+      toggleExcelPasteBtn.classList.toggle('is-open', !isCollapsed);
+    });
+  }
+
   // --- Accordion / Collapsible Section Toggles ---
   document.querySelectorAll('.card-toggle').forEach(toggle => {
     toggle.addEventListener('click', () => {
@@ -5443,8 +5882,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // --- Сворачиваемые подгруппы встроенных шаблонов (Ценники / Воблеры) ---
-  // Состояние раскрыто/свёрнуто запоминается в localStorage между сессиями.
-  // По умолчанию (без записи) подгруппы раскрыты.
   const SUB_KEYS = { priceTags: 'wobbler_sub_pricetags', wobblers: 'wobbler_sub_wobblers' };
   document.querySelectorAll('.preset-sub-toggle').forEach(btn => {
     const group = btn.closest('.preset-subgroup');
@@ -5460,9 +5897,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // --- Сворачиваемые подсекции внутри секций #3 (Шрифты) и #5 (Оформление) ---
-  // Клик по заголовку .sub-toggle сворачивает тело .sub-body (через класс is-collapsed
-  // на родителе .sub-group). Состояние сохраняется в localStorage. Клик по чекбоксу
-  // или кнопке внутри заголовка НЕ сворачивает (защита через closest).
   const FIELD_SUB_KEYS = {
     'font-title':     'wobbler_sub_font_title',
     'font-subtitle':  'wobbler_sub_font_subtitle',
@@ -5479,9 +5913,6 @@ document.addEventListener('DOMContentLoaded', () => {
       group.classList.toggle('is-collapsed', localStorage.getItem(FIELD_SUB_KEYS[key]) === '1');
     }
     btn.addEventListener('click', (e) => {
-      // Не сворачиваем при клике на интерактивный элемент внутри заголовка
-      // (сам чекбокс, кнопка «Подогнать», select). Клик по тексту/strong заголовка
-      // сворачивает. input явно проверяем — чекбокс не должен сворачивать.
       if (e.target.closest('input, button:not(.sub-toggle), select')) return;
       const now = group.classList.toggle('is-collapsed');
       if (key && FIELD_SUB_KEYS[key]) localStorage.setItem(FIELD_SUB_KEYS[key], now ? '1' : '0');

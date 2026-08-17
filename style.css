@@ -343,39 +343,153 @@ html, body {
 .controls-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 0.75rem;
   width: 100%;
+}
+
+/* Sidebar Top Nav Tabs & Mode Bar */
+.sidebar-top-nav {
+  position: sticky;
+  top: 53px;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(12px);
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.sidebar-tabs-bar {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+}
+
+.sidebar-tab-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 2px;
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.72rem;
+  font-weight: 700;
+  min-width: 0;
+}
+
+.sidebar-tab-btn .tab-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.sidebar-tab-btn .tab-name {
+  font-size: 0.65rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.sidebar-tab-btn:hover {
+  background: rgba(56, 189, 248, 0.15);
+  color: #fff;
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.sidebar-tab-btn.active {
+  background: var(--accent-blue);
+  color: #0f172a;
+  border-color: var(--accent-blue);
+  box-shadow: 0 2px 10px rgba(56, 189, 248, 0.4);
+}
+
+.sidebar-mode-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 5px;
+  margin-top: 2px;
+}
+
+.sidebar-mode-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sidebar-mode-pill:hover {
+  color: var(--accent-blue);
+  border-color: var(--accent-blue);
+}
+
+/* Sidebar Tab Mode vs All-Blocks Mode */
+.controls-sidebar.sidebar-mode-tabs .control-card:not(.active-tab-section) {
+  display: none !important;
+}
+
+.controls-sidebar.sidebar-mode-tabs .control-card.active-tab-section {
+  display: block;
+  animation: fadeInTab 0.2s ease-out;
+}
+
+@keyframes fadeInTab {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.controls-sidebar.sidebar-mode-all .control-card {
+  display: block !important;
 }
 
 .control-card {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  padding: 1.2rem;
+  padding: 1rem 1.1rem;
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
   width: 100%;
 }
 
 .control-card h3 {
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 700;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   color: var(--text-main);
 }
 
 .card-num {
   background: var(--border-color);
   color: var(--accent-blue);
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 800;
 }
 
@@ -385,7 +499,7 @@ html, body {
   user-select: none;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
   transition: color 0.2s ease;
   padding-bottom: 0;
@@ -401,7 +515,6 @@ html, body {
   line-height: 1;
 }
 .card-toggle:not(.collapsed) .toggle-arrow {
-  /* expanded — arrow up */
   transform: rotate(0deg);
 }
 .card-toggle.collapsed .toggle-arrow {
@@ -412,12 +525,11 @@ html, body {
   transition: opacity 0.25s ease;
 }
 .card-toggle:not(.collapsed) ~ .card-body {
-  margin-top: 1rem;
+  margin-top: 0.75rem;
 }
 .card-toggle.collapsed ~ .card-body {
   margin-top: 0;
 }
-
 
 /* Template Tabs */
 .template-tabs {
@@ -426,7 +538,7 @@ html, body {
   background: rgba(15, 23, 42, 0.6);
   padding: 4px;
   border-radius: var(--radius-md);
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 /* Панель Экспорт/Импорт шаблонов */
@@ -569,12 +681,39 @@ html, body {
 .preset-sub-body {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding-left: 4px;
+  gap: 6px;
+  padding-left: 2px;
   padding-top: 4px;
 }
 .preset-subgroup.is-collapsed .preset-sub-body {
   display: none;
+}
+
+/* 2-column Compact Presets Grid */
+.preset-grid-2col {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.preset-grid-2col .preset-card {
+  padding: 6px 8px;
+  gap: 8px;
+  border-radius: 8px;
+}
+
+.preset-grid-2col .preset-color {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+}
+
+.preset-grid-2col .preset-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .btn-delete-template {
@@ -612,10 +751,59 @@ html, body {
   font-size: 0.8rem;
   color: var(--text-muted);
   text-align: center;
-  padding: 1.5rem 1rem;
+  padding: 1.2rem 0.8rem;
   background: rgba(15, 23, 42, 0.4);
   border-radius: 8px;
   border: 1px dashed var(--border-color);
+}
+
+/* Excel Quick-Paste Bar & Collapsible Drawer */
+.excel-quick-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.excel-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  padding: 4px 8px;
+  font-weight: 700;
+}
+
+.excel-chevron {
+  font-size: 0.7rem;
+  transition: transform 0.2s ease;
+  display: inline-block;
+}
+
+.excel-toggle-btn.is-open .excel-chevron {
+  transform: rotate(180deg);
+}
+
+.excel-paste-drawer {
+  overflow: hidden;
+  transition: max-height 0.25s ease, opacity 0.2s ease, margin 0.2s ease;
+  max-height: 180px;
+  opacity: 1;
+  margin-bottom: 8px;
+}
+
+.excel-paste-drawer.is-collapsed {
+  max-height: 0;
+  opacity: 0;
+  margin-bottom: 0;
+  pointer-events: none;
+}
+
+.excel-drawer-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
 }
 
 /* Multi-Item Excel Table Input Section */
@@ -630,6 +818,30 @@ html, body {
   padding: 8px;
   resize: vertical;
 }
+
+/* Items Table Header */
+.items-table-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  background: rgba(15, 23, 42, 0.7);
+  border-radius: 6px;
+  margin-top: 4px;
+  margin-bottom: 2px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.items-table-header .col-num { width: 20px; text-align: center; }
+.items-table-header .col-tools { width: 68px; text-align: center; }
+.items-table-header .col-title { flex: 3; padding-left: 2px; }
+.items-table-header .col-sub { flex: 1; padding-left: 2px; }
+.items-table-header .col-price { flex: 1.2; padding-left: 2px; }
+.items-table-header .col-del { width: 30px; text-align: center; }
 
 .items-table-wrapper {
   max-height: 280px;
@@ -785,6 +997,17 @@ html, body {
 .item-quick-menu button:hover { background: rgba(56, 189, 248, 0.15); }
 .item-quick-menu button.active { color: var(--accent-yellow); font-weight: 700; }
 
+/* Чекбокс-режим меню (мультивыбор оформлений): фиксированная колонка галок
+   слева, чтобы текст не «дрожал» при простановке/снятии ✓. */
+.item-quick-menu-multi button { display: flex; align-items: center; }
+.item-quick-menu-multi button::before {
+  content: '';
+  display: inline-block;
+  width: 1.1em;
+  flex: none;
+}
+.item-quick-menu-multi button.active::before { content: '✓'; }
+
 /* Подстрахуем нативный popup <option> тёмным фоном/светлым текстом на тех
    сборках Chromium, где color-scheme:dark не перекрашивает список опций. */
 #bgImageSelect option,
@@ -873,24 +1096,98 @@ select option {
   background: rgba(15, 23, 42, 0.5);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  padding: 12px;
-  margin-bottom: 12px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
 }
 
 .field-settings-group:last-child {
   margin-bottom: 0;
 }
 
-.group-header h4 {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--accent-blue);
+.compact-group {
+  padding: 8px 10px;
   margin-bottom: 8px;
 }
 
-/* Сворачиваемые подсекции (блоки внутри секций #3 Шрифты и #5 Оформление).
-   Переиспользует is-collapsed паттерн (как preset-subgroup): клик по .sub-toggle
-   переключает класс на родителе .sub-group, CSS прячет .sub-body. */
+.group-header h4 {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--accent-blue);
+  margin-bottom: 6px;
+}
+
+/* Sub-Tabs Navigation (for Section 3 Fonts & Section 5 Decor) */
+.sub-tabs-nav {
+  display: flex;
+  gap: 4px;
+  background: rgba(15, 23, 42, 0.7);
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 8px;
+}
+
+.sub-tab-btn {
+  flex: 1;
+  padding: 5px 8px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.sub-tab-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.sub-tab-btn.active {
+  background: var(--bg-card);
+  color: var(--accent-blue);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.sub-tab-pane {
+  display: none;
+}
+
+.sub-tab-pane.active {
+  display: block;
+  animation: fadeInTab 0.15s ease-out;
+}
+
+/* Decor Tab Badge Dot */
+.tab-badge-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #64748b;
+  display: inline-block;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+  flex-shrink: 0;
+}
+
+.tab-badge-dot.active-dot {
+  background: #22c55e;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.7);
+}
+
+/* Value Readout Badge */
+.val-badge {
+  font-weight: 800;
+  color: var(--accent-yellow);
+}
+
+/* Сворачиваемые подсекции */
 .sub-toggle {
   cursor: pointer;
   user-select: none;
@@ -910,16 +1207,24 @@ select option {
 .sub-group.is-collapsed .sub-body { display: none; }
 .sub-group.is-collapsed .sub-arrow { transform: rotate(-90deg); }
 .sub-group.is-collapsed .sub-toggle { margin-bottom: 0; }
+.sub-group.is-collapsed-never.is-collapsed .sub-body { display: block !important; }
 .sub-body { width: 100%; }
-/* Цена: чекбокс «показать блок цены» скрывает тело через класс price-off
-   (вместо инлайн-display, чтобы не конфликтовать с is-collapsed сворачиванием). */
 .sub-body.price-off { display: none !important; }
 
 /* Radio Options */
 .radio-group {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
+}
+
+.compact-radio-group {
+  gap: 6px;
+}
+
+.compact-radio-group .radio-option {
+  padding: 6px 8px;
+  gap: 8px;
 }
 
 .radio-option {
@@ -937,8 +1242,8 @@ select option {
 }
 
 .radio-custom {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border: 2px solid var(--text-muted);
   border-radius: 50%;
   margin-top: 2px;
@@ -952,8 +1257,8 @@ select option {
 
 .radio-option input:checked + .radio-custom::after {
   content: '';
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   background: var(--accent-blue);
   border-radius: 50%;
   position: absolute;
@@ -963,12 +1268,12 @@ select option {
 
 .radio-text strong {
   display: block;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: #fff;
 }
 
 .radio-text small {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: var(--text-muted);
 }
 
@@ -976,32 +1281,73 @@ select option {
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-bottom: 10px;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.compact-form-group {
+  margin-bottom: 6px;
+  gap: 3px;
 }
 
 .form-row {
   display: flex;
-  gap: 10px;
+  gap: 8px;
+}
+
+.compact-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.compact-row .form-group {
+  margin-bottom: 0;
+  gap: 3px;
+}
+
+.compact-color-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.color-picker-input {
+  width: 100% !important;
+  height: 32px !important;
+  padding: 2px !important;
+  border-radius: 6px !important;
+  border: 1px solid var(--border-color) !important;
+  background: rgba(15, 23, 42, 0.8) !important;
+  cursor: pointer;
+}
+
+.color-picker-mini {
+  width: 32px !important;
+  height: 28px !important;
+  padding: 0 !important;
+  border: none !important;
+  background: none !important;
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
 .flex-1 { flex: 1; }
 .flex-2 { flex: 2; }
 
 label {
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   color: var(--text-muted);
   font-weight: 600;
 }
 
 input[type="text"], input[type="number"], select {
   width: 100%;
-  padding: 0.55rem 0.75rem;
+  padding: 0.45rem 0.65rem;
   background: rgba(15, 23, 42, 0.8);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   color: #fff;
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   outline: none;
 }
 
@@ -1485,7 +1831,9 @@ input[type="range"] {
 }
 
 /* Внутренний блок: плашка ПОВЕРХ ценника (absolute), ничего не сдвигает.
-   z-index:5 — выше содержимого шапки (z-index:2), ниже направляющих реза (10). */
+   z-index:5 — выше содержимого шапки (z-index:2), ниже направляющих реза (10).
+   Если показан внешний блок сверху (.has-outside-top), плашка сдвигается вниз
+   на его высоту (var(--outside-top-h)), чтобы оставаться внутри шапки ценника. */
 .wobbler-element.has-inside-top .wobbler-inside-top {
   position: absolute;
   top: 0;
@@ -1500,6 +1848,10 @@ input[type="range"] {
   height: var(--inside-top-h, 0mm);
   border-radius: 4mm !important;
   z-index: 5;
+}
+
+.wobbler-element.has-outside-top.has-inside-top .wobbler-inside-top {
+  top: var(--outside-top-h, 0mm);
 }
 
 .crop-guides {
