@@ -1,6 +1,7 @@
 /* Core CSS Tokens & Reset */
 :root {
-  color-scheme: dark;          /* нативные элементы форм (<select>/<option>, скроллбары) — тёмные */
+  color-scheme: dark;
+  /* нативные элементы форм (<select>/<option>, скроллбары) — тёмные */
   --bg-dark: #0f172a;
   --bg-card: #1e293b;
   --bg-card-hover: #334155;
@@ -27,7 +28,8 @@
   font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-html, body {
+html,
+body {
   width: 100%;
   max-width: 100vw;
   overflow-x: hidden;
@@ -105,7 +107,8 @@ html, body {
   transition: all 0.2s ease;
 }
 
-.device-btn.active, .device-btn:hover {
+.device-btn.active,
+.device-btn:hover {
   background: var(--accent-blue);
   color: #0f172a;
 }
@@ -120,14 +123,17 @@ html, body {
   border-radius: 20px;
   border: 1px solid var(--border-color);
 }
+
 .header-toggle-group label {
   display: flex;
   align-items: center;
   cursor: pointer;
 }
+
 .header-toggle-group input {
   display: none;
 }
+
 .header-toggle-btn {
   padding: 4px 8px;
   border: none;
@@ -139,10 +145,12 @@ html, body {
   transition: all 0.2s ease;
   white-space: nowrap;
 }
+
 .header-toggle-group label:hover .header-toggle-btn {
   color: var(--accent-blue);
 }
-.header-toggle-group input:checked + .header-toggle-btn {
+
+.header-toggle-group input:checked+.header-toggle-btn {
   background: var(--accent-blue);
   color: #0f172a;
 }
@@ -239,7 +247,8 @@ html, body {
   transition: all 0.2s ease;
 }
 
-.align-btn.active, .align-btn:hover {
+.align-btn.active,
+.align-btn:hover {
   background: var(--bg-card-hover);
   color: var(--accent-blue);
 }
@@ -257,12 +266,14 @@ html, body {
   border: 1px solid var(--border-color);
   border-radius: 8px;
 }
+
 .font-apply-mode .fam-label {
   font-size: 0.74rem;
   font-weight: 700;
   color: var(--text-muted);
   white-space: nowrap;
 }
+
 .seg-control {
   display: flex;
   gap: 4px;
@@ -271,6 +282,7 @@ html, body {
   border-radius: 8px;
   border: 1px solid var(--border-color);
 }
+
 .seg-btn {
   flex: 1;
   padding: 5px 10px;
@@ -284,14 +296,17 @@ html, body {
   transition: all 0.2s ease;
   white-space: nowrap;
 }
+
 .seg-btn.active {
   background: var(--accent-blue);
   color: #ffffff;
 }
+
 .seg-btn:not(.active):hover {
   background: var(--bg-card-hover);
   color: var(--accent-blue);
 }
+
 .btn-sm {
   padding: 5px 8px;
   font-size: 0.72rem;
@@ -343,39 +358,160 @@ html, body {
 .controls-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 0.75rem;
   width: 100%;
+}
+
+/* Sidebar Top Nav Tabs & Mode Bar */
+.sidebar-top-nav {
+  position: sticky;
+  top: 53px;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(12px);
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.sidebar-tabs-bar {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+}
+
+.sidebar-tab-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 2px;
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.72rem;
+  font-weight: 700;
+  min-width: 0;
+}
+
+.sidebar-tab-btn .tab-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.sidebar-tab-btn .tab-name {
+  font-size: 0.65rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.sidebar-tab-btn:hover {
+  background: rgba(56, 189, 248, 0.15);
+  color: #fff;
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.sidebar-tab-btn.active {
+  background: var(--accent-blue);
+  color: #0f172a;
+  border-color: var(--accent-blue);
+  box-shadow: 0 2px 10px rgba(56, 189, 248, 0.4);
+}
+
+.sidebar-mode-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 5px;
+  margin-top: 2px;
+}
+
+.sidebar-mode-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sidebar-mode-pill:hover {
+  color: var(--accent-blue);
+  border-color: var(--accent-blue);
+}
+
+/* Sidebar Tab Mode vs All-Blocks Mode */
+.controls-sidebar.sidebar-mode-tabs .control-card:not(.active-tab-section) {
+  display: none !important;
+}
+
+.controls-sidebar.sidebar-mode-tabs .control-card.active-tab-section {
+  display: block;
+  animation: fadeInTab 0.2s ease-out;
+}
+
+@keyframes fadeInTab {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.controls-sidebar.sidebar-mode-all .control-card {
+  display: block !important;
 }
 
 .control-card {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
-  padding: 1.2rem;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  padding: 1rem 1.1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   width: 100%;
 }
 
 .control-card h3 {
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 700;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   color: var(--text-main);
 }
 
 .card-num {
   background: var(--border-color);
   color: var(--accent-blue);
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 800;
 }
 
@@ -385,14 +521,16 @@ html, body {
   user-select: none;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
   transition: color 0.2s ease;
   padding-bottom: 0;
 }
+
 .card-toggle:hover {
   color: var(--accent-blue);
 }
+
 .toggle-arrow {
   margin-left: auto;
   font-size: 0.7rem;
@@ -400,24 +538,27 @@ html, body {
   transition: transform 0.25s ease, color 0.2s ease;
   line-height: 1;
 }
+
 .card-toggle:not(.collapsed) .toggle-arrow {
-  /* expanded — arrow up */
   transform: rotate(0deg);
 }
+
 .card-toggle.collapsed .toggle-arrow {
   transform: rotate(0deg);
 }
+
 .card-body {
   overflow: hidden;
   transition: opacity 0.25s ease;
 }
-.card-toggle:not(.collapsed) ~ .card-body {
-  margin-top: 1rem;
-}
-.card-toggle.collapsed ~ .card-body {
-  margin-top: 0;
+
+.card-toggle:not(.collapsed)~.card-body {
+  margin-top: 0.75rem;
 }
 
+.card-toggle.collapsed~.card-body {
+  margin-top: 0;
+}
 
 /* Template Tabs */
 .template-tabs {
@@ -426,7 +567,7 @@ html, body {
   background: rgba(15, 23, 42, 0.6);
   padding: 4px;
   border-radius: var(--radius-md);
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 /* Панель Экспорт/Импорт шаблонов */
@@ -483,7 +624,8 @@ html, body {
   position: relative;
 }
 
-.preset-card:hover, .preset-card.active {
+.preset-card:hover,
+.preset-card.active {
   border-color: var(--accent-blue);
   background: rgba(56, 189, 248, 0.1);
 }
@@ -501,20 +643,59 @@ html, body {
   background-position: center;
   border: 1px solid #3f3f46;
 }
+
 .preset-color.yellow-tag {
   background-image: url('yellow_bg.jpg');
   background-size: cover;
   background-position: center;
   border: 1px solid #3f3f46;
 }
-.preset-color.yellow { background: linear-gradient(135deg, #ffe600, #ffb700); }
-.preset-color.red { background: linear-gradient(135deg, #e63946, #c1121f); }
-.preset-color.tomato { background: linear-gradient(135deg, #e63946, #800f2f); }
-.preset-color.purple { background: linear-gradient(135deg, #7b2cbf, #5a189a); }
-.preset-color.sort-nedeli { background: linear-gradient(135deg, #E30613, #b00510); }
-.preset-color.ryba { background: linear-gradient(135deg, #0f172a, #1e3a5f); border: 1px solid #334155; }
-.preset-color.sneki { background: linear-gradient(135deg, #1a1a2e, #16213e); border: 1px solid #334155; }
-.preset-color.custom { background: linear-gradient(135deg, #38bdf8, #818cf8); }
+
+.preset-color.yellow {
+  background: linear-gradient(135deg, #ffe600, #ffb700);
+}
+
+.preset-color.red {
+  background: linear-gradient(135deg, #e63946, #c1121f);
+}
+
+.preset-color.tomato {
+  background: linear-gradient(135deg, #e63946, #800f2f);
+}
+
+.preset-color.purple {
+  background: linear-gradient(135deg, #7b2cbf, #5a189a);
+}
+
+.preset-color.sort-nedeli {
+  background: linear-gradient(135deg, #E30613, #b00510);
+}
+
+.preset-color.ryba {
+  background: linear-gradient(135deg, #0f172a, #1e3a5f);
+  border: 1px solid #334155;
+}
+
+.preset-color.sneki {
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  border: 1px solid #334155;
+}
+
+.preset-color.sneki-5 {
+  background-image: url('sneki_5_bg.jpg');
+  background-size: cover;
+  background-position: center;
+  border: 1px solid #334155;
+}
+
+.preset-color.sneki-digit {
+  background: linear-gradient(100deg, #1a1a2e 0%, #16213e 78%, #7dd3fc 78%, #38bdf8 100%);
+  border: 1px solid #334155;
+}
+
+.preset-color.custom {
+  background: linear-gradient(135deg, #38bdf8, #818cf8);
+}
 
 .preset-info {
   display: flex;
@@ -537,9 +718,11 @@ html, body {
 .preset-subgroup {
   margin-bottom: 8px;
 }
+
 .preset-subgroup:last-child {
   margin-bottom: 0;
 }
+
 .preset-sub-toggle {
   width: 100%;
   display: flex;
@@ -555,26 +738,58 @@ html, body {
   letter-spacing: 0.04em;
   cursor: pointer;
 }
+
 .preset-sub-toggle:hover {
   color: var(--accent-blue);
 }
+
 .preset-sub-arrow {
   margin-left: auto;
   font-size: 0.7rem;
   transition: transform 0.25s ease;
 }
+
 .preset-subgroup.is-collapsed .preset-sub-arrow {
   transform: rotate(-90deg);
 }
+
 .preset-sub-body {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding-left: 4px;
+  gap: 6px;
+  padding-left: 2px;
   padding-top: 4px;
 }
+
 .preset-subgroup.is-collapsed .preset-sub-body {
   display: none;
+}
+
+/* 2-column Compact Presets Grid */
+.preset-grid-2col {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.preset-grid-2col .preset-card {
+  padding: 6px 8px;
+  gap: 8px;
+  border-radius: 8px;
+}
+
+.preset-grid-2col .preset-color {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+}
+
+.preset-grid-2col .preset-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .btn-delete-template {
@@ -603,6 +818,7 @@ html, body {
   opacity: 0.7;
   transition: opacity 0.2s, color 0.2s;
 }
+
 .btn-export-template:hover {
   opacity: 1;
   color: var(--accent);
@@ -612,10 +828,59 @@ html, body {
   font-size: 0.8rem;
   color: var(--text-muted);
   text-align: center;
-  padding: 1.5rem 1rem;
+  padding: 1.2rem 0.8rem;
   background: rgba(15, 23, 42, 0.4);
   border-radius: 8px;
   border: 1px dashed var(--border-color);
+}
+
+/* Excel Quick-Paste Bar & Collapsible Drawer */
+.excel-quick-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.excel-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  padding: 4px 8px;
+  font-weight: 700;
+}
+
+.excel-chevron {
+  font-size: 0.7rem;
+  transition: transform 0.2s ease;
+  display: inline-block;
+}
+
+.excel-toggle-btn.is-open .excel-chevron {
+  transform: rotate(180deg);
+}
+
+.excel-paste-drawer {
+  overflow: hidden;
+  transition: max-height 0.25s ease, opacity 0.2s ease, margin 0.2s ease;
+  max-height: 180px;
+  opacity: 1;
+  margin-bottom: 8px;
+}
+
+.excel-paste-drawer.is-collapsed {
+  max-height: 0;
+  opacity: 0;
+  margin-bottom: 0;
+  pointer-events: none;
+}
+
+.excel-drawer-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
 }
 
 /* Multi-Item Excel Table Input Section */
@@ -629,6 +894,58 @@ html, body {
   font-size: 0.78rem;
   padding: 8px;
   resize: vertical;
+}
+
+/* Items Table Header */
+.items-table-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  background: rgba(15, 23, 42, 0.7);
+  border-radius: 6px;
+  margin-top: 4px;
+  margin-bottom: 2px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.items-table-header .col-num {
+  width: 20px;
+  text-align: center;
+}
+
+.items-table-header .col-tools {
+  width: 104px;
+  text-align: center;
+}
+
+.items-table-header .col-title {
+  flex: 3;
+  padding-left: 2px;
+}
+
+.items-table-header .col-sub {
+  flex: 1;
+  padding-left: 2px;
+}
+
+.items-table-header .col-price {
+  flex: 1.2;
+  padding-left: 2px;
+}
+
+.items-table-header .col-digit {
+  flex: 0 0 44px;
+  text-align: center;
+}
+
+.items-table-header .col-del {
+  width: 30px;
+  text-align: center;
 }
 
 .items-table-wrapper {
@@ -654,7 +971,7 @@ html, body {
   background: rgba(30, 41, 59, 0.6);
   padding: 4px 6px;
   border-radius: 6px;
-  border: 1px solid rgba(255,255,255,0.05);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .item-num {
@@ -674,7 +991,7 @@ html, body {
   min-width: 30px;
   height: 30px;
   padding: 0;
-  border: 1px solid rgba(255,255,255,0.12);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(37, 99, 235, 0.18);
   color: #e2e8f0;
   border-radius: 6px;
@@ -683,8 +1000,14 @@ html, body {
   cursor: pointer;
   transition: background .15s, transform .1s;
 }
-.item-settings-btn:hover { background: rgba(37, 99, 235, 0.4); }
-.item-settings-btn:active { transform: scale(0.92); }
+
+.item-settings-btn:hover {
+  background: rgba(37, 99, 235, 0.4);
+}
+
+.item-settings-btn:active {
+  transform: scale(0.92);
+}
 
 /* Глобальный переключатель автоприменения оформления при выборе фона (🔗).
    Находится среди быстрых кнопок вставки (📋 🗑 ⧉ 🔗).
@@ -702,11 +1025,17 @@ html, body {
   line-height: 1;
   cursor: pointer;
   transition: border-color .15s, background .15s, opacity .15s;
-  opacity: 0.55;               /* ВЫКЛ: приглушённая */
+  opacity: 0.55;
+  /* ВЫКЛ: приглушённая */
 }
-.autolink-toggle:hover { opacity: 0.85; }
+
+.autolink-toggle:hover {
+  opacity: 0.85;
+}
+
 .autolink-toggle.active {
-  opacity: 1;                  /* ВКЛ: яркая + акцентная рамка */
+  opacity: 1;
+  /* ВКЛ: яркая + акцентная рамка */
   border-color: var(--accent-blue);
   box-shadow: 0 0 0 1px var(--accent-blue) inset;
 }
@@ -729,10 +1058,20 @@ html, body {
   cursor: pointer;
   transition: background .15s, transform .1s, border-color .15s;
 }
-.item-bg-btn:hover { background: rgba(37, 99, 235, 0.4); }
-.item-bg-btn:active { transform: scale(0.92); }
+
+.item-bg-btn:hover {
+  background: rgba(37, 99, 235, 0.4);
+}
+
+.item-bg-btn:active {
+  transform: scale(0.92);
+}
+
 /* Подсветка, когда у ценника выбран не-шаблонный фон. */
-.item-bg-btn.active { border-color: var(--accent-blue); box-shadow: 0 0 0 1px var(--accent-blue) inset; }
+.item-bg-btn.active {
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 1px var(--accent-blue) inset;
+}
 
 /* Иконка-кнопка 🎨 быстрого выбора пресета оформления ценника. */
 .item-decor-btn {
@@ -750,9 +1089,57 @@ html, body {
   cursor: pointer;
   transition: background .15s, transform .1s, border-color .15s;
 }
-.item-decor-btn:hover { background: rgba(147, 51, 234, 0.4); }
-.item-decor-btn:active { transform: scale(0.92); }
-.item-decor-btn.active { border-color: var(--accent-purple); box-shadow: 0 0 0 1px var(--accent-purple) inset; }
+
+.item-decor-btn:hover {
+  background: rgba(147, 51, 234, 0.4);
+}
+
+.item-decor-btn:active {
+  transform: scale(0.92);
+}
+
+.item-decor-btn.active {
+  border-color: var(--accent-purple);
+  box-shadow: 0 0 0 1px var(--accent-purple) inset;
+}
+
+/* Иконка-кнопка ❌ перечеркивания цены красным крестом. */
+.item-cross-btn {
+  flex-shrink: 0;
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.45;
+  transition: background .15s, transform .1s, border-color .15s, opacity .15s;
+}
+
+.item-cross-btn:hover {
+  opacity: 0.9;
+  background: rgba(239, 68, 68, 0.25);
+}
+
+.item-cross-btn:active {
+  transform: scale(0.92);
+}
+
+.item-cross-btn.active {
+  opacity: 1;
+  background: rgba(239, 68, 68, 0.35);
+  border-color: #ef4444;
+  box-shadow: 0 0 0 1px #ef4444 inset;
+}
+
+.item-cross-btn.customized {
+  font-weight: 800;
+}
 
 /* Всплывающее меню быстрых опций строки товара (позиционируется из JS,
    fixed — не зависит от скролла контейнера списка). */
@@ -768,6 +1155,7 @@ html, body {
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
+
 .item-quick-menu button {
   display: block;
   width: 100%;
@@ -782,8 +1170,33 @@ html, body {
   cursor: pointer;
   white-space: nowrap;
 }
-.item-quick-menu button:hover { background: rgba(56, 189, 248, 0.15); }
-.item-quick-menu button.active { color: var(--accent-yellow); font-weight: 700; }
+
+.item-quick-menu button:hover {
+  background: rgba(56, 189, 248, 0.15);
+}
+
+.item-quick-menu button.active {
+  color: var(--accent-yellow);
+  font-weight: 700;
+}
+
+/* Чекбокс-режим меню (мультивыбор оформлений): фиксированная колонка галок
+   слева, чтобы текст не «дрожал» при простановке/снятии ✓. */
+.item-quick-menu-multi button {
+  display: flex;
+  align-items: center;
+}
+
+.item-quick-menu-multi button::before {
+  content: '';
+  display: inline-block;
+  width: 1.1em;
+  flex: none;
+}
+
+.item-quick-menu-multi button.active::before {
+  content: '✓';
+}
 
 /* Подстрахуем нативный popup <option> тёмным фоном/светлым текстом на тех
    сборках Chromium, где color-scheme:dark не перекрашивает список опций. */
@@ -802,7 +1215,7 @@ select option {
   min-width: 30px;
   height: 30px;
   padding: 0;
-  border: 1px solid rgba(255,255,255,0.12);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(239, 68, 68, 0.18);
   color: #fca5a5;
   border-radius: 6px;
@@ -811,8 +1224,14 @@ select option {
   cursor: pointer;
   transition: background .15s, transform .1s;
 }
-.item-delete-btn:hover { background: rgba(239, 68, 68, 0.4); }
-.item-delete-btn:active { transform: scale(0.92); }
+
+.item-delete-btn:hover {
+  background: rgba(239, 68, 68, 0.4);
+}
+
+.item-delete-btn:active {
+  transform: scale(0.92);
+}
 
 /* Общее для полей таблицы (textarea): игнорируем intrinsic-размер cols,
    делим ширину строго по flex-grow; единая стартовая высота строки. */
@@ -846,11 +1265,24 @@ select option {
   color: var(--accent-yellow) !important;
 }
 
+/* Узкое поле «№» (большая цифра товара) в строке таблицы */
+.item-digit-input {
+  flex: 0 0 44px;
+  width: 44px;
+  min-height: 30px;
+  padding: 4px 4px !important;
+  font-size: 0.78rem !important;
+  font-weight: 800;
+  text-align: center;
+  color: #7dd3fc !important;
+}
+
 /* 4 клетки для ввода цены по одной цифре */
 .price-cells {
   display: flex;
   gap: 6px;
 }
+
 .price-cell {
   width: 38px;
   height: 42px;
@@ -858,11 +1290,12 @@ select option {
   font-size: 1.3rem !important;
   font-weight: 800;
   padding: 0 !important;
-  border: 2px solid rgba(255,255,255,0.18);
+  border: 2px solid rgba(255, 255, 255, 0.18);
   border-radius: 8px;
   background: rgba(15, 23, 42, 0.8);
   color: var(--accent-yellow) !important;
 }
+
 .price-cell:focus {
   border-color: var(--accent-blue, #2563eb);
   outline: none;
@@ -873,24 +1306,98 @@ select option {
   background: rgba(15, 23, 42, 0.5);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  padding: 12px;
-  margin-bottom: 12px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
 }
 
 .field-settings-group:last-child {
   margin-bottom: 0;
 }
 
-.group-header h4 {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--accent-blue);
+.compact-group {
+  padding: 8px 10px;
   margin-bottom: 8px;
 }
 
-/* Сворачиваемые подсекции (блоки внутри секций #3 Шрифты и #5 Оформление).
-   Переиспользует is-collapsed паттерн (как preset-subgroup): клик по .sub-toggle
-   переключает класс на родителе .sub-group, CSS прячет .sub-body. */
+.group-header h4 {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--accent-blue);
+  margin-bottom: 6px;
+}
+
+/* Sub-Tabs Navigation (for Section 3 Fonts & Section 5 Decor) */
+.sub-tabs-nav {
+  display: flex;
+  gap: 4px;
+  background: rgba(15, 23, 42, 0.7);
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 8px;
+}
+
+.sub-tab-btn {
+  flex: 1;
+  padding: 5px 8px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.sub-tab-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.sub-tab-btn.active {
+  background: var(--bg-card);
+  color: var(--accent-blue);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.sub-tab-pane {
+  display: none;
+}
+
+.sub-tab-pane.active {
+  display: block;
+  animation: fadeInTab 0.15s ease-out;
+}
+
+/* Decor Tab Badge Dot */
+.tab-badge-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #64748b;
+  display: inline-block;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+  flex-shrink: 0;
+}
+
+.tab-badge-dot.active-dot {
+  background: #22c55e;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.7);
+}
+
+/* Value Readout Badge */
+.val-badge {
+  font-weight: 800;
+  color: var(--accent-yellow);
+}
+
+/* Сворачиваемые подсекции */
 .sub-toggle {
   cursor: pointer;
   user-select: none;
@@ -900,26 +1407,56 @@ select option {
   gap: 8px;
   transition: color 0.2s ease;
 }
-.sub-toggle:hover { color: var(--accent-blue); }
+
+.sub-toggle:hover {
+  color: var(--accent-blue);
+}
+
 .sub-toggle .sub-arrow {
   font-size: 0.7rem;
   color: var(--text-muted);
   transition: transform 0.25s ease;
   flex-shrink: 0;
 }
-.sub-group.is-collapsed .sub-body { display: none; }
-.sub-group.is-collapsed .sub-arrow { transform: rotate(-90deg); }
-.sub-group.is-collapsed .sub-toggle { margin-bottom: 0; }
-.sub-body { width: 100%; }
-/* Цена: чекбокс «показать блок цены» скрывает тело через класс price-off
-   (вместо инлайн-display, чтобы не конфликтовать с is-collapsed сворачиванием). */
-.sub-body.price-off { display: none !important; }
+
+.sub-group.is-collapsed .sub-body {
+  display: none;
+}
+
+.sub-group.is-collapsed .sub-arrow {
+  transform: rotate(-90deg);
+}
+
+.sub-group.is-collapsed .sub-toggle {
+  margin-bottom: 0;
+}
+
+.sub-group.is-collapsed-never.is-collapsed .sub-body {
+  display: block !important;
+}
+
+.sub-body {
+  width: 100%;
+}
+
+.sub-body.price-off {
+  display: none !important;
+}
 
 /* Radio Options */
 .radio-group {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
+}
+
+.compact-radio-group {
+  gap: 6px;
+}
+
+.compact-radio-group .radio-option {
+  padding: 6px 8px;
+  gap: 8px;
 }
 
 .radio-option {
@@ -937,8 +1474,8 @@ select option {
 }
 
 .radio-custom {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border: 2px solid var(--text-muted);
   border-radius: 50%;
   margin-top: 2px;
@@ -946,14 +1483,14 @@ select option {
   position: relative;
 }
 
-.radio-option input:checked + .radio-custom {
+.radio-option input:checked+.radio-custom {
   border-color: var(--accent-blue);
 }
 
-.radio-option input:checked + .radio-custom::after {
+.radio-option input:checked+.radio-custom::after {
   content: '';
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   background: var(--accent-blue);
   border-radius: 50%;
   position: absolute;
@@ -963,12 +1500,12 @@ select option {
 
 .radio-text strong {
   display: block;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: #fff;
 }
 
 .radio-text small {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: var(--text-muted);
 }
 
@@ -976,36 +1513,86 @@ select option {
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-bottom: 10px;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.compact-form-group {
+  margin-bottom: 6px;
+  gap: 3px;
 }
 
 .form-row {
   display: flex;
-  gap: 10px;
+  gap: 8px;
 }
 
-.flex-1 { flex: 1; }
-.flex-2 { flex: 2; }
+.compact-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.compact-row .form-group {
+  margin-bottom: 0;
+  gap: 3px;
+}
+
+.compact-color-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.color-picker-input {
+  width: 100% !important;
+  height: 32px !important;
+  padding: 2px !important;
+  border-radius: 6px !important;
+  border: 1px solid var(--border-color) !important;
+  background: rgba(15, 23, 42, 0.8) !important;
+  cursor: pointer;
+}
+
+.color-picker-mini {
+  width: 32px !important;
+  height: 28px !important;
+  padding: 0 !important;
+  border: none !important;
+  background: none !important;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.flex-2 {
+  flex: 2;
+}
 
 label {
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   color: var(--text-muted);
   font-weight: 600;
 }
 
-input[type="text"], input[type="number"], select {
+input[type="text"],
+input[type="number"],
+select {
   width: 100%;
-  padding: 0.55rem 0.75rem;
+  padding: 0.45rem 0.65rem;
   background: rgba(15, 23, 42, 0.8);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   color: #fff;
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   outline: none;
 }
 
-input[type="text"]:focus, input[type="number"]:focus, select:focus {
+input[type="text"]:focus,
+input[type="number"]:focus,
+select:focus {
   border-color: var(--accent-blue);
 }
 
@@ -1025,6 +1612,7 @@ textarea {
   overflow: hidden;
   line-height: 1.3;
 }
+
 textarea:focus {
   border-color: var(--accent-blue);
 }
@@ -1117,15 +1705,18 @@ input[type="range"] {
   transition: all 0.2s ease;
   flex-shrink: 0;
 }
+
 .collapse-btn:hover {
   border-color: var(--accent-blue);
   background: rgba(56, 189, 248, 0.1);
 }
+
 .collapse-arrow {
   font-size: 0.7rem;
   transition: transform 0.25s ease;
   line-height: 1;
 }
+
 /* Схлопнутое состояние: стрелка повёрнута */
 .is-collapsed .collapse-arrow {
   transform: rotate(-90deg);
@@ -1149,6 +1740,7 @@ input[type="range"] {
   gap: 6px;
   flex-wrap: wrap;
 }
+
 /* Ползунок размера шрифта наименования в тулбаре предпросмотра. */
 .preview-title-size {
   display: flex;
@@ -1159,24 +1751,29 @@ input[type="range"] {
   border-radius: var(--radius-md);
   padding: 4px 10px;
 }
+
 .preview-title-size-label {
   font-weight: 800;
   color: var(--accent-yellow);
   font-size: 0.85rem;
 }
+
 .preview-title-size input[type=range] {
   width: 90px;
 }
+
 .preview-title-size-val {
   font-size: 0.75rem;
   color: var(--text-muted);
   min-width: 1.6em;
   text-align: right;
 }
+
 .btn-sm {
   font-size: 0.72rem !important;
   padding: 4px 10px !important;
 }
+
 .btn-sm.active {
   background: var(--accent-blue, #2563eb) !important;
   color: #fff !important;
@@ -1188,6 +1785,7 @@ input[type="range"] {
   display: inline-flex;
   align-items: baseline;
 }
+
 .price-digit {
   display: inline-block;
   /* Все цифры цены занимают одинаковое место: min-width = ширине самой широкой
@@ -1201,10 +1799,10 @@ input[type="range"] {
      бесплатно улучшает результат; в шрифтах без поддержки игнорируется. */
   font-variant-numeric: tabular-nums;
 }
+
 /* Пробел в цене — полноценный символ шириной с цифру (nbsp не схлопывается
    в inline-flex). min-width/text-align наследуются от .price-digit. */
-.price-digit.price-space {
-}
+.price-digit.price-space {}
 
 /* Режим перетаскивания надписей: надписи выделяются и становятся «хватаемыми» */
 .wobbler-element.drag-mode .wobbler-title,
@@ -1215,6 +1813,7 @@ input[type="range"] {
   outline: 1px dashed rgba(37, 99, 235, 0.8);
   outline-offset: 3px;
 }
+
 /* Каждая цифра и валюта перетаскиваются отдельно */
 .wobbler-element.drag-mode .price-digit,
 .wobbler-element.drag-mode .price-curr {
@@ -1223,6 +1822,7 @@ input[type="range"] {
   outline: 1px dashed rgba(245, 158, 11, 0.85);
   outline-offset: 2px;
 }
+
 .wobbler-element.drag-mode .price-val {
   outline: none;
 }
@@ -1238,6 +1838,7 @@ input[type="range"] {
   outline: 1px dashed rgba(34, 197, 94, 0.9);
   outline-offset: 3px;
 }
+
 .wobbler-element.drag-mode-solo .price-digit,
 .wobbler-element.drag-mode-solo .price-curr {
   cursor: move;
@@ -1245,6 +1846,7 @@ input[type="range"] {
   outline: 1px dashed rgba(132, 204, 22, 0.95);
   outline-offset: 2px;
 }
+
 .wobbler-element.drag-mode-solo .price-val {
   outline: none;
 }
@@ -1332,7 +1934,8 @@ input[type="range"] {
   transition: all 0.2s ease;
 }
 
-.preset-size-btn.active, .preset-size-btn:hover {
+.preset-size-btn.active,
+.preset-size-btn:hover {
   background: var(--accent-blue);
   color: #0f172a;
   border-color: var(--accent-blue);
@@ -1367,7 +1970,7 @@ input[type="range"] {
   padding: 25px;
   background: rgba(15, 23, 42, 0.5);
   border-radius: 4px;
-  border: 1px dashed rgba(255,255,255,0.1);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
   transition: all 0.2s ease;
   margin: 0 auto;
 }
@@ -1405,14 +2008,14 @@ input[type="range"] {
   width: var(--wobbler-width);
   height: var(--wobbler-height);
   background: #ffffff;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
   border-radius: 0 !important;
   user-select: none;
-  border: 1px solid rgba(0,0,0,0.15);
+  border: 1px solid rgba(0, 0, 0, 0.15);
 }
 
 /* === Декоративные блоки «Оформление» ===
@@ -1456,12 +2059,14 @@ input[type="range"] {
 .wobbler-element.has-outside-top {
   height: calc(var(--wobbler-height) + var(--outside-top-h, 0mm));
 }
+
 .wobbler-element.has-outside-top .wobbler-outside-top {
   display: flex;
   flex: 0 0 auto;
   height: var(--outside-top-h, 0mm);
-  border-bottom: 1px solid rgba(0,0,0,0.15);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.15);
 }
+
 /* Линия реза только по телу ценника, не по внешнему блоку. */
 .wobbler-element.has-outside-top .crop-guides {
   top: var(--outside-top-h, 0mm);
@@ -1472,20 +2077,25 @@ input[type="range"] {
 .wobbler-element.has-outside-bottom {
   height: calc(var(--wobbler-height) + var(--outside-bottom-h, 0mm));
 }
+
 .wobbler-element.has-outside-top.has-outside-bottom {
   /* Если показаны оба внешних блока — высота учитывает оба. */
   height: calc(var(--wobbler-height) + var(--outside-top-h, 0mm) + var(--outside-bottom-h, 0mm));
 }
+
 .wobbler-element.has-outside-bottom .wobbler-outside-bottom {
   display: flex;
   flex: 0 0 auto;
   height: var(--outside-bottom-h, 0mm);
-  border-top: 1px solid rgba(0,0,0,0.15);
-  order: 99;   /* в самом низу flex-потока карты */
+  border-top: 1px solid rgba(0, 0, 0, 0.15);
+  order: 99;
+  /* в самом низу flex-потока карты */
 }
 
 /* Внутренний блок: плашка ПОВЕРХ ценника (absolute), ничего не сдвигает.
-   z-index:5 — выше содержимого шапки (z-index:2), ниже направляющих реза (10). */
+   z-index:5 — выше содержимого шапки (z-index:2), ниже направляющих реза (10).
+   Если показан внешний блок сверху (.has-outside-top), плашка сдвигается вниз
+   на его высоту (var(--outside-top-h)), чтобы оставаться внутри шапки ценника. */
 .wobbler-element.has-inside-top .wobbler-inside-top {
   position: absolute;
   top: 0;
@@ -1502,10 +2112,14 @@ input[type="range"] {
   z-index: 5;
 }
 
+.wobbler-element.has-outside-top.has-inside-top .wobbler-inside-top {
+  top: var(--outside-top-h, 0mm);
+}
+
 .crop-guides {
   position: absolute;
   inset: 0;
-  border: 1px dashed rgba(0,0,0,0.25);
+  border: 1px dashed rgba(0, 0, 0, 0.25);
   border-radius: 0 !important;
   pointer-events: none;
   z-index: 10;
@@ -1523,7 +2137,10 @@ input[type="range"] {
   display: none;
   cursor: default;
 }
-#wobblerPreview.safe-edit-mode .safe-edit-overlay { display: block; }
+
+#wobblerPreview.safe-edit-mode .safe-edit-overlay {
+  display: block;
+}
 
 .safe-rect {
   position: absolute;
@@ -1541,26 +2158,42 @@ input[type="range"] {
   border-radius: 2px;
   touch-action: none;
 }
+
 /* Верхний/нижний край — горизонтальная полоса посередине, курсор ns-resize */
-.safe-h-top, .safe-h-bottom {
+.safe-h-top,
+.safe-h-bottom {
   left: 50%;
   transform: translateX(-50%);
   width: 14mm;
   height: 4mm;
   cursor: ns-resize;
 }
-.safe-h-top    { top: -2mm; }
-.safe-h-bottom { bottom: -2mm; }
+
+.safe-h-top {
+  top: -2mm;
+}
+
+.safe-h-bottom {
+  bottom: -2mm;
+}
+
 /* Левый/правый край — вертикальная полоса посередине, курсор ew-resize */
-.safe-h-left, .safe-h-right {
+.safe-h-left,
+.safe-h-right {
   top: 50%;
   transform: translateY(-50%);
   width: 4mm;
   height: 14mm;
   cursor: ew-resize;
 }
-.safe-h-left  { left: -2mm; }
-.safe-h-right { right: -2mm; }
+
+.safe-h-left {
+  left: -2mm;
+}
+
+.safe-h-right {
+  right: -2mm;
+}
 
 /* Layout Split vs Full.
    Высота шапки/нижнего поля привязана к --wobbler-height (размер самого ценника),
@@ -1630,9 +2263,9 @@ input[type="range"] {
      (white-space: pre-line уважает и ручные \n из textarea). Сверхдлинное
      слово без пробелов всё же переносится через overflow-wrap, не ломая
      вёрстку. JS (fitTitleSize) подбирает кегль под эту же раскладку. */
-  word-break: normal;
-  overflow-wrap: anywhere;
-  white-space: pre-line;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: break-spaces;
   /* Ширина названия = безопасная зона (--title-safe-w, % от рабочей зоны
      шапки). Меньше 100% — блок ýже и отцентрирован (родитель .header-content
      имеет align-items:center), текст не заезжает на боковую графику фона
@@ -1674,6 +2307,73 @@ input[type="range"] {
   width: 100%;
 }
 
+.price-box-inner {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+}
+
+.price-cross-overlay {
+  position: absolute;
+  top: -1.2mm;
+  bottom: -1.2mm;
+  left: -2mm;
+  right: -2mm;
+  pointer-events: none;
+  z-index: 10;
+  display: none;
+}
+
+.price-box-inner.is-crossed .price-cross-overlay,
+.wobbler-price-box.is-crossed .price-cross-overlay,
+.wobbler-element.price-crossed .price-cross-overlay {
+  display: block;
+}
+
+.price-cross-overlay svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+  filter: drop-shadow(0 0 0.8px rgba(0, 0, 0, 0.9));
+}
+
+/* Большая цифра справа (шаблоны вроде «Снеки с цифрой»): зона от x≈0.70 до
+   правой рамки (по пиксельному профилю sneki_digit_bg.jpg), цифра центрируется
+   в ней. Абсолютная позиция — не влияет на flex-поток названия/цены. Скрыт
+   (display:none из JS) при пустом значении. */
+.wobbler-bigdigit {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 3.5%;
+  width: 26%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  line-height: 1;
+  white-space: pre;
+  transition: transform 0.1s ease;
+}
+
+.bigdigit-num-symbol {
+  position: absolute;
+  top: -6.8mm;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 20pt;
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
+  color: inherit;
+  font-family: inherit;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+}
+
 /* Светлая плашка под ценой — для шаблона «Рыба» (цена чёрная на чёрном фоне).
    Плашка делает цифры читаемыми, не меняя расположения поля. */
 .wobbler-element.price-plate .wobbler-price-box {
@@ -1684,8 +2384,9 @@ input[type="range"] {
   min-width: 22mm;
   margin-left: auto;
   margin-right: auto;
-  box-shadow: 0 0 0 0.2mm rgba(255,255,255,0.9);
+  box-shadow: 0 0 0 0.2mm rgba(255, 255, 255, 0.9);
 }
+
 .wobbler-element.price-plate.layout-full .wobbler-price-box {
   margin-top: 0;
 }
@@ -1700,6 +2401,7 @@ input[type="range"] {
   cursor: pointer;
   height: 100%;
 }
+
 .checkbox-label input[type="checkbox"] {
   width: 16px;
   height: 16px;
@@ -1737,11 +2439,13 @@ input[type="range"] {
   border-top: none;
   padding: 2mm 4mm;
 }
+
 .wobbler-element.price-in-bottom .wobbler-price-box {
   margin-top: 0;
   width: 100%;
   align-items: baseline;
 }
+
 .wobbler-element.price-in-bottom .wobbler-header {
   justify-content: center;
 }
@@ -1769,7 +2473,7 @@ input[type="range"] {
   padding: 1.5rem;
   width: 92%;
   max-width: 400px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
 .modal-box h3 {
@@ -1799,6 +2503,7 @@ input[type="range"] {
   overflow-y: auto;
   margin: 0.5rem 0;
 }
+
 .copy-target {
   display: flex;
   align-items: center;
@@ -1809,9 +2514,11 @@ input[type="range"] {
   color: #fff;
   font-size: 0.85rem;
 }
+
 .copy-target:hover {
   background: rgba(56, 189, 248, 0.08);
 }
+
 .copy-target input {
   accent-color: var(--accent-blue);
 }
@@ -1833,30 +2540,36 @@ input[type="range"] {
   max-height: 90vh;
   overflow-y: auto;
 }
+
 .item-settings-hint {
   font-size: 0.78rem;
   color: var(--text-muted);
   margin-bottom: 0.75rem;
 }
+
 .is-group {
   margin-bottom: 4px;
 }
+
 .is-group-title {
   font-size: 0.9rem;
   font-weight: 800;
   color: var(--accent-yellow);
   margin: 0.5rem 0 0.4rem;
 }
+
 .is-sep {
   border: none;
   border-top: 1px solid var(--border-color);
   margin: 12px 0;
 }
+
 /* Пока чекбокс группы выключен — тело приглушено и недоступно. */
 .is-group-body.is-disabled {
   opacity: 0.45;
   pointer-events: none;
 }
+
 #updateTemplateBtn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
@@ -1891,6 +2604,7 @@ input[type="range"] {
 .sheet-mini-container.is-collapsed {
   display: none !important;
 }
+
 .sheet-card-header.is-collapsed p {
   display: none;
 }
@@ -1914,7 +2628,7 @@ input[type="range"] {
   width: 210mm;
   height: 297mm;
   background: #ffffff;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
   transform: scale(0.35);
   transform-origin: top center;
   margin-bottom: -190mm;
@@ -1935,6 +2649,7 @@ input[type="range"] {
   margin: 0 0 8px;
   line-height: 1.4;
 }
+
 .multi-print-templates {
   display: flex;
   flex-direction: column;
@@ -1947,6 +2662,7 @@ input[type="range"] {
   border: 1px solid var(--border-color);
   border-radius: 8px;
 }
+
 .multi-print-row-item {
   display: flex;
   align-items: center;
@@ -1956,22 +2672,29 @@ input[type="range"] {
   border-radius: 6px;
   font-size: 0.78rem;
 }
-.multi-print-row-item .mpi-name { flex: 1; }
+
+.multi-print-row-item .mpi-name {
+  flex: 1;
+}
+
 .multi-print-row-item .mpi-size {
   color: var(--text-muted);
   font-size: 0.7rem;
   white-space: nowrap;
 }
+
 .multi-print-row-item .mpi-filled {
   color: var(--accent-yellow);
   font-size: 0.7rem;
   white-space: nowrap;
 }
+
 .multi-print-row-item select {
   width: auto;
   padding: 2px 4px;
   font-size: 0.7rem;
 }
+
 .multi-print-summary {
   font-size: 0.75rem;
   color: var(--accent-blue);
@@ -1986,16 +2709,24 @@ input[type="range"] {
    Открывается классом .open (управляется из JS по pill-переключателю в шапке). */
 .multi-print-drawer-backdrop {
   position: fixed;
-  top: 53px; left: 0; right: 0; bottom: 0;
+  top: 53px;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: rgba(0, 0, 0, 0.35);
   z-index: 98;
   display: none;
 }
-.multi-print-drawer-backdrop.open { display: block; }
+
+.multi-print-drawer-backdrop.open {
+  display: block;
+}
 
 .multi-print-drawer {
   position: fixed;
-  top: 53px; left: 0; right: 0;
+  top: 53px;
+  left: 0;
+  right: 0;
   background: var(--bg-card);
   border-bottom: 1px solid var(--border-color);
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
@@ -2008,27 +2739,32 @@ input[type="range"] {
   pointer-events: none;
   transition: transform 0.22s ease, opacity 0.18s ease;
 }
+
 .multi-print-drawer.open {
   transform: translateY(0);
   opacity: 1;
   pointer-events: auto;
 }
+
 .multi-print-drawer-inner {
   padding: 0.9rem 1.2rem 1.1rem;
   max-width: 820px;
   margin: 0 auto;
 }
+
 .multi-print-drawer-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 6px;
 }
+
 .multi-print-drawer-head h3 {
   font-size: 0.95rem;
   font-weight: 800;
   color: #fff;
 }
+
 .multi-print-drawer-options {
   display: flex;
   align-items: center;
@@ -2036,10 +2772,12 @@ input[type="range"] {
   flex-wrap: wrap;
   margin: 8px 0 4px;
 }
+
 .multi-print-drawer-options .form-group {
   flex: 0 1 220px;
   margin: 0;
 }
+
 .multi-print-drawer-options .checkbox-label {
   font-size: 0.78rem;
   white-space: nowrap;
@@ -2113,19 +2851,28 @@ body.force-desktop .workspace-panel {
    Магическое число высоты шапки не нужно — flex распределяет автоматически. */
 body.force-desktop {
   height: 100vh;
-  height: 100dvh;            /* динамическая высота (учитывает мобильные панели) */
-  overflow: hidden;          /* убираем общий скролл страницы */
+  height: 100dvh;
+  /* динамическая высота (учитывает мобильные панели) */
+  overflow: hidden;
+  /* убираем общий скролл страницы */
 }
+
 body.force-desktop .main-layout {
-  height: auto;              /* flex:1 уже растягивает; явно не фиксируем */
-  min-height: 0;             /* разрешаем сжатие ниже контента */
-  overflow: hidden;          /* обрезаем — скролл у колонок */
+  height: auto;
+  /* flex:1 уже растягивает; явно не фиксируем */
+  min-height: 0;
+  /* разрешаем сжатие ниже контента */
+  overflow: hidden;
+  /* обрезаем — скролл у колонок */
 }
+
 body.force-desktop .controls-sidebar,
 body.force-desktop .workspace-panel {
   height: 100%;
-  min-height: 0;             /* критично для flex/grid, иначе не сжимается */
-  overflow-y: auto;          /* независимый скролл каждой колонки */
+  min-height: 0;
+  /* критично для flex/grid, иначе не сжимается */
+  overflow-y: auto;
+  /* независимый скролл каждой колонки */
   -webkit-overflow-scrolling: touch;
 }
 
@@ -2136,10 +2883,12 @@ body.force-desktop .workspace-panel {
     height: 100dvh;
     overflow: hidden;
   }
+
   body.mode-auto .main-layout {
     min-height: 0;
     overflow: hidden;
   }
+
   body.mode-auto .controls-sidebar,
   body.mode-auto .workspace-panel {
     height: 100%;
@@ -2234,7 +2983,8 @@ body.is-printing #printArea {
     margin: 0;
   }
 
-  html, body {
+  html,
+  body {
     background: #ffffff !important;
     color: #000000 !important;
     width: 210mm !important;
@@ -2244,11 +2994,21 @@ body.is-printing #printArea {
     overflow: visible !important;
   }
 
-  header, aside, main, nav, .no-print, .mobile-tab-bar, .app-header, .main-layout, .controls-sidebar, .workspace-panel {
+  header,
+  aside,
+  main,
+  nav,
+  .no-print,
+  .mobile-tab-bar,
+  .app-header,
+  .main-layout,
+  .controls-sidebar,
+  .workspace-panel {
     display: none !important;
   }
 
-  .print-only, #printArea {
+  .print-only,
+  #printArea {
     display: block !important;
     position: absolute !important;
     left: 0 !important;
@@ -2266,7 +3026,8 @@ body.is-printing #printArea {
     padding: 5mm 2mm 2mm 2mm !important;
     box-sizing: border-box !important;
     display: grid !important;
-    gap: 0; /* задаётся инлайн-стилем из JS (preparePrintArea) через setProperty !important */
+    gap: 0;
+    /* задаётся инлайн-стилем из JS (preparePrintArea) через setProperty !important */
     align-content: start !important;
     justify-content: start !important;
     page-break-after: always !important;
@@ -2283,19 +3044,23 @@ body.is-printing #printArea {
   .print-page.multi-print-page {
     display: block !important;
   }
+
   .multi-print-row {
     display: flex !important;
     flex-wrap: nowrap !important;
     align-items: flex-start !important;
     box-sizing: border-box !important;
   }
+
   .multi-print-row:last-child {
     margin-bottom: 0 !important;
   }
+
   .multi-print-cell {
     flex-shrink: 0 !important;
     box-sizing: border-box !important;
   }
+
   .multi-print-cell:last-child {
     margin-right: 0 !important;
   }
@@ -2343,6 +3108,7 @@ body.is-printing #printArea {
   font-style: normal;
   font-display: swap;
 }
+
 @font-face {
   font-family: 'Duo Licht';
   src: url('fonts/DuoLicht.ttf') format('truetype');
@@ -2350,10 +3116,183 @@ body.is-printing #printArea {
   font-style: normal;
   font-display: swap;
 }
+
 @font-face {
   font-family: 'SortefaxNo2Turquoise';
   src: url('fonts/Sortefaxno2turquoise.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
+}
+
+/* ==========================================================================
+   Выдвижная боковая шторка ввода товаров (Вариант 4)
+   ========================================================================== */
+.items-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(3px);
+  z-index: 1200;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.items-drawer-backdrop.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.items-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 520px;
+  max-width: 95vw;
+  background: #0f172a;
+  border-left: 1px solid rgba(59, 130, 246, 0.35);
+  box-shadow: -8px 0 36px rgba(0, 0, 0, 0.7);
+  z-index: 1210;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.items-drawer.open {
+  transform: translateX(0);
+}
+
+.items-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(30, 41, 59, 0.85);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.idr-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.idr-icon {
+  font-size: 1.4rem;
+}
+
+.idr-title-group h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.idr-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--accent-yellow);
+}
+
+.idr-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.auto-open-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.idr-paste-section {
+  padding: 10px 16px;
+  background: rgba(15, 23, 42, 0.9);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.idr-paste-box {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.idr-paste-box textarea {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  background: rgba(30, 41, 59, 0.9);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  resize: vertical;
+}
+
+.idr-paste-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.idr-table-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 16px;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.idr-table-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  margin-top: 6px;
+  padding-right: 4px;
+}
+
+.items-drawer-footer {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  background: rgba(30, 41, 59, 0.85);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.floating-items-drawer-btn {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 1000;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 30px;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  box-shadow: 0 4px 18px rgba(37, 99, 235, 0.45);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.floating-items-drawer-btn:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 6px 22px rgba(37, 99, 235, 0.6);
+}
+
+.fid-badge {
+  background: #f59e0b;
+  color: #000;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 1px 6px;
 }
