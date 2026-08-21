@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@700&family=Comfortaa:wght@700&family=Inter:wght@600;800;900&family=Lobster&family=Marck+Script&family=Montserrat:wght@400;600;700;800;900&family=Neucha&family=Oswald:wght@600;700&family=Pacifico&family=Pattaya&family=Playfair+Display:wght@700;900&family=Press+Start+2P&family=Roboto:wght@500;700;900&family=Rubik:wght@500;700;900&family=Ruslan+Display&family=Russo+One&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=5">
+  <link rel="stylesheet" href="style.css?v=6">
 </head>
 <body class="mode-auto">
 
@@ -92,10 +92,45 @@
 
   <main class="main-layout no-print">
     <!-- Left Sidebar Controls -->
-    <aside class="controls-sidebar" id="controlsSidebar">
+    <aside class="controls-sidebar sidebar-mode-tabs" id="controlsSidebar">
       
+      <!-- Quick Category Navigation Bar -->
+      <div class="sidebar-top-nav no-print" id="sidebarTopNav">
+        <div class="sidebar-tabs-bar" role="tablist" aria-label="Разделы настроек">
+          <button type="button" class="sidebar-tab-btn active" data-target="section1" title="1. Шаблоны">
+            <span class="tab-icon">🏷️</span>
+            <span class="tab-name">Шаблоны</span>
+          </button>
+          <button type="button" class="sidebar-tab-btn" data-target="section2" title="2. Товары и список">
+            <span class="tab-icon">📋</span>
+            <span class="tab-name">Товары</span>
+          </button>
+          <button type="button" class="sidebar-tab-btn" data-target="section3" title="3. Шрифты и текст">
+            <span class="tab-icon">✍️</span>
+            <span class="tab-name">Шрифты</span>
+          </button>
+          <button type="button" class="sidebar-tab-btn" data-target="section4" title="4. Фоны и заливка">
+            <span class="tab-icon">🎨</span>
+            <span class="tab-name">Фоны</span>
+          </button>
+          <button type="button" class="sidebar-tab-btn" data-target="section5" title="5. Оформление ценника">
+            <span class="tab-icon">✨</span>
+            <span class="tab-name">Декор</span>
+          </button>
+          <button type="button" class="sidebar-tab-btn" data-target="section6" title="6. Печать на А4">
+            <span class="tab-icon">🖨️</span>
+            <span class="tab-name">Печать</span>
+          </button>
+        </div>
+        <div class="sidebar-mode-actions">
+          <button type="button" id="sidebarViewModeBtn" class="sidebar-mode-pill" title="Переключить: Табы (по одному блоку) / Все блоки списком">
+            <span id="sidebarViewModeIcon">📑</span> <span id="sidebarViewModeText">Табы</span>
+          </button>
+        </div>
+      </div>
+
       <!-- Preset & Saved Templates Manager -->
-      <section class="control-card" id="section1">
+      <section class="control-card active-tab-section" id="section1">
         <h3 class="card-toggle" data-section="section1"><span class="card-num">1</span> Шаблоны <span class="toggle-arrow">▲</span></h3>
         <div class="card-body">
         <div class="template-tabs">
@@ -105,9 +140,9 @@
 
         <!-- Экспорт / Импорт шаблонов -->
         <div class="template-toolbar">
-          <button id="exportAllBtn" class="btn btn-secondary btn-sm">⬇️ Экспорт всех</button>
-          <button id="importBtn" class="btn btn-secondary btn-sm">⬆️ Импорт</button>
-          <button id="resetAllBtn" class="btn btn-secondary btn-sm" title="Очистить все данные и вернуть приложение к состоянию первого запуска">♻️ Полный сброс</button>
+          <button id="exportAllBtn" class="btn btn-secondary btn-sm" title="Экспорт всех шаблонов в JSON">⬇️ Экспорт</button>
+          <button id="importBtn" class="btn btn-secondary btn-sm" title="Импорт шаблонов из JSON">⬆️ Импорт</button>
+          <button id="resetAllBtn" class="btn btn-secondary btn-sm" title="Сбросить сессию и товары к исходному состоянию (Мои шаблоны сохраняются)">♻️ Сброс</button>
           <input type="file" id="importFileInput" accept="application/json,.json" hidden>
         </div>
 
@@ -119,7 +154,7 @@
               <span class="preset-sub-title">Ценники</span>
               <span class="preset-sub-arrow">▾</span>
             </button>
-            <div class="preset-sub-body">
+            <div class="preset-sub-body preset-grid-2col">
               <button class="preset-card active" data-preset="alaska_dots">
                 <div class="preset-color dots-black"></div>
                 <div class="preset-info">
@@ -141,10 +176,24 @@
                 </div>
               </button>
 
+              <button class="preset-card" data-preset="sneki_5">
+                <div class="preset-color sneki-5"></div>
+                <div class="preset-info">
+                  <span class="preset-title">Снеки 5</span>
+                </div>
+              </button>
+
+              <button class="preset-card" data-preset="sneki_digit">
+                <div class="preset-color sneki-digit"></div>
+                <div class="preset-info">
+                  <span class="preset-title">Снеки с цифрой</span>
+                </div>
+              </button>
+
               <button class="preset-card" data-preset="yellow_tag">
                 <div class="preset-color yellow-tag"></div>
                 <div class="preset-info">
-                  <span class="preset-title">Желтый ценник</span>
+                  <span class="preset-title">Желтый</span>
                 </div>
               </button>
             </div>
@@ -156,7 +205,7 @@
               <span class="preset-sub-title">Воблеры</span>
               <span class="preset-sub-arrow">▾</span>
             </button>
-            <div class="preset-sub-body">
+            <div class="preset-sub-body preset-grid-2col">
               <button class="preset-card" data-preset="novy_vkus">
                 <div class="preset-color red"></div>
                 <div class="preset-info">
@@ -198,7 +247,7 @@
         <!-- User saved templates -->
         <div id="userTemplates" class="presets-grid tab-content">
           <div class="empty-state" id="emptyUserTemplates">
-            У вас пока нет сохраненных шаблонов.<br>Настройте макет и нажмите «Сохранить как новый шаблон».
+            У вас пока нет сохраненных шаблонов.<br>Настройте макет и нажмите «Сохранить».
           </div>
         </div>
         </div><!-- /.card-body -->
@@ -208,50 +257,60 @@
       <section class="control-card" id="section2">
         <h3 class="card-toggle" data-section="section2"><span class="card-num">2</span> Режим заполнения листов <span class="toggle-arrow">▲</span></h3>
         <div class="card-body">
-          <div class="radio-group" style="margin-bottom: 12px;">
+          <div class="radio-group compact-radio-group" style="margin-bottom: 10px;">
           <label class="radio-option">
             <input type="radio" name="printMode" value="multi" checked>
             <span class="radio-custom"></span>
             <div class="radio-text">
-              <strong>📋 Разные товары (Таблица как в Excel)</strong>
-              <small>В каждом ценнике на листе свой товар и цена</small>
+              <strong>📋 Разные товары (Таблица)</strong>
+              <small>В каждом ценнике свой товар и цена</small>
             </div>
           </label>
           <label class="radio-option">
             <input type="radio" name="printMode" value="single">
             <span class="radio-custom"></span>
             <div class="radio-text">
-              <strong>🔘 Одинаковый текст на весь лист</strong>
-              <small>Один товар дублируется на все воблеры</small>
+              <strong>🔘 Одинаковый текст</strong>
+              <small>Один товар на весь лист</small>
             </div>
           </label>
         </div>
 
         <!-- Multi-Item Table Input Block -->
-        <div id="multiItemSection" class="field-settings-group">
-          <div class="group-header" style="margin-bottom: 8px;">
-            <h4>Список товаров (для каждого воблера)</h4>
-          </div>
-
-          <!-- Quick Paste Area toggle -->
-          <div class="form-group">
-            <label>Вставить списком из Excel (Наименование, Вес, Цена):</label>
-            <textarea id="pasteExcelArea" rows="3" placeholder="Вставьте строки из Excel, например:&#10;Alaska Фейхоа 0,45 ж/б&#9;100 гр&#9;350 ₽&#10;Лимонад ЛПЗ (0,5 ст)&#9;&#9;110 ₽"></textarea>
-            <div class="paste-actions" style="display:flex; gap:6px; flex-wrap:wrap; margin-top: 4px;">
-              <button type="button" id="applyPasteBtn" class="btn btn-secondary" style="font-size: 1.05rem; line-height: 1; justify-content: center; padding: 0.4rem 0.55rem;" title="Заполнить из вставленного текста">
-                📋
-              </button>
-              <button type="button" id="clearAllItemsBtn" class="btn btn-secondary" style="font-size: 1.05rem; line-height: 1; justify-content: center; padding: 0.4rem 0.55rem;" title="Очистить всё">
-                🗑
-              </button>
-              <button type="button" id="copyItemsBtn" class="btn btn-secondary" style="font-size: 1.05rem; line-height: 1; justify-content: center; padding: 0.4rem 0.55rem;" title="Перенести товары на другой шаблон">
-                ⧉
-              </button>
+        <div id="multiItemSection" class="field-settings-group compact-group">
+          <!-- Collapsible Excel Quick-Paste & Actions Bar -->
+          <div class="excel-quick-bar">
+            <button type="button" id="toggleExcelPasteBtn" class="btn btn-secondary btn-sm excel-toggle-btn" title="Развернуть/свернуть поле для вставки из Excel">
+              <span>📋 Вставка из Excel</span> <span class="excel-chevron" id="excelChevron">▾</span>
+            </button>
+            <div class="paste-actions">
+              <button type="button" id="clearAllItemsBtn" class="btn btn-secondary btn-icon" title="Очистить всё">🗑</button>
+              <button type="button" id="copyItemsBtn" class="btn btn-secondary btn-icon" title="Перенести товары на другой шаблон">⧉</button>
               <button type="button" class="autolink-toggle" title="Автоприменение оформления при выборе фона">🔗</button>
+              <button type="button" class="btn btn-secondary decor-pos-toggle btn-icon" title="Положение блока оформления (сверху/снизу) для двухблочных пресетов">⬆</button>
             </div>
           </div>
 
-          <!-- Interactive Items List -->
+          <!-- Collapsible Excel Drawer -->
+          <div id="excelPasteDrawer" class="excel-paste-drawer is-collapsed">
+            <textarea id="pasteExcelArea" rows="3" placeholder="Вставьте строки из Excel (Наименование, Вес, Цена)..."></textarea>
+            <div class="excel-drawer-footer">
+              <button type="button" id="applyPasteBtn" class="btn btn-primary btn-sm">
+                📋 Применить к таблице
+              </button>
+            </div>
+          </div>
+
+          <!-- Interactive Items List Header & Table -->
+          <div class="items-table-header">
+            <span class="col-hdr col-num">№</span>
+            <span class="col-hdr col-tools">Опции</span>
+            <span class="col-hdr col-title">Наименование</span>
+            <span class="col-hdr col-sub">Вес</span>
+            <span class="col-hdr col-price">Цена</span>
+            <span class="col-hdr col-digit">№</span>
+            <span class="col-hdr col-del">✕</span>
+          </div>
           <div class="items-table-wrapper">
             <div id="itemsListContainer" class="items-list">
               <!-- Progressive: 1 row + new empty row appears on input -->
@@ -260,7 +319,7 @@
         </div>
 
         <!-- Single Item Settings (shown when single mode is chosen) -->
-        <div id="singleItemSection" class="field-settings-group" style="display: none;">
+        <div id="singleItemSection" class="field-settings-group compact-group" style="display: none;">
           <div class="group-header">
             <h4>Текст одного воблера</h4>
           </div>
@@ -282,6 +341,10 @@
               <input type="text" id="inputCurrency" value="₽">
             </div>
           </div>
+          <div class="form-group" id="singleDigitWrap" style="margin-top: 8px;">
+            <label for="digitText">Большая цифра (слой «Цифра»):</label>
+            <input type="text" id="digitText" maxlength="3" placeholder="напр. 5" style="max-width: 120px;">
+          </div>
           <div class="form-group" id="singleRepeatWrap">
             <label for="singleRepeatCount">Количество одинаковых ценников на листе:</label>
             <select id="singleRepeatCount">
@@ -293,7 +356,7 @@
             </select>
           </div>
         </div>
-        </div><!-- /.card-body section3 -->
+        </div><!-- /.card-body section2 -->
       </section>
 
       <!-- Font Style & Appearance Customization -->
@@ -301,8 +364,7 @@
         <h3 class="card-toggle" data-section="section3"><span class="card-num">3</span> Настройки шрифтов и текста <span class="toggle-arrow">▲</span></h3>
         <div class="card-body">
 
-        <!-- Переключатель области применения: только для режима «Разные товары».
-             По умолчанию (single) скрыт; управляется из JS (syncFontControlsToContext). -->
+        <!-- Переключатель области применения: только для режима «Разные товары» -->
         <div class="font-apply-mode" id="fontApplyModeWrap" style="display:none;">
           <span class="fam-label">Применить к:</span>
           <div class="seg-control" role="group">
@@ -312,186 +374,260 @@
           <button type="button" id="resetItemFontsBtn" class="btn btn-secondary btn-sm" title="Сбросить шрифты выбранного ценника к настройкам шаблона">↺ К шаблону</button>
         </div>
 
-        <!-- Main Title Settings -->
-        <div class="field-settings-group sub-group">
-          <div class="group-header sub-toggle" data-subgroup="font-title" style="display: flex; justify-content: space-between; align-items: center;">
-            <h4>1. Шрифт наименования</h4>
-            <span style="display:flex; align-items:center; gap:8px;">
-              <button type="button" id="autoFitFontBtn" class="btn btn-secondary" style="padding: 3px 8px; font-size: 0.72rem;">✨ Подогнать</button>
-              <span class="sub-arrow">▼</span>
-            </span>
-          </div>
-          <div class="sub-body">
-          <div class="form-row">
-            <div class="form-group flex-2">
-              <select id="titleFont" class="font-dropdown">
-                <optgroup label="Обычные">
-                  <option value="Arial, sans-serif" selected>Arial (Стандартный)</option>
-                  <option value="'Montserrat', sans-serif">Montserrat (Современный)</option>
-                  <option value="'Russo One', sans-serif">Russo One (Мощный)</option>
-                  <option value="'Bebas Neue', cursive">Bebas Neue (Высокий)</option>
-                  <option value="'Rubik', sans-serif">Rubik (Плотный)</option>
-                  <option value="'Oswald', sans-serif">Oswald (Акцентный)</option>
-                  <option value="'Playfair Display', serif">Playfair Display</option>
-                </optgroup>
-                <optgroup label="Графические (объёмные)">
-                  <option value="'Duo Dunkel', sans-serif">Duo Dunkel (Тень)</option>
-                  <option value="'Duo Licht', sans-serif">Duo Licht (Контур)</option>
-                  <option value="'SortefaxNo2Turquoise', sans-serif">Sortefax (Декор)</option>
-                </optgroup>
-              </select>
-            </div>
-            <div class="form-group flex-1">
-              <input type="color" id="titleColor" value="#ffffff">
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group flex-1">
-              <label>Размер: <span id="titleSizeVal">13</span>pt</label>
-              <input type="range" id="titleSize" min="7" max="72" value="13">
-            </div>
-            <div class="form-group flex-1">
-              <label>Толщина / стиль</label>
-              <div style="display:flex; gap:8px; align-items:center;">
-                <select id="titleWeight">
-                  <option value="900">Extra Bold (900)</option>
-                  <option value="800" selected>Bold (800)</option>
-                  <option value="400">Regular (400)</option>
-                </select>
-                <label class="checkbox-label" style="white-space:nowrap;">
-                  <input type="checkbox" id="titleItalic"> Курсив
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <!-- Title Position & Alignment (выравнивание убрано из UI; осталось смещение) -->
-          <div class="form-group">
-            <label>Смещение по вертикали: <span id="titleOffsetYVal">0</span> мм</label>
-            <input type="range" id="titleOffsetY" min="-20" max="20" value="0">
-          </div>
-
-          <!-- Тень / объём заголовка -->
-          <div class="form-group">
-            <label>Тень / объём: <span id="titleShadowVal">0</span></label>
-            <div style="display:flex; gap:8px; align-items:center;">
-              <input type="range" id="titleShadow" min="0" max="10" value="0" step="1" style="flex:1;">
-              <input type="color" id="titleShadowColor" value="#000000" title="Цвет тени" style="width:38px; height:30px; padding:0; border:none; background:none; cursor:pointer;">
-            </div>
-          </div>
-          </div><!-- /.sub-body -->
+        <!-- Sub-Tabs Navigation for Font Properties -->
+        <div class="sub-tabs-nav" role="tablist" id="fontSubTabsNav">
+          <button type="button" class="sub-tab-btn active" data-font-tab="title">🏷️ Название</button>
+          <button type="button" class="sub-tab-btn" data-font-tab="subtitle">⚖️ Вес</button>
+          <button type="button" class="sub-tab-btn" data-font-tab="price">💰 Цена</button>
+          <button type="button" class="sub-tab-btn" data-font-tab="digit">🔢 Цифра</button>
         </div>
 
-        <!-- Subtitle (Вес / доп. текст) Settings -->
-        <div class="field-settings-group sub-group">
-          <div class="group-header sub-toggle" data-subgroup="font-subtitle" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <h4>Вес / доп. текст</h4>
-            <span class="sub-arrow">▼</span>
-          </div>
-          <div class="sub-body">
-          <div class="form-row">
-            <div class="form-group flex-1">
-              <label>Размер: <span id="subtitleSizeVal">11</span>pt</label>
-              <input type="range" id="subtitleSize" min="7" max="20" value="11">
+        <!-- Tab Pane 1: Main Title Settings -->
+        <div class="sub-tab-pane active" id="fontTabTitle">
+          <div class="field-settings-group compact-group sub-group is-collapsed-never">
+            <div class="group-header sub-toggle" data-subgroup="font-title" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <h4 style="margin:0;">Шрифт наименования</h4>
+              <button type="button" id="autoFitFontBtn" class="btn btn-secondary btn-sm" style="padding: 2px 8px; font-size: 0.72rem;">✨ Подогнать</button>
             </div>
-            <div class="form-group flex-1">
-              <label>Толщина</label>
-              <select id="subtitleWeight">
-                <option value="900">Extra Bold (900)</option>
-                <option value="800">Bold (800)</option>
-                <option value="700" selected>Semi Bold (700)</option>
-                <option value="400">Regular (400)</option>
-              </select>
-            </div>
-            <div class="form-group flex-1">
-              <label>Цвет</label>
-              <input type="color" id="subtitleColor" value="#ffffff">
-            </div>
-          </div>
-          </div><!-- /.sub-body -->
-        </div>
+            <div class="sub-body">
+              <div class="form-row compact-row">
+                <div class="form-group flex-2">
+                  <label for="titleFont">Семейство шрифта</label>
+                  <select id="titleFont" class="font-dropdown">
+                    <optgroup label="Обычные">
+                      <option value="Arial, sans-serif" selected>Arial (Стандартный)</option>
+                      <option value="'Montserrat', sans-serif">Montserrat (Современный)</option>
+                      <option value="'Russo One', sans-serif">Russo One (Мощный)</option>
+                      <option value="'Bebas Neue', cursive">Bebas Neue (Высокий)</option>
+                      <option value="'Rubik', sans-serif">Rubik (Плотный)</option>
+                      <option value="'Oswald', sans-serif">Oswald (Акцентный)</option>
+                      <option value="'Playfair Display', serif">Playfair Display</option>
+                    </optgroup>
+                    <optgroup label="Графические (объёмные)">
+                      <option value="'Duo Dunkel', sans-serif">Duo Dunkel (Тень)</option>
+                      <option value="'Duo Licht', sans-serif">Duo Licht (Контур)</option>
+                      <option value="'SortefaxNo2Turquoise', sans-serif">Sortefax (Декор)</option>
+                    </optgroup>
+                  </select>
+                </div>
+                <div class="form-group flex-1 compact-color-group">
+                  <label for="titleColor">Цвет</label>
+                  <input type="color" id="titleColor" value="#ffffff" class="color-picker-input">
+                </div>
+              </div>
 
-        <!-- Full Price Block Customization (Font, Size, Weight, Offset) -->
-        <div class="field-settings-group sub-group">
-          <div class="checkbox-option sub-toggle" data-subgroup="font-price" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <label>
-              <input type="checkbox" id="showPriceToggle" checked>
-              <strong>2. Настройки блока цены</strong>
-            </label>
-            <span class="sub-arrow">▼</span>
-          </div>
-          <div class="sub-body" id="priceFieldsBlock">
-            <div class="form-row">
-              <div class="form-group flex-2">
-                <label>Шрифт цены и значка ₽</label>
-                <select id="priceFont" class="font-dropdown">
-                  <optgroup label="Обычные">
-                    <option value="Arial, sans-serif" selected>Arial (Стандартный)</option>
-                    <option value="'Montserrat', sans-serif">Montserrat</option>
-                    <option value="'Russo One', sans-serif">Russo One</option>
-                    <option value="'Bebas Neue', cursive">Bebas Neue</option>
-                    <option value="'Rubik', sans-serif">Rubik</option>
-                    <option value="'Oswald', sans-serif">Oswald</option>
-                    <option value="'Playfair Display', serif">Playfair Display</option>
-                  </optgroup>
-                  <optgroup label="Графические (объёмные)">
-                    <option value="'Duo Dunkel', sans-serif">Duo Dunkel</option>
-                    <option value="'Duo Licht', sans-serif">Duo Licht</option>
-                    <option value="'SortefaxNo2Turquoise', sans-serif">Sortefax</option>
-                  </optgroup>
-                </select>
+              <div class="form-row compact-row">
+                <div class="form-group flex-1">
+                  <label>Размер: <span id="titleSizeVal" class="val-badge">13</span> pt</label>
+                  <input type="range" id="titleSize" min="7" max="72" value="13">
+                </div>
+                <div class="form-group flex-1">
+                  <label>Толщина и стиль</label>
+                  <div style="display:flex; gap:6px; align-items:center;">
+                    <select id="titleWeight" style="flex:1;">
+                      <option value="900">900 (Extra)</option>
+                      <option value="800" selected>800 (Bold)</option>
+                      <option value="400">400 (Reg)</option>
+                    </select>
+                    <label class="checkbox-label" style="white-space:nowrap;" title="Курсив">
+                      <input type="checkbox" id="titleItalic"> <i>К</i>
+                    </label>
+                  </div>
+                </div>
               </div>
-              <div class="form-group flex-1">
-                <label>Цвет цены</label>
-                <input type="color" id="priceColor" value="#ffffff">
-              </div>
-              <div class="form-group flex-1">
-                <label class="checkbox-label"><input type="checkbox" id="pricePlateToggle"> Светлая плашка под ценой</label>
-              </div>
-            </div>
 
-            <div class="form-row">
-              <div class="form-group flex-1">
-                <label>Размер цены: <span id="priceSizeVal">40</span>pt</label>
-                <input type="range" id="priceSize" min="14" max="72" value="40">
-              </div>
-              <div class="form-group flex-1">
-                <label>Толщина цены</label>
-                <select id="priceWeight">
-                  <option value="900">Extra Bold (900)</option>
-                  <option value="800">Bold (800)</option>
-                  <option value="700" selected>Semi Bold (700)</option>
-                  <option value="400">Regular (400)</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label>Смещение цены по вертикали: <span id="priceOffsetYVal">0</span> мм</label>
-              <input type="range" id="priceOffsetY" min="-20" max="20" value="0">
-            </div>
-
-            <!-- Тень / объём цены -->
-            <div class="form-group">
-              <label>Тень / объём цены: <span id="priceShadowVal">0</span></label>
-              <div style="display:flex; gap:8px; align-items:center;">
-                <input type="range" id="priceShadow" min="0" max="10" value="0" step="1" style="flex:1;">
-                <input type="color" id="priceShadowColor" value="#000000" title="Цвет тени" style="width:38px; height:30px; padding:0; border:none; background:none; cursor:pointer;">
+              <div class="form-row compact-row">
+                <div class="form-group flex-1">
+                  <label>Смещение Y: <span id="titleOffsetYVal" class="val-badge">0</span> мм</label>
+                  <input type="range" id="titleOffsetY" min="-20" max="20" value="0">
+                </div>
+                <div class="form-group flex-1">
+                  <label>Тень/объём: <span id="titleShadowVal" class="val-badge">0</span></label>
+                  <div style="display:flex; gap:6px; align-items:center;">
+                    <input type="range" id="titleShadow" min="0" max="10" value="0" step="1" style="flex:1;">
+                    <input type="color" id="titleShadowColor" value="#000000" title="Цвет тени" class="color-picker-mini">
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
-        </div><!-- /.card-body section4 -->
+
+        <!-- Tab Pane 2: Subtitle (Вес / доп. текст) Settings -->
+        <div class="sub-tab-pane" id="fontTabSubtitle">
+          <div class="field-settings-group compact-group sub-group is-collapsed-never">
+            <div class="group-header sub-toggle" data-subgroup="font-subtitle" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <h4 style="margin:0;">Вес / доп. текст</h4>
+            </div>
+            <div class="sub-body">
+              <div class="form-row compact-row">
+                <div class="form-group flex-1">
+                  <label>Размер: <span id="subtitleSizeVal" class="val-badge">11</span> pt</label>
+                  <input type="range" id="subtitleSize" min="1" max="20" value="11">
+                </div>
+                <div class="form-group flex-1">
+                  <label>Толщина</label>
+                  <select id="subtitleWeight">
+                    <option value="900">900 (Extra Bold)</option>
+                    <option value="800">800 (Bold)</option>
+                    <option value="700" selected>700 (Semi Bold)</option>
+                    <option value="400">400 (Regular)</option>
+                  </select>
+                </div>
+                <div class="form-group flex-1 compact-color-group">
+                  <label for="subtitleColor">Цвет</label>
+                  <input type="color" id="subtitleColor" value="#ffffff" class="color-picker-input">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab Pane 3: Full Price Block Customization -->
+        <div class="sub-tab-pane" id="fontTabPrice">
+          <div class="field-settings-group compact-group sub-group is-collapsed-never">
+            <div class="form-row compact-row" style="align-items:center; margin-bottom:8px; gap:8px; flex-wrap:wrap;">
+              <label class="checkbox-label" style="font-weight:700; font-size:0.85rem;">
+                <input type="checkbox" id="showPriceToggle" checked> Показать блок цены
+              </label>
+              <label class="checkbox-label" style="font-size:0.8rem;">
+                <input type="checkbox" id="pricePlateToggle"> Светлая плашка
+              </label>
+              <label class="checkbox-label" style="font-size:0.8rem; margin-left:auto; color:#f87171; font-weight:600;">
+                <input type="checkbox" id="priceCrossToggle"> ❌ Перечеркнуть
+              </label>
+            </div>
+            <div class="form-row compact-row" id="priceCrossSettingsRow" style="align-items:center; margin-bottom:8px; background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.2); border-radius:6px; padding:4px 8px; gap:10px;">
+              <div class="form-group compact-color-group" style="display:flex; align-items:center; gap:6px; margin:0;">
+                <label for="priceCrossColor" style="font-size:0.78rem; color:#fca5a5; margin:0;">Цвет креста:</label>
+                <input type="color" id="priceCrossColor" value="#e63946" class="color-picker-mini" title="Цвет перечёркивания">
+              </div>
+              <div class="form-group flex-1" style="display:flex; align-items:center; gap:8px; margin:0;">
+                <label style="font-size:0.78rem; color:#fca5a5; margin:0; white-space:nowrap;">Толщина: <span id="priceCrossWidthVal" class="val-badge">7</span></label>
+                <input type="range" id="priceCrossWidth" min="2" max="20" value="7" style="flex:1;">
+              </div>
+            </div>
+            <div class="sub-body" id="priceFieldsBlock">
+              <div class="form-row compact-row">
+                <div class="form-group flex-2">
+                  <label for="priceFont">Шрифт цены и ₽</label>
+                  <select id="priceFont" class="font-dropdown">
+                    <optgroup label="Обычные">
+                      <option value="Arial, sans-serif" selected>Arial (Стандартный)</option>
+                      <option value="'Montserrat', sans-serif">Montserrat</option>
+                      <option value="'Russo One', sans-serif">Russo One</option>
+                      <option value="'Bebas Neue', cursive">Bebas Neue</option>
+                      <option value="'Rubik', sans-serif">Rubik</option>
+                      <option value="'Oswald', sans-serif">Oswald</option>
+                      <option value="'Playfair Display', serif">Playfair Display</option>
+                    </optgroup>
+                    <optgroup label="Графические (объёмные)">
+                      <option value="'Duo Dunkel', sans-serif">Duo Dunkel</option>
+                      <option value="'Duo Licht', sans-serif">Duo Licht</option>
+                      <option value="'SortefaxNo2Turquoise', sans-serif">Sortefax</option>
+                    </optgroup>
+                  </select>
+                </div>
+                <div class="form-group flex-1 compact-color-group">
+                  <label for="priceColor">Цвет цены</label>
+                  <input type="color" id="priceColor" value="#ffffff" class="color-picker-input">
+                </div>
+              </div>
+
+              <div class="form-row compact-row">
+                <div class="form-group flex-1">
+                  <label>Размер: <span id="priceSizeVal" class="val-badge">40</span> pt</label>
+                  <input type="range" id="priceSize" min="14" max="72" value="40">
+                </div>
+                <div class="form-group flex-1">
+                  <label for="priceWeight">Толщина цены</label>
+                  <select id="priceWeight">
+                    <option value="900">900 (Extra Bold)</option>
+                    <option value="800">800 (Bold)</option>
+                    <option value="700" selected>700 (Semi Bold)</option>
+                    <option value="400">400 (Regular)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row compact-row">
+                <div class="form-group flex-1">
+                  <label>Смещение Y: <span id="priceOffsetYVal" class="val-badge">0</span> мм</label>
+                  <input type="range" id="priceOffsetY" min="-20" max="20" value="0">
+                </div>
+                <div class="form-group flex-1">
+                  <label>Тень/объём: <span id="priceShadowVal" class="val-badge">0</span></label>
+                  <div style="display:flex; gap:6px; align-items:center;">
+                    <input type="range" id="priceShadow" min="0" max="10" value="0" step="1" style="flex:1;">
+                    <input type="color" id="priceShadowColor" value="#000000" title="Цвет тени" class="color-picker-mini">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab Pane 4: Digit (Большая цифра) Settings -->
+        <div class="sub-tab-pane" id="fontTabDigit">
+          <div class="field-settings-group compact-group sub-group is-collapsed-never">
+            <div class="group-header sub-toggle" data-subgroup="font-digit" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <h4 style="margin:0;">Слой «Цифра»</h4>
+            </div>
+            <div class="sub-body">
+              <div class="form-row compact-row">
+                <div class="form-group flex-2">
+                  <label for="digitFont">Шрифт цифры</label>
+                  <select id="digitFont" class="font-dropdown">
+                    <optgroup label="Обычные">
+                      <option value="Arial, sans-serif" selected>Arial (Стандартный)</option>
+                      <option value="'Montserrat', sans-serif">Montserrat</option>
+                      <option value="'Russo One', sans-serif">Russo One</option>
+                      <option value="'Bebas Neue', cursive">Bebas Neue</option>
+                      <option value="'Rubik', sans-serif">Rubik</option>
+                      <option value="'Oswald', sans-serif">Oswald</option>
+                      <option value="'Playfair Display', serif">Playfair Display</option>
+                    </optgroup>
+                    <optgroup label="Графические (объёмные)">
+                      <option value="'Duo Dunkel', sans-serif">Duo Dunkel</option>
+                      <option value="'Duo Licht', sans-serif">Duo Licht</option>
+                      <option value="'SortefaxNo2Turquoise', sans-serif">Sortefax</option>
+                    </optgroup>
+                  </select>
+                </div>
+                <div class="form-group flex-1 compact-color-group">
+                  <label for="digitColor">Цвет</label>
+                  <input type="color" id="digitColor" value="#ffff00" class="color-picker-input">
+                </div>
+              </div>
+
+              <div class="form-row compact-row">
+                <div class="form-group flex-1">
+                  <label>Размер: <span id="digitSizeVal" class="val-badge">48</span> pt</label>
+                  <input type="range" id="digitSize" min="14" max="100" value="48">
+                </div>
+                <div class="form-group flex-1">
+                  <label for="digitWeight">Толщина</label>
+                  <select id="digitWeight">
+                    <option value="900">900 (Extra Bold)</option>
+                    <option value="800" selected>800 (Bold)</option>
+                    <option value="700">700 (Semi Bold)</option>
+                    <option value="400">400 (Regular)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        </div><!-- /.card-body section3 -->
       </section>
 
       <!-- Design Customization & Custom Image Upload -->
       <section class="control-card" id="section4">
-        <h3 class="card-toggle collapsed" data-section="section4"><span class="card-num">4</span> Фоны и заливка <span class="toggle-arrow">▼</span></h3>
-        <div class="card-body" style="display:none;">
+        <h3 class="card-toggle" data-section="section4"><span class="card-num">4</span> Фоны и заливка <span class="toggle-arrow">▲</span></h3>
+        <div class="card-body">
 
-        <!-- Переключатель области применения фона (только для «Разные товары»).
-             Независим от переключателя Оформления (#5). -->
+        <!-- Переключатель области применения фона -->
         <div class="font-apply-mode" id="bgApplyModeWrap" style="display:none;">
           <span class="fam-label">Применить к:</span>
           <div class="seg-control" role="group">
@@ -501,65 +637,63 @@
           <button type="button" id="resetItemBgBtn" class="btn btn-secondary btn-sm" title="Сбросить фон ценника к настройкам шаблона">↺ К шаблону</button>
         </div>
 
-        <div class="form-group">
-          <label for="headerBgColor">Цвет заливки воблера</label>
-          <input type="color" id="headerBgColor" value="#18181b">
-        </div>
-
-        <div class="form-group">
-          <label for="bgImageSelect">Выбрать фоновую картинку:</label>
-          <select id="bgImageSelect">
-            <optgroup label="Встроенные">
-              <option value="dots_bg.jpg" selected>📷 Оригинальный точечный фон (Alaska)</option>
-              <option value="yellow_bg.jpg">🟡 Желтый ценник (точечный фон)</option>
-              <option value="ryba_bg.jpg">🐟 Рыба (чёрный фон с белой рамкой)</option>
-              <option value="sneki_bg.jpg">🥨 Снеки (собственный фон)</option>
-              <option value="sort_nedeli_bg.jpg">🏷️ Сорт недели (красный воблер)</option>
-              <option value="ryba_scales">🐟 Рыбья чешуя (синий узор)</option>
-            </optgroup>
-            <optgroup id="extraBgGroup" label="Дополнительно (из «bg other»)"></optgroup>
-            <option value="none">Без картинки (Однотонная заливка цветом)</option>
-            <option value="custom" id="customBgOption" style="display:none;">Загруженное фото пользователем</option>
-          </select>
-        </div>
-
-        <!-- Custom Image Upload Input -->
-        <div class="form-group">
-          <label>Или загрузить свою картинку:</label>
-          <div class="upload-btn-wrapper">
-            <label for="customBgUpload" class="btn btn-secondary upload-btn">
-              📁 Выбрать файл картинки...
-            </label>
-            <input type="file" id="customBgUpload" accept="image/*">
+        <div class="form-row compact-row">
+          <div class="form-group flex-2">
+            <label for="bgImageSelect">Фоновая картинка</label>
+            <select id="bgImageSelect">
+              <optgroup label="Встроенные">
+                <option value="dots_bg.jpg" selected>📷 Точечный фон (Alaska)</option>
+                <option value="yellow_bg.jpg">🟡 Желтый ценник</option>
+                <option value="ryba_bg.jpg">🐟 Рыба (рамка)</option>
+                <option value="sneki_bg.jpg">🥨 Снеки</option>
+                <option value="sneki_5_bg.jpg">🥨 Снеки 5</option>
+                <option value="sneki_digit_bg.jpg">🥨 Снеки с цифрой</option>
+                <option value="sort_nedeli_bg.jpg">🏷️ Сорт недели</option>
+                <option value="ryba_scales">🐟 Чешуя</option>
+              </optgroup>
+              <optgroup id="extraBgGroup" label="Дополнительно (из «bg other»)"></optgroup>
+              <option value="none">Без картинки (Заливка цветом)</option>
+              <option value="custom" id="customBgOption" style="display:none;">Загруженное фото</option>
+            </select>
           </div>
-          <div id="uploadStatus" class="upload-status"></div>
-        </div>
-
-        <div class="form-group">
-          <label>Папка доп. фонов (например, «bg other»):</label>
-          <div class="upload-btn-wrapper">
-            <label for="extraBgDirInput" class="btn btn-secondary upload-btn">
-              📂 Выбрать папку с фонами...
-            </label>
-            <input type="file" id="extraBgDirInput" webkitdirectory multiple style="display:none;">
+          <div class="form-group flex-1 compact-color-group">
+            <label for="headerBgColor">Цвет фона</label>
+            <input type="color" id="headerBgColor" value="#18181b" class="color-picker-input">
           </div>
-          <div id="extraBgStatus" class="upload-status" style="font-size:0.8em;opacity:0.8;"></div>
         </div>
 
-        <div class="form-group">
-          <label for="headerHeightRange">Высота цветного блока (% для раздельного): <span id="headerHeightVal">50</span>%</label>
+        <div class="form-row compact-row">
+          <div class="form-group flex-1">
+            <label>Своя картинка</label>
+            <div class="upload-btn-wrapper">
+              <label for="customBgUpload" class="btn btn-secondary btn-sm upload-btn">📁 Выбрать файл...</label>
+              <input type="file" id="customBgUpload" accept="image/*">
+            </div>
+            <div id="uploadStatus" class="upload-status"></div>
+          </div>
+          <div class="form-group flex-1">
+            <label>Папка с фонами</label>
+            <div class="upload-btn-wrapper">
+              <label for="extraBgDirInput" class="btn btn-secondary btn-sm upload-btn">📂 Выбрать папку...</label>
+              <input type="file" id="extraBgDirInput" webkitdirectory multiple style="display:none;">
+            </div>
+            <div id="extraBgStatus" class="upload-status"></div>
+          </div>
+        </div>
+
+        <div class="form-group compact-form-group">
+          <label for="headerHeightRange">Высота цветного блока (раздельный вид): <span id="headerHeightVal" class="val-badge">50</span>%</label>
           <input type="range" id="headerHeightRange" min="20" max="90" value="50">
         </div>
-        </div><!-- /.card-body section5 -->
+        </div><!-- /.card-body section4 -->
       </section>
 
       <!-- Decoration: decorative blocks -->
       <section class="control-card" id="section5">
-        <h3 class="card-toggle collapsed" data-section="section5"><span class="card-num">5</span> Оформление <span class="toggle-arrow">▼</span></h3>
-        <div class="card-body" style="display:none;">
+        <h3 class="card-toggle" data-section="section5"><span class="card-num">5</span> Оформление <span class="toggle-arrow">▲</span></h3>
+        <div class="card-body">
 
-        <!-- Переключатель области применения оформления (фон #4 + блоки #5).
-             Только для режима «Разные товары»; управляется из JS. -->
+        <!-- Переключатель области применения оформления -->
         <div class="font-apply-mode" id="decorApplyModeWrap" style="display:none;">
           <span class="fam-label">Применить к:</span>
           <div class="seg-control" role="group">
@@ -569,173 +703,294 @@
           <button type="button" id="resetItemDecorBtn" class="btn btn-secondary btn-sm" title="Сбросить фон и оформление ценника к настройкам шаблона">↺ К шаблону</button>
         </div>
 
-          <div class="sub-group">
-          <div class="form-group sub-toggle" data-subgroup="decor-outside" style="display: flex; justify-content: space-between; align-items: center;">
-            <label class="checkbox-label">
-              <input type="checkbox" id="decorOutsideShow"> Блок СВЕРХУ над ценником (не входит в размер)
-            </label>
-            <span class="sub-arrow">▼</span>
-          </div>
-          <div class="sub-body" id="decorOutsideGroup">
-            <div class="form-group">
-              <label for="decorOutsideText">Текст блока:</label>
-              <textarea id="decorOutsideText" rows="1" placeholder="Например: НОВИНКА, АКЦИЯ, -20%">НОВИНКА</textarea>
+        <!-- Sub-Tabs Navigation for Decor Blocks -->
+        <div class="sub-tabs-nav decor-tabs-nav" role="tablist" id="decorSubTabsNav">
+          <button type="button" class="sub-tab-btn active" data-decor-tab="outside">
+            <span class="tab-badge-dot" id="decorOutsideDot"></span> ⬆️ Сверху
+          </button>
+          <button type="button" class="sub-tab-btn" data-decor-tab="inside">
+            <span class="tab-badge-dot" id="decorInsideDot"></span> 🔲 Внутри
+          </button>
+          <button type="button" class="sub-tab-btn" data-decor-tab="bottom">
+            <span class="tab-badge-dot" id="decorBottomDot"></span> ⬇️ Снизу
+          </button>
+        </div>
+
+        <!-- Tab Pane 1: Блок СВЕРХУ -->
+        <div class="sub-tab-pane active" id="decorTabOutside">
+          <div class="field-settings-group compact-group sub-group is-collapsed-never">
+            <div class="form-group sub-toggle" data-subgroup="decor-outside" style="margin-bottom:6px;">
+              <label class="checkbox-label" style="font-weight:700; font-size:0.85rem;">
+                <input type="checkbox" id="decorOutsideShow"> Блок СВЕРХУ (над ценником)
+              </label>
             </div>
-            <div class="form-group">
-              <label for="decorOutsideBg">Цвет заливки блока:</label>
-              <input type="color" id="decorOutsideBg" value="#e63946">
-            </div>
-            <div class="form-group">
-              <label for="decorOutsideBgImg">Фоновая картинка блока:</label>
-              <select id="decorOutsideBgImg">
-                <option value="none" selected>Без картинки (заливка цветом)</option>
-                <option value="dots_bg.jpg">📷 Точечный фон</option>
-                <option value="ryba_bg.jpg">🐟 Чёрный фон с рамкой</option>
-                <option value="ryba_scales">🐟 Рыбья чешуя</option>
-                <option value="custom" id="decorOutsideCustomOption" style="display:none;">Загруженное фото</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Или загрузить свою картинку:</label>
-              <div class="upload-btn-wrapper">
-                <label for="decorOutsideCustomUpload" class="btn btn-secondary upload-btn">📁 Выбрать файл…</label>
-                <input type="file" id="decorOutsideCustomUpload" accept="image/*">
+            <div class="sub-body" id="decorOutsideGroup">
+              <div class="form-group">
+                <label for="decorOutsideText">Текст блока:</label>
+                <textarea id="decorOutsideText" rows="1" placeholder="НОВИНКА, АКЦИЯ, -20%">НОВИНКА</textarea>
               </div>
-              <div id="decorOutsideUploadStatus" class="upload-status"></div>
-            </div>
-            <div class="form-group">
-              <label for="decorOutsideColor">Цвет текста:</label>
-              <input type="color" id="decorOutsideColor" value="#ffffff">
-            </div>
-            <div class="form-group">
-              <label for="decorOutsideFontSize">Размер шрифта (pt): <span id="decorOutsideFontSizeVal">14</span></label>
-              <input type="range" id="decorOutsideFontSize" min="6" max="30" value="14">
-            </div>
-            <div class="form-group">
-              <label for="decorOutsideHeight">Высота блока (мм): <span id="decorOutsideHeightVal">12</span></label>
-              <input type="range" id="decorOutsideHeight" min="5" max="30" value="12">
-            </div>
-          </div><!-- /.sub-body -->
-          </div><!-- /.sub-group -->
-
-          <hr style="border:none;border-top:1px solid var(--border-color);margin:12px 0;">
-
-          <div class="sub-group">
-          <div class="form-group sub-toggle" data-subgroup="decor-inside" style="display: flex; justify-content: space-between; align-items: center;">
-            <label class="checkbox-label">
-              <input type="checkbox" id="decorInsideShow"> Блок ВНУТРИ ценника (сверху, входит в размер)
-            </label>
-            <span class="sub-arrow">▼</span>
-          </div>
-          <div class="sub-body" id="decorInsideGroup">
-            <div class="form-group">
-              <label for="decorInsideText">Текст блока:</label>
-              <textarea id="decorInsideText" rows="1" placeholder="Например: НОВИНКА, АКЦИЯ, -20%">НОВИНКА</textarea>
-            </div>
-            <div class="form-group">
-              <label for="decorInsideBg">Цвет заливки блока:</label>
-              <input type="color" id="decorInsideBg" value="#e63946">
-            </div>
-            <div class="form-group">
-              <label for="decorInsideBgImg">Фоновая картинка блока:</label>
-              <select id="decorInsideBgImg">
-                <option value="none" selected>Без картинки (заливка цветом)</option>
-                <option value="dots_bg.jpg">📷 Точечный фон</option>
-                <option value="ryba_bg.jpg">🐟 Чёрный фон с рамкой</option>
-                <option value="ryba_scales">🐟 Рыбья чешуя</option>
-                <option value="custom" id="decorInsideCustomOption" style="display:none;">Загруженное фото</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Или загрузить свою картинку:</label>
-              <div class="upload-btn-wrapper">
-                <label for="decorInsideCustomUpload" class="btn btn-secondary upload-btn">📁 Выбрать файл…</label>
-                <input type="file" id="decorInsideCustomUpload" accept="image/*">
+              <div class="form-row compact-row">
+                <div class="form-group flex-1 compact-color-group">
+                  <label for="decorOutsideBg">Заливка блока</label>
+                  <input type="color" id="decorOutsideBg" value="#e63946" class="color-picker-input">
+                </div>
+                <div class="form-group flex-1 compact-color-group">
+                  <label for="decorOutsideColor">Цвет текста</label>
+                  <input type="color" id="decorOutsideColor" value="#ffffff" class="color-picker-input">
+                </div>
               </div>
-              <div id="decorInsideUploadStatus" class="upload-status"></div>
-            </div>
-            <div class="form-group">
-              <label for="decorInsideColor">Цвет текста:</label>
-              <input type="color" id="decorInsideColor" value="#ffffff">
-            </div>
-            <div class="form-group">
-              <label for="decorInsideFontSize">Размер шрифта (pt): <span id="decorInsideFontSizeVal">11</span></label>
-              <input type="range" id="decorInsideFontSize" min="6" max="22" value="11">
-            </div>
-            <div class="form-group">
-              <label for="decorInsideHeight">Высота блока (мм): <span id="decorInsideHeightVal">8</span></label>
-              <input type="range" id="decorInsideHeight" min="3" max="15" value="8">
-            </div>
-            <div class="form-group">
-              <label for="decorInsideWidth">Ширина блока: <span id="decorInsideWidthVal">50</span>%</label>
-              <input type="range" id="decorInsideWidth" min="20" max="100" value="50">
-            </div>
-          </div><!-- /.sub-body -->
-          </div><!-- /.sub-group -->
-
-          <hr style="border:none;border-top:1px solid var(--border-color);margin:12px 0;">
-
-          <div class="sub-group">
-          <div class="form-group sub-toggle" data-subgroup="decor-bottom" style="display: flex; justify-content: space-between; align-items: center;">
-            <label class="checkbox-label">
-              <input type="checkbox" id="decorBottomShow"> Блок СНИЗУ под ценником (не входит в размер)
-            </label>
-            <span class="sub-arrow">▼</span>
-          </div>
-          <div class="sub-body" id="decorBottomGroup">
-            <div class="form-group">
-              <label for="decorBottomText">Текст блока:</label>
-              <textarea id="decorBottomText" rows="1" placeholder="Например: НОВИНКА, АКЦИЯ, -20%">НОВИНКА</textarea>
-            </div>
-            <div class="form-group">
-              <label for="decorBottomBg">Цвет заливки блока:</label>
-              <input type="color" id="decorBottomBg" value="#e63946">
-            </div>
-            <div class="form-group">
-              <label for="decorBottomBgImg">Фоновая картинка блока:</label>
-              <select id="decorBottomBgImg">
-                <option value="none" selected>Без картинки (заливка цветом)</option>
-                <option value="dots_bg.jpg">📷 Точечный фон</option>
-                <option value="ryba_bg.jpg">🐟 Чёрный фон с рамкой</option>
-                <option value="ryba_scales">🐟 Рыбья чешуя</option>
-                <option value="custom" id="decorBottomCustomOption" style="display:none;">Загруженное фото</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Или загрузить свою картинку:</label>
-              <div class="upload-btn-wrapper">
-                <label for="decorBottomCustomUpload" class="btn btn-secondary upload-btn">📁 Выбрать файл…</label>
-                <input type="file" id="decorBottomCustomUpload" accept="image/*">
+              <div class="form-row compact-row">
+                <div class="form-group flex-2">
+                  <label for="decorOutsideBgImg">Фон блока</label>
+                  <select id="decorOutsideBgImg">
+                    <option value="none" selected>Без картинки (цвет)</option>
+                    <option value="dots_bg.jpg">📷 Точечный фон</option>
+                    <option value="ryba_bg.jpg">🐟 Чёрный с рамкой</option>
+                    <option value="ryba_scales">🐟 Рыбья чешуя</option>
+                    <option value="custom" id="decorOutsideCustomOption" style="display:none;">Загруженное фото</option>
+                  </select>
+                </div>
+                <div class="form-group flex-1">
+                  <label>Свой файл</label>
+                  <div class="upload-btn-wrapper">
+                    <label for="decorOutsideCustomUpload" class="btn btn-secondary btn-sm upload-btn">📁 Файл…</label>
+                    <input type="file" id="decorOutsideCustomUpload" accept="image/*">
+                  </div>
+                  <div id="decorOutsideUploadStatus" class="upload-status"></div>
+                </div>
               </div>
-              <div id="decorBottomUploadStatus" class="upload-status"></div>
+              <div class="form-row compact-row">
+                <div class="form-group flex-2">
+                  <label for="decorOutsideFont">Шрифт / стиль</label>
+                  <select id="decorOutsideFont" class="font-dropdown">
+                    <option value="">По умолчанию</option>
+                    <optgroup label="Обычные">
+                      <option value="Arial, sans-serif">Arial</option>
+                      <option value="'Montserrat', sans-serif">Montserrat</option>
+                      <option value="'Russo One', sans-serif">Russo One</option>
+                      <option value="'Bebas Neue', cursive">Bebas Neue</option>
+                      <option value="'Rubik', sans-serif">Rubik</option>
+                      <option value="'Oswald', sans-serif">Oswald</option>
+                      <option value="'Playfair Display', serif">Playfair Display</option>
+                    </optgroup>
+                    <optgroup label="Графические (объёмные)">
+                      <option value="'Duo Dunkel', sans-serif">Duo Dunkel</option>
+                      <option value="'Duo Licht', sans-serif">Duo Licht</option>
+                      <option value="'SortefaxNo2Turquoise', sans-serif">Sortefax</option>
+                    </optgroup>
+                  </select>
+                </div>
+                <div class="form-group flex-1">
+                  <label>Курсив / Тень</label>
+                  <div style="display:flex; gap:4px; align-items:center;">
+                    <label class="checkbox-label" title="Курсив"><input type="checkbox" id="decorOutsideItalic"> <i>К</i></label>
+                    <input type="range" id="decorOutsideShadow" min="0" max="10" step="1" value="0" title="Тень" style="flex:1;">
+                    <input type="color" id="decorOutsideShadowColor" value="#000000" title="Цвет тени" class="color-picker-mini">
+                  </div>
+                </div>
+              </div>
+              <div class="form-row compact-row">
+                <div class="form-group flex-1">
+                  <label for="decorOutsideFontSize">Размер: <span id="decorOutsideFontSizeVal" class="val-badge">14</span> pt</label>
+                  <input type="range" id="decorOutsideFontSize" min="6" max="60" value="14">
+                </div>
+                <div class="form-group flex-1">
+                  <label for="decorOutsideHeight">Высота: <span id="decorOutsideHeightVal" class="val-badge">12</span> мм</label>
+                  <input type="range" id="decorOutsideHeight" min="5" max="30" value="12">
+                </div>
+              </div>
             </div>
-            <div class="form-group">
-              <label for="decorBottomColor">Цвет текста:</label>
-              <input type="color" id="decorBottomColor" value="#ffffff">
+          </div>
+        </div>
+
+        <!-- Tab Pane 2: Блок ВНУТРИ -->
+        <div class="sub-tab-pane" id="decorTabInside">
+          <div class="field-settings-group compact-group sub-group is-collapsed-never">
+            <div class="form-group sub-toggle" data-subgroup="decor-inside" style="margin-bottom:6px;">
+              <label class="checkbox-label" style="font-weight:700; font-size:0.85rem;">
+                <input type="checkbox" id="decorInsideShow"> Блок ВНУТРИ ценника (сверху)
+              </label>
             </div>
-            <div class="form-group">
-              <label for="decorBottomFontSize">Размер шрифта (pt): <span id="decorBottomFontSizeVal">14</span></label>
-              <input type="range" id="decorBottomFontSize" min="6" max="30" value="14">
+            <div class="sub-body" id="decorInsideGroup">
+              <div class="form-group">
+                <label for="decorInsideText">Текст блока:</label>
+                <textarea id="decorInsideText" rows="1" placeholder="НОВИНКА, АКЦИЯ, -20%">НОВИНКА</textarea>
+              </div>
+              <div class="form-row compact-row">
+                <div class="form-group flex-1 compact-color-group">
+                  <label for="decorInsideBg">Заливка блока</label>
+                  <input type="color" id="decorInsideBg" value="#e63946" class="color-picker-input">
+                </div>
+                <div class="form-group flex-1 compact-color-group">
+                  <label for="decorInsideColor">Цвет текста</label>
+                  <input type="color" id="decorInsideColor" value="#ffffff" class="color-picker-input">
+                </div>
+              </div>
+              <div class="form-row compact-row">
+                <div class="form-group flex-2">
+                  <label for="decorInsideBgImg">Фон блока</label>
+                  <select id="decorInsideBgImg">
+                    <option value="none" selected>Без картинки (цвет)</option>
+                    <option value="dots_bg.jpg">📷 Точечный фон</option>
+                    <option value="ryba_bg.jpg">🐟 Чёрный с рамкой</option>
+                    <option value="ryba_scales">🐟 Рыбья чешуя</option>
+                    <option value="custom" id="decorInsideCustomOption" style="display:none;">Загруженное фото</option>
+                  </select>
+                </div>
+                <div class="form-group flex-1">
+                  <label>Свой файл</label>
+                  <div class="upload-btn-wrapper">
+                    <label for="decorInsideCustomUpload" class="btn btn-secondary btn-sm upload-btn">📁 Файл…</label>
+                    <input type="file" id="decorInsideCustomUpload" accept="image/*">
+                  </div>
+                  <div id="decorInsideUploadStatus" class="upload-status"></div>
+                </div>
+              </div>
+              <div class="form-row compact-row">
+                <div class="form-group flex-2">
+                  <label for="decorInsideFont">Шрифт / стиль</label>
+                  <select id="decorInsideFont" class="font-dropdown">
+                    <option value="">По умолчанию</option>
+                    <optgroup label="Обычные">
+                      <option value="Arial, sans-serif">Arial</option>
+                      <option value="'Montserrat', sans-serif">Montserrat</option>
+                      <option value="'Russo One', sans-serif">Russo One</option>
+                      <option value="'Bebas Neue', cursive">Bebas Neue</option>
+                      <option value="'Rubik', sans-serif">Rubik</option>
+                      <option value="'Oswald', sans-serif">Oswald</option>
+                      <option value="'Playfair Display', serif">Playfair Display</option>
+                    </optgroup>
+                    <optgroup label="Графические (объёмные)">
+                      <option value="'Duo Dunkel', sans-serif">Duo Dunkel</option>
+                      <option value="'Duo Licht', sans-serif">Duo Licht</option>
+                      <option value="'SortefaxNo2Turquoise', sans-serif">Sortefax</option>
+                    </optgroup>
+                  </select>
+                </div>
+                <div class="form-group flex-1">
+                  <label>Курсив / Тень</label>
+                  <div style="display:flex; gap:4px; align-items:center;">
+                    <label class="checkbox-label" title="Курсив"><input type="checkbox" id="decorInsideItalic"> <i>К</i></label>
+                    <input type="range" id="decorInsideShadow" min="0" max="10" step="1" value="0" title="Тень" style="flex:1;">
+                    <input type="color" id="decorInsideShadowColor" value="#000000" title="Цвет тени" class="color-picker-mini">
+                  </div>
+                </div>
+              </div>
+              <div class="form-row compact-row">
+                <div class="form-group flex-1">
+                  <label for="decorInsideFontSize">Размер: <span id="decorInsideFontSizeVal" class="val-badge">11</span> pt</label>
+                  <input type="range" id="decorInsideFontSize" min="6" max="60" value="11">
+                </div>
+                <div class="form-group flex-1">
+                  <label for="decorInsideHeight">Высота: <span id="decorInsideHeightVal" class="val-badge">8</span> мм</label>
+                  <input type="range" id="decorInsideHeight" min="3" max="15" value="8">
+                </div>
+                <div class="form-group flex-1">
+                  <label for="decorInsideWidth">Ширина: <span id="decorInsideWidthVal" class="val-badge">50</span>%</label>
+                  <input type="range" id="decorInsideWidth" min="20" max="100" value="50">
+                </div>
+              </div>
             </div>
-            <div class="form-group">
-              <label for="decorBottomHeight">Высота блока (мм): <span id="decorBottomHeightVal">12</span></label>
-              <input type="range" id="decorBottomHeight" min="5" max="30" value="12">
+          </div>
+        </div>
+
+        <!-- Tab Pane 3: Блок СНИЗУ -->
+        <div class="sub-tab-pane" id="decorTabBottom">
+          <div class="field-settings-group compact-group sub-group is-collapsed-never">
+            <div class="form-group sub-toggle" data-subgroup="decor-bottom" style="margin-bottom:6px;">
+              <label class="checkbox-label" style="font-weight:700; font-size:0.85rem;">
+                <input type="checkbox" id="decorBottomShow"> Блок СНИЗУ (под ценником)
+              </label>
             </div>
-          </div><!-- /.sub-body -->
-          </div><!-- /.sub-group -->
+            <div class="sub-body" id="decorBottomGroup">
+              <div class="form-group">
+                <label for="decorBottomText">Текст блока:</label>
+                <textarea id="decorBottomText" rows="1" placeholder="НОВИНКА, АКЦИЯ, -20%">НОВИНКА</textarea>
+              </div>
+              <div class="form-row compact-row">
+                <div class="form-group flex-1 compact-color-group">
+                  <label for="decorBottomBg">Заливка блока</label>
+                  <input type="color" id="decorBottomBg" value="#e63946" class="color-picker-input">
+                </div>
+                <div class="form-group flex-1 compact-color-group">
+                  <label for="decorBottomColor">Цвет текста</label>
+                  <input type="color" id="decorBottomColor" value="#ffffff" class="color-picker-input">
+                </div>
+              </div>
+              <div class="form-row compact-row">
+                <div class="form-group flex-2">
+                  <label for="decorBottomBgImg">Фон блока</label>
+                  <select id="decorBottomBgImg">
+                    <option value="none" selected>Без картинки (цвет)</option>
+                    <option value="dots_bg.jpg">📷 Точечный фон</option>
+                    <option value="ryba_bg.jpg">🐟 Чёрный с рамкой</option>
+                    <option value="ryba_scales">🐟 Рыбья чешуя</option>
+                    <option value="custom" id="decorBottomCustomOption" style="display:none;">Загруженное фото</option>
+                  </select>
+                </div>
+                <div class="form-group flex-1">
+                  <label>Свой файл</label>
+                  <div class="upload-btn-wrapper">
+                    <label for="decorBottomCustomUpload" class="btn btn-secondary btn-sm upload-btn">📁 Файл…</label>
+                    <input type="file" id="decorBottomCustomUpload" accept="image/*">
+                  </div>
+                  <div id="decorBottomUploadStatus" class="upload-status"></div>
+                </div>
+              </div>
+              <div class="form-row compact-row">
+                <div class="form-group flex-2">
+                  <label for="decorBottomFont">Шрифт / стиль</label>
+                  <select id="decorBottomFont" class="font-dropdown">
+                    <option value="">По умолчанию</option>
+                    <optgroup label="Обычные">
+                      <option value="Arial, sans-serif">Arial</option>
+                      <option value="'Montserrat', sans-serif">Montserrat</option>
+                      <option value="'Russo One', sans-serif">Russo One</option>
+                      <option value="'Bebas Neue', cursive">Bebas Neue</option>
+                      <option value="'Rubik', sans-serif">Rubik</option>
+                      <option value="'Oswald', sans-serif">Oswald</option>
+                      <option value="'Playfair Display', serif">Playfair Display</option>
+                    </optgroup>
+                    <optgroup label="Графические (объёмные)">
+                      <option value="'Duo Dunkel', sans-serif">Duo Dunkel</option>
+                      <option value="'Duo Licht', sans-serif">Duo Licht</option>
+                      <option value="'SortefaxNo2Turquoise', sans-serif">Sortefax</option>
+                    </optgroup>
+                  </select>
+                </div>
+                <div class="form-group flex-1">
+                  <label>Курсив / Тень</label>
+                  <div style="display:flex; gap:4px; align-items:center;">
+                    <label class="checkbox-label" title="Курсив"><input type="checkbox" id="decorBottomItalic"> <i>К</i></label>
+                    <input type="range" id="decorBottomShadow" min="0" max="10" step="1" value="0" title="Тень" style="flex:1;">
+                    <input type="color" id="decorBottomShadowColor" value="#000000" title="Цвет тени" class="color-picker-mini">
+                  </div>
+                </div>
+              </div>
+              <div class="form-row compact-row">
+                <div class="form-group flex-1">
+                  <label for="decorBottomFontSize">Размер: <span id="decorBottomFontSizeVal" class="val-badge">14</span> pt</label>
+                  <input type="range" id="decorBottomFontSize" min="6" max="60" value="14">
+                </div>
+                <div class="form-group flex-1">
+                  <label for="decorBottomHeight">Высота: <span id="decorBottomHeightVal" class="val-badge">12</span> мм</label>
+                  <input type="range" id="decorBottomHeight" min="5" max="30" value="12">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
         </div><!-- /.card-body section5 Оформление -->
       </section>
 
       <!-- Print Config -->
       <section class="control-card" id="section6">
-        <h3 class="card-toggle collapsed" data-section="section6"><span class="card-num">6</span> Печать на А4 <span class="toggle-arrow">▼</span></h3>
-        <div class="card-body" style="display:none;">
+        <h3 class="card-toggle" data-section="section6"><span class="card-num">6</span> Печать на А4 <span class="toggle-arrow">▲</span></h3>
+        <div class="card-body">
 
-        <!-- Режим печати: один шаблон или мульти (несколько шаблонов на общий лист).
-             Источник истины — radio name="printJob" в шапке; здесь — визуальное зеркало.
-             Клик переключает шапку-radio, checked выставляется синхронизацией из JS. -->
-        <div class="radio-group print-job-mirror" style="margin-bottom: 12px;">
+        <!-- Режим печати: один шаблон или мульти -->
+        <div class="radio-group print-job-mirror compact-radio-group" style="margin-bottom: 10px;">
           <label class="radio-option">
             <input type="radio" data-print-job="single" checked>
             <span class="radio-custom"></span>
@@ -749,13 +1004,13 @@
             <span class="radio-custom"></span>
             <div class="radio-text">
               <strong>🖨️ Мульти-печать</strong>
-              <small>Несколько шаблонов (разных размеров) на одном листе</small>
+              <small>Несколько шаблонов на общем листе</small>
             </div>
           </label>
         </div>
 
         <div id="singlePrintPanel">
-        <div class="form-group">
+        <div class="form-group compact-form-group">
           <label for="sheetCount">Количество на листе:</label>
           <select id="sheetCount">
             <option value="auto">Автоматически (Максимально на А4)</option>
@@ -765,11 +1020,11 @@
             <option value="1">1 шт</option>
           </select>
         </div>
-        <div class="form-group">
-          <label for="gapMm">Зазор между ценниками (мм): <span id="gapMmVal">0</span></label>
+        <div class="form-group compact-form-group">
+          <label for="gapMm">Зазор между ценниками (мм): <span id="gapMmVal" class="val-badge">0</span></label>
           <input type="range" id="gapMm" min="0" max="5" step="0.5" value="0">
         </div>
-        <div class="checkbox-option" style="margin-bottom: 12px;">
+        <div class="checkbox-option" style="margin-bottom: 10px;">
           <label>
             <input type="checkbox" id="showCropMarks" checked>
             <span>Показывать метки для вырезания (пунктир)</span>
@@ -808,6 +1063,7 @@
           <button type="button" id="resetLabelPosBtn" class="btn btn-secondary btn-sm" title="Сбросить активный ценник к виду шаблона (расположение, шрифты, цвета, границы)">↺ Сбросить активный</button>
           <button type="button" id="resetAllLabelPosBtn" class="btn btn-secondary btn-sm" title="Сбросить весь внешний вид к шаблону (расположение, шрифты, цвета, границы, раскладка, декор, фон для всех ценников)">↺ Сбросить все</button>
           <button type="button" id="syncPricePosPreviewBtn" class="btn btn-secondary btn-sm" title="Скопировать расположение цены с ценника №1 на все остальные">💴 Цена по №1</button>
+          <button type="button" id="decorPosToggle" class="btn btn-secondary btn-sm decor-pos-toggle" title="Положение блока оформления для двухблочных пресетов (Живое, Новинка)">⬆ Блок: сверху</button>
         </div>
 
         <!-- Ползунок размера шрифта наименования (дублирует #titleSize из настроек) -->
@@ -859,9 +1115,22 @@
                   <div class="wobbler-title" id="previewTitle">Alaska Фейхоа 0,45 ж/б</div>
                   <div class="wobbler-subtitle" id="previewSubtitle"></div>
                   <div class="wobbler-price-box" id="previewPriceBox">
-                    <span class="price-val" id="previewPrice">350</span>
-                    <span class="price-curr" id="previewCurrency">₽</span>
+                    <div class="price-box-inner">
+                      <span class="price-val" id="previewPrice">350</span>
+                      <span class="price-curr" id="previewCurrency">₽</span>
+                      <div class="price-cross-overlay" aria-hidden="true">
+                        <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+                          <line class="cross-shadow-1" x1="2" y1="2" x2="98" y2="98" stroke="#000000" stroke-width="11" stroke-linecap="round" opacity="0.35"/>
+                          <line class="cross-shadow-2" x1="98" y1="2" x2="2" y2="98" stroke="#000000" stroke-width="11" stroke-linecap="round" opacity="0.35"/>
+                          <line class="cross-line-1" x1="2" y1="2" x2="98" y2="98" stroke="#e63946" stroke-width="7" stroke-linecap="round"/>
+                          <line class="cross-line-2" x1="98" y1="2" x2="2" y2="98" stroke="#e63946" stroke-width="7" stroke-linecap="round"/>
+                        </svg>
+                      </div>
+                    </div>
                   </div>
+                  <!-- Большая цифра (шаблоны вроде «Снеки с цифрой»): значение per-item,
+                       стиль шаблонный. Скрыт при пустом значении. -->
+                  <div class="wobbler-bigdigit" id="previewBigDigit"></div>
                 </div>
               </div>
 
@@ -932,6 +1201,6 @@
 
   <!-- v2: версия файла. При каждом изменении script.js повышайте число (?v=3, 4...),
        иначе браузер может отдавать закэшированную старую копию. -->
-  <script src="script.js?v=5"></script>
+  <script src="script.js?v=6"></script>
 </body>
 </html>
