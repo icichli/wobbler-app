@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Руководство пользователя — Конструктор ценников и воблеров</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 12mm 12mm 12mm 12mm;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #1e293b;
+      background: #ffffff;
+      line-height: 1.4;
+      font-size: 8.8pt;
+    }
+
+    .page {
+      page-break-after: always;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .page:last-child {
+      page-break-after: avoid;
+    }
+
+    .header {
+      border-bottom: 2px solid #2563eb;
+      padding-bottom: 6px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .header h1 {
+      font-size: 15pt;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.4px;
+    }
+
+    .header .doc-badge {
+      font-size: 8pt;
+      font-weight: 700;
+      color: #2563eb;
+      background: #eff6ff;
+      padding: 2px 7px;
+      border-radius: 4px;
+      border: 1px solid #bfdbfe;
+    }
+
+    .section {
+      margin-bottom: 10px;
+    }
+
+    .section-title {
+      font-size: 10.5pt;
+      font-weight: 700;
+      color: #0f172a;
+      border-left: 3.5px solid #2563eb;
+      padding-left: 7px;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 7px;
+      margin-bottom: 8px;
+    }
+
+    .step-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 7px 9px;
+    }
+
+    .step-num {
+      display: inline-block;
+      width: 17px;
+      height: 17px;
+      background: #2563eb;
+      color: #fff;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 17px;
+      font-size: 7.5pt;
+      font-weight: 700;
+      margin-right: 4px;
+    }
+
+    .step-title {
+      font-weight: 700;
+      color: #0f172a;
+      font-size: 8.5pt;
+      margin-bottom: 2px;
+    }
+
+    .step-desc {
+      font-size: 7.8pt;
+      color: #64748b;
+      line-height: 1.25;
+    }
+
+    .features-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+      margin-bottom: 6px;
+    }
+
+    .feature-item {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 6px 8px;
+    }
+
+    .feature-item strong {
+      color: #0f172a;
+      font-size: 8.5pt;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .feature-item p {
+      font-size: 7.8pt;
+      color: #475569;
+      line-height: 1.25;
+    }
+
+    /* Фоновые и Декор карточки */
+    .highlight-box {
+      background: #faf5ff;
+      border: 1px solid #e9d5ff;
+      border-radius: 6px;
+      padding: 8px 10px;
+      margin-bottom: 8px;
+    }
+
+    .highlight-box.blue {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+    }
+
+    .highlight-box.amber {
+      background: #fffbeb;
+      border-color: #fde68a;
+    }
+
+    .hl-title {
+      font-weight: 700;
+      font-size: 9pt;
+      color: #0f172a;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .hl-content {
+      font-size: 8pt;
+      color: #334155;
+      line-height: 1.35;
+    }
+
+    .hl-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+      margin-top: 5px;
+    }
+
+    .hl-subcard {
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 4px;
+      padding: 5px 7px;
+    }
+
+    .hl-subcard strong {
+      font-size: 8pt;
+      color: #0f172a;
+      display: block;
+      margin-bottom: 1px;
+    }
+
+    .hl-subcard p {
+      font-size: 7.5pt;
+      color: #64748b;
+      line-height: 1.2;
+    }
+
+    table.template-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 4px;
+      font-size: 8pt;
+    }
+
+    table.template-table th {
+      background: #f1f5f9;
+      color: #0f172a;
+      font-weight: 700;
+      text-align: left;
+      padding: 5px 7px;
+      border: 1px solid #cbd5e1;
+      font-size: 7.5pt;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    table.template-table td {
+      padding: 5px 7px;
+      border: 1px solid #e2e8f0;
+      vertical-align: top;
+      line-height: 1.3;
+    }
+
+    table.template-table tr:nth-child(even) {
+      background: #f8fafc;
+    }
+
+    .tpl-name {
+      font-weight: 700;
+      color: #0f172a;
+      white-space: nowrap;
+    }
+
+    .tpl-size {
+      font-weight: 700;
+      color: #2563eb;
+      white-space: nowrap;
+    }
+
+    .tag-badge {
+      display: inline-block;
+      font-size: 6.8pt;
+      font-weight: 700;
+      background: #e2e8f0;
+      color: #334155;
+      padding: 1px 4px;
+      border-radius: 3px;
+      margin-right: 2px;
+    }
+
+    .tag-accent {
+      background: #fef08a;
+      color: #854d0e;
+    }
+
+    .footer {
+      border-top: 1px solid #e2e8f0;
+      padding-top: 5px;
+      margin-top: auto;
+      display: flex;
+      justify-content: space-between;
+      font-size: 7.2pt;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ================= СТРАНИЦА 1 ================= -->
+  <div class="page">
+    <!-- Шапка -->
+    <div class="header">
+      <div>
+        <h1>Конструктор ценников и воблеров</h1>
+        <p style="font-size: 8.5pt; color: #64748b; margin-top: 1px;">Руководство пользователя • Быстрый старт и основные функции</p>
+      </div>
+      <div class="doc-badge">Часть 1 • Базовые функции</div>
+    </div>
+
+    <!-- Быстрый старт -->
+    <div class="section">
+      <div class="section-title">⚡ Быстрый старт: Как напечатать ценники за 3 шага</div>
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-title"><span class="step-num">1</span> Выберите шаблон</div>
+          <div class="step-desc">Нажмите на нужный макет («Бутылки», «Рыба», «Снеки» и др.) в разделе 1.</div>
+        </div>
+        <div class="step-card">
+          <div class="step-title"><span class="step-num">2</span> Заполните товары</div>
+          <div class="step-desc">Введите названия, вес и цены в шторке или вставьте список из Excel / 1С.</div>
+        </div>
+        <div class="step-card">
+          <div class="step-title"><span class="step-num">3</span> Запустите печать</div>
+          <div class="step-desc">Нажмите «Печать» (текущий шаблон) или «Мульти-печать» (сборный лист).</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Основные инструменты -->
+    <div class="section">
+      <div class="section-title">🛠️ Возможности и удобные инструменты</div>
+      <div class="features-list">
+        <div class="feature-item">
+          <strong>📝 Выдвижная шторка товаров</strong>
+          <p>Открывается автоматически при выборе шаблона или по синей кнопке <b>«Товары»</b> внизу слева. Строки добавляются сами при вводе текста и удаляются при стирании.</p>
+        </div>
+        <div class="feature-item">
+          <strong>📋 Вставка из Excel / 1С</strong>
+          <p>Кнопка «Вставить список» переносит скопированную таблицу с колонками <i>Наименование, Вес, Цена</i> за один клик без ручного ввода каждой строчки.</p>
+        </div>
+        <div class="feature-item">
+          <strong>❌ Акционный крест на цене</strong>
+          <p>Кнопка <b>❌</b> в строке товара перечёркивает цену ярким красным крестом с тенью для наглядного обозначения скидок и старых цен.</p>
+        </div>
+        <div class="feature-item">
+          <strong>✋ Перетаскивание надписей мышью</strong>
+          <p>Кнопка «Двигать надписи» позволяет мышью свободно двигать название, цену и вес прямо на интерактивном макете ценника.</p>
+        </div>
+        <div class="feature-item">
+          <strong>🔲 Защита графики (Границы текста)</strong>
+          <p>Рамка безопасной зоны гарантирует, что длинное название автоматически уменьшит кегль и не залезет на логотипы и рисунки фона.</p>
+        </div>
+        <div class="feature-item">
+          <strong>🖨️ Мульти-печать (Сборный лист)</strong>
+          <p>Печать разных шаблонов (например, 8 шт. «Бутылки» + 4 шт. «Снеки» + 2 шт. «Рыба») на одном общем листе А4 с сохранением графики каждого.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Блок: Оформление и акционные плашки -->
+    <div class="section">
+      <div class="section-title">🎨 Оформление и акционные плашки (Зачем и как работает)</div>
+      <div class="highlight-box amber">
+        <div class="hl-title">🎯 Зачем нужно оформление?</div>
+        <div class="hl-content">
+          Плашки моментально привлекают взгляд покупателя к нужным товарам на полке или витрине: новинкам, акциям со сниженной ценой, сезонным хитам, безалкогольным или острым сортам.
+        </div>
+        <div class="hl-grid">
+          <div class="hl-subcard">
+            <strong>Иконка «🎨» в строке товара</strong>
+            <p>Нажмите <b>🎨</b> у любого товара в таблице или шторке, чтобы выбрать одну или несколько акционных плашек («Новинка», «Хит», «Скидка», «Остро», «Живое» и др.).</p>
+          </div>
+          <div class="hl-subcard">
+            <strong>Спец-пресет «Новая цена»</strong>
+            <p>При выборе этого пресета прямо в меню появляется поле ввода сниженной цены (например, <i>250 ₽</i>). Новая цена выводится на жёлтой плашке, а старая цена перечёркивается крестом.</p>
+          </div>
+          <div class="hl-subcard">
+            <strong>3 зоны размещения плашек</strong>
+            <p>Плашки могут располагаться: <b>СВЕРХУ</b> (над ценником как выносной флажок), <b>ВНУТРИ</b> (в верхней части ценника) или <b>СНИЗУ</b> (под ценником).</p>
+          </div>
+          <div class="hl-subcard">
+            <strong>Один ценник или весь шаблон</strong>
+            <p>Переключатель в разделе 5 позволяет применить оформление только к <b>одному ценнику</b> или сразу ко <b>всему шаблону</b> на листе.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span>Конструктор ценников и воблеров • Руководство пользователя</span>
+      <span>Страница 1 из 2</span>
+    </div>
+  </div>
+
+  <!-- ================= СТРАНИЦА 2 ================= -->
+  <div class="page">
+    <!-- Шапка -->
+    <div class="header">
+      <div>
+        <h1>Дополнительные фоны и шаблоны</h1>
+        <p style="font-size: 8.5pt; color: #64748b; margin-top: 1px;">Руководство пользователя • Фоны, кастомизация и особенности шаблонов</p>
+      </div>
+      <div class="doc-badge">Часть 2 • Фоны и шаблоны</div>
+    </div>
+
+    <!-- Блок: Дополнительные фоны -->
+    <div class="section">
+      <div class="section-title">🖼️ Дополнительные фоны (Папка «bg other» и иконка 🖼️)</div>
+      <div class="highlight-box blue">
+        <div class="hl-title">🎯 Зачем нужны дополнительные фоны?</div>
+        <div class="hl-content">
+          В магазине для разных сортов напитков и категорий товаров требуются свои тематические фоны (например, светлый фон для безалкогольного пива <i>«Б/А»</i> или для непастеризованного <i>«Живое»</i>). Чтобы не переключать шаблон ради одного товара, можно назначить индивидуальный фон конкретному ценнику.
+        </div>
+        <div class="hl-grid">
+          <div class="hl-subcard">
+            <strong>📁 Папка «bg other» (1 клик)</strong>
+            <p>В разделе «4. Фоны» нажмите «📁 Выбрать папку». Программа сохранит все фоны в памяти браузера — они будут доступны всегда без повторного выбора папки.</p>
+          </div>
+          <div class="hl-subcard">
+            <strong>Иконка «🖼️» в строке товара</strong>
+            <p>Клик по <b>🖼️</b> открывает быстрый выбор фонов для конкретного товара. Пункт <i>«Как в шаблоне»</i> возвращает исходный фоновый рисунок.</p>
+          </div>
+          <div class="hl-subcard">
+            <strong>💡 Авто-контраст для светлых фонов</strong>
+            <p>При выборе светлых фонов (<i>«Б/А»</i>, <i>«Живое»</i>) программа автоматически меняет цвет букв на <b>чёрный</b>, чтобы ценник оставался чётким и легко читаемым.</p>
+          </div>
+          <div class="hl-subcard">
+            <strong>💾 Сохранение в экспорте</strong>
+            <p>При нажатии «Экспорт» все использованные картинки встраиваются в файл резервной копии — шаблон откроется с теми же фонами на любом другом ПК.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Шаблоны и их особенности -->
+    <div class="section">
+      <div class="section-title">🏷️ Особенности встроенных шаблонов</div>
+      <table class="template-table">
+        <thead>
+          <tr>
+            <th style="width: 21%;">Шаблон</th>
+            <th style="width: 14%;">Размер</th>
+            <th style="width: 25%;">Назначение</th>
+            <th>Особенности и автоматика</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="tpl-name">🍾 Бутылки</td>
+            <td class="tpl-size">6,5 × 3,5 см</td>
+            <td>Бутылочные напитки, штучный товар</td>
+            <td>Классический компактный чёрный ценник с точечным фоном (до 24 шт. на лист А4). Доступны 5 фонов: <b>Томатный</b>, <b>Медовый</b>, <b>Яблочный</b>, <b>Б/А</b>, <b>Живое</b>.</td>
+          </tr>
+          <tr>
+            <td class="tpl-name">🐟 Рыба</td>
+            <td class="tpl-size">9,2 × 5,5 см</td>
+            <td>Весовая и фасованная рыба</td>
+            <td>Автоматически подставляет вес <b>100гр</b>. Защита логотипа и плашек. Доступен спецфон <b>«Рыба Выгодно»</b> (жёлтый, с чёрным текстом). Блоки оформления — <b>13 мм</b> с авто-подгоном текста в 1 строку.</td>
+          </tr>
+          <tr>
+            <td class="tpl-name">🥨 Снеки</td>
+            <td class="tpl-size">6,5 × 4,5 см</td>
+            <td>Гренки, арахис, чипсы, фасовка</td>
+            <td>Автоматически подставляет вес <b>100гр</b>. Оптимальная высота под стандартные фасованные снеки. Доступен спецфон: <b>«Остро»</b>.</td>
+          </tr>
+          <tr>
+            <td class="tpl-name">🍿 Снеки 5</td>
+            <td class="tpl-size">6,5 × 5,0 см</td>
+            <td>Снеки с длинными названиями</td>
+            <td>Увеличенная высота <b>5 см</b> позволяет комфортно размещать длинные названия в 3–4 строки крупным шрифтом.</td>
+          </tr>
+          <tr>
+            <td class="tpl-name">🔢 Снеки с цифрой</td>
+            <td class="tpl-size">6,5 × 4,5 см</td>
+            <td>Пронумерованные полки и краны</td>
+            <td><span class="tag-badge tag-accent">Поле [№]</span> Отдельная колонка для номера. Цифра крупная ярко-жёлтая, а над ней автоматически ставится значок <b>№</b>.</td>
+          </tr>
+          <tr>
+            <td class="tpl-name">⭐ Сорт недели</td>
+            <td class="tpl-size">16,3 × 9,1 см</td>
+            <td>Большой рекламный промо-воблер</td>
+            <td>Крупный формат А5 с наклонным акционным дизайном. Варианты фона: <b>Красный</b> (по умолчанию) и <b>Жёлтый</b>. Цена размещена на верхнем белом блоке, а название акции — снизу.</td>
+          </tr>
+          <tr>
+            <td class="tpl-name">👑 Корона А5</td>
+            <td class="tpl-size">16,3 × 9,1 см</td>
+            <td>Крупный промо-воблер акции/скидки</td>
+            <td>Формат 15,5×8,3 см (+ 4 мм поля). 5 вариантов фона на выбор: <b>Жёлтый</b> (по умолчанию), <b>Оранжевый</b>, <b>Синий</b>, <b>Красный</b> и <b>Зелёный</b>. Белый объёмный текст (толщина 900, тень 5) с автоподгоном по размеру.</td>
+          </tr>
+          <tr>
+            <td class="tpl-name">⚡ А5</td>
+            <td class="tpl-size">16,3 × 4,5 см</td>
+            <td>Широкий акционный воблер-плашка</td>
+            <td>Размер воблера <b>16,3 × 4,5 см</b> (цветная графика и текст на всю площадь). Зазор при печати по умолчанию: <b>10 мм</b>. 5 вариантов фона: <b>Жёлтый</b> (по умолчанию), <b>Оранжевый</b>, <b>Красный</b>, <b>Голубой</b> и <b>Зелёный</b>. Текст наименования занимает всю цветную область с автоподгоном.</td>
+          </tr>
+          <tr>
+            <td class="tpl-name">🍬 Сладко / Попробуй / Новинка</td>
+            <td class="tpl-size">6,5 × 4,4 см</td>
+            <td>Воблеры разделов и промо</td>
+            <td>Красная («Новинка»), жёлтая («Попробуй») или фиолетовая («Сладко») шапка <b>9 мм</b> с крупным авто-подгоном текста. Белый нижний блок с рамкой <b>1 мм</b> в цвет шапки.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Рекомендации -->
+    <div class="section" style="margin-top: 6px;">
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 9px; font-size: 7.8pt; color: #475569; line-height: 1.3;">
+        💡 <b>Резервное копирование:</b> Все данные автоматически сохраняются в памяти браузера. Чтобы перенести свои товары или шаблоны на другой компьютер, нажмите <b>«Экспорт»</b> в разделе «Шаблоны» — скачается единый файл со всеми настройками и картинками.
+      </div>
+    </div>
+
+    <div class="footer">
+      <span>Конструктор ценников и воблеров • Руководство пользователя</span>
+      <span>Страница 2 из 2</span>
+    </div>
+  </div>
+
+</body>
+</html>

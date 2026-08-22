@@ -1,11 +1,23 @@
 {
   "dir": "bg other",
   "files": [
+    "a5.jpg",
+    "a5_blue.jpg",
+    "a5_green.jpg",
+    "a5_orange.jpg",
+    "a5_red.jpg",
     "ba.jpg",
+    "korona_a5_bg.jpg",
+    "korona_a5_blue.jpg",
+    "korona_a5_green.jpg",
+    "korona_a5_orange.jpg",
+    "korona_a5_red.jpg",
     "medovyj.png",
     "ostryi.png",
+    "ryba_vygodno.png",
+    "sort_nedeli_yellow.jpg",
     "tomatnyj.png",
     "yablochnyj.png",
-    "yellow_bg пустой.jpg"
+    "zhivoe.jpg"
   ]
 }
