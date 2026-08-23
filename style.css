@@ -2514,6 +2514,112 @@ input[type="range"] {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
+/* Modal: Руководство пользователя / Инструкция */
+.modal-box.modal-box-instruction {
+  max-width: 1100px;
+  width: 95vw;
+  height: 90vh;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(56, 189, 248, 0.15);
+  background: var(--bg-card);
+}
+
+.instruction-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  background: rgba(15, 23, 42, 0.95);
+  border-bottom: 1px solid var(--border-color);
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.instruction-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.instruction-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.instruction-modal-title h3 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #fff;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.instruction-subtitle {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin: 2px 0 0 0 !important;
+  line-height: 1.2;
+}
+
+.instruction-modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.instruction-modal-body {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  background: #ffffff;
+}
+
+.instruction-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+.modal-close-btn {
+  font-size: 1.1rem;
+  font-weight: 800;
+  padding: 0.4rem 0.75rem;
+  line-height: 1;
+}
+
+@media (max-width: 768px) {
+  .modal-box.modal-box-instruction {
+    width: 98vw;
+    height: 94vh;
+    border-radius: 12px;
+  }
+
+  .instruction-modal-header {
+    padding: 8px 10px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .instruction-modal-actions {
+    justify-content: flex-start;
+    gap: 6px;
+  }
+
+  .instruction-modal-actions .btn {
+    padding: 0.35rem 0.55rem;
+    font-size: 0.74rem;
+  }
+}
+
 .modal-box h3 {
   margin-bottom: 8px;
   font-size: 1.05rem;

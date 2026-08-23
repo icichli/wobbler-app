@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Массив растёт прогрессивно: стартует с 1 пустой строки; при вводе в последнее
   // поле появляется следующая пустая (см. syncRowExtent / normalizeItemsArray).
   const MAX_ITEMS = 100; // мягкий защитный потолок (только для вставки больших таблиц)
-  const TEMPLATE_KEYS = ['alaska_dots', 'yellow_tag', 'ryba', 'sneki', 'sneki_5', 'sneki_digit', 'novy_vkus', 'novinka', 'tomat', 'sladko', 'sort_nedeli', 'korona_a5', 'aktsiya_a5', 'a5'];
+  const TEMPLATE_KEYS = ['alaska_dots', 'yellow_tag', 'ryba', 'sneki', 'sneki_5', 'sneki_digit', 'novy_vkus', 'novinka', 'tomat', 'sladko', 'sort_nedeli', 'korona_a5', 'a5'];
   const templateItems = {};
   function freshItem() {
     return { title: '', price: '', subtitle: '', subtitleManual: false, digit: '' };
@@ -318,6 +318,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const userTemplatesContainer = document.getElementById('userTemplates');
   const emptyUserTemplates = document.getElementById('emptyUserTemplates');
   const userCount = document.getElementById('userCount');
+
+  // Руководство пользователя (Инструкция)
+  const instructionBtn = document.getElementById('instructionBtn');
+  const instructionModal = document.getElementById('instructionModal');
+  const closeInstructionModal = document.getElementById('closeInstructionModal');
+  const instructionPrintBtn = document.getElementById('instructionPrintBtn');
+  const instructionIframe = document.getElementById('instructionIframe');
 
   // Экспорт / Импорт шаблонов
   const exportAllBtn = document.getElementById('exportAllBtn');
@@ -3755,6 +3762,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (idrMultiPrintBtn) {
       idrMultiPrintBtn.addEventListener('click', () => {
         closeItemsDrawer();
+        const headerRadio = document.querySelector('input[name="printJob"][value="multi"]');
+        if (headerRadio) headerRadio.checked = true;
+        applyPrintJob('multi');
         openMultiPrintDrawer();
       });
     }
@@ -3762,7 +3772,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (idrPrintBtn) {
       idrPrintBtn.addEventListener('click', () => {
         closeItemsDrawer();
-        triggerPrint();
+        const jobMode = getPrintJobVal();
+        if (jobMode === 'multi') runMultiPrintFromUI();
+        else triggerPrint();
       });
     }
   }
@@ -4207,9 +4219,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Позиции надписей товара. Если у товара нет своего labelPos (старые данные /
     // edge-кейсы), берём эталон с ценника №1 (база активного шаблона), а не дефолт,
     // — иначе такой ценник отрисуется со смещениями 0,0 вместо настроек шаблона.
-    const lp = (item && item.labelPos)
+    const lp = cloneLabelPos((item && item.labelPos)
       ? item.labelPos
-      : (itemsData[0] && itemsData[0].labelPos) ? itemsData[0].labelPos : defaultLabelPos();
+      : (itemsData[0] && itemsData[0].labelPos) ? itemsData[0].labelPos : defaultLabelPos());
     const digits = String((item && item.price) || '').split('');
 
     const tElem = clone.querySelector('.wobbler-title');
@@ -4501,6 +4513,10 @@ document.addEventListener('DOMContentLoaded', () => {
       showPrice: preset.showPrice !== false,
       titleFitFloor: preset.titleFitFloor,
       key: preset.key || '',
+      widthCm: preset.widthCm || 6.5,
+      heightCm: preset.heightCm || 4.5,
+      wMm: (preset.widthCm || 6.5) * 10,
+      hMm: (preset.heightCm || 4.5) * 10,
       digit: {
         font: preset.digitFont || "Arial, sans-serif",
         color: preset.digitColor || '#ffff00',
@@ -4551,10 +4567,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // переключать активный экран на этот шаблон.
   function fitTitleSizeForPreset(text, preset) {
     if (!text || !text.trim()) return null;
-    const wCm = parseFloat(preset.widthCm || 6.5) || 6.5;
-    const hCm = parseFloat(preset.heightCm || 4.5) || 4.5;
-    const wMm = wCm * 10;
-    const hMm = hCm * 10;
+    const wMm = preset.wMm || (parseFloat(preset.widthCm) || 6.5) * 10;
+    const hMm = preset.hMm || (parseFloat(preset.heightCm) || 4.5) * 10;
     const ts = normTitleSafe(preset.titleSafe || preset.ts);
     const layout = preset.layout || 'full';
     const headerH = preset.headerHeight || 100;
@@ -4597,7 +4611,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Контракт тот же, что у applyItemToClone, но все глобальные чтения заменены на ctx.
   function applyTemplateStyleToClone(clone, item, ctx) {
     const { tf, td, tb, ts, layout, headerH, rybaPib, insideWidth, labelPos: presetLp } = ctx;
-    const lp = (item && item.labelPos) ? item.labelPos : presetLp;
+    const wMm = ctx.wMm || 65;
+    const hMm = ctx.hMm || 45;
+    const lp = cloneLabelPos((item && item.labelPos) ? item.labelPos : presetLp);
     const digits = String((item && item.price) || '').split('');
 
     const tElem = clone.querySelector('.wobbler-title');
@@ -4758,8 +4774,6 @@ document.addEventListener('DOMContentLoaded', () => {
     applyCloneDecorBlock(clone.querySelector('.wobbler-outside-bottom'), botSnap, wMm, botH);
 
     // Safe-зона названия — по геометрии preset (не активного).
-    const wMm = ctx.wMm;
-    const hMm = ctx.hMm;
     const _hh = layout === 'full' ? hMm : hMm * (headerH / 100);
     const _pib = (rybaPib && layout === 'split') || (ctx.showPrice === false);
     const _bySafeH = _hh * Math.max(0, 1 - ts.top - ts.bottom);
@@ -5711,14 +5725,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Print Trigger
   function triggerPrint() {
-    preparePrintArea();
-    document.body.classList.add('is-printing');
-    setTimeout(() => {
-      window.print();
-      setTimeout(() => {
+    try {
+      preparePrintArea();
+      document.body.classList.add('is-printing');
+      const cleanup = () => {
         document.body.classList.remove('is-printing');
-      }, 500);
-    }, 150);
+      };
+      window.addEventListener('afterprint', cleanup, { once: true });
+      setTimeout(() => {
+        try {
+          window.print();
+        } catch (e) {
+          console.error('window.print error:', e);
+        }
+        setTimeout(cleanup, 1000);
+      }, 150);
+    } catch (err) {
+      console.error('triggerPrint error:', err);
+      alert('Ошибка при подготовке к печати: ' + (err.message || err));
+      document.body.classList.remove('is-printing');
+    }
   }
 
   // ===== Мульти-печать: shelf-packer и сборка листов =====
@@ -5757,6 +5783,45 @@ document.addEventListener('DOMContentLoaded', () => {
     return pages.length ? pages : (items.length ? [{ rows: [] }] : []);
   }
 
+  // Получает список товаров для шаблона: если в templateItems[key] есть заполненные строки,
+  // возвращает их; иначе использует активные поля (для текущего шаблона) или значения по умолчанию из builtInPresets.
+  function getItemsForTemplate(key) {
+    const arr = templateItems[key] || [];
+    const filled = arr.filter(it => it && it.title && it.title.trim());
+    if (filled.length > 0) return filled;
+
+    let preset = null;
+    if (activeTemplateRef && activeTemplateRef.kind === 'builtin' && activeTemplateRef.key === key) {
+      preset = getCurrentState();
+    } else {
+      preset = builtInPresets[key] || null;
+    }
+    if (!preset) return [];
+
+    let title = '';
+    let price = '';
+    let subtitle = '';
+    let digit = '';
+
+    if (activeTemplateRef && activeTemplateRef.kind === 'builtin' && activeTemplateRef.key === key) {
+      title = (inputTitle ? inputTitle.value : '').trim() || preset.title || '';
+      price = (inputPrice ? inputPrice.value : '').trim() || preset.price || '';
+      subtitle = (inputSubtitle ? inputSubtitle.value : '').trim() || preset.subtitle || '';
+      const inputBigDigit = document.getElementById('inputBigDigit');
+      digit = (inputBigDigit ? inputBigDigit.value : '').trim() || preset.digit || '';
+    } else {
+      title = (preset.title || preset.name || '').trim();
+      price = (preset.price != null ? String(preset.price) : '').trim();
+      subtitle = (preset.subtitle != null ? String(preset.subtitle) : '').trim();
+      digit = (preset.digit != null ? String(preset.digit) : '').trim();
+    }
+
+    if (title) {
+      return [{ title, price, subtitle, digit }];
+    }
+    return [];
+  }
+
   // Собирает очередь ценников из отмеченных шаблонов, рендерит каждый под свой preset,
   // упаковывает и строит DOM в #printArea. gap — зазор между ценниками (мм).
   function prepareMultiPrintArea(selected, gap, showCrop) {
@@ -5765,20 +5830,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const queue = [];
     for (const sel of selected) {
       let preset = null;
-      if (activeTemplateRef && activeTemplateRef.key === sel.key) {
+      if (activeTemplateRef && activeTemplateRef.kind === 'builtin' && activeTemplateRef.key === sel.key) {
         preset = getCurrentState();
       } else {
         preset = builtInPresets[sel.key] || null;
       }
       if (!preset) continue;
 
-      const arr = templateItems[sel.key] || [];
-      const filled = arr.filter(it => it && it.title && it.title.trim());
-      const n = (sel.copies === 'auto' || !sel.copies) ? filled.length : Math.min(parseInt(sel.copies, 10) || 0, filled.length);
-      for (let i = 0; i < n; i++) {
-        // copies считает количество разных товаров; если copies > filled.length, добиваем последним.
-        const item = filled[i] || filled[filled.length - 1];
-        if (item) queue.push({ item, preset });
+      const items = getItemsForTemplate(sel.key);
+      if (!items.length) continue;
+
+      const copiesNum = (sel.copies === 'auto' || !sel.copies) ? 1 : (parseInt(sel.copies, 10) || 1);
+      if (items.length === 1) {
+        for (let i = 0; i < copiesNum; i++) {
+          queue.push({ item: items[0], preset });
+        }
+      } else {
+        if (sel.copies === 'auto' || !sel.copies) {
+          for (let i = 0; i < items.length; i++) {
+            queue.push({ item: items[i], preset });
+          }
+        } else {
+          for (let c = 0; c < copiesNum; c++) {
+            for (let i = 0; i < items.length; i++) {
+              queue.push({ item: items[i], preset });
+            }
+          }
+        }
       }
     }
     if (!queue.length) return { count: 0, pages: 0 };
@@ -5829,17 +5907,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Аналог triggerPrint для мульти-печати. selected — список отмеченных шаблонов.
   function triggerMultiPrint(selected, gap, showCrop) {
-    const res = prepareMultiPrintArea(selected, gap, showCrop);
-    if (!res.count) { alert('Нет заполненных ценников в выбранных шаблонах.'); return; }
-    document.body.classList.add('is-printing');
-    setTimeout(() => {
-      window.print();
-      setTimeout(() => {
+    try {
+      const res = prepareMultiPrintArea(selected, gap, showCrop);
+      if (!res || !res.count) {
+        alert('Нет заполненных ценников в выбранных шаблонах.');
+        return { count: 0, pages: 0 };
+      }
+      document.body.classList.add('is-printing');
+      const cleanup = () => {
         document.body.classList.remove('is-printing');
-        printArea.innerHTML = '';   // очищаем мульти-печать после диалога
-      }, 500);
-    }, 150);
-    return res;
+      };
+      window.addEventListener('afterprint', cleanup, { once: true });
+      setTimeout(() => {
+        try {
+          window.print();
+        } catch (e) {
+          console.error('window.print error:', e);
+        }
+        setTimeout(cleanup, 1000);
+      }, 150);
+      return res;
+    } catch (err) {
+      console.error('triggerMultiPrint error:', err);
+      alert('Ошибка при подготовке к мульти-печати: ' + (err.message || err));
+      document.body.classList.remove('is-printing');
+    }
   }
 
   // Apply State to Form Inputs
@@ -6516,6 +6608,67 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('.tab-btn[data-tab="userSaved"]').click();
   });
 
+  // ===== Модал «Руководство пользователя / Инструкция» =====
+  function openInstructionModal() {
+    if (!instructionModal) return;
+    instructionModal.classList.add('active');
+  }
+
+  function hideInstructionModal() {
+    if (!instructionModal) return;
+    instructionModal.classList.remove('active');
+  }
+
+  if (instructionBtn) {
+    instructionBtn.addEventListener('click', openInstructionModal);
+  }
+  if (closeInstructionModal) {
+    closeInstructionModal.addEventListener('click', hideInstructionModal);
+  }
+  if (instructionModal) {
+    instructionModal.addEventListener('click', (e) => {
+      if (e.target === instructionModal) {
+        hideInstructionModal();
+      }
+    });
+  }
+
+  if (instructionPrintBtn) {
+    instructionPrintBtn.addEventListener('click', () => {
+      try {
+        if (instructionIframe && instructionIframe.contentWindow) {
+          instructionIframe.contentWindow.focus();
+          instructionIframe.contentWindow.print();
+          return;
+        }
+      } catch (err) {
+        console.warn('Direct iframe print restricted, opening in new window fallback:', err);
+      }
+      const printWin = window.open('instruction.html', '_blank');
+      if (printWin) {
+        printWin.addEventListener('load', () => {
+          setTimeout(() => {
+            try {
+              printWin.print();
+            } catch (e) {
+              console.warn(e);
+            }
+          }, 300);
+        });
+      }
+    });
+  }
+
+  // Hotkeys: F1 opens user guide, Escape closes it
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'F1') {
+      e.preventDefault();
+      openInstructionModal();
+    } else if (e.key === 'Escape' && instructionModal && instructionModal.classList.contains('active')) {
+      hideInstructionModal();
+    }
+  });
+
   // ===== Модал «Перенести товары на другой шаблон» =====
   // Копирует таблицу товаров активного встроенного шаблона в выбранные
   // (глубокий клон — каждый приёмник получает независимую копию данных).
@@ -7125,11 +7278,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Print Handlers
   if (printBtn) printBtn.addEventListener('click', () => {
-    const jobMode = document.querySelector('input[name="printJob"]:checked');
-    if (jobMode && jobMode.value === 'multi') runMultiPrintFromUI();
+    const jobMode = getPrintJobVal();
+    if (jobMode === 'multi') runMultiPrintFromUI();
     else triggerPrint();
   });
-  if (printBtnSidebar) printBtnSidebar.addEventListener('click', triggerPrint);
+  if (printBtnSidebar) printBtnSidebar.addEventListener('click', () => {
+    const jobMode = getPrintJobVal();
+    if (jobMode === 'multi') runMultiPrintFromUI();
+    else triggerPrint();
+  });
 
   // Bulk background button
   const bulkSetBgBtn = document.getElementById('bulkSetBgBtn');
@@ -7195,32 +7352,48 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   // Число заполненных ценников шаблона.
   function presetFilledCount(key) {
-    const arr = templateItems[key] || [];
-    return arr.filter(it => it && it.title && it.title.trim()).length;
+    return getItemsForTemplate(key).length;
   }
 
-  // Строит список чекбоксов шаблонов с выбором числа копий.
+  // Строит список чекбоксов шаблонов с выбором числа копий (с сохранением текущего выбора).
   function renderMultiPrintTemplates() {
     if (!multiPrintTemplatesEl) return;
+    const prevSelection = {};
+    multiPrintTemplatesEl.querySelectorAll('.multi-print-row-item').forEach(row => {
+      const chk = row.querySelector('input[data-mpi-chk]');
+      const copiesSel = row.querySelector('select[data-mpi-copies]');
+      if (chk) {
+        prevSelection[chk.value] = {
+          checked: chk.checked,
+          copies: copiesSel ? copiesSel.value : 'auto'
+        };
+      }
+    });
+
+    const activeKey = (activeTemplateRef && activeTemplateRef.kind === 'builtin') ? activeTemplateRef.key : 'alaska_dots';
+    const hasAnyPrev = Object.keys(prevSelection).length > 0;
+
     multiPrintTemplatesEl.innerHTML = TEMPLATE_KEYS.map(k => {
       const p = builtInPresets[k];
       const name = p ? p.name : k;
       const filled = presetFilledCount(k);
+      const wasChecked = hasAnyPrev ? (prevSelection[k] ? prevSelection[k].checked : false) : (k === activeKey);
+      const savedCopies = prevSelection[k] ? prevSelection[k].copies : 'auto';
       return `<div class="multi-print-row-item">
         <label class="checkbox-label" style="display:flex; align-items:center; gap:6px; flex:1;">
-          <input type="checkbox" value="${k}" data-mpi-chk>
+          <input type="checkbox" value="${k}" data-mpi-chk ${wasChecked ? 'checked' : ''}>
           <span class="mpi-name">${name}</span>
         </label>
         <span class="mpi-size">${presetSizeLabel(k)}</span>
         <span class="mpi-filled">${filled} тов.</span>
         <select data-mpi-copies>
-          <option value="auto" selected>все${filled ? ` (${filled})` : ''}</option>
-          <option value="1">1×</option>
-          <option value="2">2×</option>
-          <option value="3">3×</option>
-          <option value="4">4×</option>
-          <option value="6">6×</option>
-          <option value="12">12×</option>
+          <option value="auto" ${savedCopies === 'auto' ? 'selected' : ''}>все${filled ? ` (${filled})` : ''}</option>
+          <option value="1" ${savedCopies === '1' ? 'selected' : ''}>1×</option>
+          <option value="2" ${savedCopies === '2' ? 'selected' : ''}>2×</option>
+          <option value="3" ${savedCopies === '3' ? 'selected' : ''}>3×</option>
+          <option value="4" ${savedCopies === '4' ? 'selected' : ''}>4×</option>
+          <option value="6" ${savedCopies === '6' ? 'selected' : ''}>6×</option>
+          <option value="12" ${savedCopies === '12' ? 'selected' : ''}>12×</option>
         </select>
       </div>`;
     }).join('');
@@ -7240,9 +7413,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     let count = 0;
     for (const sel of selected) {
-      const filled = presetFilledCount(sel.key);
-      const n = (sel.copies === 'auto' || !sel.copies) ? filled : Math.min(parseInt(sel.copies, 10) || 0, filled);
-      count += n;
+      const items = getItemsForTemplate(sel.key);
+      if (!items.length) continue;
+      const copiesNum = (sel.copies === 'auto' || !sel.copies) ? 1 : (parseInt(sel.copies, 10) || 1);
+      const templateTotal = (items.length === 1 || sel.copies === 'auto') ? (items.length * copiesNum) : (items.length * copiesNum);
+      count += templateTotal;
     }
     // Грубая оценка числа листов: по среднему числу на лист — не точная, но информативная.
     const gap = multiPrintGapInput ? parseFloat(multiPrintGapInput.value) || 0 : 0;
@@ -7252,8 +7427,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Собирает отмеченные шаблоны: [{ key, copies }].
   function collectMultiSelection() {
-    if (!multiPrintTemplatesEl) return [];
-    const rows = multiPrintTemplatesEl.querySelectorAll('.multi-print-row-item');
+    if (!multiPrintTemplatesEl || !multiPrintTemplatesEl.children.length) {
+      renderMultiPrintTemplates();
+    }
+    const rows = multiPrintTemplatesEl ? multiPrintTemplatesEl.querySelectorAll('.multi-print-row-item') : [];
     const out = [];
     rows.forEach(row => {
       const chk = row.querySelector('input[data-mpi-chk]');
@@ -7261,6 +7438,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const copiesSel = row.querySelector('select[data-mpi-copies]');
       out.push({ key: chk.value, copies: copiesSel ? copiesSel.value : 'auto' });
     });
+    if (!out.length) {
+      const activeKey = (activeTemplateRef && activeTemplateRef.kind === 'builtin') ? activeTemplateRef.key : 'alaska_dots';
+      const chk = multiPrintTemplatesEl ? multiPrintTemplatesEl.querySelector('input[data-mpi-chk][value="' + activeKey + '"]') : null;
+      if (chk) chk.checked = true;
+      out.push({ key: activeKey, copies: 'auto' });
+    }
     return out;
   }
 
@@ -7301,15 +7484,15 @@ document.addEventListener('DOMContentLoaded', () => {
   function openMultiPrintDrawer() {
     if (!multiPrintDrawer) return;
     renderMultiPrintTemplates();
-    // Дефолт: отметить активный встроенный шаблон, чтобы «Печать» работала сразу.
-    const activeKey = (activeTemplateRef && activeTemplateRef.kind === 'builtin') ? activeTemplateRef.key : null;
-    if (activeKey && multiPrintTemplatesEl) {
+    // Дефолт: отметить активный встроенный шаблон, если ничего не выбрано
+    const anyChecked = multiPrintTemplatesEl && multiPrintTemplatesEl.querySelector('input[data-mpi-chk]:checked');
+    if (!anyChecked && multiPrintTemplatesEl) {
+      const activeKey = (activeTemplateRef && activeTemplateRef.kind === 'builtin') ? activeTemplateRef.key : 'alaska_dots';
       const chk = multiPrintTemplatesEl.querySelector('input[data-mpi-chk][value="' + activeKey + '"]');
-      if (chk && !chk.checked) {
-        chk.checked = true;
-        // Если у активного шаблона нет заполненных товаров — снимем отметку, иначе
-        // пользователь получит alert «Нет заполненных». Отмечиваем только если есть товары.
-        if (presetFilledCount(activeKey) === 0) chk.checked = false;
+      if (chk) chk.checked = true;
+      else {
+        const firstChk = multiPrintTemplatesEl.querySelector('input[data-mpi-chk]');
+        if (firstChk) firstChk.checked = true;
       }
     }
     updateMultiPrintSummary();
@@ -7358,6 +7541,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   if (multiPrintBtn) multiPrintBtn.addEventListener('click', runMultiPrintFromUI);
+  const multiPrintBtnSidebar = document.getElementById('multiPrintBtnSidebar');
+  const openMultiPrintDrawerBtn = document.getElementById('openMultiPrintDrawerBtn');
+  if (multiPrintBtnSidebar) multiPrintBtnSidebar.addEventListener('click', runMultiPrintFromUI);
+  if (openMultiPrintDrawerBtn) openMultiPrintDrawerBtn.addEventListener('click', openMultiPrintDrawer);
 
   // Закрытие/сворачивание drawer: кнопка ✕, клик по затемнению, Esc.
   // Сворачиваем только саму панель — мульти-режим остаётся активным (pill в шапке
@@ -7634,6 +7821,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initItemsDrawer();
   renderItemsListInputs();
   renderSavedTemplates();
+  renderMultiPrintTemplates();
   // Автосохранённая сессия (таблицы, активный шаблон, режим) — или чистый старт.
   if (!restoreSession()) {
     activeTemplateRef = { kind: 'builtin', key: 'alaska_dots' };
