@@ -13,7 +13,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@700&family=Comfortaa:wght@700&family=Inter:wght@600;800;900&family=Lobster&family=Marck+Script&family=Montserrat:wght@400;600;700;800;900&family=Neucha&family=Oswald:wght@600;700&family=Pacifico&family=Pattaya&family=Playfair+Display:wght@700;900&family=Press+Start+2P&family=Roboto:wght@500;700;900&family=Rubik:wght@500;700;900&family=Ruslan+Display&family=Russo+One&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=6">
+  <link rel="stylesheet" href="style.css?v=9">
 </head>
 
 <body class="mode-auto">
@@ -49,6 +49,10 @@
         </label>
       </div>
 
+      <button id="instructionBtn" class="btn btn-secondary btn-icon-only-mobile"
+        title="Открыть руководство пользователя (F1)">
+        <span class="icon">📖</span> <span class="btn-text">Инструкция</span>
+      </button>
       <button id="saveTemplateBtn" class="btn btn-secondary btn-icon-only-mobile">
         <span class="icon">💾</span> <span class="btn-text">Сохранить</span>
       </button>
@@ -102,7 +106,8 @@
           <input type="checkbox" id="autoOpenDrawerChk" checked>
           <span>Автооткрытие</span>
         </label>
-        <button type="button" id="itemsDrawerCloseBtn" class="btn btn-secondary btn-sm" title="Закрыть шторку (Esc)">✕</button>
+        <button type="button" id="itemsDrawerCloseBtn" class="btn btn-secondary btn-sm"
+          title="Закрыть шторку (Esc)">✕</button>
       </div>
     </div>
 
@@ -112,7 +117,8 @@
         📋 Вставить список из Excel / 1C
       </button>
       <div id="idrPasteBox" class="idr-paste-box" style="display:none;">
-        <textarea id="idrPasteInput" rows="3" placeholder="Вставьте скопированные строки из Excel (Наименование [Вес] Цена)"></textarea>
+        <textarea id="idrPasteInput" rows="3"
+          placeholder="Вставьте скопированные строки из Excel (Наименование [Вес] Цена)"></textarea>
         <div class="idr-paste-actions">
           <button type="button" id="idrApplyPasteBtn" class="btn btn-primary btn-sm">Вставить список</button>
           <button type="button" id="idrCancelPasteBtn" class="btn btn-secondary btn-sm">Отмена</button>
@@ -140,14 +146,18 @@
 
     <!-- Подвал шторки -->
     <div class="items-drawer-footer">
-      <button type="button" id="idrClearAllBtn" class="btn btn-secondary btn-sm" title="Очистить все товары в списке">🗑 Очистить</button>
-      <button type="button" id="idrMultiPrintBtn" class="btn btn-secondary btn-sm" style="flex:1;" title="Открыть мульти-печать для печати нескольких шаблонов">🖨️ Мульти-печать</button>
-      <button type="button" id="idrPrintBtn" class="btn btn-primary btn-sm" style="flex:1;" title="Печать текущего шаблона">🖨️ Печать</button>
+      <button type="button" id="idrClearAllBtn" class="btn btn-secondary btn-sm" title="Очистить все товары в списке">🗑
+        Очистить</button>
+      <button type="button" id="idrMultiPrintBtn" class="btn btn-secondary btn-sm" style="flex:1;"
+        title="Открыть мульти-печать для печати нескольких шаблонов">🖨️ Мульти-печать</button>
+      <button type="button" id="idrPrintBtn" class="btn btn-primary btn-sm" style="flex:1;"
+        title="Печать текущего шаблона">🖨️ Печать</button>
     </div>
   </aside>
 
   <!-- Плавающая кнопка быстрого вызова шторки товаров -->
-  <button type="button" id="floatingItemsDrawerBtn" class="floating-items-drawer-btn no-print" title="Открыть список товаров (Шторка)">
+  <button type="button" id="floatingItemsDrawerBtn" class="floating-items-drawer-btn no-print"
+    title="Открыть список товаров (Шторка)">
     <span class="fid-icon">📝</span>
     <span class="fid-text" id="floatingItemsText">Товары</span>
     <span class="fid-badge" id="floatingItemsBadge">3</span>
@@ -380,7 +390,8 @@
                   title="Развернуть/свернуть поле для вставки из Excel">
                   <span>📋 Excel</span> <span class="excel-chevron" id="excelChevron">▾</span>
                 </button>
-                <span id="itemsStatsBadge" class="items-stats-badge" title="Количество заполненных товаров и страниц">0 тов.</span>
+                <span id="itemsStatsBadge" class="items-stats-badge" title="Количество заполненных товаров и страниц">0
+                  тов.</span>
               </div>
               <div class="paste-actions">
                 <button type="button" id="bulkSetBgBtn" class="btn btn-secondary btn-icon-xs"
@@ -1191,8 +1202,16 @@
 
           <!-- Мульти-печать: выбор шаблонов + копий -->
           <div id="multiPrintPanel" style="display:none;">
-            <p class="multi-print-hint">Выбор шаблонов для мульти-печати — в панели сверху (откроется автоматически при
-              переключении «🖨️ Мульти»).</p>
+            <p class="multi-print-hint" style="margin-bottom: 12px;">Печать нескольких разных шаблонов на общем листе
+              А4.</p>
+            <button type="button" id="openMultiPrintDrawerBtn" class="btn btn-secondary"
+              style="width: 100%; margin-bottom: 8px; justify-content: center;">
+              📋 Выбрать шаблоны и количество копий
+            </button>
+            <button type="button" id="multiPrintBtnSidebar" class="btn btn-primary"
+              style="width: 100%; justify-content: center;">
+              🖨️ Запустить мульти-печать
+            </button>
           </div>
         </div><!-- /.card-body section6 -->
       </section>
@@ -1208,6 +1227,18 @@
             <span class="collapse-arrow">▼</span>
           </button>
           <h2>Предпросмотр <span id="previewItemBadge" class="preview-item-badge" style="display:none;"></span></h2>
+          <!-- Степпер навигации по ценникам в режиме «Разные товары» -->
+          <div id="previewItemNav" class="preview-item-nav" style="display:none;">
+            <button type="button" id="prevItemBtn" class="btn-icon-sm" title="Предыдущий ценник (Alt+←)">◀</button>
+            <div class="item-nav-dropdown-wrap">
+              <button type="button" id="itemNavSelectBtn" class="item-nav-btn" title="Выбрать ценник из списка">
+                <span id="previewItemNavText">Товар 1 из 1</span>
+                <span class="dropdown-arrow">▾</span>
+              </button>
+              <div id="itemNavDropdownMenu" class="item-nav-dropdown-menu" style="display: none;"></div>
+            </div>
+            <button type="button" id="nextItemBtn" class="btn-icon-sm" title="Следующий ценник (Alt+→)">▶</button>
+          </div>
         </div>
         <span id="sizeReadout" class="size-readout">6,5 × 3,5 см</span>
 
@@ -1249,6 +1280,23 @@
 
       <!-- Single Tag Real Preview -->
       <div class="single-preview-container">
+        <!-- Floating Side Navigation Buttons (Вариант 1) -->
+        <button type="button" id="previewSidePrevBtn" class="preview-side-nav-btn prev" title="Предыдущий ценник (Alt+←)" aria-label="Предыдущий ценник" style="display: none;">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+        <button type="button" id="previewSideNextBtn" class="preview-side-nav-btn next" title="Следующий ценник (Alt+→)" aria-label="Следующий ценник" style="display: none;">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+
+        <!-- Floating Indicator Pill -->
+        <div id="previewFloatingIndicator" class="preview-floating-indicator" style="display: none;">
+          <span id="previewFloatingIndicatorText">Товар 1 из 1</span>
+        </div>
+
         <div class="preview-stage-wrapper">
           <div class="preview-stage">
             <div class="ruler ruler-h"><span id="rulerHText">6,5 см</span></div>
@@ -1372,6 +1420,42 @@
     </div>
   </div>
 
+  <!-- Modal: Руководство пользователя / Инструкция -->
+  <div id="instructionModal" class="modal-backdrop no-print" role="dialog" aria-modal="true"
+    aria-labelledby="instructionModalTitle">
+    <div class="modal-box modal-box-instruction">
+      <div class="instruction-modal-header">
+        <div class="instruction-modal-title">
+          <span class="instruction-icon">📖</span>
+          <div>
+            <h3 id="instructionModalTitle">Руководство пользователя</h3>
+            <p class="instruction-subtitle">Конструктор ценников и воблеров • Инструкция и особенности шаблонов</p>
+          </div>
+        </div>
+        <div class="instruction-modal-actions">
+          <button type="button" id="instructionPrintBtn" class="btn btn-primary btn-sm"
+            title="Распечатать руководство на принтере (A4)">
+            <span class="icon">🖨️</span> <span class="btn-text">Распечатать (A4)</span>
+          </button>
+          <a href="instruction.html" target="_blank" rel="noopener" id="instructionNewTabBtn"
+            class="btn btn-secondary btn-sm" title="Открыть инструкцию в отдельной вкладке">
+            <span class="icon">↗️</span> <span class="btn-text">В новой вкладке</span>
+          </a>
+          <a href="Инструкция_Конструктор_Ценников.pdf" download="Инструкция_Конструктор_Ценников.pdf"
+            id="instructionPdfBtn" class="btn btn-secondary btn-sm" title="Скачать инструкцию в PDF">
+            <span class="icon">📥</span> <span class="btn-text">Скачать PDF</span>
+          </a>
+          <button type="button" id="closeInstructionModal" class="btn btn-secondary btn-sm modal-close-btn"
+            title="Закрыть (Esc)">✕</button>
+        </div>
+      </div>
+      <div class="instruction-modal-body">
+        <iframe id="instructionIframe" src="instruction.html" title="Инструкция пользователя"
+          class="instruction-iframe"></iframe>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: per-item decoration был удалён — заменён основным блоком Оформления -->
 
   <!-- PRINT ONLY CONTAINER -->
@@ -1379,9 +1463,9 @@
     <!-- JS populates this with printable A4 pages -->
   </div>
 
-  <!-- v2: версия файла. При каждом изменении script.js повышайте число (?v=3, 4...),
-       иначе браузер может отдавать закэшированную старую копию. -->
-  <script src="script.js?v=12"></script>
+  <!-- html2pdf.bundle.min.js for offline, high-quality client-side A4 PDF export -->
+  <script src="html2pdf.bundle.min.js"></script>
+  <script src="script.js?v=16"></script>
 </body>
 
 </html>

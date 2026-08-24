@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Массив растёт прогрессивно: стартует с 1 пустой строки; при вводе в последнее
   // поле появляется следующая пустая (см. syncRowExtent / normalizeItemsArray).
   const MAX_ITEMS = 100; // мягкий защитный потолок (только для вставки больших таблиц)
-  const TEMPLATE_KEYS = ['alaska_dots', 'yellow_tag', 'ryba', 'sneki', 'sneki_5', 'sneki_digit', 'novy_vkus', 'novinka', 'tomat', 'sladko', 'sort_nedeli', 'korona_a5', 'aktsiya_a5', 'a5'];
+  const TEMPLATE_KEYS = ['alaska_dots', 'yellow_tag', 'ryba', 'sneki', 'sneki_5', 'sneki_digit', 'novy_vkus', 'novinka', 'tomat', 'sladko', 'sort_nedeli', 'korona_a5', 'a5'];
   const templateItems = {};
   function freshItem() {
     return { title: '', price: '', subtitle: '', subtitleManual: false, digit: '' };
@@ -318,6 +318,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const userTemplatesContainer = document.getElementById('userTemplates');
   const emptyUserTemplates = document.getElementById('emptyUserTemplates');
   const userCount = document.getElementById('userCount');
+
+  // Руководство пользователя (Инструкция)
+  const instructionBtn = document.getElementById('instructionBtn');
+  const instructionModal = document.getElementById('instructionModal');
+  const closeInstructionModal = document.getElementById('closeInstructionModal');
+  const instructionPrintBtn = document.getElementById('instructionPrintBtn');
+  const instructionIframe = document.getElementById('instructionIframe');
 
   // Экспорт / Импорт шаблонов
   const exportAllBtn = document.getElementById('exportAllBtn');
@@ -3666,11 +3673,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (saved !== null) {
           autoOpenDrawerChk.checked = saved === 'true';
         }
-      } catch (e) {}
+      } catch (e) { }
       autoOpenDrawerChk.addEventListener('change', () => {
         try {
           localStorage.setItem(AUTO_OPEN_DRAWER_KEY, autoOpenDrawerChk.checked ? 'true' : 'false');
-        } catch (e) {}
+        } catch (e) { }
       });
     }
 
@@ -3755,6 +3762,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (idrMultiPrintBtn) {
       idrMultiPrintBtn.addEventListener('click', () => {
         closeItemsDrawer();
+        const headerRadio = document.querySelector('input[name="printJob"][value="multi"]');
+        if (headerRadio) headerRadio.checked = true;
+        applyPrintJob('multi');
         openMultiPrintDrawer();
       });
     }
@@ -3762,7 +3772,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (idrPrintBtn) {
       idrPrintBtn.addEventListener('click', () => {
         closeItemsDrawer();
-        triggerPrint();
+        const jobMode = getPrintJobVal();
+        if (jobMode === 'multi') runMultiPrintFromUI();
+        else triggerPrint();
       });
     }
   }
@@ -3850,7 +3862,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const pxPerMm = (wobblerPreview && wobblerPreview.offsetWidth)
       ? (wobblerPreview.offsetWidth / ((parseFloat(wobblerWidthInput ? wobblerWidthInput.value : 6.5) * 10) || 65))
       : (96 / 25.4);
-    
+
     // Бюджет ширины (с запасом 3мм на отступы) и высоты (с запасом 1.2мм)
     const budgetW = Math.max(10, ((widthMm || 65) - 3.0) * pxPerMm);
     const budgetH = Math.max(10, ((heightMm || 12) - 1.2) * pxPerMm);
@@ -4207,9 +4219,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Позиции надписей товара. Если у товара нет своего labelPos (старые данные /
     // edge-кейсы), берём эталон с ценника №1 (база активного шаблона), а не дефолт,
     // — иначе такой ценник отрисуется со смещениями 0,0 вместо настроек шаблона.
-    const lp = (item && item.labelPos)
+    const lp = cloneLabelPos((item && item.labelPos)
       ? item.labelPos
-      : (itemsData[0] && itemsData[0].labelPos) ? itemsData[0].labelPos : defaultLabelPos();
+      : (itemsData[0] && itemsData[0].labelPos) ? itemsData[0].labelPos : defaultLabelPos());
     const digits = String((item && item.price) || '').split('');
 
     const tElem = clone.querySelector('.wobbler-title');
@@ -4501,6 +4513,10 @@ document.addEventListener('DOMContentLoaded', () => {
       showPrice: preset.showPrice !== false,
       titleFitFloor: preset.titleFitFloor,
       key: preset.key || '',
+      widthCm: preset.widthCm || 6.5,
+      heightCm: preset.heightCm || 4.5,
+      wMm: (preset.widthCm || 6.5) * 10,
+      hMm: (preset.heightCm || 4.5) * 10,
       digit: {
         font: preset.digitFont || "Arial, sans-serif",
         color: preset.digitColor || '#ffff00',
@@ -4551,10 +4567,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // переключать активный экран на этот шаблон.
   function fitTitleSizeForPreset(text, preset) {
     if (!text || !text.trim()) return null;
-    const wCm = parseFloat(preset.widthCm || 6.5) || 6.5;
-    const hCm = parseFloat(preset.heightCm || 4.5) || 4.5;
-    const wMm = wCm * 10;
-    const hMm = hCm * 10;
+    const wMm = preset.wMm || (parseFloat(preset.widthCm) || 6.5) * 10;
+    const hMm = preset.hMm || (parseFloat(preset.heightCm) || 4.5) * 10;
     const ts = normTitleSafe(preset.titleSafe || preset.ts);
     const layout = preset.layout || 'full';
     const headerH = preset.headerHeight || 100;
@@ -4597,7 +4611,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Контракт тот же, что у applyItemToClone, но все глобальные чтения заменены на ctx.
   function applyTemplateStyleToClone(clone, item, ctx) {
     const { tf, td, tb, ts, layout, headerH, rybaPib, insideWidth, labelPos: presetLp } = ctx;
-    const lp = (item && item.labelPos) ? item.labelPos : presetLp;
+    const wMm = ctx.wMm || 65;
+    const hMm = ctx.hMm || 45;
+    const lp = cloneLabelPos((item && item.labelPos) ? item.labelPos : presetLp);
     const digits = String((item && item.price) || '').split('');
 
     const tElem = clone.querySelector('.wobbler-title');
@@ -4758,8 +4774,6 @@ document.addEventListener('DOMContentLoaded', () => {
     applyCloneDecorBlock(clone.querySelector('.wobbler-outside-bottom'), botSnap, wMm, botH);
 
     // Safe-зона названия — по геометрии preset (не активного).
-    const wMm = ctx.wMm;
-    const hMm = ctx.hMm;
     const _hh = layout === 'full' ? hMm : hMm * (headerH / 100);
     const _pib = (rybaPib && layout === 'split') || (ctx.showPrice === false);
     const _bySafeH = _hh * Math.max(0, 1 - ts.top - ts.bottom);
@@ -4990,7 +5004,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // отдельно (syncFontControlsToContext); здесь только читаем источник истины.
     const tf = templateFonts || {};
     const effTitleSize = activeItemTitleSize(activeItem);
-    previewTitle.textContent = activeTitleText;
+    if (document.activeElement !== previewTitle) {
+      previewTitle.textContent = activeTitleText;
+    }
     previewTitle.style.fontFamily = fontOf(activeItem, 'titleFont', tf.titleFont || titleFont.value);
     previewTitle.style.color = fontOf(activeItem, 'titleColor', tf.titleColor || titleColor.value);
     previewTitle.style.fontSize = `${effTitleSize}pt`;
@@ -5012,8 +5028,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // (шрифт наследуется от наименования).
     if (previewSubtitle) {
       const subText = isMultiMode ? (activeItem?.subtitle || '') : (inputSubtitle?.value || '');
-      previewSubtitle.textContent = subText || '';
-      previewSubtitle.style.display = subText ? 'block' : 'none';
+      if (document.activeElement !== previewSubtitle) {
+        previewSubtitle.textContent = subText || '';
+      }
+      previewSubtitle.style.display = subText || document.activeElement === previewSubtitle ? 'block' : 'none';
       const subPt = fontOf(activeItem, 'subtitleSize', tf.subtitleSize != null ? tf.subtitleSize : (subtitleSize ? subtitleSize.value : 11));
       // Шрифт подзаголовка наследуется от шрифта наименования (исторически).
       previewSubtitle.style.fontFamily = fontOf(activeItem, 'titleFont', tf.titleFont || titleFont.value);
@@ -5030,7 +5048,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (previewBigDigit) {
       const isSnekiDigit = isSnekiDigitActive();
       const bdText = isMultiMode ? (activeItem?.digit || '') : ((document.getElementById('digitText') || {}).value || '');
-      const hasDigit = isSnekiDigit && !!bdText.trim();
+      const hasDigit = isSnekiDigit && (!!bdText.trim() || document.activeElement === previewBigDigit);
       previewBigDigit.style.display = hasDigit ? 'flex' : 'none';
       if (hasDigit) {
         const dFont = document.getElementById('digitFont');
@@ -5043,9 +5061,11 @@ document.addEventListener('DOMContentLoaded', () => {
         previewBigDigit.style.fontWeight = dWeight ? dWeight.value : '800';
         const bdPos = lp.bigdigit || { x: 0, y: 0 };
         previewBigDigit.style.transform = `translate(${bdPos.x}mm, ${bdPos.y}mm) rotate(${layerRotate}deg)`;
-        previewBigDigit.innerHTML = `<span class="bigdigit-num-symbol">№</span>${bdText.trim()}`;
+        if (document.activeElement !== previewBigDigit) {
+          previewBigDigit.innerHTML = isSnekiDigit ? `<span class="bigdigit-num-symbol">№</span>${bdText.trim()}` : bdText.trim();
+        }
       } else {
-        previewBigDigit.innerHTML = '';
+        if (document.activeElement !== previewBigDigit) previewBigDigit.innerHTML = '';
       }
     }
     syncDigitControlsVisibility();
@@ -5060,6 +5080,7 @@ document.addEventListener('DOMContentLoaded', () => {
         previewItemBadge.style.display = 'none';
       }
     }
+    if (typeof updatePreviewItemNav === 'function') updatePreviewItemNav();
 
     // Price Toggle & Custom Styling (Currency icon matches exact price font & weight!)
     if (showPriceToggle.checked) {
@@ -5070,19 +5091,21 @@ document.addEventListener('DOMContentLoaded', () => {
       // Гарантируем длину массива priceDigits под текущее число цифр.
       const digits = activePriceText.split('');
       while (lp.priceDigits.length < digits.length) lp.priceDigits.push({ x: 0, y: 0 });
-      previewPrice.innerHTML = '';
-      digits.forEach((d, idx) => {
-        const span = document.createElement('span');
-        // Пробел рендерим как полноценный символ: nbsp не схлопывается
-        // в inline-flex, а класс .price-space даёт ему ширину цифры.
-        const isSpace = d === ' ';
-        span.className = 'price-digit' + (isSpace ? ' price-space' : '');
-        span.textContent = isSpace ? '\u00A0' : d;
-        span.dataset.pos = idx;
-        const dp = lp.priceDigits[idx];
-        span.style.transform = `translate(${dp.x}mm, ${dp.y}mm)`;
-        previewPrice.appendChild(span);
-      });
+      if (document.activeElement !== previewPrice) {
+        previewPrice.innerHTML = '';
+        digits.forEach((d, idx) => {
+          const span = document.createElement('span');
+          // Пробел рендерим как полноценный символ: nbsp не схлопывается
+          // в inline-flex, а класс .price-space даёт ему ширину цифры.
+          const isSpace = d === ' ';
+          span.className = 'price-digit' + (isSpace ? ' price-space' : '');
+          span.textContent = isSpace ? '\u00A0' : d;
+          span.dataset.pos = idx;
+          const dp = lp.priceDigits[idx];
+          span.style.transform = `translate(${dp.x}mm, ${dp.y}mm)`;
+          previewPrice.appendChild(span);
+        });
+      }
       previewPrice.style.fontFamily = fontOf(activeItem, 'priceFont', tf.priceFont || priceFont.value);
       previewPrice.style.fontSize = `${fontOf(activeItem, 'priceSize', tf.priceSize != null ? tf.priceSize : priceSize.value)}pt`;
       previewPrice.style.fontWeight = fontOf(activeItem, 'priceWeight', tf.priceWeight || priceWeight.value);
@@ -5613,6 +5636,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
       itemWrapper.appendChild(cloned);
 
+      if (isMultiMode) {
+        const origIndex = itemsData.indexOf(item);
+        if (origIndex !== -1) {
+          itemWrapper.style.cursor = 'pointer';
+          itemWrapper.title = `Кликните, чтобы открыть товар #${origIndex + 1} в основном предпросмотре`;
+          if (origIndex === activePreviewIndex) {
+            itemWrapper.style.outline = '2px solid var(--accent-blue)';
+            itemWrapper.style.outlineOffset = '2px';
+            itemWrapper.style.borderRadius = '4px';
+          }
+          itemWrapper.addEventListener('click', () => {
+            if (typeof setActiveItemIndex === 'function') {
+              setActiveItemIndex(origIndex, true);
+            }
+          });
+        }
+      }
+
       if (!showCropMarks.checked) {
         const guides = itemWrapper.querySelector('.crop-guides');
         if (guides) guides.style.display = 'none';
@@ -5711,14 +5752,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Print Trigger
   function triggerPrint() {
-    preparePrintArea();
-    document.body.classList.add('is-printing');
-    setTimeout(() => {
-      window.print();
-      setTimeout(() => {
+    try {
+      preparePrintArea();
+      document.body.classList.add('is-printing');
+      const cleanup = () => {
         document.body.classList.remove('is-printing');
-      }, 500);
-    }, 150);
+      };
+      window.addEventListener('afterprint', cleanup, { once: true });
+      setTimeout(() => {
+        try {
+          window.print();
+        } catch (e) {
+          console.error('window.print error:', e);
+        }
+        setTimeout(cleanup, 1000);
+      }, 150);
+    } catch (err) {
+      console.error('triggerPrint error:', err);
+      alert('Ошибка при подготовке к печати: ' + (err.message || err));
+      document.body.classList.remove('is-printing');
+    }
   }
 
   // ===== Мульти-печать: shelf-packer и сборка листов =====
@@ -5757,6 +5810,45 @@ document.addEventListener('DOMContentLoaded', () => {
     return pages.length ? pages : (items.length ? [{ rows: [] }] : []);
   }
 
+  // Получает список товаров для шаблона: если в templateItems[key] есть заполненные строки,
+  // возвращает их; иначе использует активные поля (для текущего шаблона) или значения по умолчанию из builtInPresets.
+  function getItemsForTemplate(key) {
+    const arr = templateItems[key] || [];
+    const filled = arr.filter(it => it && it.title && it.title.trim());
+    if (filled.length > 0) return filled;
+
+    let preset = null;
+    if (activeTemplateRef && activeTemplateRef.kind === 'builtin' && activeTemplateRef.key === key) {
+      preset = getCurrentState();
+    } else {
+      preset = builtInPresets[key] || null;
+    }
+    if (!preset) return [];
+
+    let title = '';
+    let price = '';
+    let subtitle = '';
+    let digit = '';
+
+    if (activeTemplateRef && activeTemplateRef.kind === 'builtin' && activeTemplateRef.key === key) {
+      title = (inputTitle ? inputTitle.value : '').trim() || preset.title || '';
+      price = (inputPrice ? inputPrice.value : '').trim() || preset.price || '';
+      subtitle = (inputSubtitle ? inputSubtitle.value : '').trim() || preset.subtitle || '';
+      const inputBigDigit = document.getElementById('inputBigDigit');
+      digit = (inputBigDigit ? inputBigDigit.value : '').trim() || preset.digit || '';
+    } else {
+      title = (preset.title || preset.name || '').trim();
+      price = (preset.price != null ? String(preset.price) : '').trim();
+      subtitle = (preset.subtitle != null ? String(preset.subtitle) : '').trim();
+      digit = (preset.digit != null ? String(preset.digit) : '').trim();
+    }
+
+    if (title) {
+      return [{ title, price, subtitle, digit }];
+    }
+    return [];
+  }
+
   // Собирает очередь ценников из отмеченных шаблонов, рендерит каждый под свой preset,
   // упаковывает и строит DOM в #printArea. gap — зазор между ценниками (мм).
   function prepareMultiPrintArea(selected, gap, showCrop) {
@@ -5765,20 +5857,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const queue = [];
     for (const sel of selected) {
       let preset = null;
-      if (activeTemplateRef && activeTemplateRef.key === sel.key) {
+      if (activeTemplateRef && activeTemplateRef.kind === 'builtin' && activeTemplateRef.key === sel.key) {
         preset = getCurrentState();
       } else {
         preset = builtInPresets[sel.key] || null;
       }
       if (!preset) continue;
 
-      const arr = templateItems[sel.key] || [];
-      const filled = arr.filter(it => it && it.title && it.title.trim());
-      const n = (sel.copies === 'auto' || !sel.copies) ? filled.length : Math.min(parseInt(sel.copies, 10) || 0, filled.length);
-      for (let i = 0; i < n; i++) {
-        // copies считает количество разных товаров; если copies > filled.length, добиваем последним.
-        const item = filled[i] || filled[filled.length - 1];
-        if (item) queue.push({ item, preset });
+      const items = getItemsForTemplate(sel.key);
+      if (!items.length) continue;
+
+      const copiesNum = (sel.copies === 'auto' || !sel.copies) ? 1 : (parseInt(sel.copies, 10) || 1);
+      if (items.length === 1) {
+        for (let i = 0; i < copiesNum; i++) {
+          queue.push({ item: items[0], preset });
+        }
+      } else {
+        if (sel.copies === 'auto' || !sel.copies) {
+          for (let i = 0; i < items.length; i++) {
+            queue.push({ item: items[i], preset });
+          }
+        } else {
+          for (let c = 0; c < copiesNum; c++) {
+            for (let i = 0; i < items.length; i++) {
+              queue.push({ item: items[i], preset });
+            }
+          }
+        }
       }
     }
     if (!queue.length) return { count: 0, pages: 0 };
@@ -5829,17 +5934,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Аналог triggerPrint для мульти-печати. selected — список отмеченных шаблонов.
   function triggerMultiPrint(selected, gap, showCrop) {
-    const res = prepareMultiPrintArea(selected, gap, showCrop);
-    if (!res.count) { alert('Нет заполненных ценников в выбранных шаблонах.'); return; }
-    document.body.classList.add('is-printing');
-    setTimeout(() => {
-      window.print();
-      setTimeout(() => {
+    try {
+      const res = prepareMultiPrintArea(selected, gap, showCrop);
+      if (!res || !res.count) {
+        alert('Нет заполненных ценников в выбранных шаблонах.');
+        return { count: 0, pages: 0 };
+      }
+      document.body.classList.add('is-printing');
+      const cleanup = () => {
         document.body.classList.remove('is-printing');
-        printArea.innerHTML = '';   // очищаем мульти-печать после диалога
-      }, 500);
-    }, 150);
-    return res;
+      };
+      window.addEventListener('afterprint', cleanup, { once: true });
+      setTimeout(() => {
+        try {
+          window.print();
+        } catch (e) {
+          console.error('window.print error:', e);
+        }
+        setTimeout(cleanup, 1000);
+      }, 150);
+      return res;
+    } catch (err) {
+      console.error('triggerMultiPrint error:', err);
+      alert('Ошибка при подготовке к мульти-печати: ' + (err.message || err));
+      document.body.classList.remove('is-printing');
+    }
   }
 
   // Apply State to Form Inputs
@@ -5853,7 +5972,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     inputTitle.value = state.title || '';
-    if (inputSubtitle) inputSubtitle.value = state.subtitle || '';
+    if (inputSubtitle) {
+      inputSubtitle.value = state.subtitle || '';
+      delete inputSubtitle.dataset.manual;
+    }
     // Инициализируем templateFonts из state (источник истины для шрифтов шаблона),
     // затем синхронизируем инпуты DOM под этот снимок. alignState тоже наполняем,
     // т.к. readFontSnapshotFromInputs() его использует.
@@ -6516,6 +6638,67 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('.tab-btn[data-tab="userSaved"]').click();
   });
 
+  // ===== Модал «Руководство пользователя / Инструкция» =====
+  function openInstructionModal() {
+    if (!instructionModal) return;
+    instructionModal.classList.add('active');
+  }
+
+  function hideInstructionModal() {
+    if (!instructionModal) return;
+    instructionModal.classList.remove('active');
+  }
+
+  if (instructionBtn) {
+    instructionBtn.addEventListener('click', openInstructionModal);
+  }
+  if (closeInstructionModal) {
+    closeInstructionModal.addEventListener('click', hideInstructionModal);
+  }
+  if (instructionModal) {
+    instructionModal.addEventListener('click', (e) => {
+      if (e.target === instructionModal) {
+        hideInstructionModal();
+      }
+    });
+  }
+
+  if (instructionPrintBtn) {
+    instructionPrintBtn.addEventListener('click', () => {
+      try {
+        if (instructionIframe && instructionIframe.contentWindow) {
+          instructionIframe.contentWindow.focus();
+          instructionIframe.contentWindow.print();
+          return;
+        }
+      } catch (err) {
+        console.warn('Direct iframe print restricted, opening in new window fallback:', err);
+      }
+      const printWin = window.open('instruction.html', '_blank');
+      if (printWin) {
+        printWin.addEventListener('load', () => {
+          setTimeout(() => {
+            try {
+              printWin.print();
+            } catch (e) {
+              console.warn(e);
+            }
+          }, 300);
+        });
+      }
+    });
+  }
+
+  // Hotkeys: F1 opens user guide, Escape closes it
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'F1') {
+      e.preventDefault();
+      openInstructionModal();
+    } else if (e.key === 'Escape' && instructionModal && instructionModal.classList.contains('active')) {
+      hideInstructionModal();
+    }
+  });
+
   // ===== Модал «Перенести товары на другой шаблон» =====
   // Копирует таблицу товаров активного встроенного шаблона в выбранные
   // (глубокий клон — каждый приёмник получает независимую копию данных).
@@ -6811,7 +6994,21 @@ document.addEventListener('DOMContentLoaded', () => {
   // смене шрифта/толщины (влияют на ширину слов) — заново подгоняем кегль под
   // размер ценника. Слайдер сюда НЕ подключён — ручная правка держится до
   // следующего ввода текста/шрифта. refitActiveTitle сам зовёт updatePreview.
-  if (inputTitle) inputTitle.addEventListener('input', refitActiveTitle);
+  if (inputTitle) {
+    inputTitle.addEventListener('input', () => {
+      const autoSub = builtinPresetFlag('autoSubtitle', '');
+      if (autoSub && inputSubtitle && !inputSubtitle.dataset.manual) {
+        inputSubtitle.value = inputTitle.value.trim() ? autoSub : '';
+        autoGrowTextarea(inputSubtitle);
+      }
+      refitActiveTitle();
+    });
+  }
+  if (inputSubtitle) {
+    inputSubtitle.addEventListener('input', () => {
+      inputSubtitle.dataset.manual = 'true';
+    });
+  }
   if (titleFont) titleFont.addEventListener('change', refitActiveTitle);
   if (titleWeight) titleWeight.addEventListener('change', refitActiveTitle);
 
@@ -7103,6 +7300,471 @@ document.addEventListener('DOMContentLoaded', () => {
     wobblerPreview.addEventListener('pointercancel', end);
   })();
 
+  // ===== WYSIWYG Прямой инлайн-ввод в окне предпросмотра =====
+  function initWobblerInlineEditing() {
+    const isDragActive = () => {
+      return wobblerPreview && (
+        wobblerPreview.classList.contains('drag-mode') ||
+        wobblerPreview.classList.contains('drag-mode-solo') ||
+        wobblerPreview.classList.contains('safe-edit-mode')
+      );
+    };
+
+    function makeEditable(el, field, onUpdate, onFocusNext) {
+      if (!el) return;
+      el.setAttribute('contenteditable', 'plaintext-only');
+      el.setAttribute('spellcheck', 'false');
+
+      // При клике: если активен режим смещения — не активируем фокус ввода
+      el.addEventListener('pointerdown', (e) => {
+        if (isDragActive()) {
+          el.blur();
+        }
+      });
+
+      // Перехват вставки для вставки только чистого неформатированного текста
+      el.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+        if (document.queryCommandSupported && document.queryCommandSupported('insertText')) {
+          document.execCommand('insertText', false, text);
+        } else {
+          const selection = window.getSelection();
+          if (selection && selection.rangeCount) {
+            selection.deleteFromDocument();
+            selection.getRangeAt(0).insertNode(document.createTextNode(text));
+          }
+        }
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+
+      // Навигация Enter, Tab, Escape
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (onFocusNext) onFocusNext();
+          else el.blur();
+        } else if (e.key === 'Tab') {
+          e.preventDefault();
+          if (onFocusNext) onFocusNext();
+          else el.blur();
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          el.blur();
+        }
+      });
+
+      // Ввод текста в реальном времени
+      el.addEventListener('input', () => {
+        const rawText = el.innerText || el.textContent || '';
+        onUpdate(rawText);
+      });
+
+      // Завершение редактирования
+      el.addEventListener('blur', () => {
+        updatePreview();
+        scheduleSessionSave();
+      });
+    }
+
+    // 1. Наименование товара (previewTitle)
+    makeEditable(previewTitle, 'title', (rawText) => {
+      const val = rawText.replace(/[\r\n]+/g, ' ');
+      const isMultiMode = document.querySelector('input[name="printMode"]:checked').value === 'multi';
+      if (inputTitle) inputTitle.value = val;
+      const autoSub = builtinPresetFlag('autoSubtitle', '');
+
+      if (isMultiMode) {
+        if (!itemsData[activePreviewIndex]) itemsData[activePreviewIndex] = freshItem();
+        itemsData[activePreviewIndex].title = val;
+
+        // Синхронизируем инпуты наименования в блоке «Товары» (в сайдбаре и в шторке)
+        document.querySelectorAll(`.item-title-input[data-index="${activePreviewIndex}"]`).forEach(inp => {
+          if (inp !== document.activeElement && inp.value !== val) {
+            inp.value = val;
+            autoGrowTextarea(inp);
+          }
+        });
+
+        // Авто-вес: если для шаблона настроен скрипт авто-подстановки веса и вес не редактировался вручную
+        if (autoSub && !itemsData[activePreviewIndex].subtitleManual) {
+          itemsData[activePreviewIndex].subtitle = val.trim() ? autoSub : '';
+          document.querySelectorAll(`.item-subtitle-input[data-index="${activePreviewIndex}"]`).forEach(si => {
+            if (si.value !== itemsData[activePreviewIndex].subtitle) {
+              si.value = itemsData[activePreviewIndex].subtitle;
+              autoGrowTextarea(si);
+            }
+          });
+          if (previewSubtitle && document.activeElement !== previewSubtitle) {
+            previewSubtitle.textContent = itemsData[activePreviewIndex].subtitle;
+            previewSubtitle.style.display = itemsData[activePreviewIndex].subtitle ? 'block' : 'none';
+          }
+        }
+
+        // Автоподбор шрифта на лету
+        const family = titleFont ? titleFont.value : '';
+        const weight = titleWeight ? titleWeight.value : '800';
+        const fit = fitTitleSize(val, family, weight);
+        if (fit != null) {
+          itemsData[activePreviewIndex].titleSize = fit;
+          if (itemsData[activePreviewIndex].fonts) itemsData[activePreviewIndex].fonts.titleSize = fit;
+          previewTitle.style.fontSize = `${fit}pt`;
+          if (titleSize) titleSize.value = String(fit);
+          if (titleSizeVal) titleSizeVal.textContent = String(fit);
+          syncTitleSizePreview();
+        }
+
+        // Синхронизация прогрессивного списка строк
+        syncRowExtent(activePreviewIndex);
+      } else {
+        // Режим «Один товар»
+        if (autoSub && inputSubtitle && !inputSubtitle.dataset.manual) {
+          inputSubtitle.value = val.trim() ? autoSub : '';
+          autoGrowTextarea(inputSubtitle);
+          if (previewSubtitle && document.activeElement !== previewSubtitle) {
+            previewSubtitle.textContent = inputSubtitle.value;
+            previewSubtitle.style.display = inputSubtitle.value ? 'block' : 'none';
+          }
+        }
+
+        const family = titleFont ? titleFont.value : '';
+        const weight = titleWeight ? titleWeight.value : '800';
+        const fit = fitTitleSize(val, family, weight);
+        if (fit != null) {
+          templateFonts = Object.assign({}, templateFonts, { titleSize: fit });
+          previewTitle.style.fontSize = `${fit}pt`;
+          if (titleSize) titleSize.value = String(fit);
+          if (titleSizeVal) titleSizeVal.textContent = String(fit);
+          syncTitleSizePreview();
+        }
+      }
+
+      // Обновляем мини-раскладку А4
+      const wCm = parseFloat(wobblerWidthInput.value) || 6.5;
+      const hCm = parseFloat(wobblerHeightInput.value) || 4.5;
+      renderSheetPreview(wCm * 10, hCm * 10);
+      updateItemsStatsBadge();
+      if (typeof updateItemsDrawerHeader === 'function') updateItemsDrawerHeader();
+    }, () => {
+      if (previewPriceBox && previewPriceBox.style.display !== 'none' && previewPrice) {
+        previewPrice.focus();
+      } else if (previewSubtitle && previewSubtitle.style.display !== 'none') {
+        previewSubtitle.focus();
+      } else {
+        previewTitle.blur();
+      }
+    });
+
+    // 2. Цена (previewPrice)
+    if (previewPrice) {
+      // При клике на блок цены — фокус на цену
+      if (previewPriceBox) {
+        previewPriceBox.addEventListener('click', (e) => {
+          if (!isDragActive() && document.activeElement !== previewPrice) {
+            previewPrice.focus();
+          }
+        });
+      }
+
+      previewPrice.addEventListener('focus', () => {
+        const isMultiMode = document.querySelector('input[name="printMode"]:checked').value === 'multi';
+        const activePriceText = isMultiMode ? (itemsData[activePreviewIndex]?.price || '') : inputPrice.value.trim();
+        previewPrice.textContent = activePriceText;
+        try {
+          const range = document.createRange();
+          range.selectNodeContents(previewPrice);
+          const sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+        } catch (_) {}
+      });
+
+      makeEditable(previewPrice, 'price', (rawText) => {
+        const val = rawText.replace(/[\r\n]+/g, '').trim();
+        const isMultiMode = document.querySelector('input[name="printMode"]:checked').value === 'multi';
+        if (inputPrice) inputPrice.value = val;
+        if (isMultiMode) {
+          if (!itemsData[activePreviewIndex]) itemsData[activePreviewIndex] = freshItem();
+          itemsData[activePreviewIndex].price = val;
+          const rowInputs = document.querySelectorAll(`.item-price-input[data-index="${activePreviewIndex}"]`);
+          rowInputs.forEach(inp => {
+            if (inp !== document.activeElement && inp.value !== val) {
+              inp.value = val;
+              autoGrowTextarea(inp);
+            }
+          });
+          syncRowExtent(activePreviewIndex);
+          updateItemsStatsBadge();
+          if (typeof updateItemsDrawerHeader === 'function') updateItemsDrawerHeader();
+        }
+        const wCm = parseFloat(wobblerWidthInput.value) || 6.5;
+        const hCm = parseFloat(wobblerHeightInput.value) || 4.5;
+        renderSheetPreview(wCm * 10, hCm * 10);
+      }, () => {
+        if (previewSubtitle && previewSubtitle.style.display !== 'none') {
+          previewSubtitle.focus();
+        } else {
+          previewPrice.blur();
+        }
+      });
+    }
+
+    // 3. Подзаголовок / Вес (previewSubtitle)
+    if (previewSubtitle) {
+      makeEditable(previewSubtitle, 'subtitle', (rawText) => {
+        const val = rawText.replace(/[\r\n]+/g, '').trim();
+        const isMultiMode = document.querySelector('input[name="printMode"]:checked').value === 'multi';
+        if (inputSubtitle) {
+          inputSubtitle.value = val;
+          inputSubtitle.dataset.manual = 'true';
+          autoGrowTextarea(inputSubtitle);
+        }
+        if (isMultiMode) {
+          if (!itemsData[activePreviewIndex]) itemsData[activePreviewIndex] = freshItem();
+          itemsData[activePreviewIndex].subtitle = val;
+          itemsData[activePreviewIndex].subtitleManual = true;
+          const rowInputs = document.querySelectorAll(`.item-subtitle-input[data-index="${activePreviewIndex}"]`);
+          rowInputs.forEach(inp => {
+            if (inp !== document.activeElement && inp.value !== val) {
+              inp.value = val;
+              autoGrowTextarea(inp);
+            }
+          });
+          syncRowExtent(activePreviewIndex);
+          updateItemsStatsBadge();
+          if (typeof updateItemsDrawerHeader === 'function') updateItemsDrawerHeader();
+        }
+        const wCm = parseFloat(wobblerWidthInput.value) || 6.5;
+        const hCm = parseFloat(wobblerHeightInput.value) || 4.5;
+        renderSheetPreview(wCm * 10, hCm * 10);
+      }, () => {
+        previewSubtitle.blur();
+      });
+    }
+
+    // 4. Большая цифра (previewBigDigit)
+    if (previewBigDigit) {
+      makeEditable(previewBigDigit, 'digit', (rawText) => {
+        const val = rawText.replace(/[№\r\n]+/g, '').trim();
+        const isMultiMode = document.querySelector('input[name="printMode"]:checked').value === 'multi';
+        const dText = document.getElementById('digitText');
+        if (dText) dText.value = val;
+        if (isMultiMode) {
+          if (!itemsData[activePreviewIndex]) itemsData[activePreviewIndex] = freshItem();
+          itemsData[activePreviewIndex].digit = val;
+          const rowInputs = document.querySelectorAll(`.item-digit-input[data-index="${activePreviewIndex}"]`);
+          rowInputs.forEach(inp => { if (inp !== document.activeElement && inp.value !== val) inp.value = val; });
+          syncRowExtent(activePreviewIndex);
+          if (typeof updateItemsDrawerHeader === 'function') updateItemsDrawerHeader();
+        }
+      }, () => {
+        previewBigDigit.blur();
+      });
+    }
+  }
+
+  // ===== Навигация между ценниками в окне предпросмотра =====
+  function setActiveItemIndex(idx, animate = false) {
+    if (!itemsData.length) return;
+    const clamped = Math.max(0, Math.min(idx, itemsData.length - 1));
+    activePreviewIndex = clamped;
+
+    if (animate && wobblerPreview) {
+      wobblerPreview.classList.remove('item-switched');
+      void wobblerPreview.offsetWidth; // trigger reflow
+      wobblerPreview.classList.add('item-switched');
+    }
+
+    syncFontControlsToContext();
+    syncDecorControlsToContext();
+    syncBgControlsToContext();
+    refitActiveTitle();
+    updatePreview();
+
+    // Подсветка строки в таблицах шторки и сайдбара
+    document.querySelectorAll('.item-row').forEach((r) => {
+      const rowIdx = parseInt(r.getAttribute('data-index') || r.dataset.index, 10);
+      r.classList.toggle('active-preview-row', rowIdx === activePreviewIndex);
+    });
+
+    updatePreviewItemNav();
+  }
+
+  function updatePreviewItemNav() {
+    const navEl = document.getElementById('previewItemNav');
+    const sidePrevBtn = document.getElementById('previewSidePrevBtn');
+    const sideNextBtn = document.getElementById('previewSideNextBtn');
+    const floatIndicator = document.getElementById('previewFloatingIndicator');
+    const floatText = document.getElementById('previewFloatingIndicatorText');
+
+    const isMultiMode = document.querySelector('input[name="printMode"]:checked')?.value === 'multi';
+    const showNav = isMultiMode && itemsData.length > 1;
+
+    if (navEl) navEl.style.display = showNav ? 'inline-flex' : 'none';
+    if (sidePrevBtn) sidePrevBtn.style.display = showNav ? 'flex' : 'none';
+    if (sideNextBtn) sideNextBtn.style.display = showNav ? 'flex' : 'none';
+    if (floatIndicator) floatIndicator.style.display = showNav ? 'block' : 'none';
+
+    if (!showNav) return;
+
+    const prevBtn = document.getElementById('prevItemBtn');
+    const nextBtn = document.getElementById('nextItemBtn');
+    const navText = document.getElementById('previewItemNavText');
+
+    const isFirst = (activePreviewIndex <= 0);
+    const isLast = (activePreviewIndex >= itemsData.length - 1);
+    const labelStr = `Товар ${activePreviewIndex + 1} из ${itemsData.length}`;
+
+    if (prevBtn) prevBtn.disabled = isFirst;
+    if (nextBtn) nextBtn.disabled = isLast;
+    if (navText) navText.textContent = labelStr;
+
+    if (sidePrevBtn) sidePrevBtn.disabled = isFirst;
+    if (sideNextBtn) sideNextBtn.disabled = isLast;
+    if (floatText) floatText.textContent = labelStr;
+  }
+
+  function initPreviewItemNavigator() {
+    const prevBtn = document.getElementById('prevItemBtn');
+    const nextBtn = document.getElementById('nextItemBtn');
+    const sidePrevBtn = document.getElementById('previewSidePrevBtn');
+    const sideNextBtn = document.getElementById('previewSideNextBtn');
+    const selectBtn = document.getElementById('itemNavSelectBtn');
+    const menuEl = document.getElementById('itemNavDropdownMenu');
+
+    if (prevBtn) {
+      prevBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (activePreviewIndex > 0) setActiveItemIndex(activePreviewIndex - 1, true);
+      });
+    }
+
+    if (nextBtn) {
+      nextBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (activePreviewIndex < itemsData.length - 1) setActiveItemIndex(activePreviewIndex + 1, true);
+      });
+    }
+
+    if (sidePrevBtn) {
+      sidePrevBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (activePreviewIndex > 0) setActiveItemIndex(activePreviewIndex - 1, true);
+      });
+    }
+
+    if (sideNextBtn) {
+      sideNextBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (activePreviewIndex < itemsData.length - 1) setActiveItemIndex(activePreviewIndex + 1, true);
+      });
+    }
+
+    function closeMenu() {
+      if (menuEl) menuEl.style.display = 'none';
+    }
+
+    function toggleMenu(e) {
+      e.stopPropagation();
+      if (!menuEl) return;
+      if (menuEl.style.display === 'flex' || menuEl.style.display === 'block') {
+        closeMenu();
+        return;
+      }
+      // Наполняем выпадающий список позиций
+      menuEl.innerHTML = '';
+      itemsData.forEach((it, idx) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'item-nav-dropdown-item' + (idx === activePreviewIndex ? ' active' : '');
+        const titleStr = (it.title || '').trim() || `(Товар №${idx + 1})`;
+        const priceStr = (it.price || '').trim() ? `${it.price} ₽` : '';
+        btn.innerHTML = `
+          <span class="item-num">#${idx + 1}</span>
+          <span class="item-name" title="${titleStr}">${titleStr}</span>
+          <span class="item-price">${priceStr}</span>
+        `;
+        btn.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          setActiveItemIndex(idx, true);
+          closeMenu();
+        });
+        menuEl.appendChild(btn);
+      });
+      menuEl.style.display = 'flex';
+    }
+
+    if (selectBtn) selectBtn.addEventListener('click', toggleMenu);
+    document.addEventListener('click', (e) => {
+      if (menuEl && !menuEl.contains(e.target) && e.target !== selectBtn) {
+        closeMenu();
+      }
+    });
+
+    // Горячие клавиши (Alt+Left/Right или Ctrl+Left/Right)
+    document.addEventListener('keydown', (e) => {
+      const tag = (document.activeElement && document.activeElement.tagName) || '';
+      const isEditable = document.activeElement && (
+        tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement.isContentEditable
+      );
+      if (isEditable) return;
+
+      const isMultiMode = document.querySelector('input[name="printMode"]:checked')?.value === 'multi';
+      if (!isMultiMode || itemsData.length <= 1) return;
+
+      if ((e.altKey || e.ctrlKey) && e.key === 'ArrowLeft') {
+        e.preventDefault();
+        if (activePreviewIndex > 0) setActiveItemIndex(activePreviewIndex - 1, true);
+      } else if ((e.altKey || e.ctrlKey) && e.key === 'ArrowRight') {
+        e.preventDefault();
+        if (activePreviewIndex < itemsData.length - 1) setActiveItemIndex(activePreviewIndex + 1, true);
+      }
+    });
+
+    // Свайпы на мобильных устройствах
+    const stage = document.querySelector('.preview-stage') || wobblerPreview;
+    if (stage) {
+      let touchStartX = 0;
+      let touchStartY = 0;
+      let touchStartTime = 0;
+
+      stage.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+          touchStartX = e.touches[0].clientX;
+          touchStartY = e.touches[0].clientY;
+          touchStartTime = Date.now();
+        }
+      }, { passive: true });
+
+      stage.addEventListener('touchend', (e) => {
+        if (e.changedTouches.length === 1) {
+          const isDragActive = wobblerPreview && (
+            wobblerPreview.classList.contains('drag-mode') ||
+            wobblerPreview.classList.contains('drag-mode-solo') ||
+            wobblerPreview.classList.contains('safe-edit-mode')
+          );
+          if (isDragActive) return;
+
+          const dx = e.changedTouches[0].clientX - touchStartX;
+          const dy = e.changedTouches[0].clientY - touchStartY;
+          const dt = Date.now() - touchStartTime;
+
+          // Горизонтальный свайп достаточной амплитуды
+          if (dt < 400 && Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+            const isMultiMode = document.querySelector('input[name="printMode"]:checked')?.value === 'multi';
+            if (!isMultiMode || itemsData.length <= 1) return;
+
+            if (dx < 0 && activePreviewIndex < itemsData.length - 1) {
+              setActiveItemIndex(activePreviewIndex + 1, true);
+            } else if (dx > 0 && activePreviewIndex > 0) {
+              setActiveItemIndex(activePreviewIndex - 1, true);
+            }
+          }
+        }
+      }, { passive: true });
+    }
+  }
+
   // Подписка на смену режима печати (single/multi). Переключатель раскладки
   // (layoutType) убран из UI — раскладка задаётся выбранным шаблоном.
   // При смене режима пересинхронизируем шрифтовые инпуты: в single сегмент
@@ -7125,11 +7787,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Print Handlers
   if (printBtn) printBtn.addEventListener('click', () => {
-    const jobMode = document.querySelector('input[name="printJob"]:checked');
-    if (jobMode && jobMode.value === 'multi') runMultiPrintFromUI();
+    const jobMode = getPrintJobVal();
+    if (jobMode === 'multi') runMultiPrintFromUI();
     else triggerPrint();
   });
-  if (printBtnSidebar) printBtnSidebar.addEventListener('click', triggerPrint);
+  if (printBtnSidebar) printBtnSidebar.addEventListener('click', () => {
+    const jobMode = getPrintJobVal();
+    if (jobMode === 'multi') runMultiPrintFromUI();
+    else triggerPrint();
+  });
 
   // Bulk background button
   const bulkSetBgBtn = document.getElementById('bulkSetBgBtn');
@@ -7195,32 +7861,48 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   // Число заполненных ценников шаблона.
   function presetFilledCount(key) {
-    const arr = templateItems[key] || [];
-    return arr.filter(it => it && it.title && it.title.trim()).length;
+    return getItemsForTemplate(key).length;
   }
 
-  // Строит список чекбоксов шаблонов с выбором числа копий.
+  // Строит список чекбоксов шаблонов с выбором числа копий (с сохранением текущего выбора).
   function renderMultiPrintTemplates() {
     if (!multiPrintTemplatesEl) return;
+    const prevSelection = {};
+    multiPrintTemplatesEl.querySelectorAll('.multi-print-row-item').forEach(row => {
+      const chk = row.querySelector('input[data-mpi-chk]');
+      const copiesSel = row.querySelector('select[data-mpi-copies]');
+      if (chk) {
+        prevSelection[chk.value] = {
+          checked: chk.checked,
+          copies: copiesSel ? copiesSel.value : 'auto'
+        };
+      }
+    });
+
+    const activeKey = (activeTemplateRef && activeTemplateRef.kind === 'builtin') ? activeTemplateRef.key : 'alaska_dots';
+    const hasAnyPrev = Object.keys(prevSelection).length > 0;
+
     multiPrintTemplatesEl.innerHTML = TEMPLATE_KEYS.map(k => {
       const p = builtInPresets[k];
       const name = p ? p.name : k;
       const filled = presetFilledCount(k);
+      const wasChecked = hasAnyPrev ? (prevSelection[k] ? prevSelection[k].checked : false) : (k === activeKey);
+      const savedCopies = prevSelection[k] ? prevSelection[k].copies : 'auto';
       return `<div class="multi-print-row-item">
         <label class="checkbox-label" style="display:flex; align-items:center; gap:6px; flex:1;">
-          <input type="checkbox" value="${k}" data-mpi-chk>
+          <input type="checkbox" value="${k}" data-mpi-chk ${wasChecked ? 'checked' : ''}>
           <span class="mpi-name">${name}</span>
         </label>
         <span class="mpi-size">${presetSizeLabel(k)}</span>
         <span class="mpi-filled">${filled} тов.</span>
         <select data-mpi-copies>
-          <option value="auto" selected>все${filled ? ` (${filled})` : ''}</option>
-          <option value="1">1×</option>
-          <option value="2">2×</option>
-          <option value="3">3×</option>
-          <option value="4">4×</option>
-          <option value="6">6×</option>
-          <option value="12">12×</option>
+          <option value="auto" ${savedCopies === 'auto' ? 'selected' : ''}>все${filled ? ` (${filled})` : ''}</option>
+          <option value="1" ${savedCopies === '1' ? 'selected' : ''}>1×</option>
+          <option value="2" ${savedCopies === '2' ? 'selected' : ''}>2×</option>
+          <option value="3" ${savedCopies === '3' ? 'selected' : ''}>3×</option>
+          <option value="4" ${savedCopies === '4' ? 'selected' : ''}>4×</option>
+          <option value="6" ${savedCopies === '6' ? 'selected' : ''}>6×</option>
+          <option value="12" ${savedCopies === '12' ? 'selected' : ''}>12×</option>
         </select>
       </div>`;
     }).join('');
@@ -7240,9 +7922,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     let count = 0;
     for (const sel of selected) {
-      const filled = presetFilledCount(sel.key);
-      const n = (sel.copies === 'auto' || !sel.copies) ? filled : Math.min(parseInt(sel.copies, 10) || 0, filled);
-      count += n;
+      const items = getItemsForTemplate(sel.key);
+      if (!items.length) continue;
+      const copiesNum = (sel.copies === 'auto' || !sel.copies) ? 1 : (parseInt(sel.copies, 10) || 1);
+      const templateTotal = (items.length === 1 || sel.copies === 'auto') ? (items.length * copiesNum) : (items.length * copiesNum);
+      count += templateTotal;
     }
     // Грубая оценка числа листов: по среднему числу на лист — не точная, но информативная.
     const gap = multiPrintGapInput ? parseFloat(multiPrintGapInput.value) || 0 : 0;
@@ -7252,8 +7936,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Собирает отмеченные шаблоны: [{ key, copies }].
   function collectMultiSelection() {
-    if (!multiPrintTemplatesEl) return [];
-    const rows = multiPrintTemplatesEl.querySelectorAll('.multi-print-row-item');
+    if (!multiPrintTemplatesEl || !multiPrintTemplatesEl.children.length) {
+      renderMultiPrintTemplates();
+    }
+    const rows = multiPrintTemplatesEl ? multiPrintTemplatesEl.querySelectorAll('.multi-print-row-item') : [];
     const out = [];
     rows.forEach(row => {
       const chk = row.querySelector('input[data-mpi-chk]');
@@ -7261,6 +7947,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const copiesSel = row.querySelector('select[data-mpi-copies]');
       out.push({ key: chk.value, copies: copiesSel ? copiesSel.value : 'auto' });
     });
+    if (!out.length) {
+      const activeKey = (activeTemplateRef && activeTemplateRef.kind === 'builtin') ? activeTemplateRef.key : 'alaska_dots';
+      const chk = multiPrintTemplatesEl ? multiPrintTemplatesEl.querySelector('input[data-mpi-chk][value="' + activeKey + '"]') : null;
+      if (chk) chk.checked = true;
+      out.push({ key: activeKey, copies: 'auto' });
+    }
     return out;
   }
 
@@ -7301,15 +7993,15 @@ document.addEventListener('DOMContentLoaded', () => {
   function openMultiPrintDrawer() {
     if (!multiPrintDrawer) return;
     renderMultiPrintTemplates();
-    // Дефолт: отметить активный встроенный шаблон, чтобы «Печать» работала сразу.
-    const activeKey = (activeTemplateRef && activeTemplateRef.kind === 'builtin') ? activeTemplateRef.key : null;
-    if (activeKey && multiPrintTemplatesEl) {
+    // Дефолт: отметить активный встроенный шаблон, если ничего не выбрано
+    const anyChecked = multiPrintTemplatesEl && multiPrintTemplatesEl.querySelector('input[data-mpi-chk]:checked');
+    if (!anyChecked && multiPrintTemplatesEl) {
+      const activeKey = (activeTemplateRef && activeTemplateRef.kind === 'builtin') ? activeTemplateRef.key : 'alaska_dots';
       const chk = multiPrintTemplatesEl.querySelector('input[data-mpi-chk][value="' + activeKey + '"]');
-      if (chk && !chk.checked) {
-        chk.checked = true;
-        // Если у активного шаблона нет заполненных товаров — снимем отметку, иначе
-        // пользователь получит alert «Нет заполненных». Отмечиваем только если есть товары.
-        if (presetFilledCount(activeKey) === 0) chk.checked = false;
+      if (chk) chk.checked = true;
+      else {
+        const firstChk = multiPrintTemplatesEl.querySelector('input[data-mpi-chk]');
+        if (firstChk) firstChk.checked = true;
       }
     }
     updateMultiPrintSummary();
@@ -7358,6 +8050,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   if (multiPrintBtn) multiPrintBtn.addEventListener('click', runMultiPrintFromUI);
+  const multiPrintBtnSidebar = document.getElementById('multiPrintBtnSidebar');
+  const openMultiPrintDrawerBtn = document.getElementById('openMultiPrintDrawerBtn');
+  if (multiPrintBtnSidebar) multiPrintBtnSidebar.addEventListener('click', runMultiPrintFromUI);
+  if (openMultiPrintDrawerBtn) openMultiPrintDrawerBtn.addEventListener('click', openMultiPrintDrawer);
 
   // Закрытие/сворачивание drawer: кнопка ✕, клик по затемнению, Esc.
   // Сворачиваем только саму панель — мульти-режим остаётся активным (pill в шапке
@@ -7634,6 +8330,9 @@ document.addEventListener('DOMContentLoaded', () => {
   initItemsDrawer();
   renderItemsListInputs();
   renderSavedTemplates();
+  renderMultiPrintTemplates();
+  initWobblerInlineEditing();
+  initPreviewItemNavigator();
   // Автосохранённая сессия (таблицы, активный шаблон, режим) — или чистый старт.
   if (!restoreSession()) {
     activeTemplateRef = { kind: 'builtin', key: 'alaska_dots' };
