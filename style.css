@@ -1144,6 +1144,7 @@ body {
 }
 
 .item-bg-btn.active {
+  background: rgba(56, 189, 248, 0.35);
   border-color: #38bdf8;
   box-shadow: 0 0 0 1px #38bdf8 inset;
 }
@@ -2572,6 +2573,11 @@ input[type="range"] {
   height: var(--wobbler-height);
 }
 
+.wobbler-element.layout-full .header-content {
+  height: 100%;
+  justify-content: center;
+}
+
 .wobbler-element.layout-full .wobbler-bottom {
   display: none;
 }
@@ -2621,7 +2627,7 @@ input[type="range"] {
 .wobbler-title {
   font-size: 13pt;
   font-weight: 800;
-  line-height: 1.1;
+  line-height: 1.05;
   letter-spacing: -0.2px;
   /* Перенос по словам: слова не рвутся посередине, перенос идёт по пробелам
      (white-space: pre-line уважает и ручные \n из textarea). Сверхдлинное
