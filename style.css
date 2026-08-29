@@ -253,6 +253,51 @@ body {
   color: var(--accent-blue);
 }
 
+/* Кнопка переключения курсива / форматирования */
+.format-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  min-width: 38px;
+  padding: 0 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.format-toggle-btn:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-color);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.format-toggle-btn input[type="checkbox"] {
+  display: none;
+}
+
+.format-toggle-btn:has(input:checked),
+.format-toggle-btn.active {
+  background: #eab308 !important;
+  color: #0f172a !important;
+  border-color: #facc15 !important;
+  box-shadow: 0 0 12px rgba(234, 179, 8, 0.45);
+}
+
+.format-toggle-btn i {
+  font-style: italic;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 900;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
 /* Сегментированный переключатель «Этот ценник / Весь шаблон» для блока шрифтов.
    Показывается только в режиме «Разные товары» (скрыт иначе из JS). */
 .font-apply-mode {
@@ -1848,6 +1893,7 @@ input[type="range"] {
   /* Равноширинные цифры в поддерживающих шрифтах (Montserrat, Inter, …) —
      бесплатно улучшает результат; в шрифтах без поддержки игнорируется. */
   font-variant-numeric: tabular-nums;
+  text-shadow: inherit;
 }
 
 /* Пробел в цене — полноценный символ шириной с цифру (nbsp не схлопывается
@@ -1897,6 +1943,7 @@ input[type="range"] {
 #wobblerPreview.safe-edit-mode * {
   cursor: move !important;
 }
+
 .wobbler-element.drag-mode .wobbler-title,
 .wobbler-element.drag-mode .wobbler-subtitle,
 .wobbler-element.drag-mode .wobbler-price-box {
@@ -2111,6 +2158,7 @@ input[type="range"] {
     opacity: 0.5;
     transform: scale(0.985);
   }
+
   100% {
     opacity: 1;
     transform: scale(1);
@@ -2196,13 +2244,16 @@ input[type="range"] {
     width: 36px;
     height: 36px;
   }
+
   .preview-side-nav-btn svg {
     width: 18px;
     height: 18px;
   }
+
   .preview-side-nav-btn.prev {
     left: 6px;
   }
+
   .preview-side-nav-btn.next {
     right: 6px;
   }
@@ -2651,6 +2702,16 @@ input[type="range"] {
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  font-synthesis: style weight;
+  -webkit-font-synthesis: style weight;
+}
+
+.wobbler-title.is-italic,
+.wobbler-subtitle.is-italic,
+.block-text.is-italic {
+  font-style: italic !important;
+  font-synthesis: style weight !important;
+  -webkit-font-synthesis: style weight !important;
 }
 
 /* Подзаголовок (вес/доп. текст) — в нижнем левом углу ценника.
