@@ -11,9 +11,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@700&family=Comfortaa:wght@700&family=Inter:wght@600;800;900&family=Lobster&family=Marck+Script&family=Montserrat:wght@400;600;700;800;900&family=Neucha&family=Oswald:wght@600;700&family=Pacifico&family=Pattaya&family=Playfair+Display:wght@700;900&family=Press+Start+2P&family=Roboto:wght@500;700;900&family=Rubik:wght@500;700;900&family=Ruslan+Display&family=Russo+One&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@400..700&family=Comfortaa:wght@300..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Lobster&family=Marck+Script&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Neucha&family=Oswald:wght@200..700&family=Pacifico&family=Pattaya&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Press+Start+2P&family=Roboto:ital,wght@0,100..900;1,100..900&family=Rubik:ital,wght@0,300..900;1,300..900&family=Ruslan+Display&family=Russo+One&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=17">
+  <link rel="stylesheet" href="style.css?v=18">
 </head>
 
 <body class="mode-auto">
@@ -28,13 +28,12 @@
       </div>
     </div>
 
-    <!-- Device Mode Toggle & Actions -->
+    <!-- Header Actions & Controls -->
     <div class="header-actions">
-      <!-- Device View Switcher -->
-      <div class="device-toggle-group" title="Переключение вида">
-        <button id="deviceAutoBtn" class="device-btn active" title="Авто-определение">⚡ Авто</button>
-        <button id="deviceMobileBtn" class="device-btn" title="Мобильный экран">📱 Мобильный</button>
-        <button id="deviceDesktopBtn" class="device-btn" title="Экран ПК">🖥️ ПК</button>
+      <!-- Autosave Status Indicator -->
+      <div class="autosave-indicator" id="autosaveIndicator" title="Все изменения автоматически сохраняются в браузере">
+        <span class="autosave-dot"></span>
+        <span class="autosave-text" id="autosaveText">Сохранено</span>
       </div>
 
       <!-- Переключатель режима печати (синхронизирован с radio name="printJob" в секции #6) -->
@@ -53,8 +52,13 @@
         title="Открыть руководство пользователя (F1)">
         <span class="icon">📖</span> <span class="btn-text">Инструкция</span>
       </button>
-      <button id="saveTemplateBtn" class="btn btn-secondary btn-icon-only-mobile">
-        <span class="icon">💾</span> <span class="btn-text">Сохранить</span>
+      <button id="saveTemplateBtn" class="btn btn-secondary btn-icon-only-mobile"
+        title="Сохранить текущие настройки внешнего вида как отдельный шаблон">
+        <span class="icon">💾</span> <span class="btn-text">Шаблон</span>
+      </button>
+      <button id="downloadPdfBtn" class="btn btn-secondary btn-icon-only-mobile"
+        title="Скачать готовый лист А4 в PDF (со всеми фонами и картинками)">
+        <span class="icon">📥</span> <span class="btn-text">Скачать PDF</span>
       </button>
       <button id="printBtn" class="btn btn-primary btn-glow btn-icon-only-mobile">
         <span class="icon">🖨️</span> <span class="btn-text">Печать</span>
@@ -84,9 +88,15 @@
         </label>
       </div>
       <div id="multiPrintSummary" class="multi-print-summary"></div>
-      <button id="multiPrintBtn" class="btn btn-primary" style="width: 100%; justify-content: center;">
-        🖨️ Печать выбранных шаблонов
-      </button>
+      <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+        <button id="multiPrintBtn" class="btn btn-primary" style="width: 100%; justify-content: center;">
+          🖨️ Печать выбранных шаблонов
+        </button>
+        <button type="button" id="downloadMultiPdfBtnDrawer" class="btn btn-secondary"
+          style="width: 100%; justify-content: center;" title="Скачать готовый мульти-лист в PDF файл">
+          📥 Скачать мульти-лист в PDF
+        </button>
+      </div>
     </div>
   </div>
 
@@ -102,6 +112,13 @@
         </div>
       </div>
       <div class="idr-header-actions">
+        <button type="button" class="autobg-toggle autobg-toggle-full btn btn-secondary btn-sm"
+          title="Автоподстановка фона по названию товара (клик — применить ко всем заполненным товарам)">✨ Авто-фон:
+          <b>Применить</b></button>
+        <label class="checkbox-label auto-open-label" title="Автоматически подбирать фон при вводе названий товаров">
+          <input type="checkbox" id="autoBgLiveChk" checked>
+          <span>При вводе</span>
+        </label>
         <label class="checkbox-label auto-open-label" title="Автоматически открывать эту шторку при выборе шаблона">
           <input type="checkbox" id="autoOpenDrawerChk" checked>
           <span>Автооткрытие</span>
@@ -396,6 +413,8 @@
               <div class="paste-actions">
                 <button type="button" id="bulkSetBgBtn" class="btn btn-secondary btn-icon-xs"
                   title="Применить фон ко всем товарам списка">🖼️</button>
+                <button type="button" class="autobg-toggle btn-icon-xs"
+                  title="Автоподстановка фона по названию товара (клик — применить ко всем, Shift+клик — вкл/выкл авто-режим)">✨</button>
                 <button type="button" id="copyItemsBtn" class="btn btn-secondary btn-icon-xs"
                   title="Перенести товары на другой шаблон">⧉</button>
                 <button type="button" class="autolink-toggle btn-icon-xs"
@@ -421,11 +440,11 @@
             <!-- Interactive Items List Header & Table (Pixel-perfect aligned) -->
             <div class="items-table-header">
               <span class="col-hdr col-num">№</span>
-              <span class="col-hdr col-title">Наименование</span>
-              <span class="col-hdr col-sub">Вес</span>
-              <span class="col-hdr col-price">Цена</span>
-              <span class="col-hdr col-digit">№</span>
-              <span class="col-hdr col-tools">Опции</span>
+              <span class="col-hdr col-title" title="Наименование">Наименование</span>
+              <span class="col-hdr col-sub" title="Вес / фасовка">Вес</span>
+              <span class="col-hdr col-price" title="Цена">Цена</span>
+              <span class="col-hdr col-digit" style="display:none;" title="Номер">№</span>
+              <span class="col-hdr col-tools" title="Опции оформления">Опции</span>
             </div>
             <div class="items-table-wrapper">
               <div id="itemsListContainer" class="items-list">
@@ -549,7 +568,7 @@
                         <option value="800" selected>800 (Bold)</option>
                         <option value="400">400 (Reg)</option>
                       </select>
-                      <label class="checkbox-label" style="white-space:nowrap;" title="Курсив">
+                      <label class="format-toggle-btn" style="white-space:nowrap;" title="Курсив">
                         <input type="checkbox" id="titleItalic"> <i>К</i>
                       </label>
                     </div>
@@ -1195,9 +1214,15 @@
                 <span>Показывать метки для вырезания (пунктир)</span>
               </label>
             </div>
-            <button id="printBtnSidebar" class="btn btn-primary" style="width: 100%; justify-content: center;">
-              🖨️ Запустить печать (Печать на А4)
-            </button>
+            <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+              <button id="printBtnSidebar" class="btn btn-primary" style="width: 100%; justify-content: center;">
+                🖨️ Запустить печать (Печать на А4)
+              </button>
+              <button type="button" id="downloadPdfBtnSidebar" class="btn btn-secondary"
+                style="width: 100%; justify-content: center;" title="Сохранить готовый лист ценников в файл PDF">
+                📥 Скачать готовый PDF (А4)
+              </button>
+            </div>
           </div><!-- /#singlePrintPanel -->
 
           <!-- Мульти-печать: выбор шаблонов + копий -->
@@ -1208,10 +1233,16 @@
               style="width: 100%; margin-bottom: 8px; justify-content: center;">
               📋 Выбрать шаблоны и количество копий
             </button>
-            <button type="button" id="multiPrintBtnSidebar" class="btn btn-primary"
-              style="width: 100%; justify-content: center;">
-              🖨️ Запустить мульти-печать
-            </button>
+            <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+              <button type="button" id="multiPrintBtnSidebar" class="btn btn-primary"
+                style="width: 100%; justify-content: center;">
+                🖨️ Запустить мульти-печать
+              </button>
+              <button type="button" id="downloadMultiPdfBtnSidebar" class="btn btn-secondary"
+                style="width: 100%; justify-content: center;" title="Сохранить мульти-лист в файл PDF">
+                📥 Скачать мульти-лист в PDF (А4)
+              </button>
+            </div>
           </div>
         </div><!-- /.card-body section6 -->
       </section>
@@ -1243,25 +1274,56 @@
         <span id="sizeReadout" class="size-readout">6,5 × 3,5 см</span>
 
         <div class="preview-toolbar">
-          <button type="button" id="dragModeToggle" class="btn btn-secondary btn-sm"
-            title="Включить/выключить перетаскивание надписей мышью (положение разносится на все ценники)">✋ Двигать
-            надписи</button>
-          <button type="button" id="dragModeSoloToggle" class="btn btn-secondary btn-sm"
-            title="Включить/выключить перетаскивание надписей мышью — двигается только выбранный ценник, остальные не меняются">✌
-            Двигать отдельно</button>
-          <button type="button" id="safeEditToggle" class="btn btn-secondary btn-sm"
-            title="Включить/выключить редактор границ названия (тяните края прямоугольника, чтобы текст не залезал на графику фона)">🔲
-            Границы текста</button>
-          <button type="button" id="resetLabelPosBtn" class="btn btn-secondary btn-sm"
-            title="Сбросить активный ценник к виду шаблона (расположение, шрифты, цвета, границы)">↺ Сбросить
-            активный</button>
-          <button type="button" id="resetAllLabelPosBtn" class="btn btn-secondary btn-sm"
-            title="Сбросить весь внешний вид к шаблону (расположение, шрифты, цвета, границы, раскладка, декор, фон для всех ценников)">↺
-            Сбросить все</button>
-          <button type="button" id="syncPricePosPreviewBtn" class="btn btn-secondary btn-sm"
-            title="Скопировать расположение цены с ценника №1 на все остальные">💴 Цена по №1</button>
-          <button type="button" id="decorPosToggle" class="btn btn-secondary btn-sm decor-pos-toggle"
-            title="Положение блока оформления для двухблочных пресетов (Живое, Новинка)">⬆ Блок: сверху</button>
+          <!-- Компактное выпадающее меню инструментов правки макета -->
+          <div class="preview-tools-dropdown-wrap" id="previewToolsDropdownWrap">
+            <button type="button" id="previewToolsDropdownBtn" class="btn btn-secondary btn-sm preview-tools-btn"
+              title="Инструменты ручной подгонки, перетаскивания и сброса">
+              <span class="tools-btn-icon">⚙️</span>
+              <span class="tools-btn-text">Правка</span>
+              <span id="activeToolsBadge" class="tools-active-badge" style="display:none;"></span>
+              <span class="tools-btn-arrow">▾</span>
+            </button>
+            <div id="previewToolsMenu" class="preview-tools-menu" style="display:none;">
+              <div class="ptm-group-title">Перетаскивание мышью</div>
+              <button type="button" id="dragModeToggle" class="ptm-item"
+                title="Положение надписи разносится на все ценники">
+                <span class="ptm-icon">✋</span>
+                <span class="ptm-text">Двигать надписи (все)</span>
+              </button>
+              <button type="button" id="dragModeSoloToggle" class="ptm-item" title="Двигается только выбранный ценник">
+                <span class="ptm-icon">✌</span>
+                <span class="ptm-text">Двигать отдельно (соло)</span>
+              </button>
+              <button type="button" id="safeEditToggle" class="ptm-item"
+                title="Тяните края прямоугольника для границ названия">
+                <span class="ptm-icon">🔲</span>
+                <span class="ptm-text">Границы текста</span>
+              </button>
+
+              <div class="ptm-divider"></div>
+              <div class="ptm-group-title">Выравнивание и декор</div>
+              <button type="button" id="syncPricePosPreviewBtn" class="ptm-item"
+                title="Скопировать расположение цены с ценника №1 на все остальные">
+                <span class="ptm-icon">💴</span>
+                <span class="ptm-text">Скопировать цену с №1</span>
+              </button>
+              <button type="button" id="decorPosToggle" class="ptm-item decor-pos-toggle"
+                title="Положение блока оформления для двухблочных пресетов">⬆ Блок: сверху</button>
+
+              <div class="ptm-divider"></div>
+              <div class="ptm-group-title">Сброс к шаблону</div>
+              <button type="button" id="resetLabelPosBtn" class="ptm-item"
+                title="Сбросить активный ценник к виду шаблона">
+                <span class="ptm-icon">↺</span>
+                <span class="ptm-text">Сбросить активный ценник</span>
+              </button>
+              <button type="button" id="resetAllLabelPosBtn" class="ptm-item ptm-danger"
+                title="Сбросить оформление всех ценников к шаблону">
+                <span class="ptm-icon">↺</span>
+                <span class="ptm-text">Сбросить ВСЕ ценники</span>
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- Ползунок размера шрифта наименования (дублирует #titleSize из настроек) -->
@@ -1281,13 +1343,17 @@
       <!-- Single Tag Real Preview -->
       <div class="single-preview-container">
         <!-- Floating Side Navigation Buttons (Вариант 1) -->
-        <button type="button" id="previewSidePrevBtn" class="preview-side-nav-btn prev" title="Предыдущий ценник (Alt+←)" aria-label="Предыдущий ценник" style="display: none;">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <button type="button" id="previewSidePrevBtn" class="preview-side-nav-btn prev"
+          title="Предыдущий ценник (Alt+←)" aria-label="Предыдущий ценник" style="display: none;">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
             <polyline points="15 18 9 12 15 6"></polyline>
           </svg>
         </button>
-        <button type="button" id="previewSideNextBtn" class="preview-side-nav-btn next" title="Следующий ценник (Alt+→)" aria-label="Следующий ценник" style="display: none;">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <button type="button" id="previewSideNextBtn" class="preview-side-nav-btn next" title="Следующий ценник (Alt+→)"
+          aria-label="Следующий ценник" style="display: none;">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
             <polyline points="9 18 15 12 9 6"></polyline>
           </svg>
         </button>
@@ -1380,8 +1446,7 @@
               <button type="button" id="nextSheetPageBtn" class="sheet-page-btn" title="Следующая страница">▶</button>
             </div>
           </div>
-          <p>Каждый ценник на листе отображает свой товар из списка выше. Печатаются и показываются только заполненные
-            позиции (с наименованием).</p>
+          <p>💡 <b>Интерактивная карта:</b> кликните по любому ценнику на листе, чтобы выбрать его и открыть в редакторе выше. Печатаются только заполненные позиции (с наименованием).</p>
         </div>
         <div class="sheet-mini-container" id="sheetMiniContainer">
           <div id="sheetGridPreview" class="a4-sheet-preview">
@@ -1462,6 +1527,9 @@
   <div id="printArea" class="print-only">
     <!-- JS populates this with printable A4 pages -->
   </div>
+
+  <!-- Всплывающие уведомления (Toast Notifications) -->
+  <div id="toastContainer" class="toast-container no-print" aria-live="polite" aria-atomic="true"></div>
 
   <!-- html2pdf.bundle.min.js for offline, high-quality client-side A4 PDF export -->
   <script src="html2pdf.bundle.min.js"></script>

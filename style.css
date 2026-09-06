@@ -86,6 +86,60 @@ body {
   gap: 6px;
 }
 
+/* Autosave Status Indicator in Header */
+.autosave-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 10px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #10b981;
+  user-select: none;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+}
+
+.autosave-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #10b981;
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.8);
+  transition: background-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.autosave-indicator.saving {
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.3);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.autosave-indicator.saving .autosave-dot {
+  background-color: #f59e0b;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.9);
+  animation: pulseDot 1s infinite alternate;
+}
+
+.autosave-indicator.error {
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.autosave-indicator.error .autosave-dot {
+  background-color: #ef4444;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.9);
+}
+
+@keyframes pulseDot {
+  0% { transform: scale(0.85); opacity: 0.6; }
+  100% { transform: scale(1.15); opacity: 1; }
+}
+
 /* Device Mode Toggle Group in Header */
 .device-toggle-group {
   display: flex;
@@ -251,6 +305,51 @@ body {
 .align-btn:hover {
   background: var(--bg-card-hover);
   color: var(--accent-blue);
+}
+
+/* Кнопка переключения курсива / форматирования */
+.format-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  min-width: 38px;
+  padding: 0 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.format-toggle-btn:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-color);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.format-toggle-btn input[type="checkbox"] {
+  display: none;
+}
+
+.format-toggle-btn:has(input:checked),
+.format-toggle-btn.active {
+  background: #eab308 !important;
+  color: #0f172a !important;
+  border-color: #facc15 !important;
+  box-shadow: 0 0 12px rgba(234, 179, 8, 0.45);
+}
+
+.format-toggle-btn i {
+  font-style: italic;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 900;
+  font-size: 1.1rem;
+  line-height: 1;
 }
 
 /* Сегментированный переключатель «Этот ценник / Весь шаблон» для блока шрифтов.
@@ -870,26 +969,28 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   margin-bottom: 6px;
   background: rgba(15, 23, 42, 0.5);
   padding: 4px 6px;
   border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.06);
+  min-width: 0;
 }
 
 .quick-bar-left {
   display: flex;
   align-items: center;
-  gap: 6px;
-  flex: 1;
+  gap: 5px;
+  flex: 1 1 auto;
   min-width: 0;
+  overflow: hidden;
 }
 
 .paste-actions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   flex-shrink: 0;
 }
 
@@ -897,10 +998,11 @@ body {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.74rem;
-  padding: 3px 7px;
+  font-size: 0.72rem;
+  padding: 3px 6px;
   font-weight: 700;
   border-radius: 5px;
+  flex-shrink: 0;
 }
 
 .excel-chevron {
@@ -914,15 +1016,15 @@ body {
 }
 
 .btn-icon-xs {
-  width: 26px;
-  min-width: 26px;
-  height: 26px;
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
   padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 5px;
-  font-size: 0.82rem;
+  border-radius: 4px;
+  font-size: 0.78rem;
   line-height: 1;
   cursor: pointer;
   background: rgba(30, 41, 59, 0.8);
@@ -992,6 +1094,14 @@ body {
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.03em;
+  min-width: 0;
+}
+
+.items-table-header span,
+.items-table-header .col-hdr {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .items-table-header .col-num {
@@ -1101,12 +1211,15 @@ body {
   border-radius: 4px;
 }
 
-.autolink-toggle {
+.autolink-toggle,
+.autobg-toggle {
   flex-shrink: 0;
   opacity: 0.55;
+  transition: opacity 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.autolink-toggle:hover {
+.autolink-toggle:hover,
+.autobg-toggle:hover {
   opacity: 0.85;
 }
 
@@ -1114,6 +1227,41 @@ body {
   opacity: 1;
   border-color: var(--accent-blue);
   box-shadow: 0 0 0 1px var(--accent-blue) inset;
+}
+
+.autobg-toggle.active {
+  opacity: 1;
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 1px #f59e0b inset;
+  color: #f59e0b;
+}
+
+.autobg-toggle-full {
+  font-size: 11px;
+  padding: 3px 8px;
+  line-height: 1.2;
+}
+
+.autobg-toggle-full.active {
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.5);
+  background: rgba(245, 158, 11, 0.12);
+}
+
+.btn-flash-success {
+  background: rgba(16, 185, 129, 0.25) !important;
+  border-color: #10b981 !important;
+  color: #10b981 !important;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.5) !important;
+  transform: scale(1.04);
+}
+
+.btn-flash-warn {
+  background: rgba(245, 158, 11, 0.25) !important;
+  border-color: #f59e0b !important;
+  color: #f59e0b !important;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.5) !important;
+  transform: scale(1.04);
 }
 
 .item-bg-btn,
@@ -1784,11 +1932,155 @@ input[type="range"] {
   white-space: nowrap;
 }
 
-/* Тулбар предпросмотра: перетаскивание надписей / сброс позиций */
+/* Тулбар предпросмотра: компактное выпадающее меню */
 .preview-toolbar {
   display: flex;
   gap: 6px;
-  flex-wrap: wrap;
+  align-items: center;
+}
+
+.preview-tools-dropdown-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.preview-tools-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px !important;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.preview-tools-btn.active {
+  background: rgba(37, 99, 235, 0.25) !important;
+  border-color: var(--accent-blue) !important;
+  color: #fff !important;
+  box-shadow: 0 0 10px rgba(37, 99, 235, 0.35);
+}
+
+.tools-active-badge {
+  display: inline-flex;
+  align-items: center;
+  background: var(--accent-blue);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 10px;
+  line-height: 1.2;
+}
+
+.tools-btn-arrow {
+  font-size: 9px;
+  opacity: 0.7;
+  transition: transform 0.2s ease;
+}
+
+.preview-tools-dropdown-wrap.open .tools-btn-arrow {
+  transform: rotate(180deg);
+}
+
+.preview-tools-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: rgba(15, 23, 42, 0.97);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  min-width: 255px;
+  max-width: 320px;
+  z-index: 1050;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: ptmFadeIn 0.15s ease-out;
+}
+
+@keyframes ptmFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ptm-group-title {
+  font-size: 0.67rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 6px 10px 2px 10px;
+}
+
+.ptm-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 4px 4px;
+}
+
+.ptm-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+}
+
+.ptm-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.ptm-item.active {
+  background: rgba(37, 99, 235, 0.25) !important;
+  border-color: var(--accent-blue) !important;
+  color: #fff !important;
+  font-weight: 600;
+}
+
+.ptm-item.active::after {
+  content: '✓';
+  margin-left: auto;
+  font-weight: 700;
+  color: var(--accent-blue);
+  font-size: 0.85rem;
+}
+
+.ptm-danger:hover {
+  background: rgba(239, 68, 68, 0.2) !important;
+  color: #f87171 !important;
+}
+
+.ptm-icon {
+  font-size: 0.95rem;
+  min-width: 20px;
+  text-align: center;
+}
+
+.ptm-text {
+  flex: 1;
 }
 
 /* Ползунок размера шрифта наименования в тулбаре предпросмотра. */
@@ -1848,6 +2140,7 @@ input[type="range"] {
   /* Равноширинные цифры в поддерживающих шрифтах (Montserrat, Inter, …) —
      бесплатно улучшает результат; в шрифтах без поддержки игнорируется. */
   font-variant-numeric: tabular-nums;
+  text-shadow: inherit;
 }
 
 /* Пробел в цене — полноценный символ шириной с цифру (nbsp не схлопывается
@@ -1897,6 +2190,7 @@ input[type="range"] {
 #wobblerPreview.safe-edit-mode * {
   cursor: move !important;
 }
+
 .wobbler-element.drag-mode .wobbler-title,
 .wobbler-element.drag-mode .wobbler-subtitle,
 .wobbler-element.drag-mode .wobbler-price-box {
@@ -2111,6 +2405,7 @@ input[type="range"] {
     opacity: 0.5;
     transform: scale(0.985);
   }
+
   100% {
     opacity: 1;
     transform: scale(1);
@@ -2196,13 +2491,16 @@ input[type="range"] {
     width: 36px;
     height: 36px;
   }
+
   .preview-side-nav-btn svg {
     width: 18px;
     height: 18px;
   }
+
   .preview-side-nav-btn.prev {
     left: 6px;
   }
+
   .preview-side-nav-btn.next {
     right: 6px;
   }
@@ -2470,6 +2768,13 @@ input[type="range"] {
   z-index: 10;
 }
 
+/* Для воблеров с полями под вырезание (.has-border): пунктирная линия
+   контура реза проходит точно по границе цветной графики (14,5 см),
+   а 3 мм снаружи остаются полями для удобства резки */
+.wobbler-element.has-border .crop-guides {
+  inset: var(--border-mm, 3mm);
+}
+
 .print-crop-marks {
   position: absolute;
   inset: 0;
@@ -2651,6 +2956,16 @@ input[type="range"] {
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  font-synthesis: style weight;
+  -webkit-font-synthesis: style weight;
+}
+
+.wobbler-title.is-italic,
+.wobbler-subtitle.is-italic,
+.block-text.is-italic {
+  font-style: italic !important;
+  font-synthesis: style weight !important;
+  -webkit-font-synthesis: style weight !important;
 }
 
 /* Подзаголовок (вес/доп. текст) — в нижнем левом углу ценника.
@@ -3118,6 +3433,95 @@ input[type="range"] {
   align-content: start;
 }
 
+/* Sheet Mini-Wobblers Interactive Minimap */
+.sheet-mini-item {
+  position: relative;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.16s ease, outline 0.16s ease;
+  user-select: none;
+}
+
+.sheet-mini-item:hover {
+  transform: scale(1.035) translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  z-index: 20;
+}
+
+.sheet-mini-item.active-sheet-item {
+  outline: 4px solid var(--accent-blue, #2563eb);
+  outline-offset: 1px;
+  border-radius: 4px;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.3), 0 8px 22px rgba(37, 99, 235, 0.45);
+  z-index: 15;
+}
+
+.sheet-mini-index {
+  position: absolute;
+  top: 2mm;
+  left: 2mm;
+  background: rgba(15, 23, 42, 0.88);
+  color: #ffffff;
+  font-size: 8pt;
+  font-weight: 700;
+  font-family: var(--font-sans, system-ui);
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  pointer-events: none;
+  z-index: 25;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  line-height: 1.2;
+  transition: all 0.2s ease;
+}
+
+.sheet-mini-item.active-sheet-item .sheet-mini-index {
+  background: var(--accent-blue, #2563eb);
+  color: #ffffff;
+  border-color: #ffffff;
+  box-shadow: 0 0 10px rgba(37, 99, 235, 0.8);
+}
+
+.a4-sheet-preview.is-multi-mode {
+  display: block !important;
+  padding: 10mm 4mm 4mm 4mm !important;
+}
+
+.a4-sheet-preview.is-multi-mode .multi-print-row {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: flex-start !important;
+}
+
+.sheet-empty-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: #64748b;
+  text-align: center;
+  padding: 30mm 15mm;
+  font-family: var(--font-sans, system-ui);
+  box-sizing: border-box;
+}
+
+.sheet-empty-hint b {
+  font-size: 1.15rem;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.sheet-empty-hint p {
+  font-size: 0.85rem;
+  max-width: 420px;
+  line-height: 1.4;
+  margin: 0;
+  color: #64748b;
+}
+
 /* ==========================================================================
    MULTI-PRINT (несколько шаблонов на одном листе А4)
    ========================================================================== */
@@ -3342,14 +3746,18 @@ input[type="range"] {
 }
 
 .items-stats-badge {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 700;
   color: #38bdf8;
   background: rgba(56, 189, 248, 0.12);
   border: 1px solid rgba(56, 189, 248, 0.25);
-  padding: 3px 8px;
-  border-radius: 6px;
+  padding: 2px 6px;
+  border-radius: 5px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+  flex-shrink: 1;
 }
 
 .sheet-page-nav {
@@ -3547,6 +3955,15 @@ body.force-desktop .workspace-panel {
     padding: 0.5rem 0.8rem;
   }
 
+  .autosave-text {
+    display: none;
+  }
+
+  .autosave-indicator {
+    padding: 6px;
+    border-radius: 50%;
+  }
+
   .logo h1 {
     font-size: 0.95rem;
   }
@@ -3565,7 +3982,7 @@ body.force-desktop .workspace-panel {
   }
 }
 
-/* PRINT EXCLUSIVE OVERRIDES */
+/* PRINT & PDF EXPORT LAYOUT */
 .print-only {
   display: none;
 }
@@ -3582,10 +3999,138 @@ body.is-printing #printArea {
   display: block !important;
 }
 
+body.is-pdf-exporting #printArea {
+  display: block !important;
+  position: fixed !important;
+  left: 0 !important;
+  top: 0 !important;
+  width: 210mm !important;
+  z-index: 100000 !important;
+  background: #ffffff !important;
+}
+
+.pdf-export-flow {
+  display: block !important;
+  width: 210mm !important;
+  background: #ffffff !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+}
+
+/* Common Layout for Print & PDF Pages */
+.print-page,
+#printArea .print-page,
+#pdfExportWrapper .print-page,
+.pdf-export-flow .print-page {
+  width: 210mm !important;
+  min-height: 297mm !important;
+  padding: 10mm 4mm 4mm 4mm !important;
+  box-sizing: border-box !important;
+  display: grid !important;
+  gap: 0;
+  align-content: start !important;
+  justify-content: start !important;
+  page-break-after: always !important;
+  background: #ffffff !important;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+  color-adjust: exact !important;
+}
+
+.print-page:last-child,
+#printArea .print-page:last-child,
+#pdfExportWrapper .print-page:last-child {
+  page-break-after: auto !important;
+}
+
+.print-page.multi-print-page,
+#printArea .print-page.multi-print-page,
+#pdfExportWrapper .print-page.multi-print-page {
+  display: block !important;
+  padding: 10mm 4mm 4mm 4mm !important;
+}
+
+.multi-print-row,
+#printArea .multi-print-row,
+#pdfExportWrapper .multi-print-row {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: flex-start !important;
+  box-sizing: border-box !important;
+}
+
+.multi-print-row:last-child,
+#printArea .multi-print-row:last-child,
+#pdfExportWrapper .multi-print-row:last-child {
+  margin-bottom: 0 !important;
+}
+
+.multi-print-cell,
+#printArea .multi-print-cell,
+#pdfExportWrapper .multi-print-cell {
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.multi-print-cell:last-child,
+#printArea .multi-print-cell:last-child,
+#pdfExportWrapper .multi-print-cell:last-child {
+  margin-right: 0 !important;
+}
+
+.print-wobbler-wrapper,
+#printArea .print-wobbler-wrapper,
+#pdfExportWrapper .print-wobbler-wrapper {
+  position: relative !important;
+  box-sizing: border-box !important;
+  border: 0.2mm solid #e2e8f0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+  color-adjust: exact !important;
+}
+
+.print-wobbler-wrapper .wobbler-element,
+#printArea .print-wobbler-wrapper .wobbler-element,
+#pdfExportWrapper .print-wobbler-wrapper .wobbler-element {
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+  color-adjust: exact !important;
+}
+
+.print-wobbler-wrapper .wobbler-outside-top,
+.print-wobbler-wrapper .wobbler-outside-bottom,
+.print-wobbler-wrapper .wobbler-inside-top,
+#printArea .print-wobbler-wrapper .wobbler-outside-top,
+#printArea .print-wobbler-wrapper .wobbler-outside-bottom,
+#printArea .print-wobbler-wrapper .wobbler-inside-top,
+#pdfExportWrapper .print-wobbler-wrapper .wobbler-outside-top,
+#pdfExportWrapper .print-wobbler-wrapper .wobbler-outside-bottom,
+#pdfExportWrapper .print-wobbler-wrapper .wobbler-inside-top {
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
 @media print {
   @page {
     size: A4 portrait;
     margin: 0;
+  }
+
+  *,
+  *::before,
+  *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
   }
 
   html,
@@ -3623,75 +4168,6 @@ body.is-printing #printArea {
     margin: 0 !important;
     padding: 0 !important;
     background: #ffffff !important;
-  }
-
-  .print-page {
-    width: 210mm !important;
-    min-height: 297mm !important;
-    padding: 10mm 4mm 4mm 4mm !important;
-    box-sizing: border-box !important;
-    display: grid !important;
-    gap: 0;
-    /* задаётся инлайн-стилем из JS (preparePrintArea) через setProperty !important */
-    align-content: start !important;
-    justify-content: start !important;
-    page-break-after: always !important;
-    background: #ffffff !important;
-  }
-
-  /* Не выбрасывать пустой лист после последней страницы. */
-  .print-page:last-child {
-    page-break-after: auto !important;
-  }
-
-  /* Мульти-печать: страница без CSS Grid — поток строк (flex), упакованных packer'ом.
-     Padding задаётся инлайн из prepareMultiPrintArea (10мм верх / 4мм бока-низ). */
-  .print-page.multi-print-page {
-    display: block !important;
-    padding: 10mm 4mm 4mm 4mm !important;
-  }
-
-  .multi-print-row {
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    align-items: flex-start !important;
-    box-sizing: border-box !important;
-  }
-
-  .multi-print-row:last-child {
-    margin-bottom: 0 !important;
-  }
-
-  .multi-print-cell {
-    flex-shrink: 0 !important;
-    box-sizing: border-box !important;
-  }
-
-  .multi-print-cell:last-child {
-    margin-right: 0 !important;
-  }
-
-  .print-wobbler-wrapper {
-    position: relative !important;
-    box-sizing: border-box !important;
-    border: 0.2mm solid #e2e8f0 !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: hidden !important;
-  }
-
-  .print-wobbler-wrapper .wobbler-element {
-    box-shadow: none !important;
-    border-radius: 0 !important;
-  }
-
-  .print-wobbler-wrapper .wobbler-outside-top,
-  .print-wobbler-wrapper .wobbler-outside-bottom,
-  .print-wobbler-wrapper .wobbler-inside-top {
-    box-shadow: none !important;
-    border-radius: 0 !important;
   }
 }
 
@@ -3901,4 +4377,117 @@ body.is-printing #printArea {
   font-size: 0.72rem;
   font-weight: 800;
   padding: 1px 6px;
+}
+
+/* ==========================================================================
+   Всплывающие уведомления (Toast Notifications)
+   ========================================================================== */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 10px;
+  pointer-events: none;
+  max-width: calc(100vw - 48px);
+  width: 380px;
+}
+
+.toast-item {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(15, 23, 42, 0.96);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  line-height: 1.4;
+  animation: toastSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.toast-item.toast-closing {
+  opacity: 0;
+  transform: translateX(30px) scale(0.96);
+}
+
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(40px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.toast-item.toast-success {
+  border-left: 4px solid #10b981;
+}
+.toast-item.toast-info {
+  border-left: 4px solid var(--accent-blue);
+}
+.toast-item.toast-warning {
+  border-left: 4px solid #f59e0b;
+}
+.toast-item.toast-error {
+  border-left: 4px solid #ef4444;
+}
+
+.toast-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.toast-content {
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+  white-space: pre-line;
+}
+
+.toast-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  opacity: 0.7;
+  transition: opacity 0.15s ease, color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.toast-close:hover {
+  opacity: 1;
+  color: #fff;
+}
+
+/* ==========================================================================
+   Стили фокуса и навигации в таблице товаров
+   ========================================================================== */
+.item-row textarea:focus,
+.item-row input:focus {
+  outline: none;
+  border-color: var(--accent-blue) !important;
+  background: rgba(37, 99, 235, 0.12) !important;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.3) !important;
+}
+
+.item-row:focus-within {
+  background: rgba(255, 255, 255, 0.04);
 }
