@@ -7,58 +7,194 @@
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Конструктор ценников и воблеров</title>
 
+  <!-- Favicons & Bookmarks Icons -->
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="favicon-48x48.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <link rel="manifest" href="site.webmanifest">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-title" content="Местоцен">
+  <meta name="application-name" content="Местоцен">
+
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@700&family=Comfortaa:wght@700&family=Inter:wght@600;800;900&family=Lobster&family=Marck+Script&family=Montserrat:wght@400;600;700;800;900&family=Neucha&family=Oswald:wght@600;700&family=Pacifico&family=Pattaya&family=Playfair+Display:wght@700;900&family=Press+Start+2P&family=Roboto:wght@500;700;900&family=Rubik:wght@500;700;900&family=Ruslan+Display&family=Russo+One&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@400..700&family=Comfortaa:wght@300..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Lobster&family=Marck+Script&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Neucha&family=Oswald:wght@200..700&family=Pacifico&family=Pattaya&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Press+Start+2P&family=Roboto:ital,wght@0,100..900;1,100..900&family=Rubik:ital,wght@0,300..900;1,300..900&family=Ruslan+Display&family=Russo+One&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=17">
+  <link rel="stylesheet" href="style.css?v=32">
+  <script>
+    try {
+      if (localStorage.getItem('wobbler_ui_theme') === 'light') {
+        document.documentElement.classList.add('theme-light');
+        if (document.body) document.body.classList.add('theme-light');
+      }
+    } catch (e) { }
+  </script>
 </head>
 
 <body class="mode-auto">
 
   <!-- Top App Navigation -->
   <header class="app-header no-print">
-    <div class="logo">
-      <span class="logo-icon">🏷️</span>
-      <div>
-        <h1>Конструктор Воблеров</h1>
-        <p class="subtitle" id="topSubtitle">Размер: 6,5 см × 3,5 см</p>
+    <!-- Зона 1 (Слева): Бренд, габариты и статус автосохранения -->
+    <div class="header-left">
+      <div class="logo">
+        <span class="logo-icon">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+            <line x1="7" y1="7" x2="7.01" y2="7"></line>
+          </svg>
+        </span>
+        <div>
+          <h1>Конструктор Воблеров</h1>
+          <p class="subtitle" id="topSubtitle"><span class="dimensions-pill">6,5 × 3,5 см</span></p>
+        </div>
+      </div>
+      <div class="autosave-indicator" id="autosaveIndicator" title="Все изменения автоматически сохраняются в браузере">
+        <span class="autosave-dot"></span>
+        <span class="autosave-text" id="autosaveText">Сохранено</span>
       </div>
     </div>
 
-    <!-- Device Mode Toggle & Actions -->
-    <div class="header-actions">
-      <!-- Device View Switcher -->
-      <div class="device-toggle-group" title="Переключение вида">
-        <button id="deviceAutoBtn" class="device-btn active" title="Авто-определение">⚡ Авто</button>
-        <button id="deviceMobileBtn" class="device-btn" title="Мобильный экран">📱 Мобильный</button>
-        <button id="deviceDesktopBtn" class="device-btn" title="Экран ПК">🖥️ ПК</button>
-      </div>
+    <div class="header-island-divider"></div>
 
+    <!-- Зона 2 (По центру): Режим листа и история действий -->
+    <div class="header-center">
       <!-- Переключатель режима печати (синхронизирован с radio name="printJob" в секции #6) -->
-      <div class="header-toggle-group" title="Режим печати">
-        <label title="Один шаблон (текущий)">
+      <div class="header-toggle-group" title="Режим печати на листе А4">
+        <label title="Печать одного текущего шаблона">
           <input type="radio" name="printJob" value="single" checked>
-          <span class="header-toggle-btn">📄 Один</span>
+          <span class="header-toggle-btn">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+            </svg>
+            <span>Один шаблон</span>
+          </span>
         </label>
-        <label title="Мульти-печать (несколько шаблонов на одном листе)">
+        <label title="Мульти-печать нескольких шаблонов на общем листе А4">
           <input type="radio" name="printJob" value="multi">
-          <span class="header-toggle-btn">🖨️ Мульти</span>
+          <span class="header-toggle-btn">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2">
+              <rect x="2" y="7" width="20" height="14" rx="2"></rect>
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+            </svg>
+            <span>Мульти-лист</span>
+          </span>
         </label>
       </div>
 
-      <button id="instructionBtn" class="btn btn-secondary btn-icon-only-mobile"
-        title="Открыть руководство пользователя (F1)">
-        <span class="icon">📖</span> <span class="btn-text">Инструкция</span>
+      <!-- Undo / Redo & Shortcuts Pill Group -->
+      <div class="header-action-pill-group" title="История действий (Ctrl+Z / Ctrl+Y) и горячие клавиши (?)">
+        <button type="button" id="undoBtn" class="btn-history-pill" title="Отменить (Ctrl+Z)" disabled>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.3">
+            <path d="M9 14L4 9l5-5"></path>
+            <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"></path>
+          </svg>
+        </button>
+        <button type="button" id="redoBtn" class="btn-history-pill" title="Повторить (Ctrl+Y)" disabled>
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.3">
+            <path d="M15 14l5-5-5-5"></path>
+            <path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5v0A5.5 5.5 0 0 0 9.5 20H13"></path>
+          </svg>
+        </button>
+        <span class="pill-divider"></span>
+        <button type="button" id="shortcutsBtn" class="btn-history-pill"
+          title="Шпаргалка горячих клавиш клавиатуры (?)">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+            <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M8 12h.01M12 12h.01M16 12h.01M7 16h10"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="header-island-divider"></div>
+
+    <!-- Зона 3 (Справа): Сервис, предпечатный аудит и экспорт/печать -->
+    <div class="header-right">
+      <div class="header-service-group">
+        <button id="instructionBtn" class="btn btn-ghost btn-icon-only-mobile"
+          title="Открыть иллюстрированное руководство пользователя (F1)">
+          <span class="icon">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+          </span>
+          <span class="btn-text">Инструкция</span>
+        </button>
+        <button id="saveTemplateBtn" class="btn btn-ghost btn-icon-only-mobile"
+          title="Сохранить текущие настройки внешнего вида как отдельный шаблон">
+          <span class="icon">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+              <polyline points="17 21 17 13 7 13 7 21"></polyline>
+              <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
+          </span>
+          <span class="btn-text">Шаблон</span>
+        </button>
+        <button type="button" id="themeToggleBtn" class="btn btn-ghost btn-theme-toggle"
+          title="Переключить тему оформления (День / Ночь)">
+          <span class="icon theme-icon-sun" id="themeIconSun">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+          </span>
+          <span class="icon theme-icon-moon" id="themeIconMoon" style="display:none;">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </span>
+          <span class="btn-text" id="themeToggleText" style="display:none;">Тема</span>
+        </button>
+      </div>
+
+      <button type="button" id="preflightPill" class="preflight-pill status-ready"
+        title="Предпечатный аудит макета: проверка цен, переносов и текста перед печатью (клик — открыть аудит)">
+        <span class="preflight-dot"></span>
+        <span id="preflightPillText">✓ Готово</span>
       </button>
-      <button id="saveTemplateBtn" class="btn btn-secondary btn-icon-only-mobile">
-        <span class="icon">💾</span> <span class="btn-text">Сохранить</span>
-      </button>
-      <button id="printBtn" class="btn btn-primary btn-glow btn-icon-only-mobile">
-        <span class="icon">🖨️</span> <span class="btn-text">Печать</span>
-      </button>
+
+      <div class="header-export-cluster">
+        <button id="downloadPdfBtn" class="btn btn-outline-export btn-icon-only-mobile"
+          title="Скачать готовый печатный лист А4 в файл PDF (со всеми фонами и шрифтами)">
+          <span class="icon">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+          </span>
+          <span class="btn-text">Скачать PDF</span>
+        </button>
+        <button id="printBtn" class="btn btn-primary btn-print-cta btn-glow btn-icon-only-mobile"
+          title="Запустить печать ценников на принтере (Ctrl+P)">
+          <span class="icon">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 6 2 18 2 18 9"></polyline>
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+              <rect x="6" y="14" width="12" height="8"></rect>
+            </svg>
+          </span>
+          <span class="btn-text">Печать на А4</span>
+        </button>
+      </div>
     </div>
   </header>
 
@@ -70,23 +206,35 @@
       <div class="multi-print-drawer-head">
         <h3>🖨️ Мульти-печать</h3>
         <button type="button" id="multiPrintDrawerClose" class="btn btn-secondary btn-sm"
-          title="Свернуть панель (мульти-режим остаётся)">▲ Свернуть</button>
+          title="Свернуть панель мульти-печати (выбранные параметры сохраняются)">▲ Свернуть</button>
       </div>
-      <p class="multi-print-hint">Отметьте шаблоны. Каждый заполненный ценник попадёт на общий лист А4.</p>
+      <p class="multi-print-hint">Отметьте нужные шаблоны. Каждый заполненный ценник будет компактно скомпонован на
+        общем листе А4.</p>
       <div id="multiPrintTemplates" class="multi-print-templates"><!-- JS: чекбокс + копии на каждый builtin --></div>
       <div class="multi-print-drawer-options">
         <div class="form-group">
-          <label for="multiPrintGap">Зазор (мм): <span id="multiPrintGapVal">0</span></label>
-          <input type="range" id="multiPrintGap" min="0" max="5" step="0.5" value="0">
+          <label for="multiPrintGap"
+            title="Расстояние между ценниками на листе А4 для удобства разрезания ножницами или резаком">Зазор между
+            ценниками: <span id="multiPrintGapVal">0</span> мм</label>
+          <input type="range" id="multiPrintGap" min="0" max="5" step="0.5" value="0"
+            title="Зазор между ценниками в миллиметрах (0 мм — встык)">
         </div>
-        <label class="checkbox-label">
-          <input type="checkbox" id="multiPrintCrop" checked> Метки для реза
+        <label class="checkbox-label"
+          title="Печатать тонкие пунктирные линии раскроя между ценниками для разрезания листа">
+          <input type="checkbox" id="multiPrintCrop" checked> Метки для реза (пунктир)
         </label>
       </div>
       <div id="multiPrintSummary" class="multi-print-summary"></div>
-      <button id="multiPrintBtn" class="btn btn-primary" style="width: 100%; justify-content: center;">
-        🖨️ Печать выбранных шаблонов
-      </button>
+      <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+        <button id="multiPrintBtn" class="btn btn-primary" style="width: 100%; justify-content: center;"
+          title="Сформировать общий печатный лист со всеми выбранными шаблонами и открыть диалог печати (Ctrl+P)">
+          🖨️ Печать выбранных шаблонов
+        </button>
+        <button type="button" id="downloadMultiPdfBtnDrawer" class="btn btn-secondary"
+          style="width: 100%; justify-content: center;" title="Сформировать и сохранить готовый мульти-лист в файл PDF">
+          📥 Скачать мульти-лист в PDF
+        </button>
+      </div>
     </div>
   </div>
 
@@ -96,32 +244,89 @@
     <div class="items-drawer-header">
       <div class="idr-title-group">
         <span class="idr-icon">📝</span>
-        <div>
+        <div class="idr-title-text-wrap">
           <h3 id="idrTemplateName">Список товаров</h3>
           <span class="idr-badge" id="idrItemsCount">0 товаров</span>
         </div>
       </div>
       <div class="idr-header-actions">
-        <label class="checkbox-label auto-open-label" title="Автоматически открывать эту шторку при выборе шаблона">
+        <button type="button" id="itemsDrawerPinBtn" class="btn btn-secondary btn-sm items-drawer-pin-btn"
+          title="Закрепить панель товаров справа (Split-View Studio)">
+          <span class="pin-icon">📌</span>
+          <span class="pin-text">Закрепить</span>
+        </button>
+        <button type="button" id="itemsDrawerCloseBtn" class="btn btn-secondary btn-sm"
+          title="Закрыть шторку товаров (Esc)">✕</button>
+      </div>
+    </div>
+
+    <!-- Панель опций авто-фона и открытия -->
+    <div class="idr-sub-toolbar">
+      <button type="button" class="autobg-toggle autobg-toggle-full btn btn-secondary btn-sm"
+        title="Автоматический подбор фона по названию товара: клик — применить ко всем строкам таблицы, Shift+клик — авто-режим при вводе">✨
+        Авто-фон:
+        <b>Применить</b></button>
+      <div class="idr-sub-toolbar-options">
+        <label class="checkbox-label auto-open-label"
+          title="Автоматически подбирать подходящий фон при вводе названия товара">
+          <input type="checkbox" id="autoBgLiveChk" checked>
+          <span>При вводе</span>
+        </label>
+        <label class="checkbox-label auto-open-label"
+          title="Автоматически открывать эту шторку со списком товаров при выборе шаблона">
           <input type="checkbox" id="autoOpenDrawerChk" checked>
           <span>Автооткрытие</span>
         </label>
-        <button type="button" id="itemsDrawerCloseBtn" class="btn btn-secondary btn-sm"
-          title="Закрыть шторку (Esc)">✕</button>
       </div>
     </div>
 
     <!-- Блок быстрой вставки из Excel в шторке -->
     <div class="idr-paste-section">
-      <button type="button" id="idrTogglePasteBtn" class="btn btn-secondary btn-sm" style="width:100%;">
-        📋 Вставить список из Excel / 1C
+      <button type="button" id="idrTogglePasteBtn" class="btn btn-excel-highlight" style="width:100%;"
+        title="Быстрая вставка скопированных строк с наименованиями и ценами (Excel, 1C, касса)">
+        <span class="excel-icon">📋</span>
+        <span class="excel-text">Вставить список из Excel / 1C</span>
+        <span class="excel-badge">Быстрый ввод</span>
       </button>
       <div id="idrPasteBox" class="idr-paste-box" style="display:none;">
-        <textarea id="idrPasteInput" rows="3"
-          placeholder="Вставьте скопированные строки из Excel (Наименование [Вес] Цена)"></textarea>
+        <textarea id="idrPasteInput" class="no-autogrow" rows="3"
+          placeholder="Вставьте скопированные строки из Excel, 1С или чека (наименование, вес, цена)..."></textarea>
         <div class="idr-paste-actions">
-          <button type="button" id="idrApplyPasteBtn" class="btn btn-primary btn-sm">Вставить список</button>
-          <button type="button" id="idrCancelPasteBtn" class="btn btn-secondary btn-sm">Отмена</button>
+          <button type="button" id="idrApplyPasteBtn" class="btn btn-primary btn-sm"
+            title="Распознать текст и добавить товары в таблицу ценников">Вставить список</button>
+          <button type="button" id="idrCancelPasteBtn" class="btn btn-secondary btn-sm"
+            title="Отменить вставку и скрыть поле ввода">Отмена</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Поиск и сортировка товаров в шторке -->
+    <div class="idr-search-section">
+      <div class="items-search-box">
+        <span class="search-box-icon">🔍</span>
+        <input type="text" id="idrSearchInput" class="items-search-input" placeholder="Поиск по названию или цене..."
+          title="Фильтровать список товаров по введенному тексту или цифрам">
+        <span id="idrSearchCount" class="search-count-badge" style="display:none;"></span>
+        <button type="button" id="idrSearchClearBtn" class="search-clear-btn" title="Очистить поиск (Esc)"
+          style="display:none;">✕</button>
+      </div>
+      <div class="sort-dropdown-wrap" id="idrSortWrap">
+        <button type="button" id="idrSortBtn" class="btn btn-secondary btn-sm"
+          title="Упорядочить список товаров по названию или цене">↕️ Сортировка ▾</button>
+        <div id="idrSortMenu" class="sort-menu-dropdown" style="display:none;">
+          <button type="button" data-sort="name-asc" class="sort-menu-item"
+            title="Сортировать товары по алфавиту от А до Я">🔤 Название (А → Я)</button>
+          <button type="button" data-sort="name-desc" class="sort-menu-item"
+            title="Сортировать товары по алфавиту в обратном порядке">🔤 Название (Я → А)</button>
+          <button type="button" data-sort="price-asc" class="sort-menu-item"
+            title="Сортировать товары по возрастанию цены">💰 Сначала дешевле</button>
+          <button type="button" data-sort="price-desc" class="sort-menu-item"
+            title="Сортировать товары по убыванию цены">💰 Сначала дороже</button>
+          <button type="button" data-sort="filled-first" class="sort-menu-item"
+            title="Поместить заполненные ценники в начало списка">📦 Сначала заполненные</button>
+          <div class="sort-menu-divider"></div>
+          <button type="button" data-sort="restore-original" class="sort-menu-item sort-menu-restore"
+            title="Вернуть порядок товаров, который был до сортировки">🔄 Вернуть как было</button>
         </div>
       </div>
     </div>
@@ -129,13 +334,16 @@
     <!-- Таблица товаров в шторке -->
     <div class="idr-table-section">
       <div class="items-table-header">
-        <span class="col-num">№</span>
-        <span class="col-title">Наименование</span>
-        <span class="col-sub">Вес</span>
-        <span class="col-price">Цена</span>
-        <span class="col-digit" style="display:none;">№</span>
-        <span class="col-tools">Опции</span>
-        <span class="col-del"></span>
+        <span class="col-hdr col-move" title="Перетащите мышью для изменения порядка строк"></span>
+        <span class="col-hdr col-chk" title="Выбрать все товары"><input type="checkbox" id="idrSelectAllChk"
+            title="Выбрать все товары"></span>
+        <span class="col-hdr col-num" title="Порядковый номер">№</span>
+        <span class="col-hdr col-title" title="Наименование товара">Наименование</span>
+        <span class="col-hdr col-sub" title="Вес, фасовка или дополнительная строка">Вес</span>
+        <span class="col-hdr col-price" title="Стоимость товара">Цена</span>
+        <span class="col-hdr col-qty" title="Тираж одинаковых копий ценника на листе А4 (шт)">Тираж</span>
+        <span class="col-hdr col-digit" style="display:none;" title="Номер крана или сорта">№</span>
+        <span class="col-hdr col-tools" title="Опции оформления (индивидуальный стиль ценника)">Опции</span>
       </div>
       <div class="idr-table-wrapper">
         <div id="idrItemsList" class="items-list">
@@ -146,29 +354,37 @@
 
     <!-- Подвал шторки -->
     <div class="items-drawer-footer">
-      <button type="button" id="idrClearAllBtn" class="btn btn-secondary btn-sm" title="Очистить все товары в списке">🗑
+      <button type="button" id="idrClearAllBtn" class="btn btn-secondary btn-sm"
+        title="Очистить все заполненные строки в списке товаров">🗑
         Очистить</button>
       <button type="button" id="idrMultiPrintBtn" class="btn btn-secondary btn-sm" style="flex:1;"
-        title="Открыть мульти-печать для печати нескольких шаблонов">🖨️ Мульти-печать</button>
+        title="Открыть панель мульти-печати для компоновки разных шаблонов на одном листе">🖨️ Мульти-печать</button>
       <button type="button" id="idrPrintBtn" class="btn btn-primary btn-sm" style="flex:1;"
-        title="Печать текущего шаблона">🖨️ Печать</button>
+        title="Открыть диалог печати текущего шаблона на принтере (Ctrl+P)">🖨️ Печать</button>
     </div>
   </aside>
 
   <!-- Плавающая кнопка быстрого вызова шторки товаров -->
   <button type="button" id="floatingItemsDrawerBtn" class="floating-items-drawer-btn no-print"
-    title="Открыть список товаров (Шторка)">
-    <span class="fid-icon">📝</span>
+    title="Открыть панель со списком товаров (Шторка)">
+    <span class="fid-icon">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2"
+        stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path>
+        <rect x="9" y="3" width="6" height="4" rx="1"></rect>
+        <path d="M9 12h6M9 16h4"></path>
+      </svg>
+    </span>
     <span class="fid-text" id="floatingItemsText">Товары</span>
     <span class="fid-badge" id="floatingItemsBadge">3</span>
   </button>
 
   <!-- Mobile View Switcher (Tab navigation on smartphones) -->
   <div class="mobile-tab-bar no-print">
-    <button class="mobile-tab-btn active" data-mobile-view="preview">
+    <button class="mobile-tab-btn active" data-mobile-view="preview" title="Переключиться на предпросмотр ценника">
       👁️ Предпросмотр
     </button>
-    <button class="mobile-tab-btn" data-mobile-view="controls">
+    <button class="mobile-tab-btn" data-mobile-view="controls" title="Переключиться на панель настроек макета">
       ⚙️ Настройки макета
     </button>
   </div>
@@ -191,14 +407,20 @@
           <button type="button" class="sidebar-tab-btn" data-target="section3" title="3. Шрифты и текст">
             <span class="tab-icon">✍️</span>
             <span class="tab-name">Шрифты</span>
+            <span class="tab-custom-badge" id="tabBadgeFonts" title="У активного товара индивидуальные шрифты"
+              style="display:none;"></span>
           </button>
           <button type="button" class="sidebar-tab-btn" data-target="section4" title="4. Фоны и заливка">
             <span class="tab-icon">🎨</span>
             <span class="tab-name">Фоны</span>
+            <span class="tab-custom-badge" id="tabBadgeBg" title="У активного товара индивидуальный фон"
+              style="display:none;"></span>
           </button>
           <button type="button" class="sidebar-tab-btn" data-target="section5" title="5. Оформление ценника">
             <span class="tab-icon">✨</span>
             <span class="tab-name">Декор</span>
+            <span class="tab-custom-badge" id="tabBadgeDecor" title="У активного товара индивидуальный декор"
+              style="display:none;"></span>
           </button>
           <button type="button" class="sidebar-tab-btn" data-target="section6" title="6. Печать на А4">
             <span class="tab-icon">🖨️</span>
@@ -219,17 +441,22 @@
             class="toggle-arrow">▲</span></h3>
         <div class="card-body">
           <div class="template-tabs">
-            <button class="tab-btn active" data-tab="builtIn">Встроенные</button>
-            <button class="tab-btn" data-tab="userSaved">Мои шаблоны (<span id="userCount">0</span>)</button>
+            <button class="tab-btn active" data-tab="builtIn"
+              title="Готовые заводские шаблоны ценников и воблеров">Встроенные</button>
+            <button class="tab-btn" data-tab="userSaved" title="Сохраненные пользовательские шаблоны">Мои шаблоны (<span
+                id="userCount">0</span>)</button>
           </div>
 
           <!-- Экспорт / Импорт шаблонов -->
           <div class="template-toolbar">
-            <button id="exportAllBtn" class="btn btn-secondary btn-sm" title="Экспорт всех шаблонов в JSON">⬇️
+            <button id="exportAllBtn" class="btn btn-secondary btn-sm"
+              title="Сохранить все пользовательские шаблоны в JSON-файл">⬇️
               Экспорт</button>
-            <button id="importBtn" class="btn btn-secondary btn-sm" title="Импорт шаблонов из JSON">⬆️ Импорт</button>
+            <button id="importBtn" class="btn btn-secondary btn-sm"
+              title="Загрузить шаблоны из сохраненного ранее JSON-файла">⬆️ Импорт</button>
             <button id="resetAllBtn" class="btn btn-secondary btn-sm"
-              title="Сбросить сессию и товары к исходному состоянию (Мои шаблоны сохраняются)">♻️ Сброс</button>
+              title="Сбросить текущую сессию и таблицу товаров к исходному состоянию (Мои шаблоны сохраняются)">♻️
+              Сброс</button>
             <input type="file" id="importFileInput" accept="application/json,.json" hidden>
           </div>
 
@@ -237,47 +464,54 @@
           <div id="builtInTemplates" class="presets-grid tab-content active">
             <!-- Подгруппа: Ценники -->
             <div class="preset-subgroup">
-              <button type="button" class="preset-sub-toggle" data-subgroup="priceTags">
+              <button type="button" class="preset-sub-toggle" data-subgroup="priceTags"
+                title="Свернуть / развернуть категорию ценников">
                 <span class="preset-sub-title">Ценники</span>
                 <span class="preset-sub-arrow">▾</span>
               </button>
               <div class="preset-sub-body preset-grid-2col">
-                <button class="preset-card active" data-preset="alaska_dots">
+                <button class="preset-card active" data-preset="alaska_dots"
+                  title="Бутылки — 6.5 × 10 см, вертикальный (8 шт. на листе А4)">
                   <div class="preset-color dots-black"></div>
                   <div class="preset-info">
                     <span class="preset-title">Бутылки</span>
                   </div>
                 </button>
 
-                <button class="preset-card" data-preset="ryba">
+                <button class="preset-card" data-preset="ryba"
+                  title="Рыба — 6.5 × 10 см, черный фон с рамкой (8 шт. на листе А4)">
                   <div class="preset-color ryba"></div>
                   <div class="preset-info">
                     <span class="preset-title">Рыба</span>
                   </div>
                 </button>
 
-                <button class="preset-card" data-preset="sneki">
+                <button class="preset-card" data-preset="sneki"
+                  title="Снеки — 6.5 × 3.5 см, горизонтальный (24 шт. на листе А4)">
                   <div class="preset-color sneki"></div>
                   <div class="preset-info">
                     <span class="preset-title">Снеки</span>
                   </div>
                 </button>
 
-                <button class="preset-card" data-preset="sneki_5">
+                <button class="preset-card" data-preset="sneki_5"
+                  title="Снеки 5 — 6.5 × 4.8 см, горизонтальный (16 шт. на листе А4)">
                   <div class="preset-color sneki-5"></div>
                   <div class="preset-info">
                     <span class="preset-title">Снеки 5</span>
                   </div>
                 </button>
 
-                <button class="preset-card" data-preset="sneki_digit">
+                <button class="preset-card" data-preset="sneki_digit"
+                  title="Снеки с цифрой — 6.5 × 3.5 см с крупным номером крана (24 шт. на листе А4)">
                   <div class="preset-color sneki-digit"></div>
                   <div class="preset-info">
                     <span class="preset-title">Снеки с цифрой</span>
                   </div>
                 </button>
 
-                <button class="preset-card" data-preset="yellow_tag">
+                <button class="preset-card" data-preset="yellow_tag"
+                  title="Желтый — 6.5 × 3.5 см, яркий акцентный ценник (24 шт. на листе А4)">
                   <div class="preset-color yellow-tag"></div>
                   <div class="preset-info">
                     <span class="preset-title">Желтый</span>
@@ -288,54 +522,61 @@
 
             <!-- Подгруппа: Воблеры -->
             <div class="preset-subgroup">
-              <button type="button" class="preset-sub-toggle" data-subgroup="wobblers">
+              <button type="button" class="preset-sub-toggle" data-subgroup="wobblers"
+                title="Свернуть / развернуть категорию воблеров">
                 <span class="preset-sub-title">Воблеры</span>
                 <span class="preset-sub-arrow">▾</span>
               </button>
               <div class="preset-sub-body preset-grid-2col">
-                <button class="preset-card" data-preset="novy_vkus">
+                <button class="preset-card" data-preset="novy_vkus"
+                  title="Новый вкус — 8.5 × 8.5 см, круглый воблер (6 шт. на листе А4)">
                   <div class="preset-color novy-vkus"></div>
                   <div class="preset-info">
                     <span class="preset-title">Новый вкус</span>
                   </div>
                 </button>
 
-                <button class="preset-card" data-preset="novinka">
+                <button class="preset-card" data-preset="novinka"
+                  title="Новинка — 8.5 × 8.5 см, круглый воблер (6 шт. на листе А4)">
                   <div class="preset-color novinka"></div>
                   <div class="preset-info">
                     <span class="preset-title">Новинка</span>
                   </div>
                 </button>
 
-                <button class="preset-card" data-preset="tomat">
+                <button class="preset-card" data-preset="tomat"
+                  title="Попробуй — 8.5 × 8.5 см, круглый воблер (6 шт. на листе А4)">
                   <div class="preset-color poprobuy"></div>
                   <div class="preset-info">
                     <span class="preset-title">Попробуй</span>
                   </div>
                 </button>
 
-                <button class="preset-card" data-preset="sladko">
+                <button class="preset-card" data-preset="sladko"
+                  title="Сладко — 8.5 × 8.5 см, круглый воблер (6 шт. на листе А4)">
                   <div class="preset-color sladko"></div>
                   <div class="preset-info">
                     <span class="preset-title">Сладко</span>
                   </div>
                 </button>
 
-                <button class="preset-card" data-preset="sort_nedeli">
+                <button class="preset-card" data-preset="sort_nedeli"
+                  title="Сорт недели — 8.5 × 8.5 см, воблер (6 шт. на листе А4)">
                   <div class="preset-color sort-nedeli"></div>
                   <div class="preset-info">
                     <span class="preset-title">Сорт недели</span>
                   </div>
                 </button>
 
-                <button class="preset-card" data-preset="korona_a5">
+                <button class="preset-card" data-preset="korona_a5"
+                  title="Корона А5 — 14.8 × 21 см, плакат А5 (2 шт. на листе А4)">
                   <div class="preset-color korona-a5"></div>
                   <div class="preset-info">
                     <span class="preset-title">Корона А5</span>
                   </div>
                 </button>
 
-                <button class="preset-card" data-preset="a5">
+                <button class="preset-card" data-preset="a5" title="А5 — 14.8 × 21 см, ценник А5 (2 шт. на листе А4)">
                   <div class="preset-color a5-plate"></div>
                   <div class="preset-info">
                     <span class="preset-title">А5</span>
@@ -390,12 +631,33 @@
                   title="Развернуть/свернуть поле для вставки из Excel">
                   <span>📋 Excel</span> <span class="excel-chevron" id="excelChevron">▾</span>
                 </button>
+                <button type="button" id="sidebarSearchToggleBtn" class="btn btn-secondary btn-icon-xs"
+                  title="Поиск товаров в таблице (Ctrl+F)">🔍</button>
+                <div class="sort-dropdown-wrap" id="sidebarSortWrap">
+                  <button type="button" id="sidebarSortBtn" class="btn btn-secondary btn-icon-xs"
+                    title="Сортировка товаров">↕️</button>
+                  <div id="sidebarSortMenu" class="sort-menu-dropdown" style="display:none;">
+                    <button type="button" data-sort="name-asc" class="sort-menu-item">🔤 Название (А → Я)</button>
+                    <button type="button" data-sort="name-desc" class="sort-menu-item">🔤 Название (Я → А)</button>
+                    <button type="button" data-sort="price-asc" class="sort-menu-item">💰 Сначала дешевле</button>
+                    <button type="button" data-sort="price-desc" class="sort-menu-item">💰 Сначала дороже</button>
+                    <button type="button" data-sort="filled-first" class="sort-menu-item">📦 Сначала
+                      заполненные</button>
+                    <div class="sort-menu-divider"></div>
+                    <button type="button" data-sort="restore-original" class="sort-menu-item sort-menu-restore"
+                      title="Вернуть порядок товаров, который был до сортировки">🔄 Вернуть как было</button>
+                  </div>
+                </div>
                 <span id="itemsStatsBadge" class="items-stats-badge" title="Количество заполненных товаров и страниц">0
                   тов.</span>
               </div>
               <div class="paste-actions">
                 <button type="button" id="bulkSetBgBtn" class="btn btn-secondary btn-icon-xs"
                   title="Применить фон ко всем товарам списка">🖼️</button>
+                <button type="button" class="autobg-toggle btn-icon-xs"
+                  title="Автоподстановка фона по названию товара (клик — применить ко всем, Shift+клик — вкл/выкл авто-режим)">✨</button>
+                <button type="button" id="fitAllTitlesBtn" class="btn btn-secondary btn-icon-xs"
+                  title="Подогнать размер шрифта всех названий под рамку ценника">📏</button>
                 <button type="button" id="copyItemsBtn" class="btn btn-secondary btn-icon-xs"
                   title="Перенести товары на другой шаблон">⧉</button>
                 <button type="button" class="autolink-toggle btn-icon-xs"
@@ -409,23 +671,37 @@
 
             <!-- Collapsible Excel Drawer -->
             <div id="excelPasteDrawer" class="excel-paste-drawer is-collapsed">
-              <textarea id="pasteExcelArea" rows="3"
-                placeholder="Вставьте строки из Excel (Наименование, Вес, Цена)..."></textarea>
+              <textarea id="pasteExcelArea" class="no-autogrow" rows="3"
+                placeholder="Вставьте строки из Excel или 1С (наименование, вес, цена) или нажмите Ctrl+V в любом месте страницы..."></textarea>
               <div class="excel-drawer-footer">
-                <button type="button" id="applyPasteBtn" class="btn btn-primary btn-sm">
+                <button type="button" id="applyPasteBtn" class="btn btn-primary btn-sm"
+                  title="Распознать скопированные строки и внести товары в таблицу">
                   📋 Применить к таблице
                 </button>
               </div>
             </div>
 
+            <!-- Панель быстрого поиска товаров в сайдбаре -->
+            <div id="sidebarSearchBox" class="items-search-box sidebar-search-box" style="display:none;">
+              <span class="search-box-icon">🔍</span>
+              <input type="text" id="sidebarSearchInput" class="items-search-input" placeholder="Поиск в таблице...">
+              <span id="sidebarSearchCount" class="search-count-badge" style="display:none;"></span>
+              <button type="button" id="sidebarSearchClearBtn" class="search-clear-btn"
+                title="Очистить поиск (Esc)">✕</button>
+            </div>
+
             <!-- Interactive Items List Header & Table (Pixel-perfect aligned) -->
             <div class="items-table-header">
-              <span class="col-hdr col-num">№</span>
-              <span class="col-hdr col-title">Наименование</span>
-              <span class="col-hdr col-sub">Вес</span>
-              <span class="col-hdr col-price">Цена</span>
-              <span class="col-hdr col-digit">№</span>
-              <span class="col-hdr col-tools">Опции</span>
+              <span class="col-hdr col-move" title="Перетащите мышью для изменения порядка строк"></span>
+              <span class="col-hdr col-chk" title="Выбрать все товары"><input type="checkbox" id="selectAllItemsChk"
+                  title="Выбрать все товары"></span>
+              <span class="col-hdr col-num" title="Порядковый номер">№</span>
+              <span class="col-hdr col-title" title="Наименование товара">Наименование</span>
+              <span class="col-hdr col-sub" title="Вес, фасовка или дополнительная строка">Вес</span>
+              <span class="col-hdr col-price" title="Стоимость товара">Цена</span>
+              <span class="col-hdr col-qty" title="Тираж одинаковых копий ценника на листе А4 (шт)">Тираж</span>
+              <span class="col-hdr col-digit" style="display:none;" title="Номер крана или сорта">№</span>
+              <span class="col-hdr col-tools" title="Опции оформления (индивидуальный стиль ценника)">Опции</span>
             </div>
             <div class="items-table-wrapper">
               <div id="itemsListContainer" class="items-list">
@@ -437,33 +713,37 @@
           <!-- Single Item Settings (shown when single mode is chosen) -->
           <div id="singleItemSection" class="field-settings-group compact-group" style="display: none;">
             <div class="group-header">
-              <h4>Текст одного воблера</h4>
+              <h4>Текст одного ценника</h4>
             </div>
             <div class="form-group">
-              <label for="inputTitle">Наименование:</label>
-              <textarea id="inputTitle" rows="1">Alaska Фейхоа 0,45 ж/б</textarea>
+              <label for="inputTitle"
+                title="Название товара, которое будет напечатано на всех ценниках листа">Наименование:</label>
+              <textarea id="inputTitle" rows="1" placeholder="Введите название товара">Alaska Фейхоа 0,45 ж/б</textarea>
             </div>
             <div class="form-group">
-              <label for="inputSubtitle">Вес / доп. текст:</label>
+              <label for="inputSubtitle" title="Вес, фасовка, тара или дополнительная строка">Вес / доп. текст:</label>
               <textarea id="inputSubtitle" rows="1" placeholder="напр. 100 гр"></textarea>
             </div>
             <div class="form-row">
               <div class="form-group flex-2">
-                <label for="inputPriceFree">Значение цены:</label>
+                <label for="inputPriceFree" title="Стоимость товара (число или текст с фасовкой)">Значение цены:</label>
                 <input type="text" id="inputPriceFree" placeholder="напр. 350 (или 350 / 1л)">
               </div>
               <div class="form-group flex-1">
-                <label>Значок валюты</label>
+                <label for="inputCurrency" title="Символ валюты (по умолчанию знак рубля ₽)">Значок валюты</label>
                 <input type="text" id="inputCurrency" value="₽">
               </div>
             </div>
             <div class="form-group" id="singleDigitWrap" style="margin-top: 8px;">
-              <label for="digitText">Большая цифра (слой «Цифра»):</label>
+              <label for="digitText" title="Крупная цифра крана или сорта для шаблонов с цифрой">Большая цифра (слой
+                «Цифра»):</label>
               <input type="text" id="digitText" maxlength="3" placeholder="напр. 5" style="max-width: 120px;">
             </div>
             <div class="form-group" id="singleRepeatWrap">
-              <label for="singleRepeatCount">Количество одинаковых ценников на листе:</label>
-              <select id="singleRepeatCount">
+              <label for="singleRepeatCount"
+                title="Сколько одинаковых ценников разместить на печатном листе А4">Количество одинаковых ценников на
+                листе:</label>
+              <select id="singleRepeatCount" title="Выберите тираж одинаковых ценников на листе">
                 <option value="1">1 шт</option>
                 <option value="6">6 шт</option>
                 <option value="12">12 шт</option>
@@ -483,21 +763,31 @@
 
           <!-- Переключатель области применения: только для режима «Разные товары» -->
           <div class="font-apply-mode" id="fontApplyModeWrap" style="display:none;">
-            <span class="fam-label">Применить к:</span>
+            <span class="fam-label"
+              title="Область действия: настройки только для выбранного ценника или базовые для всех ценников">Применить
+              к:</span>
             <div class="seg-control" role="group">
-              <button type="button" class="seg-btn active" data-font-mode="item">Этот ценник</button>
-              <button type="button" class="seg-btn" data-font-mode="template">Весь шаблон</button>
+              <button type="button" class="seg-btn active" data-font-mode="item"
+                title="Изменения шрифтов коснутся ТОЛЬКО выбранного ценника (сохранится индивидуальный стиль)">🏷️ Этот
+                ценник</button>
+              <button type="button" class="seg-btn" data-font-mode="template"
+                title="Изменения шрифтов применятся ко ВСЕМ ценникам этого шаблона как базовый стиль">📑 Весь
+                шаблон</button>
             </div>
             <button type="button" id="resetItemFontsBtn" class="btn btn-secondary btn-sm"
-              title="Сбросить шрифты выбранного ценника к настройкам шаблона">↺ К шаблону</button>
+              title="Сбросить индивидуальные шрифты этого ценника и вернуть исходный стиль шаблона">↺ К шаблону</button>
           </div>
 
           <!-- Sub-Tabs Navigation for Font Properties -->
           <div class="sub-tabs-nav" role="tablist" id="fontSubTabsNav">
-            <button type="button" class="sub-tab-btn active" data-font-tab="title">🏷️ Название</button>
-            <button type="button" class="sub-tab-btn" data-font-tab="subtitle">⚖️ Вес</button>
-            <button type="button" class="sub-tab-btn" data-font-tab="price">💰 Цена</button>
-            <button type="button" class="sub-tab-btn" data-font-tab="digit">🔢 Цифра</button>
+            <button type="button" class="sub-tab-btn active" data-font-tab="title"
+              title="Шрифт, кегль, цвет, сдвиг и тень наименования товара">🏷️ Название</button>
+            <button type="button" class="sub-tab-btn" data-font-tab="subtitle"
+              title="Шрифт, размер и цвет веса или фасовки">⚖️ Вес</button>
+            <button type="button" class="sub-tab-btn" data-font-tab="price"
+              title="Шрифт, цвет, плашка и перечеркивание цены">💰 Цена</button>
+            <button type="button" class="sub-tab-btn" data-font-tab="digit"
+              title="Шрифт и цвет крупного номера крана или сорта">🔢 Цифра</button>
           </div>
 
           <!-- Tab Pane 1: Main Title Settings -->
@@ -507,12 +797,14 @@
                 style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                 <h4 style="margin:0;">Шрифт наименования</h4>
                 <button type="button" id="autoFitFontBtn" class="btn btn-secondary btn-sm"
-                  style="padding: 2px 8px; font-size: 0.72rem;">✨ Подогнать</button>
+                  style="padding: 2px 8px; font-size: 0.72rem;"
+                  title="Автоматически уменьшить размер шрифта, чтобы длинное название полностью уместилось в ценник">✨
+                  Подогнать</button>
               </div>
               <div class="sub-body">
                 <div class="form-row compact-row">
                   <div class="form-group flex-2">
-                    <label for="titleFont">Семейство шрифта</label>
+                    <label for="titleFont" title="Гарнитура шрифта для наименования товара">Семейство шрифта</label>
                     <select id="titleFont" class="font-dropdown">
                       <optgroup label="Обычные">
                         <option value="Arial, sans-serif" selected>Arial (Стандартный)</option>
@@ -531,25 +823,39 @@
                     </select>
                   </div>
                   <div class="form-group flex-1 compact-color-group">
-                    <label for="titleColor">Цвет</label>
+                    <label for="titleColor" title="Цвет букв наименования">Цвет</label>
                     <input type="color" id="titleColor" value="#ffffff" class="color-picker-input">
+                    <div class="quick-color-swatches" data-target="titleColor" title="Быстрые цвета названия">
+                      <button type="button" class="color-swatch-btn" data-color="#ffffff" style="background:#ffffff;"
+                        title="Белый"></button>
+                      <button type="button" class="color-swatch-btn" data-color="#000000" style="background:#000000;"
+                        title="Черный"></button>
+                      <button type="button" class="color-swatch-btn" data-color="#ffe600" style="background:#ffe600;"
+                        title="Желтый"></button>
+                      <button type="button" class="color-swatch-btn" data-color="#e63946" style="background:#e63946;"
+                        title="Красный"></button>
+                      <button type="button" class="color-swatch-btn" data-color="#38bdf8" style="background:#38bdf8;"
+                        title="Голубой"></button>
+                    </div>
                   </div>
                 </div>
 
                 <div class="form-row compact-row">
                   <div class="form-group flex-1">
-                    <label>Размер: <span id="titleSizeVal" class="val-badge">13</span> pt</label>
-                    <input type="range" id="titleSize" min="7" max="100" value="13">
+                    <label title="Кегль шрифта наименования в пунктах (pt)">Размер: <span id="titleSizeVal"
+                        class="val-badge">13</span> pt</label>
+                    <input type="range" id="titleSize" min="7" max="100" value="13"
+                      title="Размер шрифта наименования в пунктах (pt)">
                   </div>
                   <div class="form-group flex-1">
-                    <label>Толщина и стиль</label>
+                    <label title="Плотность начертания и курсив">Толщина и стиль</label>
                     <div style="display:flex; gap:6px; align-items:center;">
                       <select id="titleWeight" style="flex:1;">
                         <option value="900">900 (Extra)</option>
                         <option value="800" selected>800 (Bold)</option>
                         <option value="400">400 (Reg)</option>
                       </select>
-                      <label class="checkbox-label" style="white-space:nowrap;" title="Курсив">
+                      <label class="format-toggle-btn" style="white-space:nowrap;" title="Курсивное начертание">
                         <input type="checkbox" id="titleItalic"> <i>К</i>
                       </label>
                     </div>
@@ -558,14 +864,18 @@
 
                 <div class="form-row compact-row">
                   <div class="form-group flex-1">
-                    <label>Смещение Y: <span id="titleOffsetYVal" class="val-badge">0</span> мм</label>
-                    <input type="range" id="titleOffsetY" min="-20" max="20" value="0">
+                    <label title="Сдвиг названия по вертикали в миллиметрах (минус — вверх, плюс — вниз)">Сдвиг по
+                      вертикали: <span id="titleOffsetYVal" class="val-badge">0</span> мм</label>
+                    <input type="range" id="titleOffsetY" min="-20" max="20" value="0"
+                      title="Сдвиг названия вверх / вниз в миллиметрах">
                   </div>
                   <div class="form-group flex-1">
-                    <label>Тень/объём: <span id="titleShadowVal" class="val-badge">0</span></label>
+                    <label title="Сила и цвет тени для букв наименования">Тень/объём: <span id="titleShadowVal"
+                        class="val-badge">0</span></label>
                     <div style="display:flex; gap:6px; align-items:center;">
-                      <input type="range" id="titleShadow" min="0" max="10" value="0" step="1" style="flex:1;">
-                      <input type="color" id="titleShadowColor" value="#000000" title="Цвет тени"
+                      <input type="range" id="titleShadow" min="0" max="10" value="0" step="1" style="flex:1;"
+                        title="Интенсивность тени">
+                      <input type="color" id="titleShadowColor" value="#000000" title="Цвет тени текста"
                         class="color-picker-mini">
                     </div>
                   </div>
@@ -584,11 +894,12 @@
               <div class="sub-body">
                 <div class="form-row compact-row">
                   <div class="form-group flex-1">
-                    <label>Размер: <span id="subtitleSizeVal" class="val-badge">11</span> pt</label>
-                    <input type="range" id="subtitleSize" min="1" max="20" value="11">
+                    <label title="Размер шрифта для строки веса и фасовки">Размер: <span id="subtitleSizeVal"
+                        class="val-badge">11</span> pt</label>
+                    <input type="range" id="subtitleSize" min="1" max="20" value="11" title="Размер шрифта веса">
                   </div>
                   <div class="form-group flex-1">
-                    <label>Толщина</label>
+                    <label for="subtitleWeight" title="Насыщенность шрифта строки веса">Толщина</label>
                     <select id="subtitleWeight">
                       <option value="900">900 (Extra Bold)</option>
                       <option value="800">800 (Bold)</option>
@@ -597,7 +908,7 @@
                     </select>
                   </div>
                   <div class="form-group flex-1 compact-color-group">
-                    <label for="subtitleColor">Цвет</label>
+                    <label for="subtitleColor" title="Цвет текста строки веса">Цвет</label>
                     <input type="color" id="subtitleColor" value="#ffffff" class="color-picker-input">
                   </div>
                 </div>
@@ -609,14 +920,17 @@
           <div class="sub-tab-pane" id="fontTabPrice">
             <div class="field-settings-group compact-group sub-group is-collapsed-never">
               <div class="form-row compact-row" style="align-items:center; margin-bottom:8px; gap:8px; flex-wrap:wrap;">
-                <label class="checkbox-label" style="font-weight:700; font-size:0.85rem;">
+                <label class="checkbox-label" style="font-weight:700; font-size:0.85rem;"
+                  title="Отображать блок цены на ценнике">
                   <input type="checkbox" id="showPriceToggle" checked> Показать блок цены
                 </label>
-                <label class="checkbox-label" style="font-size:0.8rem;">
+                <label class="checkbox-label" style="font-size:0.8rem;"
+                  title="Светлая контрастная подложка под цифры цены">
                   <input type="checkbox" id="pricePlateToggle"> Светлая плашка
                 </label>
                 <label class="checkbox-label"
-                  style="font-size:0.8rem; margin-left:auto; color:#f87171; font-weight:600;">
+                  style="font-size:0.8rem; margin-left:auto; color:#f87171; font-weight:600;"
+                  title="Перечеркнуть цену крест-накрест (например, при распродаже или смене цены)">
                   <input type="checkbox" id="priceCrossToggle"> ❌ Перечеркнуть
                 </label>
               </div>
@@ -637,7 +951,7 @@
               <div class="sub-body" id="priceFieldsBlock">
                 <div class="form-row compact-row">
                   <div class="form-group flex-2">
-                    <label for="priceFont">Шрифт цены и ₽</label>
+                    <label for="priceFont" title="Гарнитура шрифта для цифр цены и знака валюты">Шрифт цены и ₽</label>
                     <select id="priceFont" class="font-dropdown">
                       <optgroup label="Обычные">
                         <option value="Arial, sans-serif" selected>Arial (Стандартный)</option>
@@ -656,18 +970,29 @@
                     </select>
                   </div>
                   <div class="form-group flex-1 compact-color-group">
-                    <label for="priceColor">Цвет цены</label>
+                    <label for="priceColor" title="Цвет цифр цены">Цвет цены</label>
                     <input type="color" id="priceColor" value="#ffffff" class="color-picker-input">
+                    <div class="quick-color-swatches" data-target="priceColor" title="Быстрые цвета цены">
+                      <button type="button" class="color-swatch-btn" data-color="#ffffff" style="background:#ffffff;"
+                        title="Белый"></button>
+                      <button type="button" class="color-swatch-btn" data-color="#ffe600" style="background:#ffe600;"
+                        title="Желтый"></button>
+                      <button type="button" class="color-swatch-btn" data-color="#e63946" style="background:#e63946;"
+                        title="Красный"></button>
+                      <button type="button" class="color-swatch-btn" data-color="#000000" style="background:#000000;"
+                        title="Черный"></button>
+                    </div>
                   </div>
                 </div>
 
                 <div class="form-row compact-row">
                   <div class="form-group flex-1">
-                    <label>Размер: <span id="priceSizeVal" class="val-badge">40</span> pt</label>
-                    <input type="range" id="priceSize" min="14" max="72" value="40">
+                    <label title="Размер шрифта цены в пунктах (pt)">Размер: <span id="priceSizeVal"
+                        class="val-badge">40</span> pt</label>
+                    <input type="range" id="priceSize" min="14" max="72" value="40" title="Размер цифр цены">
                   </div>
                   <div class="form-group flex-1">
-                    <label for="priceWeight">Толщина цены</label>
+                    <label for="priceWeight" title="Плотность начертания цифр цены">Толщина цены</label>
                     <select id="priceWeight">
                       <option value="900">900 (Extra Bold)</option>
                       <option value="800">800 (Bold)</option>
@@ -679,17 +1004,29 @@
 
                 <div class="form-row compact-row">
                   <div class="form-group flex-1">
-                    <label>Смещение Y: <span id="priceOffsetYVal" class="val-badge">0</span> мм</label>
-                    <input type="range" id="priceOffsetY" min="-20" max="20" value="0">
+                    <label title="Сдвиг блока цены по вертикали в миллиметрах (минус — вверх, плюс — вниз)">Сдвиг по
+                      вертикали: <span id="priceOffsetYVal" class="val-badge">0</span> мм</label>
+                    <input type="range" id="priceOffsetY" min="-20" max="20" value="0"
+                      title="Сдвиг цены вверх / вниз в миллиметрах">
                   </div>
                   <div class="form-group flex-1">
-                    <label>Тень/объём: <span id="priceShadowVal" class="val-badge">0</span></label>
+                    <label title="Сила и цвет тени для цифр цены">Тень/объём: <span id="priceShadowVal"
+                        class="val-badge">0</span></label>
                     <div style="display:flex; gap:6px; align-items:center;">
-                      <input type="range" id="priceShadow" min="0" max="10" value="0" step="1" style="flex:1;">
-                      <input type="color" id="priceShadowColor" value="#000000" title="Цвет тени"
+                      <input type="range" id="priceShadow" min="0" max="10" value="0" step="1" style="flex:1;"
+                        title="Интенсивность тени цены">
+                      <input type="color" id="priceShadowColor" value="#000000" title="Цвет тени цифр цены"
                         class="color-picker-mini">
                     </div>
                   </div>
+                </div>
+
+                <div class="form-row compact-row" style="margin-top: 6px;">
+                  <label class="checkbox-label"
+                    title="Отображать копейки (если есть) верхним индексом, например 350⁹⁰ ₽">
+                    <input type="checkbox" id="priceCentsSupToggle" checked>
+                    <span>Копейки верхним индексом (350⁹⁰)</span>
+                  </label>
                 </div>
               </div>
             </div>
@@ -700,12 +1037,12 @@
             <div class="field-settings-group compact-group sub-group is-collapsed-never">
               <div class="group-header sub-toggle" data-subgroup="font-digit"
                 style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <h4 style="margin:0;">Слой «Цифра»</h4>
+                <h4 style="margin:0;">Крупный номер крана / сорта</h4>
               </div>
               <div class="sub-body">
                 <div class="form-row compact-row">
                   <div class="form-group flex-2">
-                    <label for="digitFont">Шрифт цифры</label>
+                    <label for="digitFont" title="Шрифт для цифры крана или сорта">Шрифт цифры</label>
                     <select id="digitFont" class="font-dropdown">
                       <optgroup label="Обычные">
                         <option value="Arial, sans-serif" selected>Arial (Стандартный)</option>
@@ -724,18 +1061,19 @@
                     </select>
                   </div>
                   <div class="form-group flex-1 compact-color-group">
-                    <label for="digitColor">Цвет</label>
+                    <label for="digitColor" title="Цвет крупной цифры">Цвет</label>
                     <input type="color" id="digitColor" value="#ffff00" class="color-picker-input">
                   </div>
                 </div>
 
                 <div class="form-row compact-row">
                   <div class="form-group flex-1">
-                    <label>Размер: <span id="digitSizeVal" class="val-badge">48</span> pt</label>
-                    <input type="range" id="digitSize" min="14" max="100" value="48">
+                    <label title="Размер цифры в пунктах (pt)">Размер: <span id="digitSizeVal"
+                        class="val-badge">48</span> pt</label>
+                    <input type="range" id="digitSize" min="14" max="100" value="48" title="Размер цифры">
                   </div>
                   <div class="form-group flex-1">
-                    <label for="digitWeight">Толщина</label>
+                    <label for="digitWeight" title="Насыщенность начертания цифры">Толщина</label>
                     <select id="digitWeight">
                       <option value="900">900 (Extra Bold)</option>
                       <option value="800" selected>800 (Bold)</option>
@@ -759,19 +1097,45 @@
 
           <!-- Переключатель области применения фона -->
           <div class="font-apply-mode" id="bgApplyModeWrap" style="display:none;">
-            <span class="fam-label">Применить к:</span>
+            <span class="fam-label"
+              title="Область действия: фон только для выбранного ценника или базовый для всех ценников">Применить
+              к:</span>
             <div class="seg-control" role="group">
-              <button type="button" class="seg-btn active" data-bg-mode="item">Этот ценник</button>
-              <button type="button" class="seg-btn" data-bg-mode="template">Весь шаблон</button>
+              <button type="button" class="seg-btn active" data-bg-mode="item"
+                title="Фон изменится ТОЛЬКО у выбранного ценника (сохранится индивидуальный стиль)">🏷️ Этот
+                ценник</button>
+              <button type="button" class="seg-btn" data-bg-mode="template"
+                title="Фон изменится у ВСЕХ ценников этого шаблона как базовый">📑 Весь шаблон</button>
             </div>
             <button type="button" id="resetItemBgBtn" class="btn btn-secondary btn-sm"
-              title="Сбросить фон ценника к настройкам шаблона">↺ К шаблону</button>
+              title="Сбросить индивидуальный фон этого ценника и вернуть исходный фон шаблона">↺ К шаблону</button>
+          </div>
+
+          <!-- Visual Background Gallery Component (Этап 4) -->
+          <div class="bg-gallery-section" id="bgGallerySection">
+            <div class="bg-gallery-header">
+              <span class="bg-gallery-title">🖼️ Галерея текстур и фонов</span>
+              <button type="button" id="toggleBgGalleryViewBtn" class="bg-gallery-toggle-btn"
+                title="Свернуть или развернуть галерею">Свернуть ▲</button>
+            </div>
+            <!-- Category Chips -->
+            <div class="bg-gallery-filters" id="bgGalleryFilters">
+              <button type="button" class="bg-filter-chip active" data-category="all">Все</button>
+              <button type="button" class="bg-filter-chip" data-category="fish">🐟 Рыба</button>
+              <button type="button" class="bg-filter-chip" data-category="snacks">🥨 Снеки</button>
+              <button type="button" class="bg-filter-chip" data-category="drinks">🍺 Напитки</button>
+              <button type="button" class="bg-filter-chip" data-category="promo">🏷️ Акции</button>
+              <button type="button" class="bg-filter-chip" data-category="color">🎨 Заливка / Свои</button>
+            </div>
+            <!-- Interactive Visual Grid -->
+            <div class="bg-gallery-grid" id="bgGalleryGrid" role="listbox" aria-label="Галерея фонов"></div>
           </div>
 
           <div class="form-row compact-row">
             <div class="form-group flex-2">
-              <label for="bgImageSelect">Фоновая картинка</label>
-              <select id="bgImageSelect">
+              <label for="bgImageSelect"
+                title="Выберите фоновое изображение из готовой коллекции или загрузите своё">Фоновая картинка</label>
+              <select id="bgImageSelect" title="Список доступных фоновых изображений">
                 <optgroup label="Встроенные">
                   <option value="dots_bg.jpg" selected>📷 Точечный фон (Alaska)</option>
                   <option value="yellow_bg.jpg">🟡 Желтый ценник</option>
@@ -799,24 +1163,40 @@
               </select>
             </div>
             <div class="form-group flex-1 compact-color-group">
-              <label for="headerBgColor">Цвет фона</label>
+              <label for="headerBgColor" title="Базовый цвет заливки ценника">Цвет фона</label>
               <input type="color" id="headerBgColor" value="#18181b" class="color-picker-input">
+              <div class="quick-color-swatches" data-target="headerBgColor" title="Быстрые цвета фона">
+                <button type="button" class="color-swatch-btn" data-color="#18181b" style="background:#18181b;"
+                  title="Темно-серый"></button>
+                <button type="button" class="color-swatch-btn" data-color="#ffe600" style="background:#ffe600;"
+                  title="Желтый ценник"></button>
+                <button type="button" class="color-swatch-btn" data-color="#e63946" style="background:#e63946;"
+                  title="Красный (Акция)"></button>
+                <button type="button" class="color-swatch-btn" data-color="#ffffff" style="background:#ffffff;"
+                  title="Белый"></button>
+                <button type="button" class="color-swatch-btn" data-color="#2563eb" style="background:#2563eb;"
+                  title="Синий"></button>
+                <button type="button" class="color-swatch-btn" data-color="#10b981" style="background:#10b981;"
+                  title="Зеленый"></button>
+              </div>
             </div>
           </div>
 
           <div class="form-row compact-row">
             <div class="form-group flex-1">
-              <label>Своя картинка</label>
+              <label title="Загрузить пользовательское изображение с компьютера">Своя картинка</label>
               <div class="upload-btn-wrapper">
-                <label for="customBgUpload" class="btn btn-secondary btn-sm upload-btn">📁 Выбрать файл...</label>
+                <label for="customBgUpload" class="btn btn-secondary btn-sm upload-btn"
+                  title="Выбрать файл изображения (JPG, PNG)">📁 Выбрать файл...</label>
                 <input type="file" id="customBgUpload" accept="image/*">
               </div>
               <div id="uploadStatus" class="upload-status"></div>
             </div>
             <div class="form-group flex-1">
-              <label>Папка с фонами</label>
+              <label title="Подключить локальную папку с фонами">Папка с фонами</label>
               <div class="upload-btn-wrapper">
-                <label for="extraBgDirInput" class="btn btn-secondary btn-sm upload-btn">📂 Выбрать папку...</label>
+                <label for="extraBgDirInput" class="btn btn-secondary btn-sm upload-btn"
+                  title="Выбрать папку с коллекцией фонов на диске">📂 Выбрать папку...</label>
                 <input type="file" id="extraBgDirInput" webkitdirectory multiple style="display:none;">
               </div>
               <div id="extraBgStatus" class="upload-status"></div>
@@ -824,9 +1204,11 @@
           </div>
 
           <div class="form-group compact-form-group">
-            <label for="headerHeightRange">Высота цветного блока (раздельный вид): <span id="headerHeightVal"
-                class="val-badge">50</span>%</label>
-            <input type="range" id="headerHeightRange" min="20" max="90" value="50">
+            <label for="headerHeightRange"
+              title="Пропорция высоты цветной части для шаблонов с разделенным фоном">Высота цветного блока (раздельный
+              вид): <span id="headerHeightVal" class="val-badge">50</span>%</label>
+            <input type="range" id="headerHeightRange" min="20" max="90" value="50"
+              title="Высота цветного блока в процентах">
           </div>
         </div><!-- /.card-body section4 -->
       </section>
@@ -839,24 +1221,33 @@
 
           <!-- Переключатель области применения оформления -->
           <div class="font-apply-mode" id="decorApplyModeWrap" style="display:none;">
-            <span class="fam-label">Применить к:</span>
+            <span class="fam-label"
+              title="Область действия: плашки только для выбранного ценника или базовые для всех ценников">Применить
+              к:</span>
             <div class="seg-control" role="group">
-              <button type="button" class="seg-btn active" data-decor-mode="item">Этот ценник</button>
-              <button type="button" class="seg-btn" data-decor-mode="template">Весь шаблон</button>
+              <button type="button" class="seg-btn active" data-decor-mode="item"
+                title="Плашки оформления изменятся ТОЛЬКО у выбранного ценника (сохранится индивидуальный стиль)">🏷️
+                Этот ценник</button>
+              <button type="button" class="seg-btn" data-decor-mode="template"
+                title="Плашки оформления применятся ко ВСЕМ ценникам этого шаблона как базовый стиль">📑 Весь
+                шаблон</button>
             </div>
             <button type="button" id="resetItemDecorBtn" class="btn btn-secondary btn-sm"
-              title="Сбросить фон и оформление ценника к настройкам шаблона">↺ К шаблону</button>
+              title="Сбросить индивидуальные плашки этого ценника и вернуть базовый стиль шаблона">↺ К шаблону</button>
           </div>
 
           <!-- Sub-Tabs Navigation for Decor Blocks -->
           <div class="sub-tabs-nav decor-tabs-nav" role="tablist" id="decorSubTabsNav">
-            <button type="button" class="sub-tab-btn active" data-decor-tab="outside">
+            <button type="button" class="sub-tab-btn active" data-decor-tab="outside"
+              title="Наружная плашка над ценником (АКЦИЯ, ХИТ, ВЫГОДНО)">
               <span class="tab-badge-dot" id="decorOutsideDot"></span> ⬆️ Сверху
             </button>
-            <button type="button" class="sub-tab-btn" data-decor-tab="inside">
+            <button type="button" class="sub-tab-btn" data-decor-tab="inside"
+              title="Внутренняя плашка в верхней части ценника">
               <span class="tab-badge-dot" id="decorInsideDot"></span> 🔲 Внутри
             </button>
-            <button type="button" class="sub-tab-btn" data-decor-tab="bottom">
+            <button type="button" class="sub-tab-btn" data-decor-tab="bottom"
+              title="Наружная плашка под ценником (СКИДКА, СУПЕРЦЕНА)">
               <span class="tab-badge-dot" id="decorBottomDot"></span> ⬇️ Снизу
             </button>
           </div>
@@ -940,14 +1331,17 @@
                 </div>
                 <div class="form-row compact-row">
                   <div class="form-group flex-1">
-                    <label for="decorOutsideFontSize">Размер: <span id="decorOutsideFontSizeVal"
-                        class="val-badge">14</span> pt</label>
-                    <input type="range" id="decorOutsideFontSize" min="6" max="60" value="14">
+                    <label for="decorOutsideFontSize" title="Размер шрифта надписи в пунктах (pt)">Размер: <span
+                        id="decorOutsideFontSizeVal" class="val-badge">14</span> pt</label>
+                    <input type="range" id="decorOutsideFontSize" min="6" max="60" value="14"
+                      title="Размер шрифта плашки">
                   </div>
                   <div class="form-group flex-1">
-                    <label for="decorOutsideHeight">Высота: <span id="decorOutsideHeightVal" class="val-badge">12</span>
-                      мм</label>
-                    <input type="range" id="decorOutsideHeight" min="5" max="30" value="12">
+                    <label for="decorOutsideHeight"
+                      title="Физическая высота верхней плашки над ценником в миллиметрах">Высота блока: <span
+                        id="decorOutsideHeightVal" class="val-badge">12</span> мм</label>
+                    <input type="range" id="decorOutsideHeight" min="5" max="30" value="12"
+                      title="Высота плашки в миллиметрах">
                   </div>
                 </div>
               </div>
@@ -1033,19 +1427,23 @@
                 </div>
                 <div class="form-row compact-row">
                   <div class="form-group flex-1">
-                    <label for="decorInsideFontSize">Размер: <span id="decorInsideFontSizeVal"
-                        class="val-badge">11</span> pt</label>
-                    <input type="range" id="decorInsideFontSize" min="6" max="60" value="11">
+                    <label for="decorInsideFontSize" title="Размер шрифта текста внутри плашки в пунктах (pt)">Размер:
+                      <span id="decorInsideFontSizeVal" class="val-badge">11</span> pt</label>
+                    <input type="range" id="decorInsideFontSize" min="6" max="60" value="11"
+                      title="Размер шрифта плашки">
                   </div>
                   <div class="form-group flex-1">
-                    <label for="decorInsideHeight">Высота: <span id="decorInsideHeightVal" class="val-badge">8</span>
-                      мм</label>
-                    <input type="range" id="decorInsideHeight" min="3" max="15" value="8">
+                    <label for="decorInsideHeight" title="Физическая высота внутренней плашки в миллиметрах">Высота
+                      блока: <span id="decorInsideHeightVal" class="val-badge">8</span> мм</label>
+                    <input type="range" id="decorInsideHeight" min="3" max="15" value="8"
+                      title="Высота плашки в миллиметрах">
                   </div>
                   <div class="form-group flex-1">
-                    <label for="decorInsideWidth">Ширина: <span id="decorInsideWidthVal"
-                        class="val-badge">50</span>%</label>
-                    <input type="range" id="decorInsideWidth" min="20" max="100" value="50">
+                    <label for="decorInsideWidth"
+                      title="Ширина внутренней плашки в процентах от общей ширины ценника">Ширина блока: <span
+                        id="decorInsideWidthVal" class="val-badge">50</span>%</label>
+                    <input type="range" id="decorInsideWidth" min="20" max="100" value="50"
+                      title="Ширина плашки в процентах">
                   </div>
                 </div>
               </div>
@@ -1131,14 +1529,17 @@
                 </div>
                 <div class="form-row compact-row">
                   <div class="form-group flex-1">
-                    <label for="decorBottomFontSize">Размер: <span id="decorBottomFontSizeVal"
-                        class="val-badge">14</span> pt</label>
-                    <input type="range" id="decorBottomFontSize" min="6" max="60" value="14">
+                    <label for="decorBottomFontSize" title="Размер шрифта нижней плашки в пунктах (pt)">Размер: <span
+                        id="decorBottomFontSizeVal" class="val-badge">14</span> pt</label>
+                    <input type="range" id="decorBottomFontSize" min="6" max="60" value="14"
+                      title="Размер шрифта плашки">
                   </div>
                   <div class="form-group flex-1">
-                    <label for="decorBottomHeight">Высота: <span id="decorBottomHeightVal" class="val-badge">12</span>
-                      мм</label>
-                    <input type="range" id="decorBottomHeight" min="5" max="30" value="12">
+                    <label for="decorBottomHeight"
+                      title="Физическая высота нижней плашки под ценником в миллиметрах">Высота блока: <span
+                        id="decorBottomHeightVal" class="val-badge">12</span> мм</label>
+                    <input type="range" id="decorBottomHeight" min="5" max="30" value="12"
+                      title="Высота плашки в миллиметрах">
                   </div>
                 </div>
               </div>
@@ -1176,8 +1577,22 @@
 
           <div id="singlePrintPanel">
             <div class="form-group compact-form-group">
-              <label for="sheetCount">Количество на листе:</label>
-              <select id="sheetCount">
+              <label
+                title="Ориентация печатного листа А4: автоматический подбор для экономии бумаги или ручной выбор">Ориентация
+                листа А4:</label>
+              <div class="segmented-control orientation-segmented" id="printOrientationControl">
+                <button type="button" class="seg-btn active" data-orientation="auto"
+                  title="Автоматически выбрать ориентацию с максимальной вместимостью">⚡ Авто</button>
+                <button type="button" class="seg-btn" data-orientation="portrait"
+                  title="Книжная ориентация (210 × 297 мм)">📄 Книжная</button>
+                <button type="button" class="seg-btn" data-orientation="landscape"
+                  title="Альбомная ориентация (297 × 210 мм)">📑 Альбомная</button>
+              </div>
+            </div>
+            <div class="form-group compact-form-group">
+              <label for="sheetCount" title="Количество ценников, размещаемых на одном печатном листе А4">Количество на
+                листе:</label>
+              <select id="sheetCount" title="Выберите раскладку или оставьте автоматический расчет">
                 <option value="auto">Автоматически (Максимально на А4)</option>
                 <option value="24">24 шт (для 6.5×3.5 см)</option>
                 <option value="12">12 шт</option>
@@ -1186,18 +1601,29 @@
               </select>
             </div>
             <div class="form-group compact-form-group">
-              <label for="gapMm">Зазор между ценниками (мм): <span id="gapMmVal" class="val-badge">0</span></label>
-              <input type="range" id="gapMm" min="0" max="5" step="0.5" value="0">
+              <label for="gapMm" title="Расстояние между ценниками на листе (0 мм — встык, без зазоров)">Зазор между
+                ценниками: <span id="gapMmVal" class="val-badge">0</span> мм</label>
+              <input type="range" id="gapMm" min="0" max="5" step="0.5" value="0"
+                title="Зазор между соседними ценниками в миллиметрах (0 мм — встык)">
             </div>
             <div class="checkbox-option" style="margin-bottom: 10px;">
-              <label>
+              <label
+                title="Печатать тонкие пунктирные линии раскроя между ценниками для разрезания листа резаком или ножницами">
                 <input type="checkbox" id="showCropMarks" checked>
-                <span>Показывать метки для вырезания (пунктир)</span>
+                <span>Показывать метки для вырезания (пунктирные линии раскроя)</span>
               </label>
             </div>
-            <button id="printBtnSidebar" class="btn btn-primary" style="width: 100%; justify-content: center;">
-              🖨️ Запустить печать (Печать на А4)
-            </button>
+            <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+              <button id="printBtnSidebar" class="btn btn-primary" style="width: 100%; justify-content: center;"
+                title="Запустить печать ценников на принтере (Ctrl+P)">
+                🖨️ Запустить печать (Печать на А4)
+              </button>
+              <button type="button" id="downloadPdfBtnSidebar" class="btn btn-secondary"
+                style="width: 100%; justify-content: center;"
+                title="Сформировать и сохранить готовый лист ценников в файл PDF">
+                📥 Скачать готовый PDF (А4)
+              </button>
+            </div>
           </div><!-- /#singlePrintPanel -->
 
           <!-- Мульти-печать: выбор шаблонов + копий -->
@@ -1205,13 +1631,21 @@
             <p class="multi-print-hint" style="margin-bottom: 12px;">Печать нескольких разных шаблонов на общем листе
               А4.</p>
             <button type="button" id="openMultiPrintDrawerBtn" class="btn btn-secondary"
-              style="width: 100%; margin-bottom: 8px; justify-content: center;">
+              style="width: 100%; margin-bottom: 8px; justify-content: center;"
+              title="Открыть панель выбора шаблонов и тиража копий для каждого">
               📋 Выбрать шаблоны и количество копий
             </button>
-            <button type="button" id="multiPrintBtnSidebar" class="btn btn-primary"
-              style="width: 100%; justify-content: center;">
-              🖨️ Запустить мульти-печать
-            </button>
+            <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+              <button type="button" id="multiPrintBtnSidebar" class="btn btn-primary"
+                style="width: 100%; justify-content: center;"
+                title="Сформировать общий лист и запустить печать на принтере (Ctrl+P)">
+                🖨️ Запустить мульти-печать
+              </button>
+              <button type="button" id="downloadMultiPdfBtnSidebar" class="btn btn-secondary"
+                style="width: 100%; justify-content: center;" title="Сформировать и сохранить мульти-лист в файл PDF">
+                📥 Скачать мульти-лист в PDF (А4)
+              </button>
+            </div>
           </div>
         </div><!-- /.card-body section6 -->
       </section>
@@ -1242,32 +1676,76 @@
         </div>
         <span id="sizeReadout" class="size-readout">6,5 × 3,5 см</span>
 
+        <!-- Переключатель масштаба монтажного стола: Ценник крупно / Лист А4 -->
+        <div class="workspace-view-toggle" id="workspaceViewToggle" title="Режим отображения монтажного стола">
+          <button type="button" class="wvt-btn active" id="viewModeTagBtn"
+            title="Крупный детальный просмотр одного ценника">
+            <span class="wvt-icon">🔍</span> <span class="wvt-text">Ценник</span>
+          </button>
+          <button type="button" class="wvt-btn" id="viewModeSheetBtn" title="Обзор раскладки всего листа А4">
+            <span class="wvt-icon">📑</span> <span class="wvt-text">Лист А4</span>
+          </button>
+        </div>
+
         <div class="preview-toolbar">
-          <button type="button" id="dragModeToggle" class="btn btn-secondary btn-sm"
-            title="Включить/выключить перетаскивание надписей мышью (положение разносится на все ценники)">✋ Двигать
-            надписи</button>
-          <button type="button" id="dragModeSoloToggle" class="btn btn-secondary btn-sm"
-            title="Включить/выключить перетаскивание надписей мышью — двигается только выбранный ценник, остальные не меняются">✌
-            Двигать отдельно</button>
-          <button type="button" id="safeEditToggle" class="btn btn-secondary btn-sm"
-            title="Включить/выключить редактор границ названия (тяните края прямоугольника, чтобы текст не залезал на графику фона)">🔲
-            Границы текста</button>
-          <button type="button" id="resetLabelPosBtn" class="btn btn-secondary btn-sm"
-            title="Сбросить активный ценник к виду шаблона (расположение, шрифты, цвета, границы)">↺ Сбросить
-            активный</button>
-          <button type="button" id="resetAllLabelPosBtn" class="btn btn-secondary btn-sm"
-            title="Сбросить весь внешний вид к шаблону (расположение, шрифты, цвета, границы, раскладка, декор, фон для всех ценников)">↺
-            Сбросить все</button>
-          <button type="button" id="syncPricePosPreviewBtn" class="btn btn-secondary btn-sm"
-            title="Скопировать расположение цены с ценника №1 на все остальные">💴 Цена по №1</button>
-          <button type="button" id="decorPosToggle" class="btn btn-secondary btn-sm decor-pos-toggle"
-            title="Положение блока оформления для двухблочных пресетов (Живое, Новинка)">⬆ Блок: сверху</button>
+          <!-- Компактное выпадающее меню инструментов правки макета -->
+          <div class="preview-tools-dropdown-wrap" id="previewToolsDropdownWrap">
+            <button type="button" id="previewToolsDropdownBtn" class="btn btn-secondary btn-sm preview-tools-btn"
+              title="Инструменты ручной подгонки, перетаскивания и сброса">
+              <span class="tools-btn-icon">⚙️</span>
+              <span class="tools-btn-text">Правка</span>
+              <span id="activeToolsBadge" class="tools-active-badge" style="display:none;"></span>
+              <span class="tools-btn-arrow">▾</span>
+            </button>
+            <div id="previewToolsMenu" class="preview-tools-menu" style="display:none;">
+              <div class="ptm-group-title">Перетаскивание мышью</div>
+              <button type="button" id="dragModeToggle" class="ptm-item"
+                title="Свободное перетаскивание надписей мышью: смещения применятся ко всем ценникам">
+                <span class="ptm-icon">✋</span>
+                <span class="ptm-text">Двигать надписи (все)</span>
+              </button>
+              <button type="button" id="dragModeSoloToggle" class="ptm-item"
+                title="Свободное перетаскивание надписей мышью: смещения применятся только к выбранному ценнику">
+                <span class="ptm-icon">✌</span>
+                <span class="ptm-text">Двигать отдельно (соло)</span>
+              </button>
+              <button type="button" id="safeEditToggle" class="ptm-item"
+                title="Настроить границы названия: потяните рамку на ценнике, чтобы ограничить область для длинного текста (отступы в мм)">
+                <span class="ptm-icon">🔲</span>
+                <span class="ptm-text">Границы текста</span>
+              </button>
+
+              <div class="ptm-divider"></div>
+              <div class="ptm-group-title">Выравнивание и декор</div>
+              <button type="button" id="syncPricePosPreviewBtn" class="ptm-item"
+                title="Скопировать координаты и положение цены с ценника №1 на все остальные ценники">
+                <span class="ptm-icon">💴</span>
+                <span class="ptm-text">Скопировать цену с №1</span>
+              </button>
+              <button type="button" id="decorPosToggle" class="ptm-item decor-pos-toggle"
+                title="Переключить положение блока оформления (сверху / снизу ценника)">⬆ Блок: сверху</button>
+
+              <div class="ptm-divider"></div>
+              <div class="ptm-group-title">Сброс к шаблону</div>
+              <button type="button" id="resetLabelPosBtn" class="ptm-item"
+                title="Сбросить смещения надписей выбранного ценника к исходному виду шаблона">
+                <span class="ptm-icon">↺</span>
+                <span class="ptm-text">Сбросить активный ценник</span>
+              </button>
+              <button type="button" id="resetAllLabelPosBtn" class="ptm-item ptm-danger"
+                title="Сбросить смещения надписей у ВСЕХ ценников листа к исходному виду шаблона">
+                <span class="ptm-icon">↺</span>
+                <span class="ptm-text">Сбросить ВСЕ ценники</span>
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- Ползунок размера шрифта наименования (дублирует #titleSize из настроек) -->
-        <div class="preview-title-size" title="Размер шрифта наименования">
-          <span class="preview-title-size-label">Аа</span>
-          <input type="range" id="titleSizePreview" min="7" max="100" value="13">
+        <div class="preview-title-size" title="Кегль шрифта наименования товара в пунктах (pt)">
+          <span class="preview-title-size-label">Кегль</span>
+          <input type="range" id="titleSizePreview" min="7" max="100" value="13"
+            title="Регулировка кегля шрифта названия (pt)">
           <span class="preview-title-size-val" id="titleSizePreviewVal">13</span>
         </div>
 
@@ -1281,13 +1759,17 @@
       <!-- Single Tag Real Preview -->
       <div class="single-preview-container">
         <!-- Floating Side Navigation Buttons (Вариант 1) -->
-        <button type="button" id="previewSidePrevBtn" class="preview-side-nav-btn prev" title="Предыдущий ценник (Alt+←)" aria-label="Предыдущий ценник" style="display: none;">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <button type="button" id="previewSidePrevBtn" class="preview-side-nav-btn prev"
+          title="Предыдущий ценник (Alt+←)" aria-label="Предыдущий ценник" style="display: none;">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
             <polyline points="15 18 9 12 15 6"></polyline>
           </svg>
         </button>
-        <button type="button" id="previewSideNextBtn" class="preview-side-nav-btn next" title="Следующий ценник (Alt+→)" aria-label="Следующий ценник" style="display: none;">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <button type="button" id="previewSideNextBtn" class="preview-side-nav-btn next" title="Следующий ценник (Alt+→)"
+          aria-label="Следующий ценник" style="display: none;">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
             <polyline points="9 18 15 12 9 6"></polyline>
           </svg>
         </button>
@@ -1295,6 +1777,16 @@
         <!-- Floating Indicator Pill -->
         <div id="previewFloatingIndicator" class="preview-floating-indicator" style="display: none;">
           <span id="previewFloatingIndicatorText">Товар 1 из 1</span>
+        </div>
+
+        <!-- Smart Text Overflow Warning Pill -->
+        <div id="textOverflowBadge" class="text-overflow-badge" style="display:none;"
+          title="Текст выходит за границы безопасной зоны. Нажмите, чтобы автоматически подогнать размер!">
+          <span class="overflow-icon">⚠️</span>
+          <span class="overflow-msg">Текст не помещается</span>
+          <button type="button" id="overflowAutoFitBtn" class="overflow-fit-btn"
+            title="Автоматически уменьшить размер шрифта, чтобы длинное наименование полностью уместилось в ценник">✨
+            Подогнать</button>
         </div>
 
         <div class="preview-stage-wrapper">
@@ -1312,6 +1804,9 @@
               </div>
               <!-- Crop lines visual overlay -->
               <div class="crop-guides"></div>
+              <!-- Магнитные направляющие холста -->
+              <div class="canvas-guide-line horizontal" id="canvasGuideH"></div>
+              <div class="canvas-guide-line vertical" id="canvasGuideV"></div>
 
               <!-- Top Header Section -->
               <div class="wobbler-header" id="wobblerHeader">
@@ -1363,6 +1858,32 @@
                   id="outsideBottomText"></span></div>
             </div>
           </div>
+
+          <!-- Плавающий контекстный микро-тулбар холста -->
+          <div id="canvasQuickBar" class="canvas-quick-bar" style="display:none;">
+            <div class="cqb-header">
+              <span class="cqb-target-label" id="cqbTargetLabel">Название</span>
+              <button type="button" class="cqb-close-btn" id="cqbCloseBtn" title="Закрыть (Esc)">✕</button>
+            </div>
+            <div class="cqb-body">
+              <div class="cqb-group" title="Размер шрифта">
+                <button type="button" class="cqb-btn" id="cqbFontMinus" title="Меньше шрифт (-1pt)">−</button>
+                <input type="number" class="cqb-val-input" id="cqbFontSizeVal" min="6" max="150" step="1" value="24"
+                  title="Текущий кегль шрифта (можно ввести число)">
+                <button type="button" class="cqb-btn" id="cqbFontPlus" title="Больше шрифт (+1pt)">+</button>
+              </div>
+              <div class="cqb-group" title="Начертание">
+                <button type="button" class="cqb-btn" id="cqbBold" title="Жирный (Bold)"><b>B</b></button>
+                <button type="button" class="cqb-btn" id="cqbItalic" title="Курсив (Italic)"><i>I</i></button>
+              </div>
+              <div class="cqb-group" title="Цвет текста">
+                <label class="cqb-color-wrap" title="Выбрать цвет текста">
+                  <input type="color" id="cqbColorInput" class="cqb-color-input">
+                  <span class="cqb-color-swatch" id="cqbColorSwatch"></span>
+                </label>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1373,15 +1894,57 @@
             <button type="button" class="collapse-btn" id="toggleSheetBtn" title="Скрыть/показать раскладку">
               <span class="collapse-arrow">▼</span>
             </button>
-            <h3>Раскладка на листе А4 (<span id="sheetCalcText">24 воблера на листе</span>)</h3>
-            <div id="sheetPageNav" class="sheet-page-nav" style="display:none;">
-              <button type="button" id="prevSheetPageBtn" class="sheet-page-btn" title="Предыдущая страница">◀</button>
-              <span id="sheetPageIndicator" class="sheet-page-indicator">Стр. 1 из 1</span>
-              <button type="button" id="nextSheetPageBtn" class="sheet-page-btn" title="Следующая страница">▶</button>
+            <div class="sheet-title-wrap">
+              <h3>Раскладка на листе А4</h3>
+              <span id="sheetCalcText" class="sheet-calc-badge">24 воблера на листе</span>
+            </div>
+            <div class="sheet-header-actions">
+              <!-- Быстрое переключение ориентации в Print Hub -->
+              <div class="sheet-orientation-pills" id="sheetOrientationPills">
+                <button type="button" class="sheet-orient-btn active" data-orientation="auto" id="sheetOrientAutoBtn"
+                  title="Автоматический выбор ориентации с максимальной вместимостью листа">⚡ Авто</button>
+                <button type="button" class="sheet-orient-btn" data-orientation="portrait" id="sheetOrientPortBtn"
+                  title="Книжная ориентация (210 × 297 мм)">📄 Книжная</button>
+                <button type="button" class="sheet-orient-btn" data-orientation="landscape" id="sheetOrientLandBtn"
+                  title="Альбомная ориентация (297 × 210 мм)">📑 Альбомная</button>
+              </div>
+              <div id="sheetPageNav" class="sheet-page-nav" style="display:none;">
+                <button type="button" id="prevSheetPageBtn" class="sheet-page-btn"
+                  title="Предыдущая страница">◀</button>
+                <span id="sheetPageIndicator" class="sheet-page-indicator">Стр. 1 из 1</span>
+                <button type="button" id="nextSheetPageBtn" class="sheet-page-btn" title="Следующая страница">▶</button>
+              </div>
             </div>
           </div>
-          <p>Каждый ценник на листе отображает свой товар из списка выше. Печатаются и показываются только заполненные
-            позиции (с наименованием).</p>
+
+          <!-- Сводная панель метрик Print Hub -->
+          <div class="print-hub-metrics" id="printHubMetrics">
+            <div class="ph-metric-pill" id="phPagesPill" title="Количество необходимых печатных листов бумаги А4">
+              <span class="ph-icon">📄</span> <span class="ph-label">Листов А4:</span> <b class="ph-val"
+                id="phPagesVal">1</b>
+            </div>
+            <div class="ph-metric-pill" id="phTotalPill" title="Общий тираж ценников с учетом копий">
+              <span class="ph-icon">🏷️</span> <span class="ph-label">Тираж:</span> <b class="ph-val" id="phTotalVal">0
+                шт.</b>
+            </div>
+            <div class="ph-metric-pill" id="phUniquePill" title="Количество заполненных уникальных товаров в списке">
+              <span class="ph-icon">📦</span> <span class="ph-label">Товаров:</span> <b class="ph-val"
+                id="phUniqueVal">0</b>
+            </div>
+            <div class="ph-metric-pill" id="phGridPill"
+              title="Раскладка сетки: столбцы × строки (максимальная вместимость одного листа)">
+              <span class="ph-icon">📐</span> <span class="ph-label">Сетка:</span> <b class="ph-val"
+                id="phGridVal">0×0</b>
+            </div>
+            <div class="ph-metric-pill ph-orient-pill" id="phOrientPill"
+              title="Текущая активная ориентация листа и выгода вместимости">
+              <span class="ph-icon">🧭</span> <span class="ph-label">Ориентация:</span> <b class="ph-val"
+                id="phOrientVal">Книжная</b>
+            </div>
+          </div>
+
+          <p class="sheet-interactive-hint">💡 <b>Интерактивная карта:</b> кликните по любому ценнику на листе, чтобы
+            выбрать его и подсветить в таблице товаров. Печатаются только заполненные позиции.</p>
         </div>
         <div class="sheet-mini-container" id="sheetMiniContainer">
           <div id="sheetGridPreview" class="a4-sheet-preview">
@@ -1400,9 +1963,12 @@
       <input type="text" id="newTemplateNameInput" placeholder="Например: Новый вкус 6.5x3.5, Акция 5x5...">
       <div id="saveModalHint" class="save-modal-hint" style="display:none;"></div>
       <div class="modal-actions">
-        <button id="cancelSaveModal" class="btn btn-secondary">Отмена</button>
-        <button id="updateTemplateBtn" class="btn btn-secondary" disabled>🔄 Обновить</button>
-        <button id="confirmSaveModal" class="btn btn-primary">💾 Сохранить новый</button>
+        <button id="cancelSaveModal" class="btn btn-secondary"
+          title="Отменить сохранение и закрыть окно (Esc)">Отмена</button>
+        <button id="updateTemplateBtn" class="btn btn-secondary" disabled
+          title="Перезаписать изменения в текущий активный шаблон">🔄 Обновить</button>
+        <button id="confirmSaveModal" class="btn btn-primary"
+          title="Сохранить текущие настройки как отдельный новый шаблон с указанным именем">💾 Сохранить новый</button>
       </div>
     </div>
   </div>
@@ -1414,8 +1980,10 @@
       <p id="copyItemsHint">Текущая таблица скопируется в выбранные шаблоны, заменив их данные.</p>
       <div id="copyItemsTargets" class="copy-targets"></div>
       <div class="modal-actions">
-        <button id="cancelCopyItems" class="btn btn-secondary">Отмена</button>
-        <button id="confirmCopyItems" class="btn btn-primary">⧉ Скопировать</button>
+        <button id="cancelCopyItems" class="btn btn-secondary"
+          title="Отменить перенос товаров и закрыть окно (Esc)">Отмена</button>
+        <button id="confirmCopyItems" class="btn btn-primary" title="Скопировать товары в выбранные шаблоны">⧉
+          Скопировать</button>
       </div>
     </div>
   </div>
@@ -1458,14 +2026,127 @@
 
   <!-- Modal: per-item decoration был удалён — заменён основным блоком Оформления -->
 
+  <!-- Плавающая панель пакетных действий над товарами -->
+  <div id="bulkActionsBar" class="bulk-actions-toolbar no-print" style="display: none;">
+    <div class="bulk-toolbar-info">
+      <span class="bulk-toolbar-icon">📦</span>
+      <span class="bulk-selected-text">Выбрано: <b id="bulkSelectedCount">0</b></span>
+    </div>
+    <div class="bulk-toolbar-actions">
+      <button type="button" id="bulkBarSetBgBtn" class="btn btn-secondary btn-sm"
+        title="Назначить фон всем выбранным ценникам">🎨 Фон</button>
+      <button type="button" id="bulkBarSetPriceBtn" class="btn btn-secondary btn-sm"
+        title="Задать единую цену для выбранных товаров">💰 Цена</button>
+      <button type="button" id="bulkBarSetSubBtn" class="btn btn-secondary btn-sm" title="Задать единый вес/фасовку">⚖️
+        Вес</button>
+      <button type="button" id="bulkBarSetQtyBtn" class="btn btn-secondary btn-sm"
+        title="Задать одинаковый тираж копий">⚡ Тираж</button>
+      <button type="button" id="bulkBarDeleteBtn" class="btn btn-danger btn-sm" title="Удалить выбранные строки">🗑️
+        Удалить</button>
+      <button type="button" id="bulkBarCancelBtn" class="btn btn-secondary btn-sm"
+        title="Снять выделение (Esc)">✕</button>
+    </div>
+  </div>
+
+  <!-- Modal: Предпечатный аудит (Pre-Flight Safety Check) -->
+  <div id="preflightModal" class="modal-backdrop no-print" role="dialog" aria-modal="true" style="display: none;">
+    <div class="modal-box modal-box-preflight">
+      <div class="preflight-header">
+        <span class="preflight-icon">🛡️</span>
+        <div>
+          <h3>Предпечатный аудит</h3>
+          <p class="preflight-sub">Автоматическая проверка макета и данных перед печатью</p>
+        </div>
+      </div>
+      <div id="preflightSummaryBanner" class="preflight-summary-banner"></div>
+      <div id="preflightList" class="preflight-list">
+        <!-- Генерируется через JS: список проверок с иконками ✅ ⚠️ ❌ -->
+      </div>
+      <div class="modal-actions preflight-actions">
+        <button type="button" id="preflightFixBtn" class="btn btn-secondary"
+          title="Вернуться к таблице товаров для исправления замечаний">✏️ Исправить данные</button>
+        <button type="button" id="preflightForcePrintBtn" class="btn btn-primary btn-glow"
+          title="Пропустить замечания и перейти к печати ценников (Ctrl+P)">🖨️ Всё равно печатать</button>
+        <button type="button" id="preflightCloseBtn" class="btn btn-secondary"
+          title="Закрыть окно аудита (Esc)">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Шпаргалка горячих клавиш (Shortcuts Modal) -->
+  <div id="shortcutsModal" class="modal-backdrop no-print" role="dialog" aria-modal="true" style="display: none;">
+    <div class="modal-box modal-box-shortcuts">
+      <div class="shortcuts-header">
+        <span class="shortcuts-icon">⌨️</span>
+        <div>
+          <h3>Горячие клавиши</h3>
+          <p class="shortcuts-sub">Быстрые комбинации клавиш для продуктивной работы</p>
+        </div>
+        <button type="button" id="shortcutsCloseIconBtn" class="btn btn-secondary btn-xs" style="margin-left:auto;"
+          title="Закрыть (Esc)">✕</button>
+      </div>
+      <div class="shortcuts-body">
+        <div class="shortcut-group">
+          <h4>🖨️ Печать и аудит</h4>
+          <div class="shortcut-row"><span class="shortcut-keys"><kbd>Ctrl</kbd> / <kbd>Cmd</kbd> +
+              <kbd>P</kbd></span><span class="shortcut-desc">Перехватывает системную печать браузера и запускает
+              профессиональный предпечатный аудит и печать ценников</span></div>
+        </div>
+        <div class="shortcut-group">
+          <h4>🔍 Поиск</h4>
+          <div class="shortcut-row"><span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>F</kbd></span><span
+              class="shortcut-desc">Быстрый переход в поиск по товарам</span></div>
+        </div>
+        <div class="shortcut-group">
+          <h4>📋 Работа со списком товаров</h4>
+          <div class="shortcut-row"><span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>V</kbd></span><span
+              class="shortcut-desc">Вставка ценников с кассы (1С, Excel) из буфера обмена прямо на экран</span></div>
+          <div class="shortcut-row"><span class="shortcut-keys"><kbd>Enter</kbd></span><span class="shortcut-desc">В
+              названии: перенос слова на новую строку. В цене и весе: переход вниз</span></div>
+          <div class="shortcut-row"><span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>Enter</kbd></span><span
+              class="shortcut-desc">Завершить ввод названия и перейти к следующему товару</span></div>
+          <div class="shortcut-row"><span class="shortcut-keys"><kbd>Shift</kbd> + <kbd>Enter</kbd></span><span
+              class="shortcut-desc">Вставить чистую строку ниже текущей</span></div>
+          <div class="shortcut-row"><span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>D</kbd></span><span
+              class="shortcut-desc">Дублировать текущую строку со всеми параметрами ниже</span></div>
+          <div class="shortcut-row"><span class="shortcut-keys"><kbd>Tab</kbd> / <kbd>Shift</kbd> +
+              <kbd>Tab</kbd></span><span class="shortcut-desc">Быстрый переход между ячейками и соседними
+              строками</span></div>
+          <div class="shortcut-row"><span class="shortcut-keys"><kbd>↑</kbd> / <kbd>↓</kbd></span><span
+              class="shortcut-desc">Переход вверх/вниз между строками</span></div>
+          <div class="shortcut-row"><span class="shortcut-keys"><kbd>⠿ Drag</kbd></span><span
+              class="shortcut-desc">Перетаскивание строк мышью для изменения порядка товаров</span></div>
+        </div>
+        <div class="shortcut-group">
+          <h4>↩️ История и навигация</h4>
+          <div class="shortcut-row"><span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>Z</kbd></span><span
+              class="shortcut-desc">Отменить последнее действие (Undo)</span></div>
+          <div class="shortcut-row"><span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>Y</kbd></span><span
+              class="shortcut-desc">Повторить отмененное действие (Redo)</span></div>
+          <div class="shortcut-row"><span class="shortcut-keys"><kbd>Esc</kbd></span><span class="shortcut-desc">Закрыть
+              окно / сбросить выбор / отмена</span></div>
+          <div class="shortcut-row"><span class="shortcut-keys"><kbd>?</kbd></span><span class="shortcut-desc">Открыть /
+              закрыть эту шпаргалку</span></div>
+        </div>
+      </div>
+      <div class="modal-actions shortcuts-actions">
+        <button type="button" id="shortcutsCloseBtn" class="btn btn-secondary"
+          title="Закрыть шпаргалку горячих клавиш (Esc)">Понятно</button>
+      </div>
+    </div>
+  </div>
+
   <!-- PRINT ONLY CONTAINER -->
   <div id="printArea" class="print-only">
     <!-- JS populates this with printable A4 pages -->
   </div>
 
+  <!-- Всплывающие уведомления (Toast Notifications) -->
+  <div id="toastContainer" class="toast-container no-print" aria-live="polite" aria-atomic="true"></div>
+
   <!-- html2pdf.bundle.min.js for offline, high-quality client-side A4 PDF export -->
   <script src="html2pdf.bundle.min.js"></script>
-  <script src="script.js?v=25"></script>
+  <script src="script.js?v=31"></script>
 </body>
 
 </html>
