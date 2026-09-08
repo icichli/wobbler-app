@@ -66,10 +66,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const toast = document.createElement('div');
     toast.className = `toast-item toast-${type}`;
 
-    let icon = 'ℹ️';
-    if (type === 'success') icon = '✅';
-    else if (type === 'warning') icon = '⚠️';
-    else if (type === 'error') icon = '❌';
+    let icon = 'i-info';
+    if (type === 'success') icon = 'i-check';
+    else if (type === 'warning') icon = 'i-alert';
+    else if (type === 'error') icon = 'i-x';
 
     const contentDiv = document.createElement('div');
     contentDiv.className = 'toast-content';
@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const iconSpan = document.createElement('span');
     iconSpan.className = 'toast-icon';
-    iconSpan.textContent = icon;
+    iconSpan.innerHTML = '<svg class="ico"><use href="#' + icon + '"/></svg>';
 
     const closeBtn = document.createElement('button');
     closeBtn.type = 'button';
@@ -210,6 +210,52 @@ document.addEventListener('DOMContentLoaded', () => {
   let bgApplyMode = 'item';
   let templateBg = null;
   const bgApplyModeWrap = document.getElementById('bgApplyModeWrap');
+
+  // === Превью начертаний в списках шрифтов: каждая опция набрана своим шрифтом ===
+  document.querySelectorAll('select.font-dropdown').forEach(sel => {
+    sel.querySelectorAll('option').forEach(opt => {
+      const fam = opt.getAttribute('value');
+      if (fam && fam.trim() !== '') opt.style.fontFamily = fam;
+    });
+  });
+
+  // === Бейджи области применения («этот ценник» / «весь шаблон») ===
+  // Показывают в заголовках секций 3/4/5 и в чипе у холста, куда попадут правки.
+  // Только чтение состояния; сами режимы меняются сегментами внутри секций.
+  function scopeBadgeLabel(mode) {
+    return mode === 'template' ? 'весь шаблон' : 'этот ценник';
+  }
+
+  function updateScopeBadges() {
+    const pairs = [
+      ['fontScopeBadge', fontApplyMode],
+      ['bgScopeBadge', bgApplyMode],
+      ['decorScopeBadge', decorApplyMode]
+    ];
+    pairs.forEach(([id, mode]) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = scopeBadgeLabel(mode);
+      el.classList.toggle('mode-template', mode === 'template');
+      el.classList.toggle('mode-item', mode !== 'template');
+    });
+    const chip = document.getElementById('canvasScopeChip');
+    if (chip) {
+      const activeTab = document.querySelector('.sidebar-tab-btn.active');
+      const target = activeTab ? activeTab.getAttribute('data-target') : '';
+      const modeMap = { section3: fontApplyMode, section4: bgApplyMode, section5: decorApplyMode };
+      const mode = modeMap[target];
+      if (mode) {
+        const chipText = document.getElementById('canvasScopeChipText');
+        if (chipText) chipText.textContent = 'правки: ' + scopeBadgeLabel(mode);
+        chip.classList.toggle('mode-template', mode === 'template');
+        chip.classList.toggle('mode-item', mode !== 'template');
+        chip.style.display = '';
+      } else {
+        chip.style.display = 'none';
+      }
+    }
+  }
   const resetItemBgBtn = document.getElementById('resetItemBgBtn');
 
   // DOM Inputs - Size
@@ -698,7 +744,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (priceColor) priceColor.value = get('priceColor', '#000000');
     if (priceSize) priceSize.value = get('priceSize', 40);
     if (priceWeight) priceWeight.value = get('priceWeight', '800');
-    if (priceOffsetY) priceOffsetY.value = get('priceOffsetY', 1);
+    if (priceOffsetY) priceOffsetY.value = get('priceOffsetY', 0);
     {
       const psh = parseShadow(get('priceShadow', ''));
       if (priceShadow) priceShadow.value = psh.strength;
@@ -744,6 +790,7 @@ document.addEventListener('DOMContentLoaded', () => {
       fontApplyMode = 'template';
       if (fontApplyModeWrap) fontApplyModeWrap.style.display = 'none';
       writeFontSnapshotToInputs(templateFonts);
+      updateScopeBadges();
       return;
     }
     if (fontApplyModeWrap) fontApplyModeWrap.style.display = '';
@@ -758,6 +805,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       writeFontSnapshotToInputs(templateFonts);
     }
+    updateScopeBadges();
   }
 
   // === Per-item оформление (декор-блоки #5): snapshot-модель ===
@@ -900,6 +948,7 @@ document.addEventListener('DOMContentLoaded', () => {
       decorApplyMode = 'template';
       if (decorApplyModeWrap) decorApplyModeWrap.style.display = 'none';
       writeDecorSnapshotToInputs(templateDecor);
+      updateScopeBadges();
       return;
     }
     if (decorApplyModeWrap) decorApplyModeWrap.style.display = '';
@@ -913,6 +962,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       writeDecorSnapshotToInputs(templateDecor);
     }
+    updateScopeBadges();
   }
 
   // === Per-item ФОН ценника (#4): независимая snapshot-модель ===
@@ -1009,6 +1059,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!entry || !entry.ref) return;
       const marker = 'bgother:' + name;
       extraBgMap[marker] = entry.ref;
+      extraBgMap[name] = entry.ref;
       if (group) {
         const opt = document.createElement('option');
         opt.value = marker;
@@ -1024,7 +1075,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Онлайн-режим (http/https): читает bg_index.json (генерируется скриптом
   // gen_bg_index.py и заливается на сервер рядом с index.html) и наполняет
-  // подменю ссылками на файлы в «bg other». На file:// НЕ вызывается — там
+  // подменю ссылками на файлы в «images». На file:// НЕ вызывается — там
   // fetch локальных файлов заблокирован, используется IndexedDB-кэш.
   // Ошибки/отсутствие файла молча пропускаются (graceful degradation).
   async function loadExtraBackgroundsOnline() {
@@ -1037,7 +1088,7 @@ document.addEventListener('DOMContentLoaded', () => {
       index = await resp.json();
     } catch (e) { return; }
     if (!index || !Array.isArray(index.files) || index.files.length === 0) return;
-    const dir = index.dir || 'bg other';
+    const dir = index.dir || 'images';
     populateExtraBgOptions(index.files.map(name => ({ name: name, ref: dir + '/' + name })));
   }
 
@@ -1219,6 +1270,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (bgApplyModeWrap) bgApplyModeWrap.style.display = 'none';
       writeBgSnapshotToInputs(templateBg);
       try { refreshAutoBgBtns(); } catch (e) { }
+      updateScopeBadges();
       return;
     }
     if (bgApplyModeWrap) bgApplyModeWrap.style.display = '';
@@ -1233,6 +1285,7 @@ document.addEventListener('DOMContentLoaded', () => {
       writeBgSnapshotToInputs(templateBg);
     }
     try { refreshAutoBgBtns(); } catch (e) { }
+    updateScopeBadges();
   }
 
   // Возвращает полный «снимок» оформления блока (outside/inside/bottom) для ценника i.
@@ -1489,14 +1542,16 @@ document.addEventListener('DOMContentLoaded', () => {
       priceColor: '#ffffff',
       priceAlign: 'center',
       priceOffsetY: 0,
+      priceSlotTop: 12.49,
       price: '350',
       currency: '₽',
       headerBg: '#18181b',
       bgImage: 'dots_bg.jpg',
       customBgData: null,
       headerHeight: 90,
-      // Safe-зона названия Бутылки: строго по черной полосе (top 0.245, bottom 0.59).
-      titleSafe: { left: 0.02, right: 0.02, top: 0.245, bottom: 0.59 },
+      titleSlotTop: 3.39,
+      titleZoneH: 7.43,
+      titleSafe: { left: 0.02, right: 0.02, top: 0.142, bottom: 0.693 },
       layout: 'full',
       priceInBottom: false,
       subtitleCorner: false,
@@ -1546,7 +1601,7 @@ document.addEventListener('DOMContentLoaded', () => {
       titleWeight: '800',
       titleItalic: false,
       titleAlign: 'center',
-      titleOffsetY: 1,
+      titleOffsetY: 0,
       subtitleColor: '#000000',
       subtitleSize: 13,
       subtitleWeight: '400',
@@ -1557,16 +1612,17 @@ document.addEventListener('DOMContentLoaded', () => {
       priceWeight: '400',
       priceColor: '#000000',
       priceAlign: 'center',
-      priceOffsetY: 2,
+      priceOffsetY: 0,
+      priceSlotTop: 12.92,
       price: '350',
       currency: '₽',
       headerBg: '#18181b',
       bgImage: 'yellow_bg.jpg',
       customBgData: null,
       headerHeight: 90,
-      // Safe-зона названия Желтый ценник: строго по желтой полосе (top 0.34, bottom 0.47)
-      // между красной шапкой/верхними точками и нижними точками.
-      titleSafe: { left: 0.02, right: 0.02, top: 0.34, bottom: 0.47 },
+      titleSlotTop: 4.82,
+      titleZoneH: 8.55,
+      titleSafe: { left: 0.02, right: 0.02, top: 0.174, bottom: 0.636 },
       layout: 'full',
       priceInBottom: false,
       subtitleCorner: false,
@@ -1794,6 +1850,7 @@ document.addEventListener('DOMContentLoaded', () => {
       priceColor: '#000000',   // чёрная на белом блоке
       priceAlign: 'center',
       priceOffsetY: 0,
+      priceSlotTop: 54.94,
       price: '',
       currency: '',            // пустая по умолчанию — пользователь введёт сам
       subtitleColor: '#ffffff',
@@ -1804,6 +1861,8 @@ document.addEventListener('DOMContentLoaded', () => {
       bgImage: 'sort_nedeli_bg.jpg',
       customBgData: null,
       headerHeight: 90,
+      titleSlotTop: 0,
+      titleZoneH: 44.1,
       layout: 'full',
       borderMm: 4,             // белая рамка 4 мм вокруг графики (поля под обрез)
       layerRotate: -2.45,      // наклон цены и текста акции как у графики
@@ -1925,7 +1984,7 @@ document.addEventListener('DOMContentLoaded', () => {
       titleWeight: '800',
       titleItalic: false,
       titleAlign: 'center',
-      titleOffsetY: 0,
+      titleOffsetY: -3.5,
       subtitleColor: '#ffffff',
       subtitleSize: 13,
       subtitleWeight: '700',
@@ -1936,18 +1995,17 @@ document.addEventListener('DOMContentLoaded', () => {
       priceWeight: '800',
       priceColor: '#000000',
       priceAlign: 'center',
-      priceOffsetY: 1,
+      priceOffsetY: 0,
       price: '300',
       currency: '₽',
       headerBg: '#000000',
       bgImage: 'ryba_bg.jpg',
       customBgData: null,
       headerHeight: 90,
-      // Safe-зона названия Рыбы (выставлена вручную в визуальном редакторе границ
-      // поверх ryba_bg.jpg): не наезжать на логотип «МЕСТОПИВО» сверху (top 0.29),
-      // на колосья/печать по бокам (left ≈0.198, right ≈0.190) и на белые декор-
-      // прямоугольники внизу (bottom 0.4). Доли от сторон шапки.
-      titleSafe: { left: 0.197711156045666, right: 0.18955861343090596, top: 0.29, bottom: 0.4 },
+      titleSlotTop: 11.8,
+      titleZoneH: 18.3,
+      priceSlotTop: 28.12,
+      titleSafe: { left: 0.193, right: 0.193, top: 0.214, bottom: 0.452 },
       layout: 'full',
       priceInBottom: false,
       subtitleCorner: true,
@@ -1983,7 +2041,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // механизмы читают их по полям, без привязки к другим шаблонам.
       autoSubtitle: '100гр',
       titleFitFloor: 10,
-      labelPos: { title: { x: 0, y: -1.1 }, subtitle: { x: -2, y: -2.2 }, price: { x: 0, y: 0 }, priceDigits: [{ x: -5.5, y: 0.2 }, { x: -1.1, y: 0 }, { x: 3.6, y: 0 }], currency: { x: 5.5, y: 0.6 } }
+      labelPos: { title: { x: 0, y: 0 }, subtitle: { x: -2, y: -2.2 }, price: { x: 0, y: 0 }, priceDigits: [{ x: -5.5, y: 0 }, { x: -1.1, y: 0 }, { x: 3.6, y: 0 }], currency: { x: 5.5, y: 0 } }
     },
     // Снеки — независимый шаблон: собственная геометрия 6,5×3,5 см, собственный
     // фон sneki_bg.jpg и собственные настройки ниже. Исторически значения
@@ -2004,7 +2062,7 @@ document.addEventListener('DOMContentLoaded', () => {
       titleWeight: '800',
       titleItalic: false,
       titleAlign: 'center',
-      titleOffsetY: 1,
+      titleOffsetY: -3.5,
       subtitleColor: '#ffffff',
       subtitleSize: 9,
       subtitleWeight: '700',
@@ -2015,14 +2073,17 @@ document.addEventListener('DOMContentLoaded', () => {
       priceWeight: '700',
       priceColor: '#000000',
       priceAlign: 'center',
-      priceOffsetY: 1,
+      priceOffsetY: 0,
+      priceSlotTop: 17.79,
       price: '300',
       currency: '₽',
       headerBg: '#000000',
       bgImage: 'sneki_bg.jpg',
       customBgData: null,
       headerHeight: 90,
-      titleSafe: { left: 0.22736126270890838, right: 0.16, top: 0.29, bottom: 0.4 },
+      titleSlotTop: 7.6,
+      titleZoneH: 11.5,
+      titleSafe: { left: 0.175, right: 0.175, top: 0.218, bottom: 0.455 },
       layout: 'full',
       priceInBottom: false,
       subtitleCorner: true,
@@ -2060,7 +2121,7 @@ document.addEventListener('DOMContentLoaded', () => {
       digitColor: '#ffff00',
       digitSize: 48,
       digitWeight: '900',
-      labelPos: { title: { x: -0.2, y: -0.7 }, subtitle: { x: -2.1, y: -0.6 }, price: { x: -0.6, y: 0 }, priceDigits: [{ x: -3.2, y: 0.5 }, { x: -0.8, y: 0.4 }, { x: 1.7, y: 0.4 }], currency: { x: 3.7, y: 0.3 }, bigdigit: { x: 4, y: 6.8 } }
+      labelPos: { title: { x: 0, y: 0 }, subtitle: { x: -2.1, y: -0.6 }, price: { x: 0, y: 0 }, priceDigits: [{ x: -3.2, y: 0 }, { x: -0.8, y: 0 }, { x: 1.7, y: 0 }], currency: { x: 3.7, y: 0 }, bigdigit: { x: 4, y: 6.8 } }
     },
     // «Снеки 5» — шаблон ценника 6,5×3,5 см с фоном sneki_5_bg.jpg (5 белых плашек под цифры цены/валюту).
     sneki_5: {
@@ -2075,7 +2136,7 @@ document.addEventListener('DOMContentLoaded', () => {
       titleWeight: '800',
       titleItalic: false,
       titleAlign: 'center',
-      titleOffsetY: 1,
+      titleOffsetY: -3.5,
       subtitleColor: '#ffffff',
       subtitleSize: 6,
       subtitleWeight: '700',
@@ -2086,14 +2147,17 @@ document.addEventListener('DOMContentLoaded', () => {
       priceWeight: '700',
       priceColor: '#000000',
       priceAlign: 'center',
-      priceOffsetY: 1,
+      priceOffsetY: 0,
+      priceSlotTop: 17.79,
       price: '300',
       currency: '₽',
       headerBg: '#000000',
       bgImage: 'sneki_5_bg.jpg',
       customBgData: null,
       headerHeight: 90,
-      titleSafe: { left: 0.22736126270890838, right: 0.16, top: 0.29, bottom: 0.4 },
+      titleSlotTop: 7.6,
+      titleZoneH: 11.5,
+      titleSafe: { left: 0.175, right: 0.175, top: 0.218, bottom: 0.455 },
       layout: 'full',
       priceInBottom: false,
       subtitleCorner: true,
@@ -2132,16 +2196,16 @@ document.addEventListener('DOMContentLoaded', () => {
       digitSize: 48,
       digitWeight: '900',
       labelPos: {
-        title: { x: -0.2, y: -0.7 },
+        title: { x: 0, y: 0 },
         subtitle: { x: -3, y: 0.4 },
         price: { x: 0, y: 0 },
         priceDigits: [
-          { x: -4.8, y: 0.4 },
-          { x: -2.5, y: 0.4 },
-          { x: -0.1, y: 0.4 },
-          { x: 2.2, y: 0.4 }
+          { x: -4.8, y: 0 },
+          { x: -2.5, y: 0 },
+          { x: -0.1, y: 0 },
+          { x: 2.2, y: 0 }
         ],
-        currency: { x: 3.7, y: 0.3 }
+        currency: { x: 3.7, y: 0 }
       }
     },
     // «Снеки с цифрой» — расширение «Снеков» (7,4×3,5 см): та же композиция
@@ -2172,15 +2236,17 @@ document.addEventListener('DOMContentLoaded', () => {
       priceWeight: '700',
       priceColor: '#000000',
       priceAlign: 'center',
-      priceOffsetY: 1,
+      priceOffsetY: 0,
+      priceSlotTop: 17.79,
       price: '300',
       currency: '₽',
       headerBg: '#000000',
       bgImage: 'sneki_digit_bg.jpg',
       customBgData: null,
       headerHeight: 90,
-      // Safe-зона названия — значение выверено вручную в визуальном редакторе границ.
-      titleSafe: { left: 0.22736126270890838, right: 0.20791181097834238, top: 0.29, bottom: 0.4 },
+      titleSlotTop: 2.94,
+      titleZoneH: 10.85,
+      titleSafe: { left: 0.22211000304261916, right: 0.19678179415958874, top: 0.21418534910449427, bottom: 0.4721325133320439 },
       layout: 'full',
       priceInBottom: false,
       subtitleCorner: true,
@@ -2260,6 +2326,14 @@ document.addEventListener('DOMContentLoaded', () => {
         activeTemplateId = null;
       }
     }
+  }
+
+  // Возвращает объект активного шаблона (встроенного или пользовательского).
+  function getActivePreset() {
+    if (!activeTemplateRef) return null;
+    if (activeTemplateRef.kind === 'builtin') return builtInPresets[activeTemplateRef.key] || null;
+    if (activeTemplateRef.kind === 'custom') return customTemplates[activeTemplateRef.index] || null;
+    return null;
   }
 
   // Настройка-флаг активного ВСТРОЕННОГО пресета (autoSubtitle, titleFitFloor,
@@ -2359,6 +2433,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (at && at.kind === 'builtin' && builtInPresets[at.key]) {
       activeTemplateRef = { kind: 'builtin', key: at.key };
       itemsData = templateItems[at.key];
+      if (['ryba', 'sneki', 'sneki_5'].includes(at.key) && s.state && (s.state.titleOffsetY === 0 || s.state.titleOffsetY == null)) {
+        s.state.titleOffsetY = builtInPresets[at.key].titleOffsetY;
+      }
       applied = true;
     } else if (at && at.kind === 'custom' && customTemplates[at.index]) {
       activeTemplateRef = { kind: 'custom', index: at.index };
@@ -2524,11 +2601,18 @@ document.addEventListener('DOMContentLoaded', () => {
         idrItemsList.appendChild(createItemRow(newIndex));
       }
     }
+    updateItemsEmptyHint();
     if (typeof updateItemsDrawerHeader === 'function') updateItemsDrawerHeader();
     if (typeof multiPrintDrawer !== 'undefined' && multiPrintDrawer && multiPrintDrawer.classList.contains('open')) {
       renderMultiPrintTemplates();
       updateMultiPrintSummary();
     }
+  }
+
+  // Подсказка-приглашение в шторке: видна, пока ни один товар не заполнен.
+  function updateItemsEmptyHint() {
+    const emptyHint = document.getElementById('itemsEmptyHint');
+    if (emptyHint) emptyHint.style.display = itemsData.some(isItemFilled) ? 'none' : '';
   }
 
   // ===== Светлые фоны (Б/А, Живое, Рыба Выгодно, Сорт недели Желтый, А5): выбор → чёрный текст наименования/веса/цены =====
@@ -2568,7 +2652,7 @@ document.addEventListener('DOMContentLoaded', () => {
   //   <kind>Show      boolean   показать/скрыть блок
   //   <kind>Text      строка    текст плашки (напр. 'НОВИНКА', 'АКЦИЯ')
   //   <kind>Bg        hex-цвет  цвет заливки блока (напр. '#e63946')
-  //   <kind>BgImg     маркер    'none' | имя файла фона | 'ryba_scales' | 'custom'
+  //   <kind>BgImg     маркер    'none' | имя файла фона | 'custom'
   //   <kind>CustomBg  data:URL  картинка блока (только при BgImg='custom', иначе null)
   //   <kind>Color     hex-цвет  цвет текста блока (напр. '#ffffff')
   //   <kind>FontSize  число pt  размер шрифта (диапазон слайдера 6-60)
@@ -2757,9 +2841,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Обе кнопки-переключателя (панель превью с подписью + иконка у кнопок
     // вставки) управляют одним состоянием и обновляются синхронно.
     document.querySelectorAll('.decor-pos-toggle').forEach(b => {
-      b.textContent = (b.id === 'decorPosToggle')
-        ? (top ? '⬆ Блок: сверху' : '⬇ Блок: снизу')
-        : (top ? '⬆' : '⬇');
+      b.innerHTML = (b.id === 'decorPosToggle')
+        ? (top ? 'Блок: сверху' : 'Блок: снизу')
+        : (top ? '<svg class="ico"><use href="#i-arrow-up"/></svg>' : '<svg class="ico"><use href="#i-arrow-down"/></svg>');
       b.title = 'Положение блока оформления для двухблочных пресетов (Живое, Новинка): ' +
         (top ? 'СВЕРХУ ценника (клик — переключить снизу)' : 'СНИЗУ ценника (клик — переключить сверху)');
     });
@@ -3096,10 +3180,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const isFull = b.classList.contains('autobg-toggle-full');
       if (isFull) {
         if (isApplied) {
-          b.innerHTML = '✨ Авто-фон: <b>Убрать</b>';
+          b.innerHTML = 'Авто-фон: <b>Убрать</b>';
           b.title = 'Убрать индивидуальные фоны у товаров (клик — сбросить к базовому шаблону)';
         } else {
-          b.innerHTML = '✨ Авто-фон: <b>Применить</b>';
+          b.innerHTML = 'Авто-фон: <b>Применить</b>';
           b.title = 'Автоподстановка фона по названию товара (клик — применить ко всем заполненным товарам)';
         }
       } else {
@@ -3138,7 +3222,7 @@ document.addEventListener('DOMContentLoaded', () => {
         b.classList.add('btn-flash-warn');
         const isFull = b.classList.contains('autobg-toggle-full');
         if (isFull) {
-          b.innerHTML = '✨ Фоны: <b>Убраны!</b>';
+          b.innerHTML = 'Фоны: <b>Убраны!</b>';
         }
         setTimeout(() => {
           b.classList.remove('btn-flash-warn');
@@ -3160,7 +3244,7 @@ document.addEventListener('DOMContentLoaded', () => {
         b.classList.add('btn-flash-success');
         const isFull = b.classList.contains('autobg-toggle-full');
         if (isFull) {
-          b.innerHTML = appliedCount > 0 ? `✨ Применено (${appliedCount})!` : '✨ Нет совпадений';
+          b.innerHTML = appliedCount > 0 ? `Применено (${appliedCount})!` : 'Нет совпадений';
         }
         setTimeout(() => {
           b.classList.remove('btn-flash-success');
@@ -3511,10 +3595,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const badge = document.getElementById('itemsStatsBadge');
     if (badge) {
-      const orientIcon = grid.isLandscape ? '📑' : '📄';
-      badge.textContent = `⚡ ${totalCards} ценн. (${filledCount} тов.) · ${totalCards > 0 ? pages : 0} стр.`;
+      const orientIcon = grid.isLandscape ? 'альбомная' : 'книжная';
+      badge.textContent = `${totalCards} ценн. (${filledCount} тов.) · ${totalCards > 0 ? pages : 0} стр.`;
       const benefitHint = (grid.mode === 'auto' && grid.benefit > 0) ? ` (+${grid.benefit} шт. за счет авто-ориентации)` : '';
-      badge.title = `Всего к печати: ${totalCards} ценников (${filledCount} уникальных товаров, ${orientIcon} на лист влезает ${grid.maxCount} шт.${benefitHint}, требуется ${totalCards > 0 ? pages : 0} листов А4)`;
+      badge.title = `Всего к печати: ${totalCards} ценников (${filledCount} уникальных товаров, ориентация ${orientIcon}, на лист влезает ${grid.maxCount} шт.${benefitHint}, требуется ${totalCards > 0 ? pages : 0} листов А4)`;
     }
   }
 
@@ -3864,7 +3948,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
           const label = document.createElement('span');
           label.style.cssText = 'font-size: 0.75rem; color: #fef08a; font-weight: 700; display: flex; justify-content: space-between; align-items: center;';
-          label.innerHTML = '<span>✏️ Новая цена и валюта:</span>';
+          label.innerHTML = '<span>Новая цена и валюта:</span>';
           inputWrap.appendChild(label);
 
           const rowInputs = document.createElement('div');
@@ -4213,16 +4297,16 @@ document.addEventListener('DOMContentLoaded', () => {
       <span class="item-num">${i + 1}</span>
       <div class="item-title-wrap">
         <textarea class="item-title-input" rows="1" placeholder="Наименование товара №${i + 1}" data-index="${i}">${safeTitle}</textarea>
-        <button type="button" class="item-overflow-warn-btn" data-index="${i}" title="Текст названия выходит за границы ценника! Нажмите для автоподгонки кегля" style="display:none;">⚠️</button>
+        <button type="button" class="item-overflow-warn-btn" data-index="${i}" title="Текст названия выходит за границы ценника! Нажмите для автоподгонки размера шрифта" style="display:none;"><svg class="ico"><use href="#i-alert"/></svg></button>
       </div>
       <textarea class="item-subtitle-input" rows="1" placeholder="Вес" data-index="${i}">${safeSub}</textarea>
       <textarea class="item-price-input" rows="1" placeholder="Цена" data-index="${i}">${safePrice}</textarea>
       <div class="item-qty-wrap" title="Тираж копий на листе А4"><input type="number" class="item-qty-input ${multipleClass}" min="1" max="99" value="${countVal}" data-multiple="${isMultiple}" data-index="${i}" title="Тираж копий на листе А4 (колесико мыши: +/-)"></div>
       <input type="text" class="item-digit-input" maxlength="3" placeholder="№" data-index="${i}" title="Большая цифра (слой «Цифра»)" value="${safeDigit}" style="${isSnekiDigitActive() ? '' : 'display:none;'}">
       <button type="button" class="item-cross-btn" data-index="${i}" title="Перечеркнуть цену (акция/скидка)"><s>₽</s></button>
-      <button type="button" class="item-bg-btn ${bgBadgeClass}" data-index="${i}" title="Фон этого ценника">🖼</button>
-      <button type="button" class="item-decor-btn ${decorBadgeClass}" data-index="${i}" title="Оформление этого ценника">🎨</button>
-      <button type="button" class="item-delete-btn" data-index="${i}" title="Удалить товар №${i + 1}">🗑</button>
+      <button type="button" class="item-bg-btn ${bgBadgeClass}" data-index="${i}" title="Фон этого ценника"><svg class="ico"><use href="#i-image"/></svg></button>
+      <button type="button" class="item-decor-btn ${decorBadgeClass}" data-index="${i}" title="Оформление этого ценника"><svg class="ico"><use href="#i-palette"/></svg></button>
+      <button type="button" class="item-delete-btn" data-index="${i}" title="Удалить товар №${i + 1}"><svg class="ico"><use href="#i-trash"/></svg></button>
     `;
 
     const selChk = row.querySelector('.item-select-chk');
@@ -4702,7 +4786,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updatePreview();
       scheduleSessionSave();
       if (typeof updateSortMenuButtonsState === 'function') updateSortMenuButtonsState();
-      if (typeof showToast === 'function') showToast('🔄 Исходный порядок товаров восстановлен', 'success', 2000);
+      if (typeof showToast === 'function') showToast('Исходный порядок товаров восстановлен', 'success', 2000);
       return;
     }
 
@@ -4790,6 +4874,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Авто-подгон высоты текстовых полей после добавления в DOM (чтобы 2-я строка наименования не обрезалась)
     itemsListContainer.querySelectorAll('textarea').forEach(autoGrowTextarea);
     if (idrItemsList) idrItemsList.querySelectorAll('textarea').forEach(autoGrowTextarea);
+    updateItemsEmptyHint();
     syncDigitControlsVisibility();
     if (typeof updateItemsDrawerHeader === 'function') updateItemsDrawerHeader();
     if (typeof applyGoodsFilter === 'function') applyGoodsFilter();
@@ -4804,17 +4889,45 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- Модуль разбора и вставки товаров (Касса, 1C, Excel) ---
   // ==========================================================================
 
-  // Список исключаемых префиксов в названиях товаров (кассовые категории)
-  const POS_IGNORED_PREFIXES = [
-    'пиво бутылочное',
-    // Сюда можно легко добавлять новые префиксы по мере необходимости
+  // Список кассовых категорий и правила их обработки
+  const POS_CONFIG = [
+    {
+      prefix: 'рыба весовая',
+      stripLastPriceDigit: true,
+      defaultSubtitle: '100гр'
+    },
+    {
+      prefix: 'снеки весовые',
+      stripLastPriceDigit: true,
+      defaultSubtitle: '100гр'
+    },
+    {
+      prefix: 'пиво бутылочное',
+      stripLastPriceDigit: false,
+      defaultSubtitle: ''
+    }
   ];
+
+  // Список исключаемых префиксов в названиях товаров (для обратной совместимости)
+  const POS_IGNORED_PREFIXES = POS_CONFIG.map(c => c.prefix);
+
+  // Определение конфигурации кассовой категории по началу строки
+  function detectPosConfig(raw) {
+    if (!raw) return null;
+    const str = String(raw).trim();
+    for (const cfg of POS_CONFIG) {
+      const escaped = cfg.prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+      const re = new RegExp('^' + escaped + '[:\\-–—\\s]*', 'i');
+      if (re.test(str)) return cfg;
+    }
+    return null;
+  }
 
   // Удаление кассовых префиксов из наименования (с сохранением объема/тары в названии)
   function stripPosTitlePrefix(rawTitle) {
     let title = (rawTitle || '').trim();
-    for (const prefix of POS_IGNORED_PREFIXES) {
-      const escaped = prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+    for (const cfg of POS_CONFIG) {
+      const escaped = cfg.prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
       const re = new RegExp('^' + escaped + '[:\\-–—\\s]*', 'i');
       if (re.test(title)) {
         title = title.replace(re, '').trim();
@@ -4834,6 +4947,7 @@ document.addEventListener('DOMContentLoaded', () => {
       parts = raw.split(/\s{2,}/).map(p => p.trim());
     }
 
+    const posCfg = detectPosConfig(parts[0]);
     let title = '';
     let price = '';
     let subtitle = '';
@@ -4856,19 +4970,15 @@ document.addEventListener('DOMContentLoaded', () => {
       // Кассовый чек / отчет (4+ колонок: Наименование \t Цена \t Кол-во \t Сумма \t Скидка \t Итог)
       // - Цена — это 1-я цифра/колонка после наименования (parts[1])
       // - Остальные колонки кассы (кол-во, сумма, скидка) отбрасываются
-      // - Объем и тара остаются в названии (Вариант А)
+      // - Объем и тара остаются в названии
       title = stripPosTitlePrefix(parts[0]);
       price = cleanPriceInput(parts[1]);
     } else if (parts.length === 3) {
       // 3 колонки: либо стандартный Excel [Название, Вес, Цена], либо касса [Название, Цена, Кол-во]
-      const hasPrefix = POS_IGNORED_PREFIXES.some(p => {
-        const re = new RegExp('^' + p.replace(/\s+/g, '\\s+'), 'i');
-        return re.test(parts[0]);
-      });
       const p1IsNum = /^[\d\s.,]+$/.test(parts[1]);
       const p2IsQty = /^\d+(\.0+)?$/.test(parts[2]) && Number(parts[2]) <= 100;
 
-      if (hasPrefix || (p1IsNum && p2IsQty)) {
+      if (posCfg || (p1IsNum && p2IsQty)) {
         title = stripPosTitlePrefix(parts[0]);
         price = cleanPriceInput(parts[1]);
       } else {
@@ -4879,12 +4989,29 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    // Если товар весовой (рыба весовая, снеки весовые):
+    // на кассе цена указана за 1 кг, на ценнике нужна за 100 г — убираем последний символ (делим на 10)
+    if (posCfg && posCfg.stripLastPriceDigit && price) {
+      if (price.length > 1 && /\d$/.test(price)) {
+        price = price.slice(0, -1);
+      }
+      if (!subtitle && posCfg.defaultSubtitle) {
+        subtitle = posCfg.defaultSubtitle;
+      }
+    }
+
+    if (title) {
+      // Первая буква названия заглавная (например «сыр ФРАЙЧИЗЫ» -> «Сыр ФРАЙЧИЗЫ»)
+      title = title.charAt(0).toUpperCase() + title.slice(1);
+    }
+
     if (!title && !price && !subtitle) return null;
 
     return {
       title: title || '',
       subtitle: subtitle || '',
       price: price || '',
+      digit: '',
       count: 1,
       subtitleManual: !!subtitle
     };
@@ -4923,7 +5050,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 2. Очищаем текущий список и наполняем новыми товарами
     itemsData.length = 0;
-    const lines = rawText.split(/\r?\n/);
+
+    // Нормализация: если в буфере несколько кассовых позиций скопированы подряд одной строкой через табуляцию (без \n),
+    // автоматически разделяем их на отдельные строки перед известными категориями кассы
+    const prefixPattern = POS_CONFIG.map(c => c.prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+')).join('|');
+    const preparedText = rawText.replace(new RegExp('[\\t\\s]+(?=(?:' + prefixPattern + ')\\b)', 'gi'), '\n');
+    const lines = preparedText.split(/\r?\n/);
     let parsedCount = 0;
 
     lines.forEach((line) => {
@@ -4941,6 +5073,8 @@ document.addEventListener('DOMContentLoaded', () => {
       itemsData.push({ ...freshItem(), labelPos: cloneLabelPos(baseLabelPos) });
     }
 
+    activePreviewIndex = 0;
+
     // 3. Синхронизируем эталонные координаты первого товара на все строки
     applySharedPosFromFirstToAll();
 
@@ -4951,11 +5085,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 5. Рендерим обновленный список (в сайдбаре и шторке)
     renderItemsListInputs();
+    if (typeof renderDrawerItems === 'function' && itemsDrawer && itemsDrawer.classList.contains('open')) {
+      renderDrawerItems();
+    }
     updatePreview();
     if (typeof resetSortHistory === 'function') resetSortHistory();
+    scheduleSessionSave();
 
     const count = itemsData.filter(isItemFilled).length;
-    showToast(`✅ Вставлено товаров: ${count}`, 'success');
+    showToast(`Вставлено товаров: ${count}`, 'success');
     return count;
   }
 
@@ -4977,7 +5115,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const hasTabs = clipboardText.includes('\t');
     const hasNewlines = clipboardText.includes('\n');
-    const hasPosPrefix = POS_IGNORED_PREFIXES.some(p => new RegExp(p.replace(/\s+/g, '\\s+'), 'i').test(clipboardText));
+    const hasPosPrefix = POS_CONFIG.some(c => {
+      const escaped = c.prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+      return new RegExp(escaped, 'i').test(clipboardText);
+    });
 
     if (hasTabs || hasPosPrefix || (hasNewlines && /\d/.test(clipboardText))) {
       e.preventDefault();
@@ -5320,8 +5461,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return best;
   }
 
-  // Кнопка «Выровнять цену по №1» убрана из блока «Разные товары».
-  // Дубликат в панели превью (syncPricePosPreviewBtn) остаётся.
+
 
   // Размер шрифта наименования по количеству символов (эмпирическая шкала).
   // Короткое название → крупный кегль, длинное → уменьшаем до минимума 8pt.
@@ -5491,6 +5631,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Проверяет, предусматривает ли шаблон слот под цену в шапке ценника.
+  // Зависит от геометрии и типа шаблона, а НЕ от временного состояния переключателя showPrice,
+  // что гарантирует полную независимость слоёв (0px смещения названия при выключении цены).
+  function isTemplatePriceSlotAvailable(ref, layout, pib) {
+    if (pib || layout === 'split') return false;
+    if (!ref) return true;
+    if (ref.kind === 'builtin') {
+      const k = ref.key;
+      if (k === 'korona_a5' || k === 'a5' || k === 'novy_vkus' || k === 'novinka' || k === 'tomat' || k === 'sladko') {
+        return false;
+      }
+      return true;
+    }
+    if (ref.kind === 'custom' && typeof customTemplates !== 'undefined') {
+      const ct = customTemplates[ref.index];
+      if (ct && ct.state && ct.state.showPrice === false) {
+        return false;
+      }
+      return true;
+    }
+    return true;
+  }
+
   function fitTitleSize(text, family, weight, itemIdx = activePreviewIndex) {
     if (!text || !text.trim()) return null;
     const idx = (typeof itemIdx === 'number' && itemIdx >= 0) ? itemIdx : activePreviewIndex;
@@ -5501,10 +5664,40 @@ document.addEventListener('DOMContentLoaded', () => {
     const hMm = hCm * 10;
     const ts = resolveItemBg(idx).titleSafe;
     const headerHm = currentLayout === 'full' ? hMm : hMm * (parseFloat(headerHeightRange ? headerHeightRange.value : 20.45) || 20.45) / 100;
-    const bySafeH = headerHm * Math.max(0, 1 - ts.top - ts.bottom);
-    const mult = ((rybaPriceInBottom && currentLayout === 'split') || (showPriceToggle && !showPriceToggle.checked) || currentLayout === 'split') ? 1.0 : 0.45;
-    const tzMm = Math.min(headerHm * mult, bySafeH);
-    const padMm = (borderMm > 0) ? borderMm : 3;
+    const isSplit = currentLayout === 'split';
+    const padMm = (borderMm > 0) ? borderMm : (isSplit ? 0 : 3);
+    const contentHm = isSplit ? headerHm : Math.max(1, headerHm - padMm * 2);
+    const activePreset = getActivePreset();
+    let slotTop = 0;
+    let tzMm = 0;
+    if (isSplit) {
+      slotTop = 0;
+      tzMm = contentHm;
+    } else if (activePreset && activePreset.titleSlotTop != null) {
+      const basePresetTs = normTitleSafe(activePreset.titleSafe || activePreset.ts);
+      const isCustomizedTs = basePresetTs && (
+        Math.abs(ts.top - basePresetTs.top) > 0.005 ||
+        Math.abs(ts.bottom - basePresetTs.bottom) > 0.005
+      );
+      if (isCustomizedTs) {
+        slotTop = Math.max(0, headerHm * ts.top - padMm);
+        tzMm = Math.max(2, headerHm * Math.max(0.05, 1 - ts.top - ts.bottom));
+      } else {
+        slotTop = parseFloat(activePreset.titleSlotTop);
+        tzMm = (activePreset.titleZoneH != null)
+          ? parseFloat(activePreset.titleZoneH)
+          : Math.max(2, headerHm * Math.max(0.05, 1 - ts.top - ts.bottom));
+      }
+    } else {
+      const isTsDefault = (ts.top === 0 && ts.bottom === 0);
+      if (isTsDefault) {
+        tzMm = hasPrice ? (headerHm * 0.45) : contentHm;
+      } else {
+        tzMm = Math.max(2, headerHm * Math.max(0.05, 1 - ts.top - ts.bottom));
+      }
+      slotTop = Math.max(0, headerHm * ts.top - padMm);
+    }
+    tzMm = Math.min(tzMm, Math.max(2, contentHm - slotTop));
     const contentW_mm = Math.max(10, wMm - padMm * 2);
     const safeW_mm = wMm * (1 - ts.left - ts.right);
     const titleW_mm = Math.min(contentW_mm, safeW_mm);
@@ -5680,7 +5873,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Пакетная подгонка кегля всех названий под безопасную зону («Fit All Titles»)
   function fitAllTitles() {
-    if (typeof pushHistoryState === 'function') pushHistoryState('Подгонка кегля всех товаров', true);
+    if (typeof pushHistoryState === 'function') pushHistoryState('Подгонка размера шрифта всех товаров', true);
     const family = titleFont ? titleFont.value : 'Arial, sans-serif';
     const weight = titleWeight ? titleWeight.value : '800';
     let count = 0;
@@ -5700,7 +5893,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderItemsListInputs();
     scheduleSessionSave();
     if (typeof showToast === 'function') {
-      showToast(`📏 Оптимальный кегль рассчитан для ${count} товаров`, 'success', 2400);
+      showToast(`Оптимальный размер шрифта рассчитан для ${count} товаров`, 'success', 2400);
     }
   }
 
@@ -5826,17 +6019,17 @@ document.addEventListener('DOMContentLoaded', () => {
       if (grid.mode === 'auto') {
         if (grid.isLandscape) {
           orientVal.textContent = grid.benefit > 0
-            ? `⚡ Альбомная (+${grid.benefit} шт)`
-            : '⚡ Альбомная';
+            ? `Альбомная (+${grid.benefit} шт)`
+            : 'Альбомная';
         } else {
           orientVal.textContent = grid.benefit > 0
-            ? `⚡ Книжная (+${grid.benefit} шт)`
-            : '⚡ Книжная';
+            ? `Книжная (+${grid.benefit} шт)`
+            : 'Книжная';
         }
       } else if (grid.mode === 'landscape') {
-        orientVal.textContent = '📑 Альбомная';
+        orientVal.textContent = 'Альбомная';
       } else {
-        orientVal.textContent = '📄 Книжная';
+        orientVal.textContent = 'Книжная';
       }
     }
 
@@ -5844,7 +6037,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const pStr = `Книжная: ${grid.portraitCount} шт.`;
       const lStr = `Альбомная: ${grid.landscapeCount} шт.`;
       const modeStr = grid.mode === 'auto' ? 'Автоподбор' : (grid.isLandscape ? 'Принудительно альбомная' : 'Принудительно книжная');
-      orientPill.title = `${modeStr}\nСравнение вместимости листа А4:\n• ${pStr}\n• ${lStr}\n${grid.benefit > 0 ? (grid.isLandscape ? '👉 Альбомная вмещает на ' + grid.benefit + ' шт. больше!' : '👉 Книжная вмещает на ' + grid.benefit + ' шт. больше!') : 'Вместимость одинакова'}`;
+      orientPill.title = `${modeStr}\nСравнение вместимости листа А4:\n• ${pStr}\n• ${lStr}\n${grid.benefit > 0 ? (grid.isLandscape ? 'Альбомная вмещает на ' + grid.benefit + ' шт. больше!' : 'Книжная вмещает на ' + grid.benefit + ' шт. больше!') : 'Вместимость одинакова'}`;
     }
   }
 
@@ -5934,6 +6127,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const sElem = clone.querySelector('.wobbler-subtitle');
     const box = clone.querySelector('.wobbler-price-box');
     const curr = clone.querySelector('.price-curr');
+    if (box) {
+      box.style.display = (showPriceToggle && !showPriceToggle.checked) ? 'none' : 'flex';
+    }
 
     if (tElem) {
       tElem.textContent = formatSmartTitle((item && item.title) || '');
@@ -6098,20 +6294,70 @@ document.addEventListener('DOMContentLoaded', () => {
     const _w = parseFloat(wobblerWidthInput.value) || 6.5;
     const _h = parseFloat(wobblerHeightInput.value) || 4.5;
     const _hh = currentLayout === 'full' ? _h * 10 : _h * 10 * ((parseInt(headerHeightRange.value, 10) || 50) / 100);
-    const _pib = (rybaPriceInBottom && currentLayout === 'split') || (showPriceToggle && !showPriceToggle.checked) || (currentLayout === 'full');
-    const _bySafeH = _hh * Math.max(0, 1 - ts.top - ts.bottom);
-    const _tz = Math.min(_hh * (_pib ? 1.0 : 0.45), _bySafeH);
-    clone.style.setProperty('--title-zone-h', `${_tz.toFixed(2)}mm`);
-    // Та же формула, что в updatePreview: titleW_mm = headerW*(1-l-r),
-    // --title-safe-w (доля от content-ширины) = titleW_mm / contentW.
-    {
-      const _hw = _w * 10;                         // ширина шапки, мм
-      const _pad = (borderMm > 0) ? borderMm : 3;
-      const _cw = Math.max(1, _hw - _pad * 2);     // content-ширина, мм
-      const _tw = _hw * (1 - ts.left - ts.right);  // ширина названия, мм
-      const _swf = Math.max(0, Math.min(1, _tw / _cw));
-      clone.style.setProperty('--title-safe-w', `${(_swf * 100).toFixed(2)}%`);
+    const _pib = (rybaPriceInBottom && currentLayout === 'split');
+    const _isSplit = currentLayout === 'split';
+    const _hasPriceSlot = isTemplatePriceSlotAvailable(activeTemplateRef, currentLayout, _pib);
+    const _pad = (borderMm > 0) ? borderMm : (_isSplit ? 0 : 3);
+    const _hw = _w * 10;                         // ширина шапки, мм
+    const _cw = Math.max(1, _hw - _pad * 2);     // content-ширина, мм
+    const _contentHm = _isSplit ? _hh : Math.max(1, _hh - _pad * 2);
+
+    const activePreset = getActivePreset();
+    let _slotTop = 0;
+    let _tz = 0;
+    if (_isSplit) {
+      _slotTop = 0;
+      _tz = _contentHm;
+    } else if (activePreset && activePreset.titleSlotTop != null) {
+      const basePresetTs = normTitleSafe(activePreset.titleSafe || activePreset.ts);
+      const isCustomizedTs = basePresetTs && (
+        Math.abs(ts.top - basePresetTs.top) > 0.005 ||
+        Math.abs(ts.bottom - basePresetTs.bottom) > 0.005
+      );
+      if (isCustomizedTs) {
+        _slotTop = Math.max(0, _hh * ts.top - _pad);
+        _tz = Math.max(2, _hh * Math.max(0.05, 1 - ts.top - ts.bottom));
+      } else {
+        _slotTop = parseFloat(activePreset.titleSlotTop);
+        _tz = (activePreset.titleZoneH != null)
+          ? parseFloat(activePreset.titleZoneH)
+          : Math.max(2, _hh * Math.max(0.05, 1 - ts.top - ts.bottom));
+      }
+    } else {
+      const _isTsDefault = (ts.top === 0 && ts.bottom === 0);
+      if (_isTsDefault) {
+        _tz = _hasPriceSlot ? (_hh * 0.45) : _contentHm;
+      } else {
+        _tz = Math.max(2, _hh * Math.max(0.05, 1 - ts.top - ts.bottom));
+      }
+      _slotTop = Math.max(0, _hh * ts.top - _pad);
     }
+    _tz = Math.min(_tz, Math.max(2, _contentHm - _slotTop));
+    clone.style.setProperty('--title-zone-h', `${_tz.toFixed(2)}mm`);
+    clone.style.setProperty('--title-slot-top', `${_slotTop.toFixed(2)}mm`);
+
+    const _tw = _hw * (1 - ts.left - ts.right);  // ширина названия, мм
+    const _swf = Math.max(0, Math.min(1, _tw / _cw));
+    clone.style.setProperty('--title-safe-w', `${(_swf * 100).toFixed(2)}%`);
+
+    let _priceTop = 0;
+    if (_hasPriceSlot) {
+      const activePreset = getActivePreset();
+      if (activePreset && activePreset.priceSlotTop != null) {
+        _priceTop = parseFloat(activePreset.priceSlotTop);
+      } else {
+        const _basePresetTs = normTitleSafe(activePreset && (activePreset.titleSafe || activePreset.ts));
+        const _baseTz = (_basePresetTs && (_basePresetTs.top > 0 || _basePresetTs.bottom > 0))
+          ? Math.min(_hh * 0.45, _hh * Math.max(0, 1 - _basePresetTs.top - _basePresetTs.bottom))
+          : (_hh * 0.45);
+        const _pSizePt = parseFloat(fontOf(item, 'priceSize', (templateFonts && templateFonts.priceSize) || (priceSize ? priceSize.value : 40))) || 40;
+        const _basePriceH = _pSizePt * 0.3528 * 1.12;
+        const _baseComb = _baseTz + 2.0 + _basePriceH;
+        const _baselineSlotTop = Math.max(0, (_contentHm - _baseComb) / 2);
+        _priceTop = _baselineSlotTop + _baseTz + 4.0;
+      }
+    }
+    clone.style.setProperty('--price-slot-top', `${_priceTop.toFixed(2)}mm`);
 
     // Декоративные блоки (СВЕРХУ / ВНУТРИ / СНИЗУ) отрисованы выше через
     // applyCloneDecorBlock() — единый хелпер для всех трёх блоков клона.
@@ -6219,6 +6465,9 @@ document.addEventListener('DOMContentLoaded', () => {
       heightCm: preset.heightCm || 4.5,
       wMm: (preset.widthCm || 6.5) * 10,
       hMm: (preset.heightCm || 4.5) * 10,
+      priceSlotTop: preset.priceSlotTop != null ? preset.priceSlotTop : null,
+      titleSlotTop: preset.titleSlotTop != null ? preset.titleSlotTop : null,
+      titleZoneH: preset.titleZoneH != null ? preset.titleZoneH : null,
       digit: {
         font: preset.digitFont || "Arial, sans-serif",
         color: preset.digitColor || '#ffff00',
@@ -6276,11 +6525,42 @@ document.addEventListener('DOMContentLoaded', () => {
     const headerH = preset.headerHeight || 100;
     const rybaPib = !!(preset.priceInBottom || preset.rybaPib);
     const headerHm = layout === 'full' ? hMm : hMm * (parseFloat(headerH) || 20.45) / 100;
-    const bySafeH = headerHm * Math.max(0, 1 - ts.top - ts.bottom);
-    const noPrice = preset.showPrice === false;
-    const mult = (rybaPib && layout === 'split') || noPrice || layout === 'split' ? 1.0 : 0.45;
-    const tzMm = Math.min(headerHm * mult, bySafeH);
-    const padMm = 3;
+    const isSplit = layout === 'split';
+    const padMm = (preset.borderMm > 0) ? preset.borderMm : (isSplit ? 0 : 3);
+    const contentHm = isSplit ? headerHm : Math.max(1, headerHm - padMm * 2);
+    const isNaturallyNoPrice = !!(preset.key === 'korona_a5' || preset.key === 'a5' || preset.key === 'novy_vkus' || preset.key === 'novinka' || preset.key === 'tomat' || preset.key === 'sladko');
+    const hasPrice = !isNaturallyNoPrice && !rybaPib && !isSplit;
+
+    let slotTop = 0;
+    let tzMm = 0;
+    if (isSplit) {
+      slotTop = 0;
+      tzMm = contentHm;
+    } else if (preset.titleSlotTop != null) {
+      const basePresetTs = normTitleSafe(preset.titleSafe || preset.ts);
+      const isCustomizedTs = basePresetTs && (
+        Math.abs(ts.top - basePresetTs.top) > 0.005 ||
+        Math.abs(ts.bottom - basePresetTs.bottom) > 0.005
+      );
+      if (isCustomizedTs) {
+        slotTop = Math.max(0, headerHm * ts.top - padMm);
+        tzMm = Math.max(2, headerHm * Math.max(0.05, 1 - ts.top - ts.bottom));
+      } else {
+        slotTop = parseFloat(preset.titleSlotTop);
+        tzMm = (preset.titleZoneH != null)
+          ? parseFloat(preset.titleZoneH)
+          : Math.max(2, headerHm * Math.max(0.05, 1 - ts.top - ts.bottom));
+      }
+    } else {
+      const isTsDefault = (ts.top === 0 && ts.bottom === 0);
+      if (isTsDefault) {
+        tzMm = hasPrice ? (headerHm * 0.45) : contentHm;
+      } else {
+        tzMm = Math.max(2, headerHm * Math.max(0.05, 1 - ts.top - ts.bottom));
+      }
+      slotTop = Math.max(0, headerHm * ts.top - padMm);
+    }
+    tzMm = Math.min(tzMm, Math.max(2, contentHm - slotTop));
     const contentW_mm = Math.max(10, wMm - padMm * 2);
     const safeW_mm = wMm * (1 - ts.left - ts.right);
     const titleW_mm = Math.min(contentW_mm, safeW_mm);
@@ -6486,18 +6766,69 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Safe-зона названия — по геометрии preset (не активного).
     const _hh = layout === 'full' ? hMm : hMm * (headerH / 100);
-    const _pib = (rybaPib && layout === 'split') || (ctx.showPrice === false) || (layout === 'full');
-    const _bySafeH = _hh * Math.max(0, 1 - ts.top - ts.bottom);
-    const _tz = Math.min(_hh * (_pib ? 1.0 : 0.45), _bySafeH);
-    clone.style.setProperty('--title-zone-h', `${_tz.toFixed(2)}mm`);
-    {
-      const _hw = wMm;
-      const _pad = (ctx.borderMm > 0) ? ctx.borderMm : 3;
-      const _cw = Math.max(1, _hw - _pad * 2);
-      const _tw = _hw * (1 - ts.left - ts.right);
-      const _swf = Math.max(0, Math.min(1, _tw / _cw));
-      clone.style.setProperty('--title-safe-w', `${(_swf * 100).toFixed(2)}%`);
+    const _pib = (rybaPib && layout === 'split');
+    const _isSplit = layout === 'split';
+    const _isNaturallyNoPrice = !!(ctx.key === 'korona_a5' || ctx.key === 'a5' || ctx.key === 'novy_vkus' || ctx.key === 'novinka' || ctx.key === 'tomat' || ctx.key === 'sladko');
+    const _hasPriceSlot = !_isNaturallyNoPrice && !_pib && !_isSplit;
+    const _pad = (ctx.borderMm > 0) ? ctx.borderMm : (_isSplit ? 0 : 3);
+    const _hw = wMm;
+    const _cw = Math.max(1, _hw - _pad * 2);
+    const _contentHm = _isSplit ? _hh : Math.max(1, _hh - _pad * 2);
+
+    let _slotTop = 0;
+    let _tz = 0;
+    if (_isSplit) {
+      _slotTop = 0;
+      _tz = _contentHm;
+    } else if (ctx.titleSlotTop != null) {
+      const basePresetTs = normTitleSafe(ctx.titleSafe || ctx.ts);
+      const isCustomizedTs = basePresetTs && (
+        Math.abs(ts.top - basePresetTs.top) > 0.005 ||
+        Math.abs(ts.bottom - basePresetTs.bottom) > 0.005
+      );
+      if (isCustomizedTs) {
+        _slotTop = Math.max(0, _hh * ts.top - _pad);
+        _tz = Math.max(2, _hh * Math.max(0.05, 1 - ts.top - ts.bottom));
+      } else {
+        _slotTop = parseFloat(ctx.titleSlotTop);
+        _tz = (ctx.titleZoneH != null)
+          ? parseFloat(ctx.titleZoneH)
+          : Math.max(2, _hh * Math.max(0.05, 1 - ts.top - ts.bottom));
+      }
+    } else {
+      const _isTsDefault = (ts.top === 0 && ts.bottom === 0);
+      if (_isTsDefault) {
+        _tz = _hasPriceSlot ? (_hh * 0.45) : _contentHm;
+      } else {
+        _tz = Math.max(2, _hh * Math.max(0.05, 1 - ts.top - ts.bottom));
+      }
+      _slotTop = Math.max(0, _hh * ts.top - _pad);
     }
+    _tz = Math.min(_tz, Math.max(2, _contentHm - _slotTop));
+    clone.style.setProperty('--title-zone-h', `${_tz.toFixed(2)}mm`);
+    clone.style.setProperty('--title-slot-top', `${_slotTop.toFixed(2)}mm`);
+
+    const _tw = _hw * (1 - ts.left - ts.right);
+    const _swf = Math.max(0, Math.min(1, _tw / _cw));
+    clone.style.setProperty('--title-safe-w', `${(_swf * 100).toFixed(2)}%`);
+
+    let _priceTop = 0;
+    if (_hasPriceSlot) {
+      if (ctx.priceSlotTop != null) {
+        _priceTop = parseFloat(ctx.priceSlotTop);
+      } else {
+        const _basePresetTs = normTitleSafe(ctx.titleSafe || ctx.ts);
+        const _baseTz = (_basePresetTs && (_basePresetTs.top > 0 || _basePresetTs.bottom > 0))
+          ? Math.min(_hh * 0.45, _hh * Math.max(0, 1 - _basePresetTs.top - _basePresetTs.bottom))
+          : (_hh * 0.45);
+        const _pSizePt = parseFloat(fontOf(item, 'priceSize', tf.priceSize)) || 40;
+        const _basePriceH = _pSizePt * 0.3528 * 1.12;
+        const _baseComb = _baseTz + 2.0 + _basePriceH;
+        const _baselineSlotTop = Math.max(0, (_contentHm - _baseComb) / 2);
+        _priceTop = _baselineSlotTop + _baseTz + 4.0;
+      }
+    }
+    clone.style.setProperty('--price-slot-top', `${_priceTop.toFixed(2)}mm`);
   }
 
   // Строит клон ценника, одетый под preset (геометрия/layout/стили из preset,
@@ -6562,107 +6893,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Применение фона (имя встроенной картинки / custom data-URL / none) к любому
   // элементу. Обобщает логику, ранее зашитую под wobblerHeader. Возвращает
+  // Резолвер путей к фоновым изображениям с полной обратной совместимостью
+  function resolveBgUrl(val) {
+    if (!val || val === 'none' || val === 'custom') return '';
+    if (typeof extraBgMap !== 'undefined' && extraBgMap[val]) {
+      return extraBgMap[val];
+    }
+    const clean = String(val).replace(/^bgother:/, '');
+    if (clean.startsWith('data:') || clean.startsWith('http:') || clean.startsWith('https:')) {
+      return clean;
+    }
+    if (clean.startsWith('images/')) {
+      return clean;
+    }
+    if (clean.startsWith('bg other/')) {
+      return clean.replace(/^bg other\//, 'images/');
+    }
+    return 'images/' + clean;
+  }
+
+  // Применяет фон (картинка или цвет) к любому целевому элементу DOM.
+  // Используется для шапки воблера, карточек превью и префлайта, задавая
   // выбранную фоновую CSS-строку (для согласованности cover/position).
   function applyBackgroundTo(el, bgVal, customDataUrl, bgColor) {
     if (!el) return;
     if (bgColor != null) el.style.backgroundColor = bgColor;
-    if (bgVal === 'dots_bg.jpg' || bgVal === 'dots_bg') {
-      el.style.backgroundImage = "url('dots_bg.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'ryba_bg.jpg') {
-      el.style.backgroundImage = "url('ryba_bg.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'sneki_bg.jpg') {
-      el.style.backgroundImage = "url('sneki_bg.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'sneki_5_bg.jpg') {
-      el.style.backgroundImage = "url('sneki_5_bg.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'sneki_digit_bg.jpg') {
-      el.style.backgroundImage = "url('sneki_digit_bg.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'yellow_bg.jpg') {
-      el.style.backgroundImage = "url('yellow_bg.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'sort_nedeli_bg.jpg' || bgVal === 'sort_nedeli_bg.png' || bgVal === 'sort_nedeli_bg') {
-      el.style.backgroundImage = "url('sort_nedeli_bg.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'sort_nedeli_yellow.jpg' || bgVal === 'sort_nedeli_yellow.png' || bgVal === 'sort_nedeli_yellow') {
-      el.style.backgroundImage = "url('sort_nedeli_yellow.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'a5.jpg' || bgVal === 'a5_yellow.jpg' || bgVal === 'А5.jpg' || bgVal === 'a5') {
-      el.style.backgroundImage = "url('a5.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'a5_orange.jpg') {
-      el.style.backgroundImage = "url('a5_orange.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'a5_red.jpg') {
-      el.style.backgroundImage = "url('a5_red.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'a5_blue.jpg') {
-      el.style.backgroundImage = "url('a5_blue.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'a5_green.jpg') {
-      el.style.backgroundImage = "url('a5_green.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'korona_a5_bg.jpg' || bgVal === 'korona_a5_bg.jpeg' || bgVal === 'korona_a5_bg.png' || bgVal === 'korona_a5_bg' || bgVal === 'aktsiya_a5_bg.jpg' || bgVal === 'aktsiya_a5_bg.jpeg' || bgVal === 'aktsiya_a5_bg.png' || bgVal === 'aktsiya_a5_bg') {
-      el.style.backgroundImage = "url('korona_a5_bg.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'korona_a5_orange.jpg' || bgVal === 'korona_a5_orange.png' || bgVal === 'korona_a5_orange' || bgVal === 'aktsiya_a5_orange.jpg') {
-      el.style.backgroundImage = "url('korona_a5_orange.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'korona_a5_blue.jpg' || bgVal === 'korona_a5_blue.png' || bgVal === 'korona_a5_blue' || bgVal === 'aktsiya_a5_blue.jpg') {
-      el.style.backgroundImage = "url('korona_a5_blue.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'korona_a5_green.jpg' || bgVal === 'korona_a5_green.png' || bgVal === 'korona_a5_green' || bgVal === 'aktsiya_a5_green.jpg') {
-      el.style.backgroundImage = "url('korona_a5_green.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'korona_a5_red.jpg' || bgVal === 'korona_a5_red.png' || bgVal === 'korona_a5_red' || bgVal === 'aktsiya_a5_red.jpg') {
-      el.style.backgroundImage = "url('korona_a5_red.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'ryba_scales') {
-      el.style.backgroundImage =
-        "radial-gradient(circle at 50% 0%, rgba(125,211,252,0.55) 0%, rgba(125,211,252,0) 55%)," +
-        "radial-gradient(circle at 0% 50%, rgba(56,189,248,0.45) 0%, rgba(56,189,248,0) 50%)," +
-        "radial-gradient(circle at 100% 50%, rgba(14,165,233,0.45) 0%, rgba(14,165,233,0) 50%)," +
-        "repeating-radial-gradient(circle at 50% 120%, rgba(255,255,255,0.18) 0 3mm, rgba(255,255,255,0) 3mm 6mm)";
-      el.style.backgroundSize = "auto";
-      el.style.backgroundPosition = "center";
-    } else if (typeof bgVal === 'string' && bgVal.indexOf('bgother:') === 0) {
-      // Дополнительный фон из папки «bg other». data:URL берётся из extraBgMap
-      // (наполняется из IndexedDB при загрузке страницы или при выборе папки).
-      // Если маркер неизвестен — пробуем прямое обращение к папке bg other/<имя>.
-      const dataUrl = extraBgMap[bgVal];
-      if (dataUrl) {
-        el.style.backgroundImage = `url('${dataUrl}')`;
-        el.style.backgroundSize = "cover";
-        el.style.backgroundPosition = "center";
-      } else {
-        const rawName = bgVal.replace(/^bgother:/, '');
-        el.style.backgroundImage = `url('bg other/${rawName}')`;
-        el.style.backgroundSize = "cover";
-        el.style.backgroundPosition = "center";
-      }
-    } else if (bgVal === 'custom' && customDataUrl) {
+    if (!bgVal || bgVal === 'none') {
+      el.style.backgroundImage = 'none';
+      return;
+    }
+    if (bgVal === 'custom' && customDataUrl) {
       el.style.backgroundImage = `url('${customDataUrl}')`;
+      el.style.backgroundSize = "cover";
+      el.style.backgroundPosition = "center";
+      return;
+    }
+    const url = resolveBgUrl(bgVal);
+    if (url) {
+      el.style.backgroundImage = `url('${url}')`;
       el.style.backgroundSize = "cover";
       el.style.backgroundPosition = "center";
     } else {
@@ -6682,7 +6950,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     rulerHText.textContent = `${widthCm.toString().replace('.', ',')} см`;
     rulerVText.textContent = `${heightCm.toString().replace('.', ',')} см`;
-    topSubtitle.textContent = `Размер: ${widthCm.toString().replace('.', ',')} см × ${heightCm.toString().replace('.', ',')} см`;
+    topSubtitle.textContent = `${widthCm.toString().replace('.', ',')} × ${heightCm.toString().replace('.', ',')} см`;
 
     // Индикатор размера в шапке предпросмотра (только чтение)
     const sizeReadout = document.getElementById('sizeReadout');
@@ -6847,6 +7115,9 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       priceFieldsBlock.classList.add('price-off');
       previewPriceBox.style.display = 'none';
+      if (previewPrice && document.activeElement !== previewPrice) previewPrice.innerHTML = '';
+      if (previewCurrency) previewCurrency.textContent = '';
+      if (priceCrossSettingsRow) priceCrossSettingsRow.style.display = 'none';
     }
 
     // Background Image & Overlay — per-item фон активного ценника, если задан
@@ -6991,29 +7262,74 @@ document.addEventListener('DOMContentLoaded', () => {
       ? heightMm
       : heightMm * (parseFloat(headerHeightRange.value) || 20.45) / 100;
     const priceInBottomNow = rybaPriceInBottom && selectedLayout === 'split';
-    const noPriceNow = showPriceToggle && !showPriceToggle.checked;
     const isSplitLayout = selectedLayout === 'split';
+    const hasPriceSlot = isTemplatePriceSlotAvailable(activeTemplateRef, selectedLayout, priceInBottomNow);
     const ts = resolveItemBg(activePreviewIndex).titleSafe;
-    const mult = (priceInBottomNow || noPriceNow || isSplitLayout) ? 1.0 : 0.45;
-    const bySafeH = headerHm * Math.max(0, 1 - ts.top - ts.bottom);
-    const titleZone = Math.min(headerHm * mult, bySafeH);
-    document.documentElement.style.setProperty('--title-zone-h', `${titleZone.toFixed(2)}mm`);
-    // Безопасная ширина названия. left/right — доли от ВСЕЙ ширины шапки
-    // (.wobbler-header), как и top/bottom от её высоты: так прямоугольник
-    // редактора (.safe-rect, позиционируется внутри всей шапки) совпадает с
-    // реальным боксом названия 1:1, и пользователь видит истинные границы.
-    // Геометрия: ширина названия в мм = headerW*(1-l-r) (совпадает с rect).
-    // Но .wobbler-title живёт в .header-content (ширина = шапка − padding 6мм),
-    // поэтому --title-safe-w (это % от content-ширины) =
-    //   headerW*(1-l-r) / contentW * 100.
-    {
-      const headerW_mm = widthMm;
-      const padMm = (borderMm > 0) ? borderMm : 3;
-      const contentW_mm = Math.max(1, widthMm - padMm * 2);
-      const titleW_mm = headerW_mm * (1 - ts.left - ts.right);
-      const safeWFrac = Math.max(0, Math.min(1, titleW_mm / contentW_mm));
-      document.documentElement.style.setProperty('--title-safe-w', `${(safeWFrac * 100).toFixed(2)}%`);
+    const padMm = (borderMm > 0) ? borderMm : (isSplitLayout ? 0 : 3);
+    const contentW_mm = Math.max(1, widthMm - padMm * 2);
+    const contentHm = isSplitLayout ? headerHm : Math.max(1, headerHm - padMm * 2);
+
+    // 1. Позиция и высота слоя наименования (строго независимы от цены)
+    const activePreset = getActivePreset();
+    let slotTop = 0;
+    let titleZone = 0;
+    if (isSplitLayout) {
+      slotTop = 0;
+      titleZone = contentHm;
+    } else if (activePreset && activePreset.titleSlotTop != null) {
+      const basePresetTs = normTitleSafe(activePreset.titleSafe || activePreset.ts);
+      const isCustomizedTs = basePresetTs && (
+        Math.abs(ts.top - basePresetTs.top) > 0.005 ||
+        Math.abs(ts.bottom - basePresetTs.bottom) > 0.005
+      );
+      if (isCustomizedTs) {
+        slotTop = Math.max(0, headerHm * ts.top - padMm);
+        titleZone = Math.max(2, headerHm * Math.max(0.05, 1 - ts.top - ts.bottom));
+      } else {
+        slotTop = parseFloat(activePreset.titleSlotTop);
+        titleZone = (activePreset.titleZoneH != null)
+          ? parseFloat(activePreset.titleZoneH)
+          : Math.max(2, headerHm * Math.max(0.05, 1 - ts.top - ts.bottom));
+      }
+    } else {
+      const isTsDefault = (ts.top === 0 && ts.bottom === 0);
+      if (isTsDefault) {
+        titleZone = hasPriceSlot ? (headerHm * 0.45) : contentHm;
+      } else {
+        titleZone = Math.max(2, headerHm * Math.max(0.05, 1 - ts.top - ts.bottom));
+      }
+      slotTop = Math.max(0, headerHm * ts.top - padMm);
     }
+    titleZone = Math.min(titleZone, Math.max(2, contentHm - slotTop));
+    document.documentElement.style.setProperty('--title-zone-h', `${titleZone.toFixed(2)}mm`);
+    document.documentElement.style.setProperty('--title-slot-top', `${slotTop.toFixed(2)}mm`);
+
+    // 2. Безопасная ширина названия
+    const titleW_mm = widthMm * (1 - ts.left - ts.right);
+    const safeWFrac = Math.max(0, Math.min(1, titleW_mm / contentW_mm));
+    document.documentElement.style.setProperty('--title-safe-w', `${(safeWFrac * 100).toFixed(2)}%`);
+
+    // 3. Позиция слоя цены: полностью изолирована от safe-зоны наименования (0.00мм сдвига при drag)
+    let priceTop = 0;
+    if (hasPriceSlot) {
+      const activePreset = getActivePreset();
+      if (activePreset && activePreset.priceSlotTop != null) {
+        priceTop = parseFloat(activePreset.priceSlotTop);
+      } else {
+        const basePresetTs = normTitleSafe(activePreset && (activePreset.titleSafe || activePreset.ts));
+        const baseTz = (basePresetTs && (basePresetTs.top > 0 || basePresetTs.bottom > 0))
+          ? Math.min(headerHm * 0.45, headerHm * Math.max(0, 1 - basePresetTs.top - basePresetTs.bottom))
+          : (headerHm * 0.45);
+        const pSizePt = parseFloat(fontOf(activeItem, 'priceSize', tf.priceSize != null ? tf.priceSize : priceSize.value)) || 40;
+        const basePriceH = pSizePt * 0.3528 * 1.12;
+        const baseComb = baseTz + 2.0 + basePriceH;
+        const baselineSlotTop = Math.max(0, (contentHm - baseComb) / 2);
+        priceTop = baselineSlotTop + baseTz + 4.0;
+      }
+    } else {
+      priceTop = 0;
+    }
+    document.documentElement.style.setProperty('--price-slot-top', `${priceTop.toFixed(2)}mm`);
     // Прямоугольник редактора следует за состоянием (смена шаблона / ввод в поля).
     positionSafeRect(ts);
 
@@ -7138,46 +7454,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const BG_GALLERY_CATALOG = [
     // --- Рыба & Море ---
-    { id: 'ryba_bg.jpg', label: 'Рыба (черный)', cat: ['all', 'fish'], thumb: 'ryba_bg.jpg' },
-    { id: 'ryba_scales', label: 'Чешуя', cat: ['all', 'fish'], thumbType: 'scales' },
-    { id: 'bgother:ryba_vygodno.png', label: 'Рыба Выгодно', cat: ['all', 'fish'], file: 'bg other/ryba_vygodno.png' },
-    { id: 'bgother:moreprodukty.png', label: 'Морепродукты', cat: ['all', 'fish'], file: 'bg other/moreprodukty.png' },
+    { id: 'ryba_bg.jpg', label: 'Рыба (черный)', cat: ['all', 'fish'], thumb: 'images/ryba_bg.jpg' },
+    { id: 'bgother:ryba_vygodno.png', label: 'Рыба Выгодно', cat: ['all', 'fish'], file: 'images/ryba_vygodno.png' },
+    { id: 'bgother:moreprodukty.png', label: 'Морепродукты', cat: ['all', 'fish'], file: 'images/moreprodukty.png' },
 
     // --- Снеки & Закуски ---
-    { id: 'sneki_bg.jpg', label: 'Снеки', cat: ['all', 'snacks'], thumb: 'sneki_bg.jpg' },
-    { id: 'sneki_5_bg.jpg', label: 'Снеки 5', cat: ['all', 'snacks'], thumb: 'sneki_5_bg.jpg' },
-    { id: 'sneki_digit_bg.jpg', label: 'Снеки №', cat: ['all', 'snacks'], thumb: 'sneki_digit_bg.jpg' },
-    { id: 'bgother:ostryi.png', label: 'Остро', cat: ['all', 'snacks'], file: 'bg other/ostryi.png' },
-    { id: 'bgother:kalmar.png', label: 'Кальмары', cat: ['all', 'snacks'], file: 'bg other/kalmar.png' },
-    { id: 'bgother:myaso.png', label: 'Вяленое мясо', cat: ['all', 'snacks'], file: 'bg other/myaso.png' },
-    { id: 'bgother:syr.png', label: 'Сыр', cat: ['all', 'snacks'], file: 'bg other/syr.png' },
-    { id: 'bgother:orehi.png', label: 'Орехи', cat: ['all', 'snacks'], file: 'bg other/orehi.png' },
-    { id: 'bgother:grenki.png', label: 'Гренки', cat: ['all', 'snacks'], file: 'bg other/grenki.png' },
-    { id: 'bgother:ryb_solomka.png', label: 'Рыбная соломка', cat: ['all', 'snacks'], file: 'bg other/ryb_solomka.png' },
+    { id: 'sneki_bg.jpg', label: 'Снеки', cat: ['all', 'snacks'], thumb: 'images/sneki_bg.jpg' },
+    { id: 'sneki_5_bg.jpg', label: 'Снеки 5', cat: ['all', 'snacks'], thumb: 'images/sneki_5_bg.jpg' },
+    { id: 'sneki_digit_bg.jpg', label: 'Снеки №', cat: ['all', 'snacks'], thumb: 'images/sneki_digit_bg.jpg' },
+    { id: 'bgother:ostryi.png', label: 'Остро', cat: ['all', 'snacks'], file: 'images/ostryi.png' },
+    { id: 'bgother:kalmar.png', label: 'Кальмары', cat: ['all', 'snacks'], file: 'images/kalmar.png' },
+    { id: 'bgother:myaso.png', label: 'Вяленое мясо', cat: ['all', 'snacks'], file: 'images/myaso.png' },
+    { id: 'bgother:syr.png', label: 'Сыр', cat: ['all', 'snacks'], file: 'images/syr.png' },
+    { id: 'bgother:orehi.png', label: 'Орехи', cat: ['all', 'snacks'], file: 'images/orehi.png' },
+    { id: 'bgother:grenki.png', label: 'Гренки', cat: ['all', 'snacks'], file: 'images/grenki.png' },
+    { id: 'bgother:ryb_solomka.png', label: 'Рыбная соломка', cat: ['all', 'snacks'], file: 'images/ryb_solomka.png' },
 
     // --- Напитки ---
-    { id: 'bgother:tomatnyj.png', label: 'Томатный', cat: ['all', 'drinks'], file: 'bg other/tomatnyj.png' },
-    { id: 'bgother:vishnevyj.png', label: 'Вишневый', cat: ['all', 'drinks'], file: 'bg other/vishnevyj.png' },
-    { id: 'bgother:medovyj.png', label: 'Медовый', cat: ['all', 'drinks'], file: 'bg other/medovyj.png' },
-    { id: 'bgother:yablochnyj.png', label: 'Яблочный', cat: ['all', 'drinks'], file: 'bg other/yablochnyj.png' },
-    { id: 'bgother:ba.jpg', label: 'Б/А', cat: ['all', 'drinks'], file: 'bg other/ba.jpg' },
-    { id: 'bgother:zhivoe.jpg', label: 'Живое', cat: ['all', 'drinks'], file: 'bg other/zhivoe.jpg' },
+    { id: 'bgother:tomatnyj.png', label: 'Томатный', cat: ['all', 'drinks'], file: 'images/tomatnyj.png' },
+    { id: 'bgother:vishnevyj.png', label: 'Вишневый', cat: ['all', 'drinks'], file: 'images/vishnevyj.png' },
+    { id: 'bgother:medovyj.png', label: 'Медовый', cat: ['all', 'drinks'], file: 'images/medovyj.png' },
+    { id: 'bgother:yablochnyj.png', label: 'Яблочный', cat: ['all', 'drinks'], file: 'images/yablochnyj.png' },
+    { id: 'bgother:ba.jpg', label: 'Б/А', cat: ['all', 'drinks'], file: 'images/ba.jpg' },
+    { id: 'bgother:zhivoe.jpg', label: 'Живое', cat: ['all', 'drinks'], file: 'images/zhivoe.jpg' },
 
     // --- Акции, ценники и плакаты ---
-    { id: 'dots_bg.jpg', label: 'Точки (Alaska)', cat: ['all', 'promo'], thumb: 'dots_bg.jpg' },
-    { id: 'yellow_bg.jpg', label: 'Желтый ценник', cat: ['all', 'promo'], thumb: 'yellow_bg.jpg' },
-    { id: 'sort_nedeli_bg.jpg', label: 'Сорт недели (Кр)', cat: ['all', 'promo'], thumb: 'sort_nedeli_bg.jpg' },
-    { id: 'sort_nedeli_yellow.jpg', label: 'Сорт недели (Жел)', cat: ['all', 'promo'], thumb: 'sort_nedeli_yellow.jpg' },
-    { id: 'korona_a5_bg.jpg', label: 'Корона (Желтая)', cat: ['all', 'promo'], thumb: 'korona_a5_bg.jpg' },
-    { id: 'korona_a5_orange.jpg', label: 'Корона (Оранж)', cat: ['all', 'promo'], thumb: 'korona_a5_orange.jpg' },
-    { id: 'korona_a5_blue.jpg', label: 'Корона (Синяя)', cat: ['all', 'promo'], thumb: 'korona_a5_blue.jpg' },
-    { id: 'korona_a5_red.jpg', label: 'Корона (Красная)', cat: ['all', 'promo'], thumb: 'korona_a5_red.jpg' },
-    { id: 'korona_a5_green.jpg', label: 'Корона (Зеленая)', cat: ['all', 'promo'], thumb: 'korona_a5_green.jpg' },
-    { id: 'a5.jpg', label: 'А5 (Желтый)', cat: ['all', 'promo'], thumb: 'a5.jpg' },
-    { id: 'a5_orange.jpg', label: 'А5 (Оранжевый)', cat: ['all', 'promo'], thumb: 'a5_orange.jpg' },
-    { id: 'a5_red.jpg', label: 'А5 (Красный)', cat: ['all', 'promo'], thumb: 'a5_red.jpg' },
-    { id: 'a5_blue.jpg', label: 'А5 (Синий)', cat: ['all', 'promo'], thumb: 'a5_blue.jpg' },
-    { id: 'a5_green.jpg', label: 'А5 (Зеленый)', cat: ['all', 'promo'], thumb: 'a5_green.jpg' },
+    { id: 'dots_bg.jpg', label: 'Точки (Alaska)', cat: ['all', 'promo'], thumb: 'images/dots_bg.jpg' },
+    { id: 'yellow_bg.jpg', label: 'Желтый ценник', cat: ['all', 'promo'], thumb: 'images/yellow_bg.jpg' },
+    { id: 'sort_nedeli_bg.jpg', label: 'Сорт недели (Кр)', cat: ['all', 'promo'], thumb: 'images/sort_nedeli_bg.jpg' },
+    { id: 'sort_nedeli_yellow.jpg', label: 'Сорт недели (Жел)', cat: ['all', 'promo'], thumb: 'images/sort_nedeli_yellow.jpg' },
+    { id: 'korona_a5_bg.jpg', label: 'Корона (Желтая)', cat: ['all', 'promo'], thumb: 'images/korona_a5_bg.jpg' },
+    { id: 'korona_a5_orange.jpg', label: 'Корона (Оранж)', cat: ['all', 'promo'], thumb: 'images/korona_a5_orange.jpg' },
+    { id: 'korona_a5_blue.jpg', label: 'Корона (Синяя)', cat: ['all', 'promo'], thumb: 'images/korona_a5_blue.jpg' },
+    { id: 'korona_a5_red.jpg', label: 'Корона (Красная)', cat: ['all', 'promo'], thumb: 'images/korona_a5_red.jpg' },
+    { id: 'korona_a5_green.jpg', label: 'Корона (Зеленая)', cat: ['all', 'promo'], thumb: 'images/korona_a5_green.jpg' },
+    { id: 'a5.jpg', label: 'А5 (Желтый)', cat: ['all', 'promo'], thumb: 'images/a5.jpg' },
+    { id: 'a5_orange.jpg', label: 'А5 (Оранжевый)', cat: ['all', 'promo'], thumb: 'images/a5_orange.jpg' },
+    { id: 'a5_red.jpg', label: 'А5 (Красный)', cat: ['all', 'promo'], thumb: 'images/a5_red.jpg' },
+    { id: 'a5_blue.jpg', label: 'А5 (Синий)', cat: ['all', 'promo'], thumb: 'images/a5_blue.jpg' },
+    { id: 'a5_green.jpg', label: 'А5 (Зеленый)', cat: ['all', 'promo'], thumb: 'images/a5_green.jpg' },
 
     // --- Заливка и свои фото ---
     { id: 'none', label: 'Заливка цветом', cat: ['all', 'color'], thumbType: 'color' },
@@ -7218,9 +7533,7 @@ document.addEventListener('DOMContentLoaded', () => {
       card.dataset.bg = item.id;
       card.title = item.label;
 
-      if (item.thumbType === 'scales') {
-        card.style.background = 'radial-gradient(circle at 100% 50%, transparent 20%, rgba(255,255,255,0.2) 21%, rgba(255,255,255,0.2) 34%, transparent 35%), radial-gradient(circle at 0% 50%, transparent 20%, rgba(255,255,255,0.2) 21%, rgba(255,255,255,0.2) 34%, transparent 35%) #0f172a';
-      } else if (item.thumbType === 'color') {
+      if (item.thumbType === 'color') {
         const c = headerBgColor ? headerBgColor.value : '#18181b';
         card.style.background = c;
       } else if (item.thumbType === 'custom') {
@@ -7234,7 +7547,7 @@ document.addEventListener('DOMContentLoaded', () => {
           card.appendChild(icon);
         }
       } else {
-        const url = (typeof extraBgMap !== 'undefined' && extraBgMap[item.id]) ? extraBgMap[item.id] : (item.file || item.thumb);
+        const url = (typeof extraBgMap !== 'undefined' && extraBgMap[item.id]) ? extraBgMap[item.id] : resolveBgUrl(item.file || item.thumb);
         card.style.backgroundImage = 'url("' + url + '")';
       }
 
@@ -7502,7 +7815,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const sheetHint = document.querySelector('.sheet-card-header p');
     if (sheetHint) {
-      sheetHint.innerHTML = '🖨️ <b>Раскладка мульти-печати:</b> здесь показаны все выбранные шаблоны так, как они будут напечатаны на листе А4. Кликните по любому ценнику, чтобы перейти к его редактированию.';
+      sheetHint.innerHTML = '<b>Раскладка мульти-печати:</b> здесь показаны все выбранные шаблоны так, как они будут напечатаны на листе А4. Кликните по любому ценнику, чтобы перейти к его редактированию.';
     }
 
     const selected = (typeof collectMultiSelection === 'function') ? collectMultiSelection() : [];
@@ -7586,7 +7899,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    sheetCalcText.textContent = `🖨️ Мульти: ${rendered.length} ценников (${selected.length} шабл.)${totalPages > 1 ? ` · ${totalPages} стр.` : ''}`;
+    sheetCalcText.textContent = `Мульти: ${rendered.length} ценников (${selected.length} шабл.)${totalPages > 1 ? ` · ${totalPages} стр.` : ''}`;
 
     sheetGridPreview.style.boxSizing = 'border-box';
     sheetGridPreview.style.padding = `${mTop}mm ${mSide}mm ${mBottom}mm ${mSide}mm`;
@@ -7653,7 +7966,7 @@ document.addEventListener('DOMContentLoaded', () => {
           badge.textContent = `#${itemSeq}`;
           wrap.appendChild(badge);
 
-          wrap.title = `№${itemSeq} [${tName}]: ${itemObj.title || 'Без названия'}${itemObj.price ? ' — ' + itemObj.price + ' ₽' : ''}\n👉 Нажмите, чтобы открыть этот шаблон и товар`;
+          wrap.title = `№${itemSeq} [${tName}]: ${itemObj.title || 'Без названия'}${itemObj.price ? ' — ' + itemObj.price + ' ₽' : ''}\nНажмите, чтобы открыть этот шаблон и товар`;
 
           wrap.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -7695,7 +8008,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const sheetHint = document.querySelector('.sheet-card-header p');
     if (sheetHint) {
-      sheetHint.innerHTML = '💡 <b>Интерактивная карта:</b> кликните по любому ценнику на листе, чтобы выбрать его и открыть в редакторе выше. Печатаются только заполненные позиции (с наименованием).';
+      sheetHint.innerHTML = '<b>Интерактивная карта:</b> кликните по любому ценнику на листе, чтобы выбрать его и открыть в редакторе выше. Печатаются только заполненные позиции (с наименованием).';
     }
 
     const effH = effectiveCardHeight(hMm); // с учётом внешнего декор-блока
@@ -7767,7 +8080,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updatePrintHubMetrics(grid, itemsToShow.length, filledUniqueCount, totalPages);
     sheetGridPreview.classList.toggle('is-landscape', grid.isLandscape);
 
-    const orientTag = grid.isLandscape ? '📑 Альбомная' : '📄 Книжная';
+    const orientTag = grid.isLandscape ? 'Альбомная' : 'Книжная';
     const autoExtra = (grid.mode === 'auto' && grid.benefit > 0) ? ` (+${grid.benefit} на листе)` : '';
     sheetCalcText.textContent = `${itemsToShow.length} заполнено · ${orientTag}${autoExtra} · влезает ${grid.maxCount}/лист (${grid.cols}×${grid.rows})${totalPages > 1 ? ` · ${totalPages} стр.` : ''}`;
     sheetGridPreview.style.boxSizing = 'border-box';
@@ -7791,7 +8104,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <span class="ghost-slot-num">№${g + 1}</span>
           <span class="ghost-slot-size">${wMm}×${effH.toFixed(0)} мм</span>
         `;
-        ghost.title = `Слот №${g + 1} (свободен)\n👉 Нажмите, чтобы открыть таблицу товаров`;
+        ghost.title = `Слот №${g + 1} (свободен)\nНажмите, чтобы открыть таблицу товаров`;
         ghost.addEventListener('click', () => {
           if (typeof openItemsDrawer === 'function') openItemsDrawer();
         });
@@ -7800,13 +8113,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const banner = document.createElement('div');
       banner.className = 'sheet-blueprint-banner';
       banner.innerHTML = `
-        <div class="sbb-icon">📐</div>
+        <div class="sbb-icon"><svg class="ico"><use href="#i-grid"/></svg></div>
         <div class="sbb-text">
           <h4>Лист А4 готов к раскладке</h4>
           <p>Формат: ${wMm / 10} × ${(effH / 10).toFixed(1)} см • Сетка: <b>${grid.cols} × ${grid.rows} = ${grid.maxCount} шт./лист</b></p>
         </div>
         <button type="button" class="btn btn-primary btn-sm sbb-btn" id="sheetFillItemsBtn">
-          📋 Открыть список товаров
+          <svg class="ico"><use href="#i-clipboard"/></svg> Открыть список товаров
         </button>
       `;
       const fillBtn = banner.querySelector('#sheetFillItemsBtn');
@@ -7851,7 +8164,7 @@ document.addEventListener('DOMContentLoaded', () => {
             itemWrapper.appendChild(badge);
 
             const copyStr = (entry && entry.copyIndex !== undefined) ? ` (копия ${entry.copyIndex + 1})` : '';
-            itemWrapper.title = `№${origIndex + 1}${copyStr}: ${item.title || 'Без названия'}${item.price ? ' — ' + item.price + ' ₽' : ''}\n👉 Нажмите, чтобы открыть в редакторе и подсветить в таблице`;
+            itemWrapper.title = `№${origIndex + 1}${copyStr}: ${item.title || 'Без названия'}${item.price ? ' — ' + item.price + ' ₽' : ''}\nНажмите, чтобы открыть в редакторе и подсветить в таблице`;
             itemWrapper.addEventListener('click', (e) => {
               e.stopPropagation();
               if (typeof setActiveItemIndex === 'function') {
@@ -7879,7 +8192,7 @@ document.addEventListener('DOMContentLoaded', () => {
           badge.textContent = `#${i + 1}`;
           itemWrapper.appendChild(badge);
 
-          itemWrapper.title = `Ценник на листе (${item.title || 'Текущий'})\n👉 Нажмите для перехода к редактору`;
+          itemWrapper.title = `Ценник на листе (${item.title || 'Текущий'})\nНажмите для перехода к редактору`;
           itemWrapper.addEventListener('click', () => {
             const workspacePanelEl = document.querySelector('.workspace-panel');
             const isSheetMode = workspacePanelEl && workspacePanelEl.classList.contains('view-sheet-mode');
@@ -7917,7 +8230,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <span class="ghost-slot-num">№${startIdx + g + 1}</span>
           <span class="ghost-slot-size">${wMm}×${effH.toFixed(0)} мм</span>
         `;
-        ghost.title = `Слот №${startIdx + g + 1} (свободен)\n👉 Нажмите, чтобы добавить товар`;
+        ghost.title = `Слот №${startIdx + g + 1} (свободен)\nНажмите, чтобы добавить товар`;
         ghost.addEventListener('click', () => {
           if (typeof openItemsDrawer === 'function') openItemsDrawer();
         });
@@ -8490,7 +8803,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       allPdfBtns.forEach(b => {
         b.disabled = false;
-        b.innerHTML = origMap.get(b) || '📥 Скачать PDF';
+        b.innerHTML = origMap.get(b) || '<svg class="ico"><use href="#i-download"/></svg> Скачать PDF';
       });
     }
   }
@@ -8634,6 +8947,23 @@ document.addEventListener('DOMContentLoaded', () => {
     borderMm = Math.max(0, parseFloat(state.borderMm) || 0);
     // Наклон текстовых слоёв (градусы). Применяется в updatePreview/печати.
     layerRotate = parseFloat(state.layerRotate) || 0;
+
+    if (activeTemplateRef && activeTemplateRef.kind === 'builtin' && builtInPresets[activeTemplateRef.key]) {
+      const bp = builtInPresets[activeTemplateRef.key];
+      if (bp.priceSlotTop != null) activeTemplateRef.priceSlotTop = parseFloat(bp.priceSlotTop);
+      if (bp.titleSlotTop != null) activeTemplateRef.titleSlotTop = parseFloat(bp.titleSlotTop);
+      if (bp.titleZoneH != null) activeTemplateRef.titleZoneH = parseFloat(bp.titleZoneH);
+    } else {
+      if (state.priceSlotTop != null && activeTemplateRef) {
+        activeTemplateRef.priceSlotTop = parseFloat(state.priceSlotTop);
+      }
+      if (state.titleSlotTop != null && activeTemplateRef) {
+        activeTemplateRef.titleSlotTop = parseFloat(state.titleSlotTop);
+      }
+      if (state.titleZoneH != null && activeTemplateRef) {
+        activeTemplateRef.titleZoneH = parseFloat(state.titleZoneH);
+      }
+    }
 
     // Размещение цены: в нижнем блоке (для шаблонов типа «Рыба») или в верхнем
     rybaPriceInBottom = !!state.priceInBottom;
@@ -8802,6 +9132,24 @@ document.addEventListener('DOMContentLoaded', () => {
       decorBottomHeight: td.bottomHeight,
       // Зазор между ценниками на листе А4 (мм); 0 = встык.
       gapMm: gapInput ? (parseFloat(gapInput.value) || 0) : 0,
+      priceSlotTop: (() => {
+        const p = getActivePreset();
+        if (p && p.priceSlotTop != null) return parseFloat(p.priceSlotTop);
+        const cur = parseFloat(document.documentElement.style.getPropertyValue('--price-slot-top'));
+        return isNaN(cur) ? null : cur;
+      })(),
+      titleSlotTop: (() => {
+        const p = getActivePreset();
+        if (p && p.titleSlotTop != null) return parseFloat(p.titleSlotTop);
+        const cur = parseFloat(document.documentElement.style.getPropertyValue('--title-slot-top'));
+        return isNaN(cur) ? null : cur;
+      })(),
+      titleZoneH: (() => {
+        const p = getActivePreset();
+        if (p && p.titleZoneH != null) return parseFloat(p.titleZoneH);
+        const cur = parseFloat(document.documentElement.style.getPropertyValue('--title-zone-h'));
+        return isNaN(cur) ? null : cur;
+      })(),
       labelPos: JSON.parse(JSON.stringify(activeLabelPos()))
     };
   }
@@ -8992,8 +9340,8 @@ document.addEventListener('DOMContentLoaded', () => {
           <span class="preset-title">${item.name}</span>
           <span class="preset-desc">Размер: ${sizeText}</span>
         </div>
-        <button class="btn-export-template" title="Экспорт шаблона" data-index="${index}">⬇️</button>
-        <button class="btn-delete-template" title="Удалить шаблон" data-index="${index}">🗑️</button>
+        <button class="btn-export-template" title="Экспорт шаблона" data-index="${index}"><svg class="ico"><use href="#i-download"/></svg></button>
+        <button class="btn-delete-template" title="Удалить шаблон" data-index="${index}"><svg class="ico"><use href="#i-trash"/></svg></button>
       `;
 
       card.addEventListener('click', (e) => {
@@ -9142,7 +9490,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (hasRef && name) {
         const kindLabel = activeTemplateRef.kind === 'builtin' ? 'базовый' : 'пользовательский';
         saveModalHint.style.display = 'block';
-        saveModalHint.textContent = `🔄 Будет обновлён ${kindLabel} шаблон: «${name}»` +
+        saveModalHint.textContent = `Будет обновлён ${kindLabel} шаблон: «${name}»` +
           (activeTemplateRef.kind === 'builtin'
             ? ' (создаст персональную копию, т.к. базовые шаблоны неизменяемы)'
             : '');
@@ -9182,7 +9530,7 @@ document.addEventListener('DOMContentLoaded', () => {
     saveModal.classList.remove('active');
     renderSavedTemplates();
     document.querySelector('.tab-btn[data-tab="userSaved"]').click();
-    showToast(`💾 Шаблон «${name}» сохранён`, 'success');
+    showToast(`Шаблон «${name}» сохранён`, 'success');
   });
 
   // ===== Модал «Руководство пользователя / Инструкция» =====
@@ -9272,7 +9620,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       localStorage.setItem('wobbler_ui_theme', nextLight ? 'light' : 'dark');
     } catch (err) { }
-    showToast(nextLight ? '☀️ Светлая тема Studio включена' : '🌙 Тёмная тема Studio включена', 'info', 2200);
+    showToast(nextLight ? 'Светлая тема Studio включена' : 'Тёмная тема Studio включена', 'info', 2200);
   }
 
   const initialSavedTheme = (() => {
@@ -9397,7 +9745,7 @@ document.addEventListener('DOMContentLoaded', () => {
         saveModal.classList.remove('active');
         renderSavedTemplates();
         document.querySelector('.tab-btn[data-tab="userSaved"]').click();
-        showToast(`💾 Шаблон «${t.name}» обновлён`, 'success');
+        showToast(`Шаблон «${t.name}» обновлён`, 'success');
         return;
       }
 
@@ -9711,7 +10059,7 @@ document.addEventListener('DOMContentLoaded', () => {
       previewToolsBtn.classList.add('active');
       if (activeToolsBadge) {
         activeToolsBadge.style.display = 'inline-flex';
-        activeToolsBadge.textContent = isDragAll ? '✋ Все' : (isDragSolo ? '✌ Соло' : '🔲 Границы');
+        activeToolsBadge.textContent = isDragAll ? 'Все' : (isDragSolo ? 'Соло' : 'Границы');
       }
     } else {
       previewToolsBtn.classList.remove('active');
@@ -9801,7 +10149,7 @@ document.addEventListener('DOMContentLoaded', () => {
     syncDecorControlsToContext();
     syncBgControlsToContext();
     updatePreview();
-    showToast('↺ Активный ценник сброшен к шаблону', 'info');
+    showToast('Активный ценник сброшен к шаблону', 'info');
   }
 
   // Сброс ВСЕГО внешнего вида к шаблону: позиции + шрифты/цвета/границы/раскладка/
@@ -9834,7 +10182,7 @@ document.addEventListener('DOMContentLoaded', () => {
     syncDecorControlsToContext();
     syncBgControlsToContext();
     updatePreview();
-    showToast('↺ Все ценники сброшены к виду шаблона', 'info');
+    showToast('Все ценники сброшены к виду шаблона', 'info');
   }
 
   // Сброс АКТИВНОГО ценника к виду шаблона (расположение + оформление + границы).
@@ -9846,15 +10194,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (resetAllLabelPosBtn) {
     resetAllLabelPosBtn.addEventListener('click', resetAllToTemplate);
   }
-  // Дубликат кнопки «💴 Цена по №1» в панели превью.
-  const syncPricePosPreviewBtn = document.getElementById('syncPricePosPreviewBtn');
-  if (syncPricePosPreviewBtn) {
-    syncPricePosPreviewBtn.addEventListener('click', () => {
-      applySharedPosFromFirstToAll();
-      closePreviewToolsMenu();
-      showToast('💴 Расположение цены скопировано с №1 на все ценники', 'success');
-    });
-  }
+
 
 
   // Перетаскивание надписей через Pointer Events с делегированием на #wobblerPreview.
@@ -10499,7 +10839,7 @@ document.addEventListener('DOMContentLoaded', () => {
       fontMinus.addEventListener('click', (e) => {
         e.stopPropagation();
         if (!currentTargetKind) return;
-        if (typeof pushHistoryState === 'function') pushHistoryState('Кегль QuickBar');
+        if (typeof pushHistoryState === 'function') pushHistoryState('Размер шрифта');
         const cur = getCurrentQuickBarFontSize();
         applyQuickBarFontSize(cur - 1);
       });
@@ -10510,7 +10850,7 @@ document.addEventListener('DOMContentLoaded', () => {
       fontPlus.addEventListener('click', (e) => {
         e.stopPropagation();
         if (!currentTargetKind) return;
-        if (typeof pushHistoryState === 'function') pushHistoryState('Кегль QuickBar');
+        if (typeof pushHistoryState === 'function') pushHistoryState('Размер шрифта');
         const cur = getCurrentQuickBarFontSize();
         applyQuickBarFontSize(cur + 1);
       });
@@ -10519,7 +10859,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Поле текущего кегля (прямой ввод числа)
     if (fontSizeVal) {
       fontSizeVal.addEventListener('change', () => {
-        if (typeof pushHistoryState === 'function') pushHistoryState('Кегль QuickBar');
+        if (typeof pushHistoryState === 'function') pushHistoryState('Размер шрифта');
         applyQuickBarFontSize(fontSizeVal.value);
       });
       fontSizeVal.addEventListener('keydown', (e) => {
@@ -11238,6 +11578,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    updateScopeBadges();
     localStorage.setItem('wobbler_active_sidebar_tab', targetSectionId);
   }
 
@@ -11599,7 +11940,7 @@ document.addEventListener('DOMContentLoaded', () => {
     applyHistorySnapshot(prevSnap);
     updateHistoryButtons();
     isHistoryNavigating = false;
-    showToast(`↩ Отменено: ${prevSnap.description || 'действие'}`, 'info', 1800);
+    showToast(`Отменено: ${prevSnap.description || 'действие'}`, 'info', 1800);
   }
 
   function redoAction() {
@@ -11616,7 +11957,7 @@ document.addEventListener('DOMContentLoaded', () => {
     applyHistorySnapshot(nextSnap);
     updateHistoryButtons();
     isHistoryNavigating = false;
-    showToast(`↪ Повторено: ${nextSnap.description || 'действие'}`, 'info', 1800);
+    showToast(`Повторено: ${nextSnap.description || 'действие'}`, 'info', 1800);
   }
 
   function applyHistorySnapshot(snap) {
@@ -11789,6 +12130,31 @@ document.addEventListener('DOMContentLoaded', () => {
       sideCount.textContent = `${matchedCount} из ${totalCount}`;
     }
     if (sideClear) sideClear.style.display = isFiltered ? '' : 'none';
+
+    // «Ничего не найдено» — приглашение сбросить поиск, а не пустая тишина
+    const showNoResults = isFiltered && matchedCount === 0;
+    [itemsListContainer, idrItemsList].forEach(container => {
+      if (!container) return;
+      let el = container.querySelector('.items-no-results');
+      if (showNoResults) {
+        if (!el) {
+          el = document.createElement('div');
+          el.className = 'items-no-results';
+          const msg = document.createElement('span');
+          msg.className = 'items-no-results-msg';
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'btn btn-secondary btn-xs items-no-results-reset';
+          btn.textContent = 'Сбросить поиск';
+          btn.addEventListener('click', () => setGoodsSearch(''));
+          el.append(msg, btn);
+          container.appendChild(el);
+        }
+        el.querySelector('.items-no-results-msg').textContent = `Ничего не найдено по «${q}»`;
+      } else if (el) {
+        el.remove();
+      }
+    });
   }
 
   function setGoodsSearch(query) {
@@ -11939,7 +12305,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const ts = (bg && bg.titleSafe) ? bg.titleSafe : { left: 0, right: 0, top: 0, bottom: 0 };
       const headerHm = currentLayout === 'full' ? hMm : hMm * (parseFloat(headerHeightRange ? headerHeightRange.value : 20.45) || 20.45) / 100;
       const bySafeH = headerHm * Math.max(0, 1 - ts.top - ts.bottom);
-      const mult = ((rybaPriceInBottom && currentLayout === 'split') || (showPriceToggle && !showPriceToggle.checked) || currentLayout === 'split') ? 1.0 : 0.45;
+      const hasPrice = isTemplatePriceSlotAvailable(activeTemplateRef, currentLayout, rybaPriceInBottom && currentLayout === 'split');
+      const mult = hasPrice ? 0.45 : 1.0;
       const tzMm = Math.min(headerHm * mult, bySafeH);
       const padMm = (borderMm > 0) ? borderMm : 3;
       const contentW_mm = Math.max(10, wMm - padMm * 2);
@@ -12020,7 +12387,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const maxFit = fitTitleSize(titleText, family, weight);
         if (maxFit != null && maxFit < currentSize - 0.75) {
           warnBtn.style.display = 'inline-flex';
-          warnBtn.title = `Текст названия не помещается в ценник (текущий: ${currentSize}pt, влезает: ${maxFit.toFixed(0)}pt).\n👉 Нажмите, чтобы подогнать размер!`;
+          warnBtn.title = `Текст названия не помещается в ценник (текущий: ${currentSize}pt, влезает: ${maxFit.toFixed(0)}pt).\nНажмите, чтобы подогнать размер!`;
         } else {
           warnBtn.style.display = 'none';
         }
@@ -12036,7 +12403,7 @@ document.addEventListener('DOMContentLoaded', () => {
       refitActiveTitle();
       autoFitFontSize();
       checkTextOverflow();
-      showToast('✨ Кегль шрифта автоматически подогнан под границы ценника!', 'success', 2200);
+      showToast('Размер шрифта автоматически подогнан под границы ценника!', 'success', 2200);
     });
   }
 
@@ -12428,7 +12795,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const ts = (bg && bg.titleSafe) ? bg.titleSafe : { left: 0, right: 0, top: 0, bottom: 0 };
         const headerHm = currentLayout === 'full' ? hMm : hMm * (parseFloat(headerHeightRange ? headerHeightRange.value : 20.45) || 20.45) / 100;
         const bySafeH = headerHm * Math.max(0, 1 - ts.top - ts.bottom);
-        const mult = ((rybaPriceInBottom && currentLayout === 'split') || (showPriceToggle && !showPriceToggle.checked) || currentLayout === 'split') ? 1.0 : 0.45;
+        const hasPrice = isTemplatePriceSlotAvailable(activeTemplateRef, currentLayout, rybaPriceInBottom && currentLayout === 'split');
+        const mult = hasPrice ? 0.45 : 1.0;
         const tzMm = Math.min(headerHm * mult, bySafeH);
         const padMm = (borderMm > 0) ? borderMm : 3;
         const contentW_mm = Math.max(10, wMm - padMm * 2);
@@ -12535,11 +12903,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (preflightSummaryBanner) {
       preflightSummaryBanner.className = 'preflight-summary-banner ' + (audit.hasErrors ? 'err' : (audit.hasWarnings ? 'warn' : 'ok'));
       if (audit.hasErrors) {
-        preflightSummaryBanner.innerHTML = `❌ <b>Обнаружены ошибки:</b> найдено ${errCount} критических замечаний перед печатью тиража (${audit.totalCards} шт. на ${audit.totalSheets} л. А4). Исправьте их перед печатью.`;
+        preflightSummaryBanner.innerHTML = `<b>Обнаружены ошибки:</b> найдено ${errCount} критических замечаний перед печатью тиража (${audit.totalCards} шт. на ${audit.totalSheets} л. А4). Исправьте их перед печатью.`;
       } else if (audit.hasWarnings) {
-        preflightSummaryBanner.innerHTML = `⚠️ <b>Есть замечания:</b> тираж (${audit.totalCards} шт. на ${audit.totalSheets} л. А4) готов к печати, но найдено ${warnCount} замечаний.`;
+        preflightSummaryBanner.innerHTML = `<b>Есть замечания:</b> тираж (${audit.totalCards} шт. на ${audit.totalSheets} л. А4) готов к печати, но найдено ${warnCount} замечаний.`;
       } else {
-        preflightSummaryBanner.innerHTML = `✅ <b>Всё отлично!</b> Тираж проверен: ${audit.totalCards} шт. на ${audit.totalSheets} лист(ах) А4 готовы к печати.`;
+        preflightSummaryBanner.innerHTML = `<b>Всё отлично!</b> Тираж проверен: ${audit.totalCards} шт. на ${audit.totalSheets} лист(ах) А4 готовы к печати.`;
       }
     }
 
@@ -12549,25 +12917,25 @@ document.addEventListener('DOMContentLoaded', () => {
         preflightList.innerHTML = `
           <div class="preflight-item preflight-item-run-info">
             <div class="preflight-item-text">
-              <span class="preflight-badge ok">📋 Тираж</span>
+              <span class="preflight-badge ok">Тираж</span>
               <span>Тираж проверен: к печати <b>${audit.totalCards} шт.</b> ценников на <b>${audit.totalSheets}</b> ${audit.totalSheets === 1 ? 'листе' : 'листах'} А4${audit.copiesDetail ? ` (${audit.copiesDetail})` : ''}.</span>
             </div>
           </div>
           <div class="preflight-item">
             <div class="preflight-item-text">
-              <span class="preflight-badge ok">✅ ОК</span>
+              <span class="preflight-badge ok">ОК</span>
               <span>Цены и наименования всех товаров заполнены корректно.</span>
             </div>
           </div>
           <div class="preflight-item">
             <div class="preflight-item-text">
-              <span class="preflight-badge ok">✅ ОК</span>
+              <span class="preflight-badge ok">ОК</span>
               <span>Тексты укладываются в безопасную зону ценника.</span>
             </div>
           </div>
           <div class="preflight-item">
             <div class="preflight-item-text">
-              <span class="preflight-badge ok">✅ ОК</span>
+              <span class="preflight-badge ok">ОК</span>
               <span>Лист А4 заполнен оптимально (вместимость: ${audit.sheetCapacity} шт.).</span>
             </div>
           </div>
@@ -12578,7 +12946,7 @@ document.addEventListener('DOMContentLoaded', () => {
         runItem.className = 'preflight-item preflight-item-run-info';
         runItem.innerHTML = `
           <div class="preflight-item-text">
-            <span class="preflight-badge ok">📋 Тираж</span>
+            <span class="preflight-badge ok">Тираж</span>
             <span>К печати: <b>${audit.totalCards} шт.</b> ценников на <b>${audit.totalSheets}</b> ${audit.totalSheets === 1 ? 'листе' : 'листах'} А4${audit.copiesDetail ? ` (${audit.copiesDetail})` : ''}.</span>
           </div>
         `;
@@ -12588,9 +12956,9 @@ document.addEventListener('DOMContentLoaded', () => {
           const itemEl = document.createElement('div');
           itemEl.className = 'preflight-item';
           const badgeClass = issue.type === 'err' ? 'err' : (issue.type === 'warn' ? 'warn' : (issue.type === 'info' ? 'info' : 'ok'));
-          const badgeText = issue.type === 'err' ? '❌ Ошибка' : (issue.type === 'warn' ? '⚠️ Внимание' : 'ℹ️ Инфо');
+          const badgeText = issue.type === 'err' ? 'Ошибка' : (issue.type === 'warn' ? 'Внимание' : 'Инфо');
           const contrastTag = issue.contrastRatio ? `<span class="preflight-contrast-badge">${issue.contrastRatio}:1</span>` : '';
-          const actionBtnText = issue.actionType === 'contrast' ? '✨ Добавить тень' : (issue.actionType === 'jumpTemplate' ? 'Перейти' : 'Исправить');
+          const actionBtnText = issue.actionType === 'contrast' ? 'Добавить тень' : (issue.actionType === 'jumpTemplate' ? 'Перейти' : 'Исправить');
           const tplKeyAttr = issue.templateKey ? ` data-template="${issue.templateKey}"` : '';
 
           itemEl.innerHTML = `
@@ -12704,15 +13072,15 @@ document.addEventListener('DOMContentLoaded', () => {
         pill.title = `Список товаров пуст. Нажмите, чтобы открыть таблицу товаров для печати.`;
       } else if (audit.hasErrors) {
         pill.classList.add('status-error');
-        pillText.textContent = `❌ ${errCount} ош.`;
+        pillText.textContent = `${errCount} ошиб.`;
         pill.title = `Предпечатный аудит (тираж: ${audit.totalCards} шт. на ${audit.totalSheets} л. А4): обнаружено ${errCount} ошибок! Нажмите, чтобы открыть.`;
       } else if (audit.hasWarnings) {
         pill.classList.add('status-warning');
-        pillText.textContent = `⚠️ ${warnCount} зам.`;
+        pillText.textContent = `${warnCount} зам.`;
         pill.title = `Предпечатный аудит (тираж: ${audit.totalCards} шт. на ${audit.totalSheets} л. А4): ${warnCount} замечаний. Нажмите, чтобы открыть.`;
       } else {
         pill.classList.add('status-ready');
-        pillText.textContent = `✓ ${audit.totalCards} шт. (${audit.totalSheets} л.)`;
+        pillText.textContent = `${audit.totalCards} шт. (${audit.totalSheets} л.)`;
         pill.title = `Готово к печати: тираж ${audit.totalCards} шт. на ${audit.totalSheets} лист(ах) А4. Нажмите для предпечатного аудита.`;
       }
     } catch (_) { }
@@ -13019,4 +13387,15 @@ document.addEventListener('DOMContentLoaded', () => {
       refitActiveTitle();
     });
   }
+
+  // Контентный пакет шрифтов подключается асинхронно (media="print" → all):
+  // после применения его CSS повторно прогоняем готовность шрифтов и замер метрик.
+  window.addEventListener('wobbler-fonts-css-ready', () => {
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => {
+        updatePreview();
+        refitActiveTitle();
+      });
+    }
+  });
 });
