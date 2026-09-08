@@ -23,7 +23,7 @@ import os
 import json
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-BG_DIR = os.path.join(HERE, "bg other")
+BG_DIR = os.path.join(HERE, "images")
 EXTS = (".jpg", ".jpeg", ".png", ".webp", ".gif")
 
 files = []
@@ -34,7 +34,7 @@ if os.path.isdir(BG_DIR):
             files.append(name)
 
 with open(os.path.join(HERE, "bg_index.json"), "w", encoding="utf-8") as f:
-    json.dump({"dir": "bg other", "files": files}, f, ensure_ascii=False, indent=2)
+    json.dump({"dir": "images", "files": files}, f, ensure_ascii=False, indent=2)
 
 print("bg_index.json: %d фонов" % len(files))
 for n in files:
