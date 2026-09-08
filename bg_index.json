@@ -1,5 +1,5 @@
 {
-  "dir": "bg other",
+  "dir": "images",
   "files": [
     "a5.jpg",
     "a5_blue.jpg",
@@ -7,6 +7,7 @@
     "a5_orange.jpg",
     "a5_red.jpg",
     "ba.jpg",
+    "dots_bg.jpg",
     "grenki.png",
     "kalmar.png",
     "korona_a5_bg.jpg",
@@ -20,13 +21,18 @@
     "orehi.png",
     "ostryi.png",
     "ryb_solomka.png",
+    "ryba_bg.jpg",
     "ryba_vygodno.png",
+    "sneki_5_bg.jpg",
+    "sneki_bg.jpg",
+    "sneki_digit_bg.jpg",
+    "sort_nedeli_bg.jpg",
     "sort_nedeli_yellow.jpg",
     "syr.png",
     "tomatnyj.png",
     "vishnevyj.png",
     "yablochnyj.png",
-    "yellow_bg пустой.jpg",
+    "yellow_bg.jpg",
     "zhivoe.jpg"
   ]
 }

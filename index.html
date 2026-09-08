@@ -9,22 +9,25 @@
 
   <!-- Favicons & Bookmarks Icons -->
   <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="48x48" href="favicon-48x48.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-  <link rel="manifest" href="site.webmanifest">
+  <link rel="apple-touch-icon" href="favicon.ico">
   <meta name="theme-color" content="#0f172a">
-  <meta name="apple-mobile-web-app-title" content="Местоцен">
-  <meta name="application-name" content="Местоцен">
+  <meta name="apple-mobile-web-app-title" content="Местопиво">
+  <meta name="application-name" content="Местопиво">
 
-  <!-- Google Fonts -->
+  <!-- Google Fonts: UI-шрифты (блокирующе) + контентный пакет для ценников (асинхронно, чтобы не тормозить первый кадр) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@400..700&family=Comfortaa:wght@300..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Lobster&family=Marck+Script&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Neucha&family=Oswald:wght@200..700&family=Pacifico&family=Pattaya&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Press+Start+2P&family=Roboto:ital,wght@0,100..900;1,100..900&family=Rubik:ital,wght@0,300..900;1,300..900&family=Ruslan+Display&family=Russo+One&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Russo+One&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=32">
+  <link rel="stylesheet" media="print" onload="this.media='all'; window.dispatchEvent(new Event('wobbler-fonts-css-ready'))"
+    href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@400..700&family=Comfortaa:wght@300..700&family=Lobster&family=Marck+Script&family=Neucha&family=Oswald:wght@200..700&family=Pacifico&family=Pattaya&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Press+Start+2P&family=Roboto:ital,wght@0,100..900;1,100..900&family=Rubik:ital,wght@0,300..900;1,300..900&family=Ruslan+Display&display=swap">
+  <noscript>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@400..700&family=Comfortaa:wght@300..700&family=Lobster&family=Marck+Script&family=Neucha&family=Oswald:wght@200..700&family=Pacifico&family=Pattaya&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Press+Start+2P&family=Roboto:ital,wght@0,100..900;1,100..900&family=Rubik:ital,wght@0,300..900;1,300..900&family=Ruslan+Display&display=swap"
+      rel="stylesheet">
+  </noscript>
+  <link rel="stylesheet" href="style.css?v=37">
   <script>
     try {
       if (localStorage.getItem('wobbler_ui_theme') === 'light') {
@@ -35,9 +38,56 @@
   </script>
 </head>
 
-<body class="mode-auto">
+  <body class="mode-auto">
 
-  <!-- Top App Navigation -->
+    <!-- Единый спрайт иконок интерфейса (inline SVG, штрих 2px, без библиотек) -->
+    <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+      <symbol id="i-tag" viewBox="0 0 24 24"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><path d="M7.5 7.5h.01"/></symbol>
+      <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></symbol>
+      <symbol id="i-type" viewBox="0 0 24 24"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" x2="15" y1="20" y2="20"/><line x1="12" x2="12" y1="4" y2="20"/></symbol>
+      <symbol id="i-image" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></symbol>
+      <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/><path d="M7.5 10.5h.01"/><path d="M11 7.5h.01"/><path d="M15.5 8.5h.01"/><path d="M6.5 14.5h.01"/></symbol>
+      <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/><path d="M4 17v2"/><path d="M5 18H3"/></symbol>
+      <symbol id="i-printer" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></symbol>
+      <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></symbol>
+      <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></symbol>
+      <symbol id="i-reset" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></symbol>
+      <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></symbol>
+      <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></symbol>
+      <symbol id="i-fit" viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" x2="14" y1="3" y2="10"/><line x1="3" x2="10" y1="21" y2="14"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+      <symbol id="i-sort" viewBox="0 0 24 24"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></symbol>
+      <symbol id="i-save" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></symbol>
+      <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></symbol>
+      <symbol id="i-pin" viewBox="0 0 24 24"><line x1="12" x2="12" y1="17" y2="22"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1z"/></symbol>
+      <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></symbol>
+      <symbol id="i-external" viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></symbol>
+      <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></symbol>
+      <symbol id="i-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+      <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+      <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+      <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></symbol>
+      <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></symbol>
+      <symbol id="i-ruble" viewBox="0 0 24 24"><path d="M9 20V5h5.5a4 4 0 0 1 0 8H9"/><path d="M7 13.5h8"/><path d="M7 17h8"/></symbol>
+      <symbol id="i-hash" viewBox="0 0 24 24"><line x1="4" x2="20" y1="9" y2="9"/><line x1="4" x2="20" y1="15" y2="15"/><line x1="10" x2="8" y1="3" y2="21"/><line x1="16" x2="14" y1="3" y2="21"/></symbol>
+      <symbol id="i-scale" viewBox="0 0 24 24"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></symbol>
+      <symbol id="i-package" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.29 7 12 12 20.71 7"/><line x1="12" x2="12" y1="22" y2="12"/></symbol>
+      <symbol id="i-clipboard" viewBox="0 0 24 24"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6"/><path d="M9 16h6"/></symbol>
+      <symbol id="i-folder" viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></symbol>
+      <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></symbol>
+      <symbol id="i-sliders" viewBox="0 0 24 24"><line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/></symbol>
+      <symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></symbol>
+      <symbol id="i-arrow-down" viewBox="0 0 24 24"><path d="M19 12l-7 7-7-7"/><path d="M12 5v14"/></symbol>
+      <symbol id="i-square" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/></symbol>
+      <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></symbol>
+      <symbol id="i-grid" viewBox="0 0 24 24"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></symbol>
+      <symbol id="i-keyboard" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M6 9h.01M10 9h.01M14 9h.01M18 9h.01M8 13h.01M12 13h.01M16 13h.01M7 16h10"/></symbol>
+      <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+      <symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+    </svg>
+
+    <!-- Top App Navigation -->
   <header class="app-header no-print">
     <!-- Зона 1 (Слева): Бренд, габариты и статус автосохранения -->
     <div class="header-left">
@@ -50,8 +100,9 @@
           </svg>
         </span>
         <div>
-          <h1>Конструктор Воблеров</h1>
-          <p class="subtitle" id="topSubtitle"><span class="dimensions-pill">6,5 × 3,5 см</span></p>
+          <h1 class="brand-title">Конструктор Воблеров</h1>
+          <p class="subtitle"><span class="brand-subline">печатный цех «Местопиво»</span> <span
+              class="dimensions-pill" id="topSubtitle">6,5 × 3,5 см</span></p>
         </div>
       </div>
       <div class="autosave-indicator" id="autosaveIndicator" title="Все изменения автоматически сохраняются в браузере">
@@ -168,7 +219,7 @@
       <button type="button" id="preflightPill" class="preflight-pill status-ready"
         title="Предпечатный аудит макета: проверка цен, переносов и текста перед печатью (клик — открыть аудит)">
         <span class="preflight-dot"></span>
-        <span id="preflightPillText">✓ Готово</span>
+        <span id="preflightPillText">Готово</span>
       </button>
 
       <div class="header-export-cluster">
@@ -204,7 +255,7 @@
   <div id="multiPrintDrawer" class="multi-print-drawer no-print">
     <div class="multi-print-drawer-inner">
       <div class="multi-print-drawer-head">
-        <h3>🖨️ Мульти-печать</h3>
+        <h3><svg class="ico"><use href="#i-printer"/></svg> Мульти-печать</h3>
         <button type="button" id="multiPrintDrawerClose" class="btn btn-secondary btn-sm"
           title="Свернуть панель мульти-печати (выбранные параметры сохраняются)">▲ Свернуть</button>
       </div>
@@ -228,11 +279,11 @@
       <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
         <button id="multiPrintBtn" class="btn btn-primary" style="width: 100%; justify-content: center;"
           title="Сформировать общий печатный лист со всеми выбранными шаблонами и открыть диалог печати (Ctrl+P)">
-          🖨️ Печать выбранных шаблонов
+          <svg class="ico"><use href="#i-printer"/></svg> Печать выбранных шаблонов
         </button>
         <button type="button" id="downloadMultiPdfBtnDrawer" class="btn btn-secondary"
           style="width: 100%; justify-content: center;" title="Сформировать и сохранить готовый мульти-лист в файл PDF">
-          📥 Скачать мульти-лист в PDF
+          <svg class="ico"><use href="#i-download"/></svg> Скачать мульти-лист в PDF
         </button>
       </div>
     </div>
@@ -243,7 +294,7 @@
   <aside id="itemsDrawer" class="items-drawer no-print" aria-label="Шторка товаров">
     <div class="items-drawer-header">
       <div class="idr-title-group">
-        <span class="idr-icon">📝</span>
+        <span class="idr-icon"><svg class="ico"><use href="#i-clipboard"/></svg></span>
         <div class="idr-title-text-wrap">
           <h3 id="idrTemplateName">Список товаров</h3>
           <span class="idr-badge" id="idrItemsCount">0 товаров</span>
@@ -252,7 +303,7 @@
       <div class="idr-header-actions">
         <button type="button" id="itemsDrawerPinBtn" class="btn btn-secondary btn-sm items-drawer-pin-btn"
           title="Закрепить панель товаров справа (Split-View Studio)">
-          <span class="pin-icon">📌</span>
+          <span class="pin-icon"><svg class="ico"><use href="#i-pin"/></svg></span>
           <span class="pin-text">Закрепить</span>
         </button>
         <button type="button" id="itemsDrawerCloseBtn" class="btn btn-secondary btn-sm"
@@ -263,8 +314,7 @@
     <!-- Панель опций авто-фона и открытия -->
     <div class="idr-sub-toolbar">
       <button type="button" class="autobg-toggle autobg-toggle-full btn btn-secondary btn-sm"
-        title="Автоматический подбор фона по названию товара: клик — применить ко всем строкам таблицы, Shift+клик — авто-режим при вводе">✨
-        Авто-фон:
+        title="Автоматический подбор фона по названию товара: клик — применить ко всем строкам таблицы, Shift+клик — авто-режим при вводе"><svg class="ico"><use href="#i-sparkles"/></svg> Авто-фон:
         <b>Применить</b></button>
       <div class="idr-sub-toolbar-options">
         <label class="checkbox-label auto-open-label"
@@ -284,7 +334,7 @@
     <div class="idr-paste-section">
       <button type="button" id="idrTogglePasteBtn" class="btn btn-excel-highlight" style="width:100%;"
         title="Быстрая вставка скопированных строк с наименованиями и ценами (Excel, 1C, касса)">
-        <span class="excel-icon">📋</span>
+        <span class="excel-icon"><svg class="ico"><use href="#i-clipboard"/></svg></span>
         <span class="excel-text">Вставить список из Excel / 1C</span>
         <span class="excel-badge">Быстрый ввод</span>
       </button>
@@ -303,7 +353,7 @@
     <!-- Поиск и сортировка товаров в шторке -->
     <div class="idr-search-section">
       <div class="items-search-box">
-        <span class="search-box-icon">🔍</span>
+        <span class="search-box-icon"><svg class="ico"><use href="#i-search"/></svg></span>
         <input type="text" id="idrSearchInput" class="items-search-input" placeholder="Поиск по названию или цене..."
           title="Фильтровать список товаров по введенному тексту или цифрам">
         <span id="idrSearchCount" class="search-count-badge" style="display:none;"></span>
@@ -312,21 +362,21 @@
       </div>
       <div class="sort-dropdown-wrap" id="idrSortWrap">
         <button type="button" id="idrSortBtn" class="btn btn-secondary btn-sm"
-          title="Упорядочить список товаров по названию или цене">↕️ Сортировка ▾</button>
+          title="Упорядочить список товаров по названию или цене"><svg class="ico"><use href="#i-sort"/></svg> Сортировка ▾</button>
         <div id="idrSortMenu" class="sort-menu-dropdown" style="display:none;">
           <button type="button" data-sort="name-asc" class="sort-menu-item"
-            title="Сортировать товары по алфавиту от А до Я">🔤 Название (А → Я)</button>
+            title="Сортировать товары по алфавиту от А до Я">Название (А → Я)</button>
           <button type="button" data-sort="name-desc" class="sort-menu-item"
-            title="Сортировать товары по алфавиту в обратном порядке">🔤 Название (Я → А)</button>
+            title="Сортировать товары по алфавиту в обратном порядке">Название (Я → А)</button>
           <button type="button" data-sort="price-asc" class="sort-menu-item"
-            title="Сортировать товары по возрастанию цены">💰 Сначала дешевле</button>
+            title="Сортировать товары по возрастанию цены">Сначала дешевле</button>
           <button type="button" data-sort="price-desc" class="sort-menu-item"
-            title="Сортировать товары по убыванию цены">💰 Сначала дороже</button>
+            title="Сортировать товары по убыванию цены">Сначала дороже</button>
           <button type="button" data-sort="filled-first" class="sort-menu-item"
-            title="Поместить заполненные ценники в начало списка">📦 Сначала заполненные</button>
+            title="Поместить заполненные ценники в начало списка">Сначала заполненные</button>
           <div class="sort-menu-divider"></div>
           <button type="button" data-sort="restore-original" class="sort-menu-item sort-menu-restore"
-            title="Вернуть порядок товаров, который был до сортировки">🔄 Вернуть как было</button>
+            title="Вернуть порядок товаров, который был до сортировки">Вернуть как было</button>
         </div>
       </div>
     </div>
@@ -346,6 +396,9 @@
         <span class="col-hdr col-tools" title="Опции оформления (индивидуальный стиль ценника)">Опции</span>
       </div>
       <div class="idr-table-wrapper">
+        <div class="items-empty-hint" id="itemsEmptyHint" style="display:none;">Товаров пока нет. Вставьте список
+          из кассы или Excel — <b>Ctrl+V</b> в любом месте окна, или начните вводить название в первой строке
+          ниже.</div>
         <div id="idrItemsList" class="items-list">
           <!-- Генерируется динамически через JS -->
         </div>
@@ -355,12 +408,11 @@
     <!-- Подвал шторки -->
     <div class="items-drawer-footer">
       <button type="button" id="idrClearAllBtn" class="btn btn-secondary btn-sm"
-        title="Очистить все заполненные строки в списке товаров">🗑
-        Очистить</button>
+        title="Очистить все заполненные строки в списке товаров"><svg class="ico"><use href="#i-trash"/></svg> Очистить</button>
       <button type="button" id="idrMultiPrintBtn" class="btn btn-secondary btn-sm" style="flex:1;"
-        title="Открыть панель мульти-печати для компоновки разных шаблонов на одном листе">🖨️ Мульти-печать</button>
+        title="Открыть панель мульти-печати для компоновки разных шаблонов на одном листе"><svg class="ico"><use href="#i-printer"/></svg> Мульти-печать</button>
       <button type="button" id="idrPrintBtn" class="btn btn-primary btn-sm" style="flex:1;"
-        title="Открыть диалог печати текущего шаблона на принтере (Ctrl+P)">🖨️ Печать</button>
+        title="Открыть диалог печати текущего шаблона на принтере (Ctrl+P)"><svg class="ico"><use href="#i-printer"/></svg> Печать</button>
     </div>
   </aside>
 
@@ -382,10 +434,10 @@
   <!-- Mobile View Switcher (Tab navigation on smartphones) -->
   <div class="mobile-tab-bar no-print">
     <button class="mobile-tab-btn active" data-mobile-view="preview" title="Переключиться на предпросмотр ценника">
-      👁️ Предпросмотр
+      <svg class="ico"><use href="#i-eye"/></svg> Предпросмотр
     </button>
     <button class="mobile-tab-btn" data-mobile-view="controls" title="Переключиться на панель настроек макета">
-      ⚙️ Настройки макета
+      <svg class="ico"><use href="#i-sliders"/></svg> Настройки макета
     </button>
   </div>
 
@@ -397,40 +449,40 @@
       <div class="sidebar-top-nav no-print" id="sidebarTopNav">
         <div class="sidebar-tabs-bar" role="tablist" aria-label="Разделы настроек">
           <button type="button" class="sidebar-tab-btn active" data-target="section1" title="1. Шаблоны">
-            <span class="tab-icon">🏷️</span>
+            <span class="tab-icon"><svg class="ico"><use href="#i-tag"/></svg></span>
             <span class="tab-name">Шаблоны</span>
           </button>
           <button type="button" class="sidebar-tab-btn" data-target="section2" title="2. Товары и список">
-            <span class="tab-icon">📋</span>
+            <span class="tab-icon"><svg class="ico"><use href="#i-list"/></svg></span>
             <span class="tab-name">Товары</span>
           </button>
           <button type="button" class="sidebar-tab-btn" data-target="section3" title="3. Шрифты и текст">
-            <span class="tab-icon">✍️</span>
+            <span class="tab-icon"><svg class="ico"><use href="#i-type"/></svg></span>
             <span class="tab-name">Шрифты</span>
             <span class="tab-custom-badge" id="tabBadgeFonts" title="У активного товара индивидуальные шрифты"
               style="display:none;"></span>
           </button>
           <button type="button" class="sidebar-tab-btn" data-target="section4" title="4. Фоны и заливка">
-            <span class="tab-icon">🎨</span>
+            <span class="tab-icon"><svg class="ico"><use href="#i-image"/></svg></span>
             <span class="tab-name">Фоны</span>
             <span class="tab-custom-badge" id="tabBadgeBg" title="У активного товара индивидуальный фон"
               style="display:none;"></span>
           </button>
           <button type="button" class="sidebar-tab-btn" data-target="section5" title="5. Оформление ценника">
-            <span class="tab-icon">✨</span>
+            <span class="tab-icon"><svg class="ico"><use href="#i-sparkles"/></svg></span>
             <span class="tab-name">Декор</span>
             <span class="tab-custom-badge" id="tabBadgeDecor" title="У активного товара индивидуальный декор"
               style="display:none;"></span>
           </button>
           <button type="button" class="sidebar-tab-btn" data-target="section6" title="6. Печать на А4">
-            <span class="tab-icon">🖨️</span>
+            <span class="tab-icon"><svg class="ico"><use href="#i-printer"/></svg></span>
             <span class="tab-name">Печать</span>
           </button>
         </div>
         <div class="sidebar-mode-actions">
           <button type="button" id="sidebarViewModeBtn" class="sidebar-mode-pill"
             title="Переключить: Табы (по одному блоку) / Все блоки списком">
-            <span id="sidebarViewModeIcon">📑</span> <span id="sidebarViewModeText">Табы</span>
+            <span id="sidebarViewModeText">Табы</span>
           </button>
         </div>
       </div>
@@ -450,13 +502,11 @@
           <!-- Экспорт / Импорт шаблонов -->
           <div class="template-toolbar">
             <button id="exportAllBtn" class="btn btn-secondary btn-sm"
-              title="Сохранить все пользовательские шаблоны в JSON-файл">⬇️
-              Экспорт</button>
+              title="Сохранить все пользовательские шаблоны в JSON-файл"><svg class="ico"><use href="#i-download"/></svg> Экспорт</button>
             <button id="importBtn" class="btn btn-secondary btn-sm"
-              title="Загрузить шаблоны из сохраненного ранее JSON-файла">⬆️ Импорт</button>
+              title="Загрузить шаблоны из сохраненного ранее JSON-файла"><svg class="ico"><use href="#i-upload"/></svg> Импорт</button>
             <button id="resetAllBtn" class="btn btn-secondary btn-sm"
-              title="Сбросить текущую сессию и таблицу товаров к исходному состоянию (Мои шаблоны сохраняются)">♻️
-              Сброс</button>
+              title="Сбросить текущую сессию и таблицу товаров к исходному состоянию (Мои шаблоны сохраняются)"><svg class="ico"><use href="#i-reset"/></svg> Сброс</button>
             <input type="file" id="importFileInput" accept="application/json,.json" hidden>
           </div>
 
@@ -589,7 +639,7 @@
           <!-- User saved templates -->
           <div id="userTemplates" class="presets-grid tab-content">
             <div class="empty-state" id="emptyUserTemplates">
-              У вас пока нет сохраненных шаблонов.<br>Настройте макет и нажмите «Сохранить».
+              Здесь появятся ваши шаблоны.<br>Настройте макет и нажмите «Шаблон» в шапке, затем «Сохранить новый».
             </div>
           </div>
 
@@ -608,7 +658,7 @@
               <input type="radio" name="printMode" value="multi" checked>
               <span class="radio-custom"></span>
               <div class="radio-text">
-                <strong>📋 Разные товары (Таблица)</strong>
+                <strong><svg class="ico"><use href="#i-clipboard"/></svg> Разные товары (Таблица)</strong>
                 <small>В каждом ценнике свой товар и цена</small>
               </div>
             </label>
@@ -616,7 +666,7 @@
               <input type="radio" name="printMode" value="single">
               <span class="radio-custom"></span>
               <div class="radio-text">
-                <strong>🔘 Одинаковый текст</strong>
+                <strong>Одинаковый текст</strong>
                 <small>Один товар на весь лист</small>
               </div>
             </label>
@@ -629,23 +679,22 @@
               <div class="quick-bar-left">
                 <button type="button" id="toggleExcelPasteBtn" class="btn btn-secondary btn-xs excel-toggle-btn"
                   title="Развернуть/свернуть поле для вставки из Excel">
-                  <span>📋 Excel</span> <span class="excel-chevron" id="excelChevron">▾</span>
+                  <span><svg class="ico"><use href="#i-clipboard"/></svg> Excel</span> <span class="excel-chevron" id="excelChevron">▾</span>
                 </button>
                 <button type="button" id="sidebarSearchToggleBtn" class="btn btn-secondary btn-icon-xs"
-                  title="Поиск товаров в таблице (Ctrl+F)">🔍</button>
+                  title="Поиск товаров в таблице (Ctrl+F)"><svg class="ico"><use href="#i-search"/></svg></button>
                 <div class="sort-dropdown-wrap" id="sidebarSortWrap">
                   <button type="button" id="sidebarSortBtn" class="btn btn-secondary btn-icon-xs"
-                    title="Сортировка товаров">↕️</button>
+                    title="Сортировка товаров"><svg class="ico"><use href="#i-sort"/></svg></button>
                   <div id="sidebarSortMenu" class="sort-menu-dropdown" style="display:none;">
-                    <button type="button" data-sort="name-asc" class="sort-menu-item">🔤 Название (А → Я)</button>
-                    <button type="button" data-sort="name-desc" class="sort-menu-item">🔤 Название (Я → А)</button>
-                    <button type="button" data-sort="price-asc" class="sort-menu-item">💰 Сначала дешевле</button>
-                    <button type="button" data-sort="price-desc" class="sort-menu-item">💰 Сначала дороже</button>
-                    <button type="button" data-sort="filled-first" class="sort-menu-item">📦 Сначала
-                      заполненные</button>
+                    <button type="button" data-sort="name-asc" class="sort-menu-item">Название (А → Я)</button>
+                    <button type="button" data-sort="name-desc" class="sort-menu-item">Название (Я → А)</button>
+                    <button type="button" data-sort="price-asc" class="sort-menu-item">Сначала дешевле</button>
+                    <button type="button" data-sort="price-desc" class="sort-menu-item">Сначала дороже</button>
+                    <button type="button" data-sort="filled-first" class="sort-menu-item">Сначала заполненные</button>
                     <div class="sort-menu-divider"></div>
                     <button type="button" data-sort="restore-original" class="sort-menu-item sort-menu-restore"
-                      title="Вернуть порядок товаров, который был до сортировки">🔄 Вернуть как было</button>
+                      title="Вернуть порядок товаров, который был до сортировки">Вернуть как было</button>
                   </div>
                 </div>
                 <span id="itemsStatsBadge" class="items-stats-badge" title="Количество заполненных товаров и страниц">0
@@ -653,19 +702,19 @@
               </div>
               <div class="paste-actions">
                 <button type="button" id="bulkSetBgBtn" class="btn btn-secondary btn-icon-xs"
-                  title="Применить фон ко всем товарам списка">🖼️</button>
+                  title="Применить фон ко всем товарам списка"><svg class="ico"><use href="#i-image"/></svg></button>
                 <button type="button" class="autobg-toggle btn-icon-xs"
-                  title="Автоподстановка фона по названию товара (клик — применить ко всем, Shift+клик — вкл/выкл авто-режим)">✨</button>
+                  title="Автоподстановка фона по названию товара (клик — применить ко всем, Shift+клик — вкл/выкл авто-режим)"><svg class="ico"><use href="#i-sparkles"/></svg></button>
                 <button type="button" id="fitAllTitlesBtn" class="btn btn-secondary btn-icon-xs"
-                  title="Подогнать размер шрифта всех названий под рамку ценника">📏</button>
+                  title="Подогнать размер шрифта всех названий под рамку ценника"><svg class="ico"><use href="#i-fit"/></svg></button>
                 <button type="button" id="copyItemsBtn" class="btn btn-secondary btn-icon-xs"
                   title="Перенести товары на другой шаблон">⧉</button>
                 <button type="button" class="autolink-toggle btn-icon-xs"
-                  title="Автоприменение оформления при выборе фона">🔗</button>
+                  title="Автоприменение оформления при выборе фона"><svg class="ico"><use href="#i-link"/></svg></button>
                 <button type="button" class="btn btn-secondary decor-pos-toggle btn-icon-xs"
-                  title="Положение блока оформления (сверху/снизу) для двухблочных пресетов">⬆</button>
+                  title="Положение блока оформления (сверху/снизу) для двухблочных пресетов"><svg class="ico"><use href="#i-arrow-up"/></svg></button>
                 <button type="button" id="clearAllItemsBtn" class="btn btn-secondary btn-icon-xs btn-danger-hover"
-                  title="Очистить весь список">🗑</button>
+                  title="Очистить весь список"><svg class="ico"><use href="#i-trash"/></svg></button>
               </div>
             </div>
 
@@ -676,14 +725,14 @@
               <div class="excel-drawer-footer">
                 <button type="button" id="applyPasteBtn" class="btn btn-primary btn-sm"
                   title="Распознать скопированные строки и внести товары в таблицу">
-                  📋 Применить к таблице
+                  <svg class="ico"><use href="#i-clipboard"/></svg> Применить к таблице
                 </button>
               </div>
             </div>
 
             <!-- Панель быстрого поиска товаров в сайдбаре -->
             <div id="sidebarSearchBox" class="items-search-box sidebar-search-box" style="display:none;">
-              <span class="search-box-icon">🔍</span>
+              <span class="search-box-icon"><svg class="ico"><use href="#i-search"/></svg></span>
               <input type="text" id="sidebarSearchInput" class="items-search-input" placeholder="Поиск в таблице...">
               <span id="sidebarSearchCount" class="search-count-badge" style="display:none;"></span>
               <button type="button" id="sidebarSearchClearBtn" class="search-clear-btn"
@@ -758,7 +807,8 @@
       <!-- Font Style & Appearance Customization -->
       <section class="control-card" id="section3">
         <h3 class="card-toggle" data-section="section3"><span class="card-num">3</span> Настройки шрифтов и текста <span
-            class="toggle-arrow">▲</span></h3>
+            class="scope-badge" id="fontScopeBadge" title="Область применения правок: переключается внутри секции">этот
+            ценник</span><span class="toggle-arrow">▲</span></h3>
         <div class="card-body">
 
           <!-- Переключатель области применения: только для режима «Разные товары» -->
@@ -768,26 +818,24 @@
               к:</span>
             <div class="seg-control" role="group">
               <button type="button" class="seg-btn active" data-font-mode="item"
-                title="Изменения шрифтов коснутся ТОЛЬКО выбранного ценника (сохранится индивидуальный стиль)">🏷️ Этот
-                ценник</button>
+                title="Изменения шрифтов коснутся ТОЛЬКО выбранного ценника (сохранится индивидуальный стиль)"><svg class="ico"><use href="#i-tag"/></svg> Этот ценник</button>
               <button type="button" class="seg-btn" data-font-mode="template"
-                title="Изменения шрифтов применятся ко ВСЕМ ценникам этого шаблона как базовый стиль">📑 Весь
-                шаблон</button>
+                title="Изменения шрифтов применятся ко ВСЕМ ценникам этого шаблона как базовый стиль"><svg class="ico"><use href="#i-layers"/></svg> Весь шаблон</button>
             </div>
             <button type="button" id="resetItemFontsBtn" class="btn btn-secondary btn-sm"
-              title="Сбросить индивидуальные шрифты этого ценника и вернуть исходный стиль шаблона">↺ К шаблону</button>
+              title="Сбросить индивидуальные шрифты этого ценника и вернуть исходный стиль шаблона"><svg class="ico"><use href="#i-reset"/></svg> К шаблону</button>
           </div>
 
           <!-- Sub-Tabs Navigation for Font Properties -->
           <div class="sub-tabs-nav" role="tablist" id="fontSubTabsNav">
             <button type="button" class="sub-tab-btn active" data-font-tab="title"
-              title="Шрифт, кегль, цвет, сдвиг и тень наименования товара">🏷️ Название</button>
+              title="Шрифт, размер, цвет, сдвиг и тень наименования товара"><svg class="ico"><use href="#i-tag"/></svg> Название</button>
             <button type="button" class="sub-tab-btn" data-font-tab="subtitle"
-              title="Шрифт, размер и цвет веса или фасовки">⚖️ Вес</button>
+              title="Шрифт, размер и цвет веса или фасовки"><svg class="ico"><use href="#i-scale"/></svg> Вес</button>
             <button type="button" class="sub-tab-btn" data-font-tab="price"
-              title="Шрифт, цвет, плашка и перечеркивание цены">💰 Цена</button>
+              title="Шрифт, цвет, плашка и перечеркивание цены"><svg class="ico"><use href="#i-ruble"/></svg> Цена</button>
             <button type="button" class="sub-tab-btn" data-font-tab="digit"
-              title="Шрифт и цвет крупного номера крана или сорта">🔢 Цифра</button>
+              title="Шрифт и цвет крупного номера крана или сорта"><svg class="ico"><use href="#i-hash"/></svg> Цифра</button>
           </div>
 
           <!-- Tab Pane 1: Main Title Settings -->
@@ -798,8 +846,7 @@
                 <h4 style="margin:0;">Шрифт наименования</h4>
                 <button type="button" id="autoFitFontBtn" class="btn btn-secondary btn-sm"
                   style="padding: 2px 8px; font-size: 0.72rem;"
-                  title="Автоматически уменьшить размер шрифта, чтобы длинное название полностью уместилось в ценник">✨
-                  Подогнать</button>
+                  title="Автоматически уменьшить размер шрифта, чтобы длинное название полностью уместилось в ценник"><svg class="ico"><use href="#i-fit"/></svg> Подогнать</button>
               </div>
               <div class="sub-body">
                 <div class="form-row compact-row">
@@ -842,7 +889,7 @@
 
                 <div class="form-row compact-row">
                   <div class="form-group flex-1">
-                    <label title="Кегль шрифта наименования в пунктах (pt)">Размер: <span id="titleSizeVal"
+                    <label title="Размер шрифта наименования в пунктах (pt)">Размер: <span id="titleSizeVal"
                         class="val-badge">13</span> pt</label>
                     <input type="range" id="titleSize" min="7" max="100" value="13"
                       title="Размер шрифта наименования в пунктах (pt)">
@@ -931,7 +978,7 @@
                 <label class="checkbox-label"
                   style="font-size:0.8rem; margin-left:auto; color:#f87171; font-weight:600;"
                   title="Перечеркнуть цену крест-накрест (например, при распродаже или смене цены)">
-                  <input type="checkbox" id="priceCrossToggle"> ❌ Перечеркнуть
+                  <input type="checkbox" id="priceCrossToggle"> <svg class="ico"><use href="#i-x"/></svg> Перечеркнуть
                 </label>
               </div>
               <div class="form-row compact-row" id="priceCrossSettingsRow"
@@ -1092,7 +1139,8 @@
       <!-- Design Customization & Custom Image Upload -->
       <section class="control-card" id="section4">
         <h3 class="card-toggle" data-section="section4"><span class="card-num">4</span> Фоны и заливка <span
-            class="toggle-arrow">▲</span></h3>
+            class="scope-badge" id="bgScopeBadge" title="Область применения правок: переключается внутри секции">этот
+            ценник</span><span class="toggle-arrow">▲</span></h3>
         <div class="card-body">
 
           <!-- Переключатель области применения фона -->
@@ -1102,19 +1150,18 @@
               к:</span>
             <div class="seg-control" role="group">
               <button type="button" class="seg-btn active" data-bg-mode="item"
-                title="Фон изменится ТОЛЬКО у выбранного ценника (сохранится индивидуальный стиль)">🏷️ Этот
-                ценник</button>
+                title="Фон изменится ТОЛЬКО у выбранного ценника (сохранится индивидуальный стиль)"><svg class="ico"><use href="#i-tag"/></svg> Этот ценник</button>
               <button type="button" class="seg-btn" data-bg-mode="template"
-                title="Фон изменится у ВСЕХ ценников этого шаблона как базовый">📑 Весь шаблон</button>
+                title="Фон изменится у ВСЕХ ценников этого шаблона как базовый"><svg class="ico"><use href="#i-layers"/></svg> Весь шаблон</button>
             </div>
             <button type="button" id="resetItemBgBtn" class="btn btn-secondary btn-sm"
-              title="Сбросить индивидуальный фон этого ценника и вернуть исходный фон шаблона">↺ К шаблону</button>
+              title="Сбросить индивидуальный фон этого ценника и вернуть исходный фон шаблона"><svg class="ico"><use href="#i-reset"/></svg> К шаблону</button>
           </div>
 
           <!-- Visual Background Gallery Component (Этап 4) -->
           <div class="bg-gallery-section" id="bgGallerySection">
             <div class="bg-gallery-header">
-              <span class="bg-gallery-title">🖼️ Галерея текстур и фонов</span>
+              <span class="bg-gallery-title"><svg class="ico"><use href="#i-image"/></svg> Галерея текстур и фонов</span>
               <button type="button" id="toggleBgGalleryViewBtn" class="bg-gallery-toggle-btn"
                 title="Свернуть или развернуть галерею">Свернуть ▲</button>
             </div>
@@ -1155,9 +1202,8 @@
                   <option value="a5_red.jpg">⚡ А5 (Красный)</option>
                   <option value="a5_blue.jpg">⚡ А5 (Голубой)</option>
                   <option value="a5_green.jpg">⚡ А5 (Зелёный)</option>
-                  <option value="ryba_scales">🐟 Чешуя</option>
                 </optgroup>
-                <optgroup id="extraBgGroup" label="Дополнительно (из «bg other»)"></optgroup>
+                <optgroup id="extraBgGroup" label="Дополнительные фоны"></optgroup>
                 <option value="none">Без картинки (Заливка цветом)</option>
                 <option value="custom" id="customBgOption" style="display:none;">Загруженное фото</option>
               </select>
@@ -1187,7 +1233,7 @@
               <label title="Загрузить пользовательское изображение с компьютера">Своя картинка</label>
               <div class="upload-btn-wrapper">
                 <label for="customBgUpload" class="btn btn-secondary btn-sm upload-btn"
-                  title="Выбрать файл изображения (JPG, PNG)">📁 Выбрать файл...</label>
+                  title="Выбрать файл изображения (JPG, PNG)"><svg class="ico"><use href="#i-folder"/></svg> Выбрать файл...</label>
                 <input type="file" id="customBgUpload" accept="image/*">
               </div>
               <div id="uploadStatus" class="upload-status"></div>
@@ -1196,7 +1242,7 @@
               <label title="Подключить локальную папку с фонами">Папка с фонами</label>
               <div class="upload-btn-wrapper">
                 <label for="extraBgDirInput" class="btn btn-secondary btn-sm upload-btn"
-                  title="Выбрать папку с коллекцией фонов на диске">📂 Выбрать папку...</label>
+                  title="Выбрать папку с коллекцией фонов на диске"><svg class="ico"><use href="#i-folder"/></svg> Выбрать папку...</label>
                 <input type="file" id="extraBgDirInput" webkitdirectory multiple style="display:none;">
               </div>
               <div id="extraBgStatus" class="upload-status"></div>
@@ -1216,7 +1262,8 @@
       <!-- Decoration: decorative blocks -->
       <section class="control-card" id="section5">
         <h3 class="card-toggle" data-section="section5"><span class="card-num">5</span> Оформление <span
-            class="toggle-arrow">▲</span></h3>
+            class="scope-badge" id="decorScopeBadge" title="Область применения правок: переключается внутри секции">этот
+            ценник</span><span class="toggle-arrow">▲</span></h3>
         <div class="card-body">
 
           <!-- Переключатель области применения оформления -->
@@ -1226,29 +1273,27 @@
               к:</span>
             <div class="seg-control" role="group">
               <button type="button" class="seg-btn active" data-decor-mode="item"
-                title="Плашки оформления изменятся ТОЛЬКО у выбранного ценника (сохранится индивидуальный стиль)">🏷️
-                Этот ценник</button>
+                title="Плашки оформления изменятся ТОЛЬКО у выбранного ценника (сохранится индивидуальный стиль)"><svg class="ico"><use href="#i-tag"/></svg> Этот ценник</button>
               <button type="button" class="seg-btn" data-decor-mode="template"
-                title="Плашки оформления применятся ко ВСЕМ ценникам этого шаблона как базовый стиль">📑 Весь
-                шаблон</button>
+                title="Плашки оформления применятся ко ВСЕМ ценникам этого шаблона как базовый стиль"><svg class="ico"><use href="#i-layers"/></svg> Весь шаблон</button>
             </div>
             <button type="button" id="resetItemDecorBtn" class="btn btn-secondary btn-sm"
-              title="Сбросить индивидуальные плашки этого ценника и вернуть базовый стиль шаблона">↺ К шаблону</button>
+              title="Сбросить индивидуальные плашки этого ценника и вернуть базовый стиль шаблона"><svg class="ico"><use href="#i-reset"/></svg> К шаблону</button>
           </div>
 
           <!-- Sub-Tabs Navigation for Decor Blocks -->
           <div class="sub-tabs-nav decor-tabs-nav" role="tablist" id="decorSubTabsNav">
             <button type="button" class="sub-tab-btn active" data-decor-tab="outside"
               title="Наружная плашка над ценником (АКЦИЯ, ХИТ, ВЫГОДНО)">
-              <span class="tab-badge-dot" id="decorOutsideDot"></span> ⬆️ Сверху
+              <span class="tab-badge-dot" id="decorOutsideDot"></span> <svg class="ico"><use href="#i-arrow-up"/></svg> Сверху
             </button>
             <button type="button" class="sub-tab-btn" data-decor-tab="inside"
               title="Внутренняя плашка в верхней части ценника">
-              <span class="tab-badge-dot" id="decorInsideDot"></span> 🔲 Внутри
+              <span class="tab-badge-dot" id="decorInsideDot"></span> <svg class="ico"><use href="#i-square"/></svg> Внутри
             </button>
             <button type="button" class="sub-tab-btn" data-decor-tab="bottom"
               title="Наружная плашка под ценником (СКИДКА, СУПЕРЦЕНА)">
-              <span class="tab-badge-dot" id="decorBottomDot"></span> ⬇️ Снизу
+              <span class="tab-badge-dot" id="decorBottomDot"></span> <svg class="ico"><use href="#i-arrow-down"/></svg> Снизу
             </button>
           </div>
 
@@ -1282,7 +1327,6 @@
                       <option value="none" selected>Без картинки (цвет)</option>
                       <option value="dots_bg.jpg">📷 Точечный фон</option>
                       <option value="ryba_bg.jpg">🐟 Чёрный с рамкой</option>
-                      <option value="ryba_scales">🐟 Рыбья чешуя</option>
                       <option value="custom" id="decorOutsideCustomOption" style="display:none;">Загруженное фото
                       </option>
                     </select>
@@ -1290,7 +1334,7 @@
                   <div class="form-group flex-1">
                     <label>Свой файл</label>
                     <div class="upload-btn-wrapper">
-                      <label for="decorOutsideCustomUpload" class="btn btn-secondary btn-sm upload-btn">📁 Файл…</label>
+                      <label for="decorOutsideCustomUpload" class="btn btn-secondary btn-sm upload-btn"><svg class="ico"><use href="#i-folder"/></svg> Файл…</label>
                       <input type="file" id="decorOutsideCustomUpload" accept="image/*">
                     </div>
                     <div id="decorOutsideUploadStatus" class="upload-status"></div>
@@ -1378,7 +1422,6 @@
                       <option value="none" selected>Без картинки (цвет)</option>
                       <option value="dots_bg.jpg">📷 Точечный фон</option>
                       <option value="ryba_bg.jpg">🐟 Чёрный с рамкой</option>
-                      <option value="ryba_scales">🐟 Рыбья чешуя</option>
                       <option value="custom" id="decorInsideCustomOption" style="display:none;">Загруженное фото
                       </option>
                     </select>
@@ -1386,7 +1429,7 @@
                   <div class="form-group flex-1">
                     <label>Свой файл</label>
                     <div class="upload-btn-wrapper">
-                      <label for="decorInsideCustomUpload" class="btn btn-secondary btn-sm upload-btn">📁 Файл…</label>
+                      <label for="decorInsideCustomUpload" class="btn btn-secondary btn-sm upload-btn"><svg class="ico"><use href="#i-folder"/></svg> Файл…</label>
                       <input type="file" id="decorInsideCustomUpload" accept="image/*">
                     </div>
                     <div id="decorInsideUploadStatus" class="upload-status"></div>
@@ -1480,7 +1523,6 @@
                       <option value="none" selected>Без картинки (цвет)</option>
                       <option value="dots_bg.jpg">📷 Точечный фон</option>
                       <option value="ryba_bg.jpg">🐟 Чёрный с рамкой</option>
-                      <option value="ryba_scales">🐟 Рыбья чешуя</option>
                       <option value="custom" id="decorBottomCustomOption" style="display:none;">Загруженное фото
                       </option>
                     </select>
@@ -1488,7 +1530,7 @@
                   <div class="form-group flex-1">
                     <label>Свой файл</label>
                     <div class="upload-btn-wrapper">
-                      <label for="decorBottomCustomUpload" class="btn btn-secondary btn-sm upload-btn">📁 Файл…</label>
+                      <label for="decorBottomCustomUpload" class="btn btn-secondary btn-sm upload-btn"><svg class="ico"><use href="#i-folder"/></svg> Файл…</label>
                       <input type="file" id="decorBottomCustomUpload" accept="image/*">
                     </div>
                     <div id="decorBottomUploadStatus" class="upload-status"></div>
@@ -1561,7 +1603,7 @@
               <input type="radio" data-print-job="single" checked>
               <span class="radio-custom"></span>
               <div class="radio-text">
-                <strong>📄 Один шаблон (текущий)</strong>
+                <strong><svg class="ico"><use href="#i-file"/></svg> Один шаблон (текущий)</strong>
                 <small>Обычная печать с активного шаблона</small>
               </div>
             </label>
@@ -1569,7 +1611,7 @@
               <input type="radio" data-print-job="multi">
               <span class="radio-custom"></span>
               <div class="radio-text">
-                <strong>🖨️ Мульти-печать</strong>
+                <strong><svg class="ico"><use href="#i-printer"/></svg> Мульти-печать</strong>
                 <small>Несколько шаблонов на общем листе</small>
               </div>
             </label>
@@ -1582,11 +1624,11 @@
                 листа А4:</label>
               <div class="segmented-control orientation-segmented" id="printOrientationControl">
                 <button type="button" class="seg-btn active" data-orientation="auto"
-                  title="Автоматически выбрать ориентацию с максимальной вместимостью">⚡ Авто</button>
+                  title="Автоматически выбрать ориентацию с максимальной вместимостью">Авто</button>
                 <button type="button" class="seg-btn" data-orientation="portrait"
-                  title="Книжная ориентация (210 × 297 мм)">📄 Книжная</button>
+                  title="Книжная ориентация (210 × 297 мм)">Книжная</button>
                 <button type="button" class="seg-btn" data-orientation="landscape"
-                  title="Альбомная ориентация (297 × 210 мм)">📑 Альбомная</button>
+                  title="Альбомная ориентация (297 × 210 мм)">Альбомная</button>
               </div>
             </div>
             <div class="form-group compact-form-group">
@@ -1616,12 +1658,12 @@
             <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
               <button id="printBtnSidebar" class="btn btn-primary" style="width: 100%; justify-content: center;"
                 title="Запустить печать ценников на принтере (Ctrl+P)">
-                🖨️ Запустить печать (Печать на А4)
+                <svg class="ico"><use href="#i-printer"/></svg> Запустить печать (Печать на А4)
               </button>
               <button type="button" id="downloadPdfBtnSidebar" class="btn btn-secondary"
                 style="width: 100%; justify-content: center;"
                 title="Сформировать и сохранить готовый лист ценников в файл PDF">
-                📥 Скачать готовый PDF (А4)
+                <svg class="ico"><use href="#i-download"/></svg> Скачать готовый PDF (А4)
               </button>
             </div>
           </div><!-- /#singlePrintPanel -->
@@ -1633,17 +1675,17 @@
             <button type="button" id="openMultiPrintDrawerBtn" class="btn btn-secondary"
               style="width: 100%; margin-bottom: 8px; justify-content: center;"
               title="Открыть панель выбора шаблонов и тиража копий для каждого">
-              📋 Выбрать шаблоны и количество копий
+              <svg class="ico"><use href="#i-clipboard"/></svg> Выбрать шаблоны и количество копий
             </button>
             <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
               <button type="button" id="multiPrintBtnSidebar" class="btn btn-primary"
                 style="width: 100%; justify-content: center;"
                 title="Сформировать общий лист и запустить печать на принтере (Ctrl+P)">
-                🖨️ Запустить мульти-печать
+                <svg class="ico"><use href="#i-printer"/></svg> Запустить мульти-печать
               </button>
               <button type="button" id="downloadMultiPdfBtnSidebar" class="btn btn-secondary"
                 style="width: 100%; justify-content: center;" title="Сформировать и сохранить мульти-лист в файл PDF">
-                📥 Скачать мульти-лист в PDF (А4)
+                <svg class="ico"><use href="#i-download"/></svg> Скачать мульти-лист в PDF (А4)
               </button>
             </div>
           </div>
@@ -1676,14 +1718,19 @@
         </div>
         <span id="sizeReadout" class="size-readout">6,5 × 3,5 см</span>
 
+        <!-- Чип области применения правок активной секции (Шрифты/Фоны/Оформление) -->
+        <span id="canvasScopeChip" class="canvas-scope-chip" style="display:none;"
+          title="Куда применяются правки активной секции панели слева (Шрифты, Фоны или Оформление). Режим переключается в самой секции."><span
+            class="csc-dot"></span><span id="canvasScopeChipText">правки: этот ценник</span></span>
+
         <!-- Переключатель масштаба монтажного стола: Ценник крупно / Лист А4 -->
         <div class="workspace-view-toggle" id="workspaceViewToggle" title="Режим отображения монтажного стола">
           <button type="button" class="wvt-btn active" id="viewModeTagBtn"
             title="Крупный детальный просмотр одного ценника">
-            <span class="wvt-icon">🔍</span> <span class="wvt-text">Ценник</span>
+            <span class="wvt-icon"><svg class="ico"><use href="#i-search"/></svg></span> <span class="wvt-text">Ценник</span>
           </button>
           <button type="button" class="wvt-btn" id="viewModeSheetBtn" title="Обзор раскладки всего листа А4">
-            <span class="wvt-icon">📑</span> <span class="wvt-text">Лист А4</span>
+            <span class="wvt-icon"><svg class="ico"><use href="#i-file"/></svg></span> <span class="wvt-text">Лист А4</span>
           </button>
         </div>
 
@@ -1692,7 +1739,7 @@
           <div class="preview-tools-dropdown-wrap" id="previewToolsDropdownWrap">
             <button type="button" id="previewToolsDropdownBtn" class="btn btn-secondary btn-sm preview-tools-btn"
               title="Инструменты ручной подгонки, перетаскивания и сброса">
-              <span class="tools-btn-icon">⚙️</span>
+              <span class="tools-btn-icon"><svg class="ico"><use href="#i-sliders"/></svg></span>
               <span class="tools-btn-text">Правка</span>
               <span id="activeToolsBadge" class="tools-active-badge" style="display:none;"></span>
               <span class="tools-btn-arrow">▾</span>
@@ -1701,40 +1748,35 @@
               <div class="ptm-group-title">Перетаскивание мышью</div>
               <button type="button" id="dragModeToggle" class="ptm-item"
                 title="Свободное перетаскивание надписей мышью: смещения применятся ко всем ценникам">
-                <span class="ptm-icon">✋</span>
+                
                 <span class="ptm-text">Двигать надписи (все)</span>
               </button>
               <button type="button" id="dragModeSoloToggle" class="ptm-item"
                 title="Свободное перетаскивание надписей мышью: смещения применятся только к выбранному ценнику">
-                <span class="ptm-icon">✌</span>
+                
                 <span class="ptm-text">Двигать отдельно (соло)</span>
               </button>
               <button type="button" id="safeEditToggle" class="ptm-item"
                 title="Настроить границы названия: потяните рамку на ценнике, чтобы ограничить область для длинного текста (отступы в мм)">
-                <span class="ptm-icon">🔲</span>
+                
                 <span class="ptm-text">Границы текста</span>
               </button>
 
               <div class="ptm-divider"></div>
               <div class="ptm-group-title">Выравнивание и декор</div>
-              <button type="button" id="syncPricePosPreviewBtn" class="ptm-item"
-                title="Скопировать координаты и положение цены с ценника №1 на все остальные ценники">
-                <span class="ptm-icon">💴</span>
-                <span class="ptm-text">Скопировать цену с №1</span>
-              </button>
               <button type="button" id="decorPosToggle" class="ptm-item decor-pos-toggle"
-                title="Переключить положение блока оформления (сверху / снизу ценника)">⬆ Блок: сверху</button>
+                title="Переключить положение блока оформления (сверху / снизу ценника)">Блок: сверху</button>
 
               <div class="ptm-divider"></div>
               <div class="ptm-group-title">Сброс к шаблону</div>
               <button type="button" id="resetLabelPosBtn" class="ptm-item"
                 title="Сбросить смещения надписей выбранного ценника к исходному виду шаблона">
-                <span class="ptm-icon">↺</span>
+                
                 <span class="ptm-text">Сбросить активный ценник</span>
               </button>
               <button type="button" id="resetAllLabelPosBtn" class="ptm-item ptm-danger"
                 title="Сбросить смещения надписей у ВСЕХ ценников листа к исходному виду шаблона">
-                <span class="ptm-icon">↺</span>
+                
                 <span class="ptm-text">Сбросить ВСЕ ценники</span>
               </button>
             </div>
@@ -1742,10 +1784,10 @@
         </div>
 
         <!-- Ползунок размера шрифта наименования (дублирует #titleSize из настроек) -->
-        <div class="preview-title-size" title="Кегль шрифта наименования товара в пунктах (pt)">
-          <span class="preview-title-size-label">Кегль</span>
+        <div class="preview-title-size" title="Размер шрифта наименования товара в пунктах (pt)">
+          <span class="preview-title-size-label">Размер</span>
           <input type="range" id="titleSizePreview" min="7" max="100" value="13"
-            title="Регулировка кегля шрифта названия (pt)">
+            title="Регулировка размера шрифта названия (pt)">
           <span class="preview-title-size-val" id="titleSizePreviewVal">13</span>
         </div>
 
@@ -1782,11 +1824,10 @@
         <!-- Smart Text Overflow Warning Pill -->
         <div id="textOverflowBadge" class="text-overflow-badge" style="display:none;"
           title="Текст выходит за границы безопасной зоны. Нажмите, чтобы автоматически подогнать размер!">
-          <span class="overflow-icon">⚠️</span>
+          <span class="overflow-icon"><svg class="ico"><use href="#i-alert"/></svg></span>
           <span class="overflow-msg">Текст не помещается</span>
           <button type="button" id="overflowAutoFitBtn" class="overflow-fit-btn"
-            title="Автоматически уменьшить размер шрифта, чтобы длинное наименование полностью уместилось в ценник">✨
-            Подогнать</button>
+            title="Автоматически уменьшить размер шрифта, чтобы длинное наименование полностью уместилось в ценник"><svg class="ico"><use href="#i-fit"/></svg> Подогнать</button>
         </div>
 
         <div class="preview-stage-wrapper">
@@ -1869,7 +1910,7 @@
               <div class="cqb-group" title="Размер шрифта">
                 <button type="button" class="cqb-btn" id="cqbFontMinus" title="Меньше шрифт (-1pt)">−</button>
                 <input type="number" class="cqb-val-input" id="cqbFontSizeVal" min="6" max="150" step="1" value="24"
-                  title="Текущий кегль шрифта (можно ввести число)">
+                  title="Текущий размер шрифта (можно ввести число)">
                 <button type="button" class="cqb-btn" id="cqbFontPlus" title="Больше шрифт (+1pt)">+</button>
               </div>
               <div class="cqb-group" title="Начертание">
@@ -1902,11 +1943,11 @@
               <!-- Быстрое переключение ориентации в Print Hub -->
               <div class="sheet-orientation-pills" id="sheetOrientationPills">
                 <button type="button" class="sheet-orient-btn active" data-orientation="auto" id="sheetOrientAutoBtn"
-                  title="Автоматический выбор ориентации с максимальной вместимостью листа">⚡ Авто</button>
+                  title="Автоматический выбор ориентации с максимальной вместимостью листа">Авто</button>
                 <button type="button" class="sheet-orient-btn" data-orientation="portrait" id="sheetOrientPortBtn"
-                  title="Книжная ориентация (210 × 297 мм)">📄 Книжная</button>
+                  title="Книжная ориентация (210 × 297 мм)">Книжная</button>
                 <button type="button" class="sheet-orient-btn" data-orientation="landscape" id="sheetOrientLandBtn"
-                  title="Альбомная ориентация (297 × 210 мм)">📑 Альбомная</button>
+                  title="Альбомная ориентация (297 × 210 мм)">Альбомная</button>
               </div>
               <div id="sheetPageNav" class="sheet-page-nav" style="display:none;">
                 <button type="button" id="prevSheetPageBtn" class="sheet-page-btn"
@@ -1920,30 +1961,30 @@
           <!-- Сводная панель метрик Print Hub -->
           <div class="print-hub-metrics" id="printHubMetrics">
             <div class="ph-metric-pill" id="phPagesPill" title="Количество необходимых печатных листов бумаги А4">
-              <span class="ph-icon">📄</span> <span class="ph-label">Листов А4:</span> <b class="ph-val"
+              <span class="ph-icon"><svg class="ico"><use href="#i-file"/></svg></span> <span class="ph-label">Листов А4:</span> <b class="ph-val"
                 id="phPagesVal">1</b>
             </div>
             <div class="ph-metric-pill" id="phTotalPill" title="Общий тираж ценников с учетом копий">
-              <span class="ph-icon">🏷️</span> <span class="ph-label">Тираж:</span> <b class="ph-val" id="phTotalVal">0
+              <span class="ph-icon"><svg class="ico"><use href="#i-tag"/></svg></span> <span class="ph-label">Тираж:</span> <b class="ph-val" id="phTotalVal">0
                 шт.</b>
             </div>
             <div class="ph-metric-pill" id="phUniquePill" title="Количество заполненных уникальных товаров в списке">
-              <span class="ph-icon">📦</span> <span class="ph-label">Товаров:</span> <b class="ph-val"
+              <span class="ph-icon"><svg class="ico"><use href="#i-package"/></svg></span> <span class="ph-label">Товаров:</span> <b class="ph-val"
                 id="phUniqueVal">0</b>
             </div>
             <div class="ph-metric-pill" id="phGridPill"
               title="Раскладка сетки: столбцы × строки (максимальная вместимость одного листа)">
-              <span class="ph-icon">📐</span> <span class="ph-label">Сетка:</span> <b class="ph-val"
+              <span class="ph-icon"><svg class="ico"><use href="#i-grid"/></svg></span> <span class="ph-label">Сетка:</span> <b class="ph-val"
                 id="phGridVal">0×0</b>
             </div>
             <div class="ph-metric-pill ph-orient-pill" id="phOrientPill"
               title="Текущая активная ориентация листа и выгода вместимости">
-              <span class="ph-icon">🧭</span> <span class="ph-label">Ориентация:</span> <b class="ph-val"
+              <span class="ph-icon"><svg class="ico"><use href="#i-compass"/></svg></span> <span class="ph-label">Ориентация:</span> <b class="ph-val"
                 id="phOrientVal">Книжная</b>
             </div>
           </div>
 
-          <p class="sheet-interactive-hint">💡 <b>Интерактивная карта:</b> кликните по любому ценнику на листе, чтобы
+          <p class="sheet-interactive-hint"><b>Интерактивная карта:</b> кликните по любому ценнику на листе, чтобы
             выбрать его и подсветить в таблице товаров. Печатаются только заполненные позиции.</p>
         </div>
         <div class="sheet-mini-container" id="sheetMiniContainer">
@@ -1966,9 +2007,9 @@
         <button id="cancelSaveModal" class="btn btn-secondary"
           title="Отменить сохранение и закрыть окно (Esc)">Отмена</button>
         <button id="updateTemplateBtn" class="btn btn-secondary" disabled
-          title="Перезаписать изменения в текущий активный шаблон">🔄 Обновить</button>
+          title="Перезаписать изменения в текущий активный шаблон"><svg class="ico"><use href="#i-refresh"/></svg> Обновить</button>
         <button id="confirmSaveModal" class="btn btn-primary"
-          title="Сохранить текущие настройки как отдельный новый шаблон с указанным именем">💾 Сохранить новый</button>
+          title="Сохранить текущие настройки как отдельный новый шаблон с указанным именем"><svg class="ico"><use href="#i-save"/></svg> Сохранить новый</button>
       </div>
     </div>
   </div>
@@ -1994,7 +2035,7 @@
     <div class="modal-box modal-box-instruction">
       <div class="instruction-modal-header">
         <div class="instruction-modal-title">
-          <span class="instruction-icon">📖</span>
+          <span class="instruction-icon"><svg class="ico"><use href="#i-book"/></svg></span>
           <div>
             <h3 id="instructionModalTitle">Руководство пользователя</h3>
             <p class="instruction-subtitle">Конструктор ценников и воблеров • Инструкция и особенности шаблонов</p>
@@ -2003,15 +2044,15 @@
         <div class="instruction-modal-actions">
           <button type="button" id="instructionPrintBtn" class="btn btn-primary btn-sm"
             title="Распечатать руководство на принтере (A4)">
-            <span class="icon">🖨️</span> <span class="btn-text">Распечатать (A4)</span>
+            <span class="icon"><svg class="ico"><use href="#i-printer"/></svg></span> <span class="btn-text">Распечатать (A4)</span>
           </button>
           <a href="instruction.html" target="_blank" rel="noopener" id="instructionNewTabBtn"
             class="btn btn-secondary btn-sm" title="Открыть инструкцию в отдельной вкладке">
-            <span class="icon">↗️</span> <span class="btn-text">В новой вкладке</span>
+            <span class="icon"><svg class="ico"><use href="#i-external"/></svg></span> <span class="btn-text">В новой вкладке</span>
           </a>
           <a href="Инструкция_Конструктор_Ценников.pdf" download="Инструкция_Конструктор_Ценников.pdf"
             id="instructionPdfBtn" class="btn btn-secondary btn-sm" title="Скачать инструкцию в PDF">
-            <span class="icon">📥</span> <span class="btn-text">Скачать PDF</span>
+            <span class="icon"><svg class="ico"><use href="#i-download"/></svg></span> <span class="btn-text">Скачать PDF</span>
           </a>
           <button type="button" id="closeInstructionModal" class="btn btn-secondary btn-sm modal-close-btn"
             title="Закрыть (Esc)">✕</button>
@@ -2029,20 +2070,18 @@
   <!-- Плавающая панель пакетных действий над товарами -->
   <div id="bulkActionsBar" class="bulk-actions-toolbar no-print" style="display: none;">
     <div class="bulk-toolbar-info">
-      <span class="bulk-toolbar-icon">📦</span>
+      <span class="bulk-toolbar-icon"><svg class="ico"><use href="#i-package"/></svg></span>
       <span class="bulk-selected-text">Выбрано: <b id="bulkSelectedCount">0</b></span>
     </div>
     <div class="bulk-toolbar-actions">
       <button type="button" id="bulkBarSetBgBtn" class="btn btn-secondary btn-sm"
-        title="Назначить фон всем выбранным ценникам">🎨 Фон</button>
+        title="Назначить фон всем выбранным ценникам"><svg class="ico"><use href="#i-image"/></svg> Фон</button>
       <button type="button" id="bulkBarSetPriceBtn" class="btn btn-secondary btn-sm"
-        title="Задать единую цену для выбранных товаров">💰 Цена</button>
-      <button type="button" id="bulkBarSetSubBtn" class="btn btn-secondary btn-sm" title="Задать единый вес/фасовку">⚖️
-        Вес</button>
+        title="Задать единую цену для выбранных товаров"><svg class="ico"><use href="#i-ruble"/></svg> Цена</button>
+      <button type="button" id="bulkBarSetSubBtn" class="btn btn-secondary btn-sm" title="Задать единый вес/фасовку"><svg class="ico"><use href="#i-scale"/></svg> Вес</button>
       <button type="button" id="bulkBarSetQtyBtn" class="btn btn-secondary btn-sm"
-        title="Задать одинаковый тираж копий">⚡ Тираж</button>
-      <button type="button" id="bulkBarDeleteBtn" class="btn btn-danger btn-sm" title="Удалить выбранные строки">🗑️
-        Удалить</button>
+        title="Задать одинаковый тираж копий"><svg class="ico"><use href="#i-copy"/></svg> Тираж</button>
+      <button type="button" id="bulkBarDeleteBtn" class="btn btn-danger btn-sm" title="Удалить выбранные строки"><svg class="ico"><use href="#i-trash"/></svg> Удалить</button>
       <button type="button" id="bulkBarCancelBtn" class="btn btn-secondary btn-sm"
         title="Снять выделение (Esc)">✕</button>
     </div>
@@ -2052,7 +2091,7 @@
   <div id="preflightModal" class="modal-backdrop no-print" role="dialog" aria-modal="true" style="display: none;">
     <div class="modal-box modal-box-preflight">
       <div class="preflight-header">
-        <span class="preflight-icon">🛡️</span>
+        <span class="preflight-icon"><svg class="ico"><use href="#i-shield"/></svg></span>
         <div>
           <h3>Предпечатный аудит</h3>
           <p class="preflight-sub">Автоматическая проверка макета и данных перед печатью</p>
@@ -2064,9 +2103,9 @@
       </div>
       <div class="modal-actions preflight-actions">
         <button type="button" id="preflightFixBtn" class="btn btn-secondary"
-          title="Вернуться к таблице товаров для исправления замечаний">✏️ Исправить данные</button>
+          title="Вернуться к таблице товаров для исправления замечаний"><svg class="ico"><use href="#i-pencil"/></svg> Исправить данные</button>
         <button type="button" id="preflightForcePrintBtn" class="btn btn-primary btn-glow"
-          title="Пропустить замечания и перейти к печати ценников (Ctrl+P)">🖨️ Всё равно печатать</button>
+          title="Пропустить замечания и перейти к печати ценников (Ctrl+P)"><svg class="ico"><use href="#i-printer"/></svg> Всё равно печатать</button>
         <button type="button" id="preflightCloseBtn" class="btn btn-secondary"
           title="Закрыть окно аудита (Esc)">Закрыть</button>
       </div>
@@ -2077,7 +2116,7 @@
   <div id="shortcutsModal" class="modal-backdrop no-print" role="dialog" aria-modal="true" style="display: none;">
     <div class="modal-box modal-box-shortcuts">
       <div class="shortcuts-header">
-        <span class="shortcuts-icon">⌨️</span>
+        <span class="shortcuts-icon"><svg class="ico"><use href="#i-keyboard"/></svg></span>
         <div>
           <h3>Горячие клавиши</h3>
           <p class="shortcuts-sub">Быстрые комбинации клавиш для продуктивной работы</p>
@@ -2087,18 +2126,18 @@
       </div>
       <div class="shortcuts-body">
         <div class="shortcut-group">
-          <h4>🖨️ Печать и аудит</h4>
+          <h4>Печать и аудит</h4>
           <div class="shortcut-row"><span class="shortcut-keys"><kbd>Ctrl</kbd> / <kbd>Cmd</kbd> +
               <kbd>P</kbd></span><span class="shortcut-desc">Перехватывает системную печать браузера и запускает
               профессиональный предпечатный аудит и печать ценников</span></div>
         </div>
         <div class="shortcut-group">
-          <h4>🔍 Поиск</h4>
+          <h4>Поиск</h4>
           <div class="shortcut-row"><span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>F</kbd></span><span
               class="shortcut-desc">Быстрый переход в поиск по товарам</span></div>
         </div>
         <div class="shortcut-group">
-          <h4>📋 Работа со списком товаров</h4>
+          <h4>Работа со списком товаров</h4>
           <div class="shortcut-row"><span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>V</kbd></span><span
               class="shortcut-desc">Вставка ценников с кассы (1С, Excel) из буфера обмена прямо на экран</span></div>
           <div class="shortcut-row"><span class="shortcut-keys"><kbd>Enter</kbd></span><span class="shortcut-desc">В
@@ -2118,7 +2157,7 @@
               class="shortcut-desc">Перетаскивание строк мышью для изменения порядка товаров</span></div>
         </div>
         <div class="shortcut-group">
-          <h4>↩️ История и навигация</h4>
+          <h4>История и навигация</h4>
           <div class="shortcut-row"><span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>Z</kbd></span><span
               class="shortcut-desc">Отменить последнее действие (Undo)</span></div>
           <div class="shortcut-row"><span class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>Y</kbd></span><span
@@ -2146,7 +2185,7 @@
 
   <!-- html2pdf.bundle.min.js for offline, high-quality client-side A4 PDF export -->
   <script src="html2pdf.bundle.min.js"></script>
-  <script src="script.js?v=31"></script>
+  <script src="script.js?v=36"></script>
 </body>
 
 </html>

@@ -66,10 +66,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const toast = document.createElement('div');
     toast.className = `toast-item toast-${type}`;
 
-    let icon = 'ℹ️';
-    if (type === 'success') icon = '✅';
-    else if (type === 'warning') icon = '⚠️';
-    else if (type === 'error') icon = '❌';
+    let icon = 'i-info';
+    if (type === 'success') icon = 'i-check';
+    else if (type === 'warning') icon = 'i-alert';
+    else if (type === 'error') icon = 'i-x';
 
     const contentDiv = document.createElement('div');
     contentDiv.className = 'toast-content';
@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const iconSpan = document.createElement('span');
     iconSpan.className = 'toast-icon';
-    iconSpan.textContent = icon;
+    iconSpan.innerHTML = '<svg class="ico"><use href="#' + icon + '"/></svg>';
 
     const closeBtn = document.createElement('button');
     closeBtn.type = 'button';
@@ -210,6 +210,52 @@ document.addEventListener('DOMContentLoaded', () => {
   let bgApplyMode = 'item';
   let templateBg = null;
   const bgApplyModeWrap = document.getElementById('bgApplyModeWrap');
+
+  // === Превью начертаний в списках шрифтов: каждая опция набрана своим шрифтом ===
+  document.querySelectorAll('select.font-dropdown').forEach(sel => {
+    sel.querySelectorAll('option').forEach(opt => {
+      const fam = opt.getAttribute('value');
+      if (fam && fam.trim() !== '') opt.style.fontFamily = fam;
+    });
+  });
+
+  // === Бейджи области применения («этот ценник» / «весь шаблон») ===
+  // Показывают в заголовках секций 3/4/5 и в чипе у холста, куда попадут правки.
+  // Только чтение состояния; сами режимы меняются сегментами внутри секций.
+  function scopeBadgeLabel(mode) {
+    return mode === 'template' ? 'весь шаблон' : 'этот ценник';
+  }
+
+  function updateScopeBadges() {
+    const pairs = [
+      ['fontScopeBadge', fontApplyMode],
+      ['bgScopeBadge', bgApplyMode],
+      ['decorScopeBadge', decorApplyMode]
+    ];
+    pairs.forEach(([id, mode]) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = scopeBadgeLabel(mode);
+      el.classList.toggle('mode-template', mode === 'template');
+      el.classList.toggle('mode-item', mode !== 'template');
+    });
+    const chip = document.getElementById('canvasScopeChip');
+    if (chip) {
+      const activeTab = document.querySelector('.sidebar-tab-btn.active');
+      const target = activeTab ? activeTab.getAttribute('data-target') : '';
+      const modeMap = { section3: fontApplyMode, section4: bgApplyMode, section5: decorApplyMode };
+      const mode = modeMap[target];
+      if (mode) {
+        const chipText = document.getElementById('canvasScopeChipText');
+        if (chipText) chipText.textContent = 'правки: ' + scopeBadgeLabel(mode);
+        chip.classList.toggle('mode-template', mode === 'template');
+        chip.classList.toggle('mode-item', mode !== 'template');
+        chip.style.display = '';
+      } else {
+        chip.style.display = 'none';
+      }
+    }
+  }
   const resetItemBgBtn = document.getElementById('resetItemBgBtn');
 
   // DOM Inputs - Size
@@ -744,6 +790,7 @@ document.addEventListener('DOMContentLoaded', () => {
       fontApplyMode = 'template';
       if (fontApplyModeWrap) fontApplyModeWrap.style.display = 'none';
       writeFontSnapshotToInputs(templateFonts);
+      updateScopeBadges();
       return;
     }
     if (fontApplyModeWrap) fontApplyModeWrap.style.display = '';
@@ -758,6 +805,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       writeFontSnapshotToInputs(templateFonts);
     }
+    updateScopeBadges();
   }
 
   // === Per-item оформление (декор-блоки #5): snapshot-модель ===
@@ -900,6 +948,7 @@ document.addEventListener('DOMContentLoaded', () => {
       decorApplyMode = 'template';
       if (decorApplyModeWrap) decorApplyModeWrap.style.display = 'none';
       writeDecorSnapshotToInputs(templateDecor);
+      updateScopeBadges();
       return;
     }
     if (decorApplyModeWrap) decorApplyModeWrap.style.display = '';
@@ -913,6 +962,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       writeDecorSnapshotToInputs(templateDecor);
     }
+    updateScopeBadges();
   }
 
   // === Per-item ФОН ценника (#4): независимая snapshot-модель ===
@@ -1009,6 +1059,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!entry || !entry.ref) return;
       const marker = 'bgother:' + name;
       extraBgMap[marker] = entry.ref;
+      extraBgMap[name] = entry.ref;
       if (group) {
         const opt = document.createElement('option');
         opt.value = marker;
@@ -1024,7 +1075,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Онлайн-режим (http/https): читает bg_index.json (генерируется скриптом
   // gen_bg_index.py и заливается на сервер рядом с index.html) и наполняет
-  // подменю ссылками на файлы в «bg other». На file:// НЕ вызывается — там
+  // подменю ссылками на файлы в «images». На file:// НЕ вызывается — там
   // fetch локальных файлов заблокирован, используется IndexedDB-кэш.
   // Ошибки/отсутствие файла молча пропускаются (graceful degradation).
   async function loadExtraBackgroundsOnline() {
@@ -1037,7 +1088,7 @@ document.addEventListener('DOMContentLoaded', () => {
       index = await resp.json();
     } catch (e) { return; }
     if (!index || !Array.isArray(index.files) || index.files.length === 0) return;
-    const dir = index.dir || 'bg other';
+    const dir = index.dir || 'images';
     populateExtraBgOptions(index.files.map(name => ({ name: name, ref: dir + '/' + name })));
   }
 
@@ -1219,6 +1270,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (bgApplyModeWrap) bgApplyModeWrap.style.display = 'none';
       writeBgSnapshotToInputs(templateBg);
       try { refreshAutoBgBtns(); } catch (e) { }
+      updateScopeBadges();
       return;
     }
     if (bgApplyModeWrap) bgApplyModeWrap.style.display = '';
@@ -1233,6 +1285,7 @@ document.addEventListener('DOMContentLoaded', () => {
       writeBgSnapshotToInputs(templateBg);
     }
     try { refreshAutoBgBtns(); } catch (e) { }
+    updateScopeBadges();
   }
 
   // Возвращает полный «снимок» оформления блока (outside/inside/bottom) для ценника i.
@@ -2524,11 +2577,18 @@ document.addEventListener('DOMContentLoaded', () => {
         idrItemsList.appendChild(createItemRow(newIndex));
       }
     }
+    updateItemsEmptyHint();
     if (typeof updateItemsDrawerHeader === 'function') updateItemsDrawerHeader();
     if (typeof multiPrintDrawer !== 'undefined' && multiPrintDrawer && multiPrintDrawer.classList.contains('open')) {
       renderMultiPrintTemplates();
       updateMultiPrintSummary();
     }
+  }
+
+  // Подсказка-приглашение в шторке: видна, пока ни один товар не заполнен.
+  function updateItemsEmptyHint() {
+    const emptyHint = document.getElementById('itemsEmptyHint');
+    if (emptyHint) emptyHint.style.display = itemsData.some(isItemFilled) ? 'none' : '';
   }
 
   // ===== Светлые фоны (Б/А, Живое, Рыба Выгодно, Сорт недели Желтый, А5): выбор → чёрный текст наименования/веса/цены =====
@@ -2568,7 +2628,7 @@ document.addEventListener('DOMContentLoaded', () => {
   //   <kind>Show      boolean   показать/скрыть блок
   //   <kind>Text      строка    текст плашки (напр. 'НОВИНКА', 'АКЦИЯ')
   //   <kind>Bg        hex-цвет  цвет заливки блока (напр. '#e63946')
-  //   <kind>BgImg     маркер    'none' | имя файла фона | 'ryba_scales' | 'custom'
+  //   <kind>BgImg     маркер    'none' | имя файла фона | 'custom'
   //   <kind>CustomBg  data:URL  картинка блока (только при BgImg='custom', иначе null)
   //   <kind>Color     hex-цвет  цвет текста блока (напр. '#ffffff')
   //   <kind>FontSize  число pt  размер шрифта (диапазон слайдера 6-60)
@@ -2757,9 +2817,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Обе кнопки-переключателя (панель превью с подписью + иконка у кнопок
     // вставки) управляют одним состоянием и обновляются синхронно.
     document.querySelectorAll('.decor-pos-toggle').forEach(b => {
-      b.textContent = (b.id === 'decorPosToggle')
-        ? (top ? '⬆ Блок: сверху' : '⬇ Блок: снизу')
-        : (top ? '⬆' : '⬇');
+      b.innerHTML = (b.id === 'decorPosToggle')
+        ? (top ? 'Блок: сверху' : 'Блок: снизу')
+        : (top ? '<svg class="ico"><use href="#i-arrow-up"/></svg>' : '<svg class="ico"><use href="#i-arrow-down"/></svg>');
       b.title = 'Положение блока оформления для двухблочных пресетов (Живое, Новинка): ' +
         (top ? 'СВЕРХУ ценника (клик — переключить снизу)' : 'СНИЗУ ценника (клик — переключить сверху)');
     });
@@ -3096,10 +3156,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const isFull = b.classList.contains('autobg-toggle-full');
       if (isFull) {
         if (isApplied) {
-          b.innerHTML = '✨ Авто-фон: <b>Убрать</b>';
+          b.innerHTML = 'Авто-фон: <b>Убрать</b>';
           b.title = 'Убрать индивидуальные фоны у товаров (клик — сбросить к базовому шаблону)';
         } else {
-          b.innerHTML = '✨ Авто-фон: <b>Применить</b>';
+          b.innerHTML = 'Авто-фон: <b>Применить</b>';
           b.title = 'Автоподстановка фона по названию товара (клик — применить ко всем заполненным товарам)';
         }
       } else {
@@ -3138,7 +3198,7 @@ document.addEventListener('DOMContentLoaded', () => {
         b.classList.add('btn-flash-warn');
         const isFull = b.classList.contains('autobg-toggle-full');
         if (isFull) {
-          b.innerHTML = '✨ Фоны: <b>Убраны!</b>';
+          b.innerHTML = 'Фоны: <b>Убраны!</b>';
         }
         setTimeout(() => {
           b.classList.remove('btn-flash-warn');
@@ -3160,7 +3220,7 @@ document.addEventListener('DOMContentLoaded', () => {
         b.classList.add('btn-flash-success');
         const isFull = b.classList.contains('autobg-toggle-full');
         if (isFull) {
-          b.innerHTML = appliedCount > 0 ? `✨ Применено (${appliedCount})!` : '✨ Нет совпадений';
+          b.innerHTML = appliedCount > 0 ? `Применено (${appliedCount})!` : 'Нет совпадений';
         }
         setTimeout(() => {
           b.classList.remove('btn-flash-success');
@@ -3511,10 +3571,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const badge = document.getElementById('itemsStatsBadge');
     if (badge) {
-      const orientIcon = grid.isLandscape ? '📑' : '📄';
-      badge.textContent = `⚡ ${totalCards} ценн. (${filledCount} тов.) · ${totalCards > 0 ? pages : 0} стр.`;
+      const orientIcon = grid.isLandscape ? 'альбомная' : 'книжная';
+      badge.textContent = `${totalCards} ценн. (${filledCount} тов.) · ${totalCards > 0 ? pages : 0} стр.`;
       const benefitHint = (grid.mode === 'auto' && grid.benefit > 0) ? ` (+${grid.benefit} шт. за счет авто-ориентации)` : '';
-      badge.title = `Всего к печати: ${totalCards} ценников (${filledCount} уникальных товаров, ${orientIcon} на лист влезает ${grid.maxCount} шт.${benefitHint}, требуется ${totalCards > 0 ? pages : 0} листов А4)`;
+      badge.title = `Всего к печати: ${totalCards} ценников (${filledCount} уникальных товаров, ориентация ${orientIcon}, на лист влезает ${grid.maxCount} шт.${benefitHint}, требуется ${totalCards > 0 ? pages : 0} листов А4)`;
     }
   }
 
@@ -3864,7 +3924,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
           const label = document.createElement('span');
           label.style.cssText = 'font-size: 0.75rem; color: #fef08a; font-weight: 700; display: flex; justify-content: space-between; align-items: center;';
-          label.innerHTML = '<span>✏️ Новая цена и валюта:</span>';
+          label.innerHTML = '<span>Новая цена и валюта:</span>';
           inputWrap.appendChild(label);
 
           const rowInputs = document.createElement('div');
@@ -4213,16 +4273,16 @@ document.addEventListener('DOMContentLoaded', () => {
       <span class="item-num">${i + 1}</span>
       <div class="item-title-wrap">
         <textarea class="item-title-input" rows="1" placeholder="Наименование товара №${i + 1}" data-index="${i}">${safeTitle}</textarea>
-        <button type="button" class="item-overflow-warn-btn" data-index="${i}" title="Текст названия выходит за границы ценника! Нажмите для автоподгонки кегля" style="display:none;">⚠️</button>
+        <button type="button" class="item-overflow-warn-btn" data-index="${i}" title="Текст названия выходит за границы ценника! Нажмите для автоподгонки размера шрифта" style="display:none;"><svg class="ico"><use href="#i-alert"/></svg></button>
       </div>
       <textarea class="item-subtitle-input" rows="1" placeholder="Вес" data-index="${i}">${safeSub}</textarea>
       <textarea class="item-price-input" rows="1" placeholder="Цена" data-index="${i}">${safePrice}</textarea>
       <div class="item-qty-wrap" title="Тираж копий на листе А4"><input type="number" class="item-qty-input ${multipleClass}" min="1" max="99" value="${countVal}" data-multiple="${isMultiple}" data-index="${i}" title="Тираж копий на листе А4 (колесико мыши: +/-)"></div>
       <input type="text" class="item-digit-input" maxlength="3" placeholder="№" data-index="${i}" title="Большая цифра (слой «Цифра»)" value="${safeDigit}" style="${isSnekiDigitActive() ? '' : 'display:none;'}">
       <button type="button" class="item-cross-btn" data-index="${i}" title="Перечеркнуть цену (акция/скидка)"><s>₽</s></button>
-      <button type="button" class="item-bg-btn ${bgBadgeClass}" data-index="${i}" title="Фон этого ценника">🖼</button>
-      <button type="button" class="item-decor-btn ${decorBadgeClass}" data-index="${i}" title="Оформление этого ценника">🎨</button>
-      <button type="button" class="item-delete-btn" data-index="${i}" title="Удалить товар №${i + 1}">🗑</button>
+      <button type="button" class="item-bg-btn ${bgBadgeClass}" data-index="${i}" title="Фон этого ценника"><svg class="ico"><use href="#i-image"/></svg></button>
+      <button type="button" class="item-decor-btn ${decorBadgeClass}" data-index="${i}" title="Оформление этого ценника"><svg class="ico"><use href="#i-palette"/></svg></button>
+      <button type="button" class="item-delete-btn" data-index="${i}" title="Удалить товар №${i + 1}"><svg class="ico"><use href="#i-trash"/></svg></button>
     `;
 
     const selChk = row.querySelector('.item-select-chk');
@@ -4702,7 +4762,7 @@ document.addEventListener('DOMContentLoaded', () => {
       updatePreview();
       scheduleSessionSave();
       if (typeof updateSortMenuButtonsState === 'function') updateSortMenuButtonsState();
-      if (typeof showToast === 'function') showToast('🔄 Исходный порядок товаров восстановлен', 'success', 2000);
+      if (typeof showToast === 'function') showToast('Исходный порядок товаров восстановлен', 'success', 2000);
       return;
     }
 
@@ -4790,6 +4850,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Авто-подгон высоты текстовых полей после добавления в DOM (чтобы 2-я строка наименования не обрезалась)
     itemsListContainer.querySelectorAll('textarea').forEach(autoGrowTextarea);
     if (idrItemsList) idrItemsList.querySelectorAll('textarea').forEach(autoGrowTextarea);
+    updateItemsEmptyHint();
     syncDigitControlsVisibility();
     if (typeof updateItemsDrawerHeader === 'function') updateItemsDrawerHeader();
     if (typeof applyGoodsFilter === 'function') applyGoodsFilter();
@@ -4955,7 +5016,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof resetSortHistory === 'function') resetSortHistory();
 
     const count = itemsData.filter(isItemFilled).length;
-    showToast(`✅ Вставлено товаров: ${count}`, 'success');
+    showToast(`Вставлено товаров: ${count}`, 'success');
     return count;
   }
 
@@ -5320,8 +5381,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return best;
   }
 
-  // Кнопка «Выровнять цену по №1» убрана из блока «Разные товары».
-  // Дубликат в панели превью (syncPricePosPreviewBtn) остаётся.
+
 
   // Размер шрифта наименования по количеству символов (эмпирическая шкала).
   // Короткое название → крупный кегль, длинное → уменьшаем до минимума 8pt.
@@ -5680,7 +5740,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Пакетная подгонка кегля всех названий под безопасную зону («Fit All Titles»)
   function fitAllTitles() {
-    if (typeof pushHistoryState === 'function') pushHistoryState('Подгонка кегля всех товаров', true);
+    if (typeof pushHistoryState === 'function') pushHistoryState('Подгонка размера шрифта всех товаров', true);
     const family = titleFont ? titleFont.value : 'Arial, sans-serif';
     const weight = titleWeight ? titleWeight.value : '800';
     let count = 0;
@@ -5700,7 +5760,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderItemsListInputs();
     scheduleSessionSave();
     if (typeof showToast === 'function') {
-      showToast(`📏 Оптимальный кегль рассчитан для ${count} товаров`, 'success', 2400);
+      showToast(`Оптимальный размер шрифта рассчитан для ${count} товаров`, 'success', 2400);
     }
   }
 
@@ -5826,17 +5886,17 @@ document.addEventListener('DOMContentLoaded', () => {
       if (grid.mode === 'auto') {
         if (grid.isLandscape) {
           orientVal.textContent = grid.benefit > 0
-            ? `⚡ Альбомная (+${grid.benefit} шт)`
-            : '⚡ Альбомная';
+            ? `Альбомная (+${grid.benefit} шт)`
+            : 'Альбомная';
         } else {
           orientVal.textContent = grid.benefit > 0
-            ? `⚡ Книжная (+${grid.benefit} шт)`
-            : '⚡ Книжная';
+            ? `Книжная (+${grid.benefit} шт)`
+            : 'Книжная';
         }
       } else if (grid.mode === 'landscape') {
-        orientVal.textContent = '📑 Альбомная';
+        orientVal.textContent = 'Альбомная';
       } else {
-        orientVal.textContent = '📄 Книжная';
+        orientVal.textContent = 'Книжная';
       }
     }
 
@@ -5844,7 +5904,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const pStr = `Книжная: ${grid.portraitCount} шт.`;
       const lStr = `Альбомная: ${grid.landscapeCount} шт.`;
       const modeStr = grid.mode === 'auto' ? 'Автоподбор' : (grid.isLandscape ? 'Принудительно альбомная' : 'Принудительно книжная');
-      orientPill.title = `${modeStr}\nСравнение вместимости листа А4:\n• ${pStr}\n• ${lStr}\n${grid.benefit > 0 ? (grid.isLandscape ? '👉 Альбомная вмещает на ' + grid.benefit + ' шт. больше!' : '👉 Книжная вмещает на ' + grid.benefit + ' шт. больше!') : 'Вместимость одинакова'}`;
+      orientPill.title = `${modeStr}\nСравнение вместимости листа А4:\n• ${pStr}\n• ${lStr}\n${grid.benefit > 0 ? (grid.isLandscape ? 'Альбомная вмещает на ' + grid.benefit + ' шт. больше!' : 'Книжная вмещает на ' + grid.benefit + ' шт. больше!') : 'Вместимость одинакова'}`;
     }
   }
 
@@ -6562,107 +6622,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Применение фона (имя встроенной картинки / custom data-URL / none) к любому
   // элементу. Обобщает логику, ранее зашитую под wobblerHeader. Возвращает
+  // Резолвер путей к фоновым изображениям с полной обратной совместимостью
+  function resolveBgUrl(val) {
+    if (!val || val === 'none' || val === 'custom') return '';
+    if (typeof extraBgMap !== 'undefined' && extraBgMap[val]) {
+      return extraBgMap[val];
+    }
+    const clean = String(val).replace(/^bgother:/, '');
+    if (clean.startsWith('data:') || clean.startsWith('http:') || clean.startsWith('https:')) {
+      return clean;
+    }
+    if (clean.startsWith('images/')) {
+      return clean;
+    }
+    if (clean.startsWith('bg other/')) {
+      return clean.replace(/^bg other\//, 'images/');
+    }
+    return 'images/' + clean;
+  }
+
+  // Применяет фон (картинка или цвет) к любому целевому элементу DOM.
+  // Используется для шапки воблера, карточек превью и префлайта, задавая
   // выбранную фоновую CSS-строку (для согласованности cover/position).
   function applyBackgroundTo(el, bgVal, customDataUrl, bgColor) {
     if (!el) return;
     if (bgColor != null) el.style.backgroundColor = bgColor;
-    if (bgVal === 'dots_bg.jpg' || bgVal === 'dots_bg') {
-      el.style.backgroundImage = "url('dots_bg.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'ryba_bg.jpg') {
-      el.style.backgroundImage = "url('ryba_bg.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'sneki_bg.jpg') {
-      el.style.backgroundImage = "url('sneki_bg.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'sneki_5_bg.jpg') {
-      el.style.backgroundImage = "url('sneki_5_bg.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'sneki_digit_bg.jpg') {
-      el.style.backgroundImage = "url('sneki_digit_bg.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'yellow_bg.jpg') {
-      el.style.backgroundImage = "url('yellow_bg.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'sort_nedeli_bg.jpg' || bgVal === 'sort_nedeli_bg.png' || bgVal === 'sort_nedeli_bg') {
-      el.style.backgroundImage = "url('sort_nedeli_bg.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'sort_nedeli_yellow.jpg' || bgVal === 'sort_nedeli_yellow.png' || bgVal === 'sort_nedeli_yellow') {
-      el.style.backgroundImage = "url('sort_nedeli_yellow.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'a5.jpg' || bgVal === 'a5_yellow.jpg' || bgVal === 'А5.jpg' || bgVal === 'a5') {
-      el.style.backgroundImage = "url('a5.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'a5_orange.jpg') {
-      el.style.backgroundImage = "url('a5_orange.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'a5_red.jpg') {
-      el.style.backgroundImage = "url('a5_red.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'a5_blue.jpg') {
-      el.style.backgroundImage = "url('a5_blue.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'a5_green.jpg') {
-      el.style.backgroundImage = "url('a5_green.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'korona_a5_bg.jpg' || bgVal === 'korona_a5_bg.jpeg' || bgVal === 'korona_a5_bg.png' || bgVal === 'korona_a5_bg' || bgVal === 'aktsiya_a5_bg.jpg' || bgVal === 'aktsiya_a5_bg.jpeg' || bgVal === 'aktsiya_a5_bg.png' || bgVal === 'aktsiya_a5_bg') {
-      el.style.backgroundImage = "url('korona_a5_bg.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'korona_a5_orange.jpg' || bgVal === 'korona_a5_orange.png' || bgVal === 'korona_a5_orange' || bgVal === 'aktsiya_a5_orange.jpg') {
-      el.style.backgroundImage = "url('korona_a5_orange.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'korona_a5_blue.jpg' || bgVal === 'korona_a5_blue.png' || bgVal === 'korona_a5_blue' || bgVal === 'aktsiya_a5_blue.jpg') {
-      el.style.backgroundImage = "url('korona_a5_blue.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'korona_a5_green.jpg' || bgVal === 'korona_a5_green.png' || bgVal === 'korona_a5_green' || bgVal === 'aktsiya_a5_green.jpg') {
-      el.style.backgroundImage = "url('korona_a5_green.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'korona_a5_red.jpg' || bgVal === 'korona_a5_red.png' || bgVal === 'korona_a5_red' || bgVal === 'aktsiya_a5_red.jpg') {
-      el.style.backgroundImage = "url('korona_a5_red.jpg')";
-      el.style.backgroundSize = "cover";
-      el.style.backgroundPosition = "center";
-    } else if (bgVal === 'ryba_scales') {
-      el.style.backgroundImage =
-        "radial-gradient(circle at 50% 0%, rgba(125,211,252,0.55) 0%, rgba(125,211,252,0) 55%)," +
-        "radial-gradient(circle at 0% 50%, rgba(56,189,248,0.45) 0%, rgba(56,189,248,0) 50%)," +
-        "radial-gradient(circle at 100% 50%, rgba(14,165,233,0.45) 0%, rgba(14,165,233,0) 50%)," +
-        "repeating-radial-gradient(circle at 50% 120%, rgba(255,255,255,0.18) 0 3mm, rgba(255,255,255,0) 3mm 6mm)";
-      el.style.backgroundSize = "auto";
-      el.style.backgroundPosition = "center";
-    } else if (typeof bgVal === 'string' && bgVal.indexOf('bgother:') === 0) {
-      // Дополнительный фон из папки «bg other». data:URL берётся из extraBgMap
-      // (наполняется из IndexedDB при загрузке страницы или при выборе папки).
-      // Если маркер неизвестен — пробуем прямое обращение к папке bg other/<имя>.
-      const dataUrl = extraBgMap[bgVal];
-      if (dataUrl) {
-        el.style.backgroundImage = `url('${dataUrl}')`;
-        el.style.backgroundSize = "cover";
-        el.style.backgroundPosition = "center";
-      } else {
-        const rawName = bgVal.replace(/^bgother:/, '');
-        el.style.backgroundImage = `url('bg other/${rawName}')`;
-        el.style.backgroundSize = "cover";
-        el.style.backgroundPosition = "center";
-      }
-    } else if (bgVal === 'custom' && customDataUrl) {
+    if (!bgVal || bgVal === 'none') {
+      el.style.backgroundImage = 'none';
+      return;
+    }
+    if (bgVal === 'custom' && customDataUrl) {
       el.style.backgroundImage = `url('${customDataUrl}')`;
+      el.style.backgroundSize = "cover";
+      el.style.backgroundPosition = "center";
+      return;
+    }
+    const url = resolveBgUrl(bgVal);
+    if (url) {
+      el.style.backgroundImage = `url('${url}')`;
       el.style.backgroundSize = "cover";
       el.style.backgroundPosition = "center";
     } else {
@@ -6682,7 +6679,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     rulerHText.textContent = `${widthCm.toString().replace('.', ',')} см`;
     rulerVText.textContent = `${heightCm.toString().replace('.', ',')} см`;
-    topSubtitle.textContent = `Размер: ${widthCm.toString().replace('.', ',')} см × ${heightCm.toString().replace('.', ',')} см`;
+    topSubtitle.textContent = `${widthCm.toString().replace('.', ',')} × ${heightCm.toString().replace('.', ',')} см`;
 
     // Индикатор размера в шапке предпросмотра (только чтение)
     const sizeReadout = document.getElementById('sizeReadout');
@@ -7138,46 +7135,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const BG_GALLERY_CATALOG = [
     // --- Рыба & Море ---
-    { id: 'ryba_bg.jpg', label: 'Рыба (черный)', cat: ['all', 'fish'], thumb: 'ryba_bg.jpg' },
-    { id: 'ryba_scales', label: 'Чешуя', cat: ['all', 'fish'], thumbType: 'scales' },
-    { id: 'bgother:ryba_vygodno.png', label: 'Рыба Выгодно', cat: ['all', 'fish'], file: 'bg other/ryba_vygodno.png' },
-    { id: 'bgother:moreprodukty.png', label: 'Морепродукты', cat: ['all', 'fish'], file: 'bg other/moreprodukty.png' },
+    { id: 'ryba_bg.jpg', label: 'Рыба (черный)', cat: ['all', 'fish'], thumb: 'images/ryba_bg.jpg' },
+    { id: 'bgother:ryba_vygodno.png', label: 'Рыба Выгодно', cat: ['all', 'fish'], file: 'images/ryba_vygodno.png' },
+    { id: 'bgother:moreprodukty.png', label: 'Морепродукты', cat: ['all', 'fish'], file: 'images/moreprodukty.png' },
 
     // --- Снеки & Закуски ---
-    { id: 'sneki_bg.jpg', label: 'Снеки', cat: ['all', 'snacks'], thumb: 'sneki_bg.jpg' },
-    { id: 'sneki_5_bg.jpg', label: 'Снеки 5', cat: ['all', 'snacks'], thumb: 'sneki_5_bg.jpg' },
-    { id: 'sneki_digit_bg.jpg', label: 'Снеки №', cat: ['all', 'snacks'], thumb: 'sneki_digit_bg.jpg' },
-    { id: 'bgother:ostryi.png', label: 'Остро', cat: ['all', 'snacks'], file: 'bg other/ostryi.png' },
-    { id: 'bgother:kalmar.png', label: 'Кальмары', cat: ['all', 'snacks'], file: 'bg other/kalmar.png' },
-    { id: 'bgother:myaso.png', label: 'Вяленое мясо', cat: ['all', 'snacks'], file: 'bg other/myaso.png' },
-    { id: 'bgother:syr.png', label: 'Сыр', cat: ['all', 'snacks'], file: 'bg other/syr.png' },
-    { id: 'bgother:orehi.png', label: 'Орехи', cat: ['all', 'snacks'], file: 'bg other/orehi.png' },
-    { id: 'bgother:grenki.png', label: 'Гренки', cat: ['all', 'snacks'], file: 'bg other/grenki.png' },
-    { id: 'bgother:ryb_solomka.png', label: 'Рыбная соломка', cat: ['all', 'snacks'], file: 'bg other/ryb_solomka.png' },
+    { id: 'sneki_bg.jpg', label: 'Снеки', cat: ['all', 'snacks'], thumb: 'images/sneki_bg.jpg' },
+    { id: 'sneki_5_bg.jpg', label: 'Снеки 5', cat: ['all', 'snacks'], thumb: 'images/sneki_5_bg.jpg' },
+    { id: 'sneki_digit_bg.jpg', label: 'Снеки №', cat: ['all', 'snacks'], thumb: 'images/sneki_digit_bg.jpg' },
+    { id: 'bgother:ostryi.png', label: 'Остро', cat: ['all', 'snacks'], file: 'images/ostryi.png' },
+    { id: 'bgother:kalmar.png', label: 'Кальмары', cat: ['all', 'snacks'], file: 'images/kalmar.png' },
+    { id: 'bgother:myaso.png', label: 'Вяленое мясо', cat: ['all', 'snacks'], file: 'images/myaso.png' },
+    { id: 'bgother:syr.png', label: 'Сыр', cat: ['all', 'snacks'], file: 'images/syr.png' },
+    { id: 'bgother:orehi.png', label: 'Орехи', cat: ['all', 'snacks'], file: 'images/orehi.png' },
+    { id: 'bgother:grenki.png', label: 'Гренки', cat: ['all', 'snacks'], file: 'images/grenki.png' },
+    { id: 'bgother:ryb_solomka.png', label: 'Рыбная соломка', cat: ['all', 'snacks'], file: 'images/ryb_solomka.png' },
 
     // --- Напитки ---
-    { id: 'bgother:tomatnyj.png', label: 'Томатный', cat: ['all', 'drinks'], file: 'bg other/tomatnyj.png' },
-    { id: 'bgother:vishnevyj.png', label: 'Вишневый', cat: ['all', 'drinks'], file: 'bg other/vishnevyj.png' },
-    { id: 'bgother:medovyj.png', label: 'Медовый', cat: ['all', 'drinks'], file: 'bg other/medovyj.png' },
-    { id: 'bgother:yablochnyj.png', label: 'Яблочный', cat: ['all', 'drinks'], file: 'bg other/yablochnyj.png' },
-    { id: 'bgother:ba.jpg', label: 'Б/А', cat: ['all', 'drinks'], file: 'bg other/ba.jpg' },
-    { id: 'bgother:zhivoe.jpg', label: 'Живое', cat: ['all', 'drinks'], file: 'bg other/zhivoe.jpg' },
+    { id: 'bgother:tomatnyj.png', label: 'Томатный', cat: ['all', 'drinks'], file: 'images/tomatnyj.png' },
+    { id: 'bgother:vishnevyj.png', label: 'Вишневый', cat: ['all', 'drinks'], file: 'images/vishnevyj.png' },
+    { id: 'bgother:medovyj.png', label: 'Медовый', cat: ['all', 'drinks'], file: 'images/medovyj.png' },
+    { id: 'bgother:yablochnyj.png', label: 'Яблочный', cat: ['all', 'drinks'], file: 'images/yablochnyj.png' },
+    { id: 'bgother:ba.jpg', label: 'Б/А', cat: ['all', 'drinks'], file: 'images/ba.jpg' },
+    { id: 'bgother:zhivoe.jpg', label: 'Живое', cat: ['all', 'drinks'], file: 'images/zhivoe.jpg' },
 
     // --- Акции, ценники и плакаты ---
-    { id: 'dots_bg.jpg', label: 'Точки (Alaska)', cat: ['all', 'promo'], thumb: 'dots_bg.jpg' },
-    { id: 'yellow_bg.jpg', label: 'Желтый ценник', cat: ['all', 'promo'], thumb: 'yellow_bg.jpg' },
-    { id: 'sort_nedeli_bg.jpg', label: 'Сорт недели (Кр)', cat: ['all', 'promo'], thumb: 'sort_nedeli_bg.jpg' },
-    { id: 'sort_nedeli_yellow.jpg', label: 'Сорт недели (Жел)', cat: ['all', 'promo'], thumb: 'sort_nedeli_yellow.jpg' },
-    { id: 'korona_a5_bg.jpg', label: 'Корона (Желтая)', cat: ['all', 'promo'], thumb: 'korona_a5_bg.jpg' },
-    { id: 'korona_a5_orange.jpg', label: 'Корона (Оранж)', cat: ['all', 'promo'], thumb: 'korona_a5_orange.jpg' },
-    { id: 'korona_a5_blue.jpg', label: 'Корона (Синяя)', cat: ['all', 'promo'], thumb: 'korona_a5_blue.jpg' },
-    { id: 'korona_a5_red.jpg', label: 'Корона (Красная)', cat: ['all', 'promo'], thumb: 'korona_a5_red.jpg' },
-    { id: 'korona_a5_green.jpg', label: 'Корона (Зеленая)', cat: ['all', 'promo'], thumb: 'korona_a5_green.jpg' },
-    { id: 'a5.jpg', label: 'А5 (Желтый)', cat: ['all', 'promo'], thumb: 'a5.jpg' },
-    { id: 'a5_orange.jpg', label: 'А5 (Оранжевый)', cat: ['all', 'promo'], thumb: 'a5_orange.jpg' },
-    { id: 'a5_red.jpg', label: 'А5 (Красный)', cat: ['all', 'promo'], thumb: 'a5_red.jpg' },
-    { id: 'a5_blue.jpg', label: 'А5 (Синий)', cat: ['all', 'promo'], thumb: 'a5_blue.jpg' },
-    { id: 'a5_green.jpg', label: 'А5 (Зеленый)', cat: ['all', 'promo'], thumb: 'a5_green.jpg' },
+    { id: 'dots_bg.jpg', label: 'Точки (Alaska)', cat: ['all', 'promo'], thumb: 'images/dots_bg.jpg' },
+    { id: 'yellow_bg.jpg', label: 'Желтый ценник', cat: ['all', 'promo'], thumb: 'images/yellow_bg.jpg' },
+    { id: 'sort_nedeli_bg.jpg', label: 'Сорт недели (Кр)', cat: ['all', 'promo'], thumb: 'images/sort_nedeli_bg.jpg' },
+    { id: 'sort_nedeli_yellow.jpg', label: 'Сорт недели (Жел)', cat: ['all', 'promo'], thumb: 'images/sort_nedeli_yellow.jpg' },
+    { id: 'korona_a5_bg.jpg', label: 'Корона (Желтая)', cat: ['all', 'promo'], thumb: 'images/korona_a5_bg.jpg' },
+    { id: 'korona_a5_orange.jpg', label: 'Корона (Оранж)', cat: ['all', 'promo'], thumb: 'images/korona_a5_orange.jpg' },
+    { id: 'korona_a5_blue.jpg', label: 'Корона (Синяя)', cat: ['all', 'promo'], thumb: 'images/korona_a5_blue.jpg' },
+    { id: 'korona_a5_red.jpg', label: 'Корона (Красная)', cat: ['all', 'promo'], thumb: 'images/korona_a5_red.jpg' },
+    { id: 'korona_a5_green.jpg', label: 'Корона (Зеленая)', cat: ['all', 'promo'], thumb: 'images/korona_a5_green.jpg' },
+    { id: 'a5.jpg', label: 'А5 (Желтый)', cat: ['all', 'promo'], thumb: 'images/a5.jpg' },
+    { id: 'a5_orange.jpg', label: 'А5 (Оранжевый)', cat: ['all', 'promo'], thumb: 'images/a5_orange.jpg' },
+    { id: 'a5_red.jpg', label: 'А5 (Красный)', cat: ['all', 'promo'], thumb: 'images/a5_red.jpg' },
+    { id: 'a5_blue.jpg', label: 'А5 (Синий)', cat: ['all', 'promo'], thumb: 'images/a5_blue.jpg' },
+    { id: 'a5_green.jpg', label: 'А5 (Зеленый)', cat: ['all', 'promo'], thumb: 'images/a5_green.jpg' },
 
     // --- Заливка и свои фото ---
     { id: 'none', label: 'Заливка цветом', cat: ['all', 'color'], thumbType: 'color' },
@@ -7218,9 +7214,7 @@ document.addEventListener('DOMContentLoaded', () => {
       card.dataset.bg = item.id;
       card.title = item.label;
 
-      if (item.thumbType === 'scales') {
-        card.style.background = 'radial-gradient(circle at 100% 50%, transparent 20%, rgba(255,255,255,0.2) 21%, rgba(255,255,255,0.2) 34%, transparent 35%), radial-gradient(circle at 0% 50%, transparent 20%, rgba(255,255,255,0.2) 21%, rgba(255,255,255,0.2) 34%, transparent 35%) #0f172a';
-      } else if (item.thumbType === 'color') {
+      if (item.thumbType === 'color') {
         const c = headerBgColor ? headerBgColor.value : '#18181b';
         card.style.background = c;
       } else if (item.thumbType === 'custom') {
@@ -7234,7 +7228,7 @@ document.addEventListener('DOMContentLoaded', () => {
           card.appendChild(icon);
         }
       } else {
-        const url = (typeof extraBgMap !== 'undefined' && extraBgMap[item.id]) ? extraBgMap[item.id] : (item.file || item.thumb);
+        const url = (typeof extraBgMap !== 'undefined' && extraBgMap[item.id]) ? extraBgMap[item.id] : resolveBgUrl(item.file || item.thumb);
         card.style.backgroundImage = 'url("' + url + '")';
       }
 
@@ -7502,7 +7496,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const sheetHint = document.querySelector('.sheet-card-header p');
     if (sheetHint) {
-      sheetHint.innerHTML = '🖨️ <b>Раскладка мульти-печати:</b> здесь показаны все выбранные шаблоны так, как они будут напечатаны на листе А4. Кликните по любому ценнику, чтобы перейти к его редактированию.';
+      sheetHint.innerHTML = '<b>Раскладка мульти-печати:</b> здесь показаны все выбранные шаблоны так, как они будут напечатаны на листе А4. Кликните по любому ценнику, чтобы перейти к его редактированию.';
     }
 
     const selected = (typeof collectMultiSelection === 'function') ? collectMultiSelection() : [];
@@ -7586,7 +7580,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    sheetCalcText.textContent = `🖨️ Мульти: ${rendered.length} ценников (${selected.length} шабл.)${totalPages > 1 ? ` · ${totalPages} стр.` : ''}`;
+    sheetCalcText.textContent = `Мульти: ${rendered.length} ценников (${selected.length} шабл.)${totalPages > 1 ? ` · ${totalPages} стр.` : ''}`;
 
     sheetGridPreview.style.boxSizing = 'border-box';
     sheetGridPreview.style.padding = `${mTop}mm ${mSide}mm ${mBottom}mm ${mSide}mm`;
@@ -7653,7 +7647,7 @@ document.addEventListener('DOMContentLoaded', () => {
           badge.textContent = `#${itemSeq}`;
           wrap.appendChild(badge);
 
-          wrap.title = `№${itemSeq} [${tName}]: ${itemObj.title || 'Без названия'}${itemObj.price ? ' — ' + itemObj.price + ' ₽' : ''}\n👉 Нажмите, чтобы открыть этот шаблон и товар`;
+          wrap.title = `№${itemSeq} [${tName}]: ${itemObj.title || 'Без названия'}${itemObj.price ? ' — ' + itemObj.price + ' ₽' : ''}\nНажмите, чтобы открыть этот шаблон и товар`;
 
           wrap.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -7695,7 +7689,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const sheetHint = document.querySelector('.sheet-card-header p');
     if (sheetHint) {
-      sheetHint.innerHTML = '💡 <b>Интерактивная карта:</b> кликните по любому ценнику на листе, чтобы выбрать его и открыть в редакторе выше. Печатаются только заполненные позиции (с наименованием).';
+      sheetHint.innerHTML = '<b>Интерактивная карта:</b> кликните по любому ценнику на листе, чтобы выбрать его и открыть в редакторе выше. Печатаются только заполненные позиции (с наименованием).';
     }
 
     const effH = effectiveCardHeight(hMm); // с учётом внешнего декор-блока
@@ -7767,7 +7761,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updatePrintHubMetrics(grid, itemsToShow.length, filledUniqueCount, totalPages);
     sheetGridPreview.classList.toggle('is-landscape', grid.isLandscape);
 
-    const orientTag = grid.isLandscape ? '📑 Альбомная' : '📄 Книжная';
+    const orientTag = grid.isLandscape ? 'Альбомная' : 'Книжная';
     const autoExtra = (grid.mode === 'auto' && grid.benefit > 0) ? ` (+${grid.benefit} на листе)` : '';
     sheetCalcText.textContent = `${itemsToShow.length} заполнено · ${orientTag}${autoExtra} · влезает ${grid.maxCount}/лист (${grid.cols}×${grid.rows})${totalPages > 1 ? ` · ${totalPages} стр.` : ''}`;
     sheetGridPreview.style.boxSizing = 'border-box';
@@ -7791,7 +7785,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <span class="ghost-slot-num">№${g + 1}</span>
           <span class="ghost-slot-size">${wMm}×${effH.toFixed(0)} мм</span>
         `;
-        ghost.title = `Слот №${g + 1} (свободен)\n👉 Нажмите, чтобы открыть таблицу товаров`;
+        ghost.title = `Слот №${g + 1} (свободен)\nНажмите, чтобы открыть таблицу товаров`;
         ghost.addEventListener('click', () => {
           if (typeof openItemsDrawer === 'function') openItemsDrawer();
         });
@@ -7800,13 +7794,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const banner = document.createElement('div');
       banner.className = 'sheet-blueprint-banner';
       banner.innerHTML = `
-        <div class="sbb-icon">📐</div>
+        <div class="sbb-icon"><svg class="ico"><use href="#i-grid"/></svg></div>
         <div class="sbb-text">
           <h4>Лист А4 готов к раскладке</h4>
           <p>Формат: ${wMm / 10} × ${(effH / 10).toFixed(1)} см • Сетка: <b>${grid.cols} × ${grid.rows} = ${grid.maxCount} шт./лист</b></p>
         </div>
         <button type="button" class="btn btn-primary btn-sm sbb-btn" id="sheetFillItemsBtn">
-          📋 Открыть список товаров
+          <svg class="ico"><use href="#i-clipboard"/></svg> Открыть список товаров
         </button>
       `;
       const fillBtn = banner.querySelector('#sheetFillItemsBtn');
@@ -7851,7 +7845,7 @@ document.addEventListener('DOMContentLoaded', () => {
             itemWrapper.appendChild(badge);
 
             const copyStr = (entry && entry.copyIndex !== undefined) ? ` (копия ${entry.copyIndex + 1})` : '';
-            itemWrapper.title = `№${origIndex + 1}${copyStr}: ${item.title || 'Без названия'}${item.price ? ' — ' + item.price + ' ₽' : ''}\n👉 Нажмите, чтобы открыть в редакторе и подсветить в таблице`;
+            itemWrapper.title = `№${origIndex + 1}${copyStr}: ${item.title || 'Без названия'}${item.price ? ' — ' + item.price + ' ₽' : ''}\nНажмите, чтобы открыть в редакторе и подсветить в таблице`;
             itemWrapper.addEventListener('click', (e) => {
               e.stopPropagation();
               if (typeof setActiveItemIndex === 'function') {
@@ -7879,7 +7873,7 @@ document.addEventListener('DOMContentLoaded', () => {
           badge.textContent = `#${i + 1}`;
           itemWrapper.appendChild(badge);
 
-          itemWrapper.title = `Ценник на листе (${item.title || 'Текущий'})\n👉 Нажмите для перехода к редактору`;
+          itemWrapper.title = `Ценник на листе (${item.title || 'Текущий'})\nНажмите для перехода к редактору`;
           itemWrapper.addEventListener('click', () => {
             const workspacePanelEl = document.querySelector('.workspace-panel');
             const isSheetMode = workspacePanelEl && workspacePanelEl.classList.contains('view-sheet-mode');
@@ -7917,7 +7911,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <span class="ghost-slot-num">№${startIdx + g + 1}</span>
           <span class="ghost-slot-size">${wMm}×${effH.toFixed(0)} мм</span>
         `;
-        ghost.title = `Слот №${startIdx + g + 1} (свободен)\n👉 Нажмите, чтобы добавить товар`;
+        ghost.title = `Слот №${startIdx + g + 1} (свободен)\nНажмите, чтобы добавить товар`;
         ghost.addEventListener('click', () => {
           if (typeof openItemsDrawer === 'function') openItemsDrawer();
         });
@@ -8490,7 +8484,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       allPdfBtns.forEach(b => {
         b.disabled = false;
-        b.innerHTML = origMap.get(b) || '📥 Скачать PDF';
+        b.innerHTML = origMap.get(b) || '<svg class="ico"><use href="#i-download"/></svg> Скачать PDF';
       });
     }
   }
@@ -8992,8 +8986,8 @@ document.addEventListener('DOMContentLoaded', () => {
           <span class="preset-title">${item.name}</span>
           <span class="preset-desc">Размер: ${sizeText}</span>
         </div>
-        <button class="btn-export-template" title="Экспорт шаблона" data-index="${index}">⬇️</button>
-        <button class="btn-delete-template" title="Удалить шаблон" data-index="${index}">🗑️</button>
+        <button class="btn-export-template" title="Экспорт шаблона" data-index="${index}"><svg class="ico"><use href="#i-download"/></svg></button>
+        <button class="btn-delete-template" title="Удалить шаблон" data-index="${index}"><svg class="ico"><use href="#i-trash"/></svg></button>
       `;
 
       card.addEventListener('click', (e) => {
@@ -9142,7 +9136,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (hasRef && name) {
         const kindLabel = activeTemplateRef.kind === 'builtin' ? 'базовый' : 'пользовательский';
         saveModalHint.style.display = 'block';
-        saveModalHint.textContent = `🔄 Будет обновлён ${kindLabel} шаблон: «${name}»` +
+        saveModalHint.textContent = `Будет обновлён ${kindLabel} шаблон: «${name}»` +
           (activeTemplateRef.kind === 'builtin'
             ? ' (создаст персональную копию, т.к. базовые шаблоны неизменяемы)'
             : '');
@@ -9182,7 +9176,7 @@ document.addEventListener('DOMContentLoaded', () => {
     saveModal.classList.remove('active');
     renderSavedTemplates();
     document.querySelector('.tab-btn[data-tab="userSaved"]').click();
-    showToast(`💾 Шаблон «${name}» сохранён`, 'success');
+    showToast(`Шаблон «${name}» сохранён`, 'success');
   });
 
   // ===== Модал «Руководство пользователя / Инструкция» =====
@@ -9272,7 +9266,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       localStorage.setItem('wobbler_ui_theme', nextLight ? 'light' : 'dark');
     } catch (err) { }
-    showToast(nextLight ? '☀️ Светлая тема Studio включена' : '🌙 Тёмная тема Studio включена', 'info', 2200);
+    showToast(nextLight ? 'Светлая тема Studio включена' : 'Тёмная тема Studio включена', 'info', 2200);
   }
 
   const initialSavedTheme = (() => {
@@ -9397,7 +9391,7 @@ document.addEventListener('DOMContentLoaded', () => {
         saveModal.classList.remove('active');
         renderSavedTemplates();
         document.querySelector('.tab-btn[data-tab="userSaved"]').click();
-        showToast(`💾 Шаблон «${t.name}» обновлён`, 'success');
+        showToast(`Шаблон «${t.name}» обновлён`, 'success');
         return;
       }
 
@@ -9711,7 +9705,7 @@ document.addEventListener('DOMContentLoaded', () => {
       previewToolsBtn.classList.add('active');
       if (activeToolsBadge) {
         activeToolsBadge.style.display = 'inline-flex';
-        activeToolsBadge.textContent = isDragAll ? '✋ Все' : (isDragSolo ? '✌ Соло' : '🔲 Границы');
+        activeToolsBadge.textContent = isDragAll ? 'Все' : (isDragSolo ? 'Соло' : 'Границы');
       }
     } else {
       previewToolsBtn.classList.remove('active');
@@ -9801,7 +9795,7 @@ document.addEventListener('DOMContentLoaded', () => {
     syncDecorControlsToContext();
     syncBgControlsToContext();
     updatePreview();
-    showToast('↺ Активный ценник сброшен к шаблону', 'info');
+    showToast('Активный ценник сброшен к шаблону', 'info');
   }
 
   // Сброс ВСЕГО внешнего вида к шаблону: позиции + шрифты/цвета/границы/раскладка/
@@ -9834,7 +9828,7 @@ document.addEventListener('DOMContentLoaded', () => {
     syncDecorControlsToContext();
     syncBgControlsToContext();
     updatePreview();
-    showToast('↺ Все ценники сброшены к виду шаблона', 'info');
+    showToast('Все ценники сброшены к виду шаблона', 'info');
   }
 
   // Сброс АКТИВНОГО ценника к виду шаблона (расположение + оформление + границы).
@@ -9846,15 +9840,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (resetAllLabelPosBtn) {
     resetAllLabelPosBtn.addEventListener('click', resetAllToTemplate);
   }
-  // Дубликат кнопки «💴 Цена по №1» в панели превью.
-  const syncPricePosPreviewBtn = document.getElementById('syncPricePosPreviewBtn');
-  if (syncPricePosPreviewBtn) {
-    syncPricePosPreviewBtn.addEventListener('click', () => {
-      applySharedPosFromFirstToAll();
-      closePreviewToolsMenu();
-      showToast('💴 Расположение цены скопировано с №1 на все ценники', 'success');
-    });
-  }
+
 
 
   // Перетаскивание надписей через Pointer Events с делегированием на #wobblerPreview.
@@ -10499,7 +10485,7 @@ document.addEventListener('DOMContentLoaded', () => {
       fontMinus.addEventListener('click', (e) => {
         e.stopPropagation();
         if (!currentTargetKind) return;
-        if (typeof pushHistoryState === 'function') pushHistoryState('Кегль QuickBar');
+        if (typeof pushHistoryState === 'function') pushHistoryState('Размер шрифта');
         const cur = getCurrentQuickBarFontSize();
         applyQuickBarFontSize(cur - 1);
       });
@@ -10510,7 +10496,7 @@ document.addEventListener('DOMContentLoaded', () => {
       fontPlus.addEventListener('click', (e) => {
         e.stopPropagation();
         if (!currentTargetKind) return;
-        if (typeof pushHistoryState === 'function') pushHistoryState('Кегль QuickBar');
+        if (typeof pushHistoryState === 'function') pushHistoryState('Размер шрифта');
         const cur = getCurrentQuickBarFontSize();
         applyQuickBarFontSize(cur + 1);
       });
@@ -10519,7 +10505,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Поле текущего кегля (прямой ввод числа)
     if (fontSizeVal) {
       fontSizeVal.addEventListener('change', () => {
-        if (typeof pushHistoryState === 'function') pushHistoryState('Кегль QuickBar');
+        if (typeof pushHistoryState === 'function') pushHistoryState('Размер шрифта');
         applyQuickBarFontSize(fontSizeVal.value);
       });
       fontSizeVal.addEventListener('keydown', (e) => {
@@ -11238,6 +11224,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    updateScopeBadges();
     localStorage.setItem('wobbler_active_sidebar_tab', targetSectionId);
   }
 
@@ -11599,7 +11586,7 @@ document.addEventListener('DOMContentLoaded', () => {
     applyHistorySnapshot(prevSnap);
     updateHistoryButtons();
     isHistoryNavigating = false;
-    showToast(`↩ Отменено: ${prevSnap.description || 'действие'}`, 'info', 1800);
+    showToast(`Отменено: ${prevSnap.description || 'действие'}`, 'info', 1800);
   }
 
   function redoAction() {
@@ -11616,7 +11603,7 @@ document.addEventListener('DOMContentLoaded', () => {
     applyHistorySnapshot(nextSnap);
     updateHistoryButtons();
     isHistoryNavigating = false;
-    showToast(`↪ Повторено: ${nextSnap.description || 'действие'}`, 'info', 1800);
+    showToast(`Повторено: ${nextSnap.description || 'действие'}`, 'info', 1800);
   }
 
   function applyHistorySnapshot(snap) {
@@ -11789,6 +11776,31 @@ document.addEventListener('DOMContentLoaded', () => {
       sideCount.textContent = `${matchedCount} из ${totalCount}`;
     }
     if (sideClear) sideClear.style.display = isFiltered ? '' : 'none';
+
+    // «Ничего не найдено» — приглашение сбросить поиск, а не пустая тишина
+    const showNoResults = isFiltered && matchedCount === 0;
+    [itemsListContainer, idrItemsList].forEach(container => {
+      if (!container) return;
+      let el = container.querySelector('.items-no-results');
+      if (showNoResults) {
+        if (!el) {
+          el = document.createElement('div');
+          el.className = 'items-no-results';
+          const msg = document.createElement('span');
+          msg.className = 'items-no-results-msg';
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'btn btn-secondary btn-xs items-no-results-reset';
+          btn.textContent = 'Сбросить поиск';
+          btn.addEventListener('click', () => setGoodsSearch(''));
+          el.append(msg, btn);
+          container.appendChild(el);
+        }
+        el.querySelector('.items-no-results-msg').textContent = `Ничего не найдено по «${q}»`;
+      } else if (el) {
+        el.remove();
+      }
+    });
   }
 
   function setGoodsSearch(query) {
@@ -12020,7 +12032,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const maxFit = fitTitleSize(titleText, family, weight);
         if (maxFit != null && maxFit < currentSize - 0.75) {
           warnBtn.style.display = 'inline-flex';
-          warnBtn.title = `Текст названия не помещается в ценник (текущий: ${currentSize}pt, влезает: ${maxFit.toFixed(0)}pt).\n👉 Нажмите, чтобы подогнать размер!`;
+          warnBtn.title = `Текст названия не помещается в ценник (текущий: ${currentSize}pt, влезает: ${maxFit.toFixed(0)}pt).\nНажмите, чтобы подогнать размер!`;
         } else {
           warnBtn.style.display = 'none';
         }
@@ -12036,7 +12048,7 @@ document.addEventListener('DOMContentLoaded', () => {
       refitActiveTitle();
       autoFitFontSize();
       checkTextOverflow();
-      showToast('✨ Кегль шрифта автоматически подогнан под границы ценника!', 'success', 2200);
+      showToast('Размер шрифта автоматически подогнан под границы ценника!', 'success', 2200);
     });
   }
 
@@ -12535,11 +12547,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (preflightSummaryBanner) {
       preflightSummaryBanner.className = 'preflight-summary-banner ' + (audit.hasErrors ? 'err' : (audit.hasWarnings ? 'warn' : 'ok'));
       if (audit.hasErrors) {
-        preflightSummaryBanner.innerHTML = `❌ <b>Обнаружены ошибки:</b> найдено ${errCount} критических замечаний перед печатью тиража (${audit.totalCards} шт. на ${audit.totalSheets} л. А4). Исправьте их перед печатью.`;
+        preflightSummaryBanner.innerHTML = `<b>Обнаружены ошибки:</b> найдено ${errCount} критических замечаний перед печатью тиража (${audit.totalCards} шт. на ${audit.totalSheets} л. А4). Исправьте их перед печатью.`;
       } else if (audit.hasWarnings) {
-        preflightSummaryBanner.innerHTML = `⚠️ <b>Есть замечания:</b> тираж (${audit.totalCards} шт. на ${audit.totalSheets} л. А4) готов к печати, но найдено ${warnCount} замечаний.`;
+        preflightSummaryBanner.innerHTML = `<b>Есть замечания:</b> тираж (${audit.totalCards} шт. на ${audit.totalSheets} л. А4) готов к печати, но найдено ${warnCount} замечаний.`;
       } else {
-        preflightSummaryBanner.innerHTML = `✅ <b>Всё отлично!</b> Тираж проверен: ${audit.totalCards} шт. на ${audit.totalSheets} лист(ах) А4 готовы к печати.`;
+        preflightSummaryBanner.innerHTML = `<b>Всё отлично!</b> Тираж проверен: ${audit.totalCards} шт. на ${audit.totalSheets} лист(ах) А4 готовы к печати.`;
       }
     }
 
@@ -12549,25 +12561,25 @@ document.addEventListener('DOMContentLoaded', () => {
         preflightList.innerHTML = `
           <div class="preflight-item preflight-item-run-info">
             <div class="preflight-item-text">
-              <span class="preflight-badge ok">📋 Тираж</span>
+              <span class="preflight-badge ok">Тираж</span>
               <span>Тираж проверен: к печати <b>${audit.totalCards} шт.</b> ценников на <b>${audit.totalSheets}</b> ${audit.totalSheets === 1 ? 'листе' : 'листах'} А4${audit.copiesDetail ? ` (${audit.copiesDetail})` : ''}.</span>
             </div>
           </div>
           <div class="preflight-item">
             <div class="preflight-item-text">
-              <span class="preflight-badge ok">✅ ОК</span>
+              <span class="preflight-badge ok">ОК</span>
               <span>Цены и наименования всех товаров заполнены корректно.</span>
             </div>
           </div>
           <div class="preflight-item">
             <div class="preflight-item-text">
-              <span class="preflight-badge ok">✅ ОК</span>
+              <span class="preflight-badge ok">ОК</span>
               <span>Тексты укладываются в безопасную зону ценника.</span>
             </div>
           </div>
           <div class="preflight-item">
             <div class="preflight-item-text">
-              <span class="preflight-badge ok">✅ ОК</span>
+              <span class="preflight-badge ok">ОК</span>
               <span>Лист А4 заполнен оптимально (вместимость: ${audit.sheetCapacity} шт.).</span>
             </div>
           </div>
@@ -12578,7 +12590,7 @@ document.addEventListener('DOMContentLoaded', () => {
         runItem.className = 'preflight-item preflight-item-run-info';
         runItem.innerHTML = `
           <div class="preflight-item-text">
-            <span class="preflight-badge ok">📋 Тираж</span>
+            <span class="preflight-badge ok">Тираж</span>
             <span>К печати: <b>${audit.totalCards} шт.</b> ценников на <b>${audit.totalSheets}</b> ${audit.totalSheets === 1 ? 'листе' : 'листах'} А4${audit.copiesDetail ? ` (${audit.copiesDetail})` : ''}.</span>
           </div>
         `;
@@ -12588,9 +12600,9 @@ document.addEventListener('DOMContentLoaded', () => {
           const itemEl = document.createElement('div');
           itemEl.className = 'preflight-item';
           const badgeClass = issue.type === 'err' ? 'err' : (issue.type === 'warn' ? 'warn' : (issue.type === 'info' ? 'info' : 'ok'));
-          const badgeText = issue.type === 'err' ? '❌ Ошибка' : (issue.type === 'warn' ? '⚠️ Внимание' : 'ℹ️ Инфо');
+          const badgeText = issue.type === 'err' ? 'Ошибка' : (issue.type === 'warn' ? 'Внимание' : 'Инфо');
           const contrastTag = issue.contrastRatio ? `<span class="preflight-contrast-badge">${issue.contrastRatio}:1</span>` : '';
-          const actionBtnText = issue.actionType === 'contrast' ? '✨ Добавить тень' : (issue.actionType === 'jumpTemplate' ? 'Перейти' : 'Исправить');
+          const actionBtnText = issue.actionType === 'contrast' ? 'Добавить тень' : (issue.actionType === 'jumpTemplate' ? 'Перейти' : 'Исправить');
           const tplKeyAttr = issue.templateKey ? ` data-template="${issue.templateKey}"` : '';
 
           itemEl.innerHTML = `
@@ -12704,15 +12716,15 @@ document.addEventListener('DOMContentLoaded', () => {
         pill.title = `Список товаров пуст. Нажмите, чтобы открыть таблицу товаров для печати.`;
       } else if (audit.hasErrors) {
         pill.classList.add('status-error');
-        pillText.textContent = `❌ ${errCount} ош.`;
+        pillText.textContent = `${errCount} ошиб.`;
         pill.title = `Предпечатный аудит (тираж: ${audit.totalCards} шт. на ${audit.totalSheets} л. А4): обнаружено ${errCount} ошибок! Нажмите, чтобы открыть.`;
       } else if (audit.hasWarnings) {
         pill.classList.add('status-warning');
-        pillText.textContent = `⚠️ ${warnCount} зам.`;
+        pillText.textContent = `${warnCount} зам.`;
         pill.title = `Предпечатный аудит (тираж: ${audit.totalCards} шт. на ${audit.totalSheets} л. А4): ${warnCount} замечаний. Нажмите, чтобы открыть.`;
       } else {
         pill.classList.add('status-ready');
-        pillText.textContent = `✓ ${audit.totalCards} шт. (${audit.totalSheets} л.)`;
+        pillText.textContent = `${audit.totalCards} шт. (${audit.totalSheets} л.)`;
         pill.title = `Готово к печати: тираж ${audit.totalCards} шт. на ${audit.totalSheets} лист(ах) А4. Нажмите для предпечатного аудита.`;
       }
     } catch (_) { }
@@ -13019,4 +13031,15 @@ document.addEventListener('DOMContentLoaded', () => {
       refitActiveTitle();
     });
   }
+
+  // Контентный пакет шрифтов подключается асинхронно (media="print" → all):
+  // после применения его CSS повторно прогоняем готовность шрифтов и замер метрик.
+  window.addEventListener('wobbler-fonts-css-ready', () => {
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => {
+        updatePreview();
+        refitActiveTitle();
+      });
+    }
+  });
 });
