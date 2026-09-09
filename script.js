@@ -219,11 +219,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // === Бейджи области применения («этот ценник» / «весь шаблон») ===
+  // === Бейджи области применения («ценник №X» / «весь шаблон») ===
   // Показывают в заголовках секций 3/4/5 и в бейдже предпросмотра, куда попадут правки.
   // Только чтение состояния; сами режимы меняются сегментами внутри секций.
   function scopeBadgeLabel(mode) {
-    return mode === 'template' ? 'весь шаблон' : 'этот ценник';
+    if (mode === 'template') return 'весь шаблон';
+    const isMulti = (typeof isMultiModeNow === 'function')
+      ? isMultiModeNow()
+      : (document.querySelector('input[name="printMode"]:checked')?.value === 'multi');
+    const itemNum = (typeof activePreviewIndex === 'number') ? activePreviewIndex + 1 : 1;
+    return isMulti ? `ценник №${itemNum}` : 'этот ценник';
   }
 
   function renderPreviewItemBadge() {
@@ -243,9 +248,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isMulti) {
       badge.style.display = 'inline-flex';
       if (activeScopeMode) {
-        const label = activeScopeMode === 'template' ? 'шаблон' : 'этот ценник';
-        badge.textContent = `№${itemIndex + 1} · ${label}`;
-        badge.title = `Ценник №${itemIndex + 1}. Правки активного раздела: ${activeScopeMode === 'template' ? 'весь шаблон (все ценники)' : 'только этот ценник'}.`;
+        const label = activeScopeMode === 'template' ? 'весь шаблон' : `ценник №${itemIndex + 1}`;
+        badge.textContent = `${label}`;
+        badge.title = `Правки активного раздела: ${activeScopeMode === 'template' ? 'весь шаблон (все ценники)' : `только ценник №${itemIndex + 1}`}.`;
         badge.classList.toggle('mode-template', activeScopeMode === 'template');
         badge.classList.toggle('mode-item', activeScopeMode !== 'template');
       } else {
@@ -280,6 +285,16 @@ document.addEventListener('DOMContentLoaded', () => {
       el.classList.toggle('mode-template', mode === 'template');
       el.classList.toggle('mode-item', mode !== 'template');
     });
+
+    const isMulti = (typeof isMultiModeNow === 'function')
+      ? isMultiModeNow()
+      : (document.querySelector('input[name="printMode"]:checked')?.value === 'multi');
+    const itemNum = (typeof activePreviewIndex === 'number') ? activePreviewIndex + 1 : 1;
+    const itemBtnLabel = isMulti ? `Ценник №${itemNum}` : 'Этот ценник';
+    document.querySelectorAll('.mode-item-text').forEach(span => {
+      span.textContent = itemBtnLabel;
+    });
+
     const chip = document.getElementById('canvasScopeChip');
     if (chip) chip.style.display = 'none';
 
@@ -494,6 +509,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const saveTemplateBtn = document.getElementById('saveTemplateBtn');
   const saveModal = document.getElementById('saveModal');
+  const closeSaveModalBtn = document.getElementById('closeSaveModalBtn');
   const cancelSaveModal = document.getElementById('cancelSaveModal');
   const confirmSaveModal = document.getElementById('confirmSaveModal');
   const newTemplateNameInput = document.getElementById('newTemplateNameInput');
@@ -2866,6 +2882,60 @@ document.addEventListener('DOMContentLoaded', () => {
     if (emptyHint) emptyHint.style.display = itemsData.some(isItemFilled) ? 'none' : '';
   }
 
+  // Быстрые действия из карточки пустого списка товаров
+  const idrEmptyPasteBtn = document.getElementById('idrEmptyPasteBtn');
+  if (idrEmptyPasteBtn) {
+    idrEmptyPasteBtn.addEventListener('click', () => {
+      const pasteBox = document.getElementById('idrPasteBox');
+      const pasteInput = document.getElementById('idrPasteInput');
+      if (pasteBox) pasteBox.style.display = 'block';
+      if (pasteInput) {
+        pasteInput.focus();
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          navigator.clipboard.readText().then(clipText => {
+            if (clipText && clipText.trim()) {
+              pasteInput.value = clipText.trim();
+              if (typeof showToast === 'function') {
+                showToast('Данные из буфера обмена вставлены в поле', 'info', 2000);
+              }
+            }
+          }).catch(() => {});
+        }
+      }
+    });
+  }
+
+  const idrEmptySampleBtn = document.getElementById('idrEmptySampleBtn');
+  if (idrEmptySampleBtn) {
+    idrEmptySampleBtn.addEventListener('click', () => {
+      itemsData.length = 0;
+      initialExcelItems.forEach(item => {
+        if (item.title) {
+          itemsData.push({
+            title: item.title,
+            price: item.price || '',
+            subtitle: item.subtitle || '',
+            subtitleManual: false,
+            titleSizeManual: false,
+            digit: '',
+            count: 1
+          });
+        }
+      });
+      if (!itemsData.length) {
+        itemsData.push({ title: 'Светлое Нефильтрованное', price: '180', subtitle: '1 л', count: 1 });
+        itemsData.push({ title: 'Рыба Корюшка вяленая', price: '450', subtitle: '100 г', count: 1 });
+        itemsData.push({ title: 'Арахис в глазури', price: '120', subtitle: '100 г', count: 1 });
+      }
+      normalizeItemsArray();
+      renderItemsListInputs();
+      updatePreview();
+      if (typeof showToast === 'function') {
+        showToast('Загружены демонстрационные товары', 'success', 2500);
+      }
+    });
+  }
+
   // ===== Светлые фоны (Б/А, Живое, Рыба Выгодно, Сорт недели Желтый, А5): выбор → чёрный текст наименования/веса/цены =====
   const BG_BLACK_TEXT = ['bgother:ba.jpg', 'bgother:zhivoe.jpg', 'bgother:ryba_vygodno.png', 'bgother:sort_nedeli_yellow.jpg', 'sort_nedeli_yellow.jpg', 'bgother:a5.jpg', 'a5.jpg', 'bgother:a5_orange.jpg', 'a5_orange.jpg', 'bgother:a5_blue.jpg', 'a5_blue.jpg', 'bgother:a5_green.jpg', 'a5_green.jpg'];
   const BA_AUTO_COLORS = { titleColor: '#000000', subtitleColor: '#000000', priceColor: '#000000' };
@@ -3060,8 +3130,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function refreshAutolinkBtns() {
     document.querySelectorAll('.autolink-toggle').forEach(b => {
       b.classList.toggle('active', bgDecorAutolinkEnabled);
-      b.title = 'Автоприменение оформления при выборе фона: ' +
-        (bgDecorAutolinkEnabled ? 'ВКЛ (клик — выключить)' : 'ВЫКЛ (клик — включить)');
+      b.title = 'Автопривязка стиля к фону: ' +
+        (bgDecorAutolinkEnabled ? 'ВКЛ (нажмите, чтобы выключить)' : 'ВЫКЛ (нажмите, чтобы включить)');
     });
   }
 
@@ -3095,8 +3165,8 @@ document.addEventListener('DOMContentLoaded', () => {
       b.innerHTML = (b.id === 'decorPosToggle')
         ? (top ? 'Блок: сверху' : 'Блок: снизу')
         : (top ? '<svg class="ico"><use href="#i-arrow-up"/></svg>' : '<svg class="ico"><use href="#i-arrow-down"/></svg>');
-      b.title = 'Положение блока оформления для двухблочных пресетов (Живое, Новинка): ' +
-        (top ? 'СВЕРХУ ценника (клик — переключить снизу)' : 'СНИЗУ ценника (клик — переключить сверху)');
+      b.title = 'Положение промо-плашек («Живое», «Новинка»): ' +
+        (top ? 'СВЕРХУ ценника (нажмите, чтобы переместить вниз)' : 'СНИЗУ ценника (нажмите, чтобы переместить наверх)');
     });
   }
 
@@ -4527,6 +4597,8 @@ document.addEventListener('DOMContentLoaded', () => {
     row.setAttribute('data-index', String(i));
     const isSel = (typeof selectedItemIndices !== 'undefined') && selectedItemIndices.has(i);
     if (isSel) row.classList.add('is-selected');
+    const isSkipped = !!(item && item.skipPrint);
+    if (isSkipped) row.classList.add('is-skipped');
     const safeTitle = (item.title || '').replace(/"/g, '&quot;');
     const safeSub = (item.subtitle || '').replace(/"/g, '&quot;');
     const safePrice = (item.price || '').replace(/"/g, '&quot;');
@@ -4554,11 +4626,40 @@ document.addEventListener('DOMContentLoaded', () => {
       <textarea class="item-price-input" rows="1" placeholder="Цена" data-index="${i}">${safePrice}</textarea>
       <div class="item-qty-wrap" title="Тираж копий на листе А4"><input type="number" class="item-qty-input ${multipleClass}" min="1" max="99" value="${countVal}" data-multiple="${isMultiple}" data-index="${i}" title="Тираж копий на листе А4 (колесико мыши: +/-)"></div>
       <input type="text" class="item-digit-input" maxlength="3" placeholder="№" data-index="${i}" title="Большая цифра (слой «Цифра»)" value="${safeDigit}" style="${isSnekiDigitActive() ? '' : 'display:none;'}">
-      <button type="button" class="item-cross-btn" data-index="${i}" title="Перечеркнуть цену (акция/скидка)"><s>₽</s></button>
-      <button type="button" class="item-bg-btn ${bgBadgeClass}" data-index="${i}" title="Фон этого ценника"><svg class="ico"><use href="#i-image"/></svg></button>
-      <button type="button" class="item-decor-btn ${decorBadgeClass}" data-index="${i}" title="Оформление этого ценника"><svg class="ico"><use href="#i-palette"/></svg></button>
-      <button type="button" class="item-delete-btn" data-index="${i}" title="Удалить товар №${i + 1}"><svg class="ico"><use href="#i-trash"/></svg></button>
+      <div class="item-tools-wrap">
+        <button type="button" class="item-print-btn ${isSkipped ? 'is-skipped' : ''}" data-index="${i}" title="${isSkipped ? 'Ценник исключён из печати (нажмите, чтобы включить)' : 'Печатать этот ценник (нажмите, чтобы исключить)'}"><svg class="ico"><use href="${isSkipped ? '#i-eye' : '#i-printer'}"/></svg></button>
+        <button type="button" class="item-cross-btn" data-index="${i}" title="Зачеркнуть цену (акция со скидкой / распродажа)"><s>₽</s></button>
+        <button type="button" class="item-bg-btn ${bgBadgeClass}" data-index="${i}" title="Индивидуальный фон для ценника №${i + 1}"><svg class="ico"><use href="#i-image"/></svg></button>
+        <button type="button" class="item-decor-btn ${decorBadgeClass}" data-index="${i}" title="Промо-плашки и оформление для ценника №${i + 1}"><svg class="ico"><use href="#i-palette"/></svg></button>
+        <button type="button" class="item-delete-btn" data-index="${i}" title="Удалить строку №${i + 1}"><svg class="ico"><use href="#i-trash"/></svg></button>
+      </div>
     `;
+
+    const printToggleBtn = row.querySelector('.item-print-btn');
+    if (printToggleBtn) {
+      printToggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const idx = parseInt(printToggleBtn.getAttribute('data-index'), 10);
+        if (itemsData[idx]) {
+          itemsData[idx].skipPrint = !itemsData[idx].skipPrint;
+          const nowSkipped = !!itemsData[idx].skipPrint;
+          document.querySelectorAll(`.item-row[data-index="${idx}"]`).forEach(r => {
+            r.classList.toggle('is-skipped', nowSkipped);
+            const b = r.querySelector('.item-print-btn');
+            if (b) {
+              b.classList.toggle('is-skipped', nowSkipped);
+              b.title = nowSkipped ? 'Ценник исключён из печати (нажмите, чтобы включить)' : 'Печатать этот ценник (нажмите, чтобы исключить)';
+              b.innerHTML = `<svg class="ico"><use href="${nowSkipped ? '#i-eye' : '#i-printer'}"/></svg>`;
+            }
+          });
+          if (typeof scheduleSheetPreviewUpdate === 'function') scheduleSheetPreviewUpdate();
+          scheduleSessionSave();
+          if (typeof showToast === 'function') {
+            showToast(nowSkipped ? `Ценник №${idx + 1} исключён из печати` : `Ценник №${idx + 1} включён в печать`, 'info', 1600);
+          }
+        }
+      });
+    }
 
     const selChk = row.querySelector('.item-select-chk');
     if (selChk) {
@@ -4636,7 +4737,12 @@ document.addEventListener('DOMContentLoaded', () => {
       refitActiveTitle();
       // Прогрессивный рост/схлопывание строк по факту ввода.
       syncRowExtent(idx);
-      if (typeof checkAllRowsTextOverflow === 'function') checkAllRowsTextOverflow();
+      if (typeof checkSingleRowTextOverflow === 'function') {
+        checkSingleRowTextOverflow(idx);
+        debouncedCheckAllRowsOverflow(350);
+      } else if (typeof checkAllRowsTextOverflow === 'function') {
+        checkAllRowsTextOverflow();
+      }
       updatePreview();
     });
 
@@ -5120,17 +5226,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     itemsListContainer.appendChild(fragSidebar);
 
-    if (idrItemsList) {
+    // Оптимизация (Zero Idle Render): не пересоздаём DOM шторки, если она закрыта
+    const isDrawerVisible = itemsDrawer && (itemsDrawer.classList.contains('open') || document.body.classList.contains('drawer-docked'));
+    if (idrItemsList && isDrawerVisible) {
       idrItemsList.innerHTML = '';
       const fragDrawer = document.createDocumentFragment();
       for (let i = 0; i < itemsData.length; i++) {
         fragDrawer.appendChild(createItemRow(i));
       }
       idrItemsList.appendChild(fragDrawer);
+      idrItemsList.querySelectorAll('textarea').forEach(autoGrowTextarea);
     }
     // Авто-подгон высоты текстовых полей после добавления в DOM (чтобы 2-я строка наименования не обрезалась)
     itemsListContainer.querySelectorAll('textarea').forEach(autoGrowTextarea);
-    if (idrItemsList) idrItemsList.querySelectorAll('textarea').forEach(autoGrowTextarea);
     updateItemsEmptyHint();
     syncDigitControlsVisibility();
     if (typeof updateItemsDrawerHeader === 'function') updateItemsDrawerHeader();
@@ -5160,6 +5268,11 @@ document.addEventListener('DOMContentLoaded', () => {
     },
     {
       prefix: 'пиво бутылочное',
+      stripLastPriceDigit: false,
+      defaultSubtitle: ''
+    },
+    {
+      prefix: 'пиво разливное',
       stripLastPriceDigit: false,
       defaultSubtitle: ''
     }
@@ -5471,6 +5584,7 @@ document.addEventListener('DOMContentLoaded', () => {
       frag.appendChild(createItemRow(i));
     }
     idrItemsList.appendChild(frag);
+    idrItemsList.querySelectorAll('textarea').forEach(autoGrowTextarea);
     syncDigitControlsVisibility();
   }
 
@@ -6532,7 +6646,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Интерактивная фокусировка и мягкая подсветка строки товара в таблице
   function focusItemTableRow(idx) {
     if (typeof idx !== 'number' || idx < 0) return;
-    const row = document.querySelector(`.idr-table-wrapper .item-row[data-index="${idx}"], .items-table-wrapper .item-row[data-index="${idx}"]`);
+    const isDrawerVisible = itemsDrawer && (itemsDrawer.classList.contains('open') || document.body.classList.contains('drawer-docked'));
+    const container = isDrawerVisible ? idrItemsList : itemsListContainer;
+    const row = container?.querySelector(`.item-row[data-index="${idx}"]`) || document.querySelector(`.item-row[data-index="${idx}"]`);
     if (row) {
       row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       row.classList.remove('flash-highlight');
@@ -6542,7 +6658,7 @@ document.addEventListener('DOMContentLoaded', () => {
         row.classList.remove('flash-highlight');
       }, 1600);
 
-      const titleInput = row.querySelector('.col-title input, input[name="title"], textarea');
+      const titleInput = row.querySelector('.item-title-input, textarea');
       if (titleInput && document.activeElement !== titleInput) {
         titleInput.focus({ preventScroll: true });
       }
@@ -7850,7 +7966,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Чекбокс — единственный источник состояния.
     wobblerPreview.classList.toggle('price-plate', !!(pricePlateToggle && pricePlateToggle.checked));
 
-    renderSheetPreview(widthMm, heightMm);
+    scheduleSheetPreviewUpdate(widthMm, heightMm);
 
     // Синхронизируем индикаторы активности декор-блоков на суб-табах #5
     if (typeof syncDecorTabDots === 'function') syncDecorTabDots();
@@ -8491,6 +8607,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Планировщик рендера раскладки А4 (Zero-Lag RAF Coalescing)
+  let sheetPreviewRafId = null;
+  function scheduleSheetPreviewUpdate(wMm, hMm) {
+    if (sheetPreviewRafId) return;
+    sheetPreviewRafId = requestAnimationFrame(() => {
+      sheetPreviewRafId = null;
+      const widthMm = (typeof wMm === 'number') ? wMm : (parseFloat(wobblerWidthInput ? wobblerWidthInput.value : 6.5) * 10 || 65);
+      const heightMm = (typeof hMm === 'number') ? hMm : (parseFloat(wobblerHeightInput ? wobblerHeightInput.value : 4.5) * 10 || 45);
+      renderSheetPreview(widthMm, heightMm);
+    });
+  }
+
   function renderSheetPreview(wMm, hMm) {
     sheetGridPreview.innerHTML = '';
 
@@ -8512,13 +8640,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const isMultiMode = document.querySelector('input[name="printMode"]:checked').value === 'multi';
 
-    // В мультирежиме показываем только заполненные ценники с учётом тиража (it.count)
+    // В мультирежиме показываем только заполненные ценники с учётом тиража (it.count) и без исключённых из печати (it.skipPrint)
     let itemsToShow;
     let filledUniqueCount = 0;
     if (isMultiMode) {
       itemsToShow = [];
       itemsData.forEach((it, idx) => {
-        if (it && it.title && it.title.trim()) {
+        if (it && it.title && it.title.trim() && !it.skipPrint) {
           filledUniqueCount++;
           const qty = Math.max(1, parseInt(it.count, 10) || 1);
           for (let q = 0; q < qty; q++) {
@@ -8672,14 +8800,6 @@ document.addEventListener('DOMContentLoaded', () => {
               if (typeof showToast === 'function') {
                 showToast(`Выбран товар №${origIndex + 1}: «${item.title || 'Без названия'}»`, 'info', 1800);
               }
-              const workspacePanelEl = document.querySelector('.workspace-panel');
-              const isSheetMode = workspacePanelEl && workspacePanelEl.classList.contains('view-sheet-mode');
-              if (!isSheetMode) {
-                const previewTarget = document.querySelector('.preview-card') || wobblerPreview;
-                if (previewTarget) {
-                  previewTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-              }
             });
           }
         } else {
@@ -8759,13 +8879,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const isMultiMode = document.querySelector('input[name="printMode"]:checked').value === 'multi';
 
-    // В мультирежиме печатаем только заполненные ценники (есть наименование).
-    // В режиме одного товара дублируем выбранный ценник N раз (singleRepeatCount).
+    // В мультирежиме печатаем только заполненные ценники (есть наименование) без пропущенных
     let itemsToPrint;
     if (isMultiMode) {
       itemsToPrint = [];
       itemsData.forEach(it => {
-        if (it && it.title && it.title.trim()) {
+        if (it && it.title && it.title.trim() && !it.skipPrint) {
           const qty = Math.max(1, parseInt(it.count, 10) || 1);
           for (let q = 0; q < qty; q++) {
             itemsToPrint.push(it);
@@ -8855,9 +8974,9 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const isMultiMode = document.querySelector('input[name="printMode"]:checked').value === 'multi';
       if (isMultiMode) {
-        const filled = itemsData.filter(it => it && it.title && it.title.trim());
+        const filled = itemsData.filter(it => it && it.title && it.title.trim() && !it.skipPrint);
         if (!filled.length) {
-          alert('Нет заполненных ценников для печати. Введите наименование товара.');
+          alert('Нет активных ценников для печати. Включите хотя бы один товар в печать.');
           return;
         }
       } else {
@@ -10027,6 +10146,35 @@ document.addEventListener('DOMContentLoaded', () => {
     saveModal.classList.remove('active');
   });
 
+  if (closeSaveModalBtn) {
+    closeSaveModalBtn.addEventListener('click', () => {
+      saveModal.classList.remove('active');
+    });
+  }
+
+  // Закрытие кликом в любое место вне окна (по темному фону)
+  if (saveModal) {
+    saveModal.addEventListener('click', (e) => {
+      if (e.target === saveModal) {
+        saveModal.classList.remove('active');
+      }
+    });
+  }
+
+  // Горячие клавиши в поле ввода: Escape — закрыть, Enter — сохранить
+  if (newTemplateNameInput) {
+    newTemplateNameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        saveModal.classList.remove('active');
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        confirmSaveModal.click();
+      }
+    });
+  }
+
   confirmSaveModal.addEventListener('click', () => {
     const name = newTemplateNameInput.value.trim();
     if (!name) {
@@ -10517,7 +10665,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (el.id === 'pasteExcelArea' || el.id === 'idrPasteInput' || el.classList.contains('no-autogrow')) return;
     if (el.classList.contains('item-title-input')) {
       el.style.height = 'auto';
-      el.style.height = `${Math.min(el.scrollHeight, 54)}px`;
+      el.style.height = `${Math.min(el.scrollHeight, 44)}px`;
       return;
     }
     if (el.id === 'inputTitle') {
@@ -12716,6 +12864,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Escape (Закрыть открытые модалки, шпаргалку, сбросить выбор)
     if (e.key === 'Escape') {
+      if (saveModal && saveModal.classList.contains('active')) {
+        saveModal.classList.remove('active');
+        return;
+      }
+      if (copyItemsModal && copyItemsModal.classList.contains('active')) {
+        copyItemsModal.classList.remove('active');
+        return;
+      }
       if (typeof shortcutsModal !== 'undefined' && shortcutsModal && shortcutsModal.style.display !== 'none') {
         shortcutsModal.style.display = 'none';
         return;
@@ -13019,6 +13175,50 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof checkAllRowsTextOverflow === 'function') checkAllRowsTextOverflow();
   }
 
+  // Быстрая проверка переполнения для одной активной строки (во время набора)
+  function checkSingleRowTextOverflow(idx) {
+    if (isNaN(idx) || !itemsData[idx]) return;
+    const titleText = (itemsData[idx].title || '').trim();
+    const warnBtns = document.querySelectorAll(`.item-overflow-warn-btn[data-index="${idx}"]`);
+    if (!warnBtns.length) return;
+
+    if (!titleText) {
+      warnBtns.forEach(btn => btn.style.display = 'none');
+      return;
+    }
+
+    let family = (titleFont ? titleFont.value : '') || 'Arial, sans-serif';
+    let weight = (titleWeight ? titleWeight.value : '800') || '800';
+    if (itemsData[idx].fontsCustomized && itemsData[idx].fonts) {
+      if (itemsData[idx].fonts.titleFont) family = itemsData[idx].fonts.titleFont;
+      if (itemsData[idx].fonts.titleWeight) weight = itemsData[idx].fonts.titleWeight;
+    }
+
+    const currentSize = itemsData[idx].titleSize || parseFloat(titleSize ? titleSize.value : 13) || 13;
+    try {
+      const maxFit = fitTitleSize(titleText, family, weight, idx);
+      if (maxFit != null && maxFit < currentSize - 0.75) {
+        warnBtns.forEach(btn => {
+          btn.style.display = 'inline-flex';
+          btn.title = `Текст названия выходит за рамку ценника (текущий: ${currentSize} pt, помещается: ${maxFit.toFixed(0)} pt).\nНажмите для автоподгонки шрифта!`;
+        });
+      } else {
+        warnBtns.forEach(btn => btn.style.display = 'none');
+      }
+    } catch (_) {
+      warnBtns.forEach(btn => btn.style.display = 'none');
+    }
+  }
+
+  let debouncedCheckAllRowsTimer = null;
+  function debouncedCheckAllRowsOverflow(delay = 350) {
+    if (debouncedCheckAllRowsTimer) clearTimeout(debouncedCheckAllRowsTimer);
+    debouncedCheckAllRowsTimer = setTimeout(() => {
+      debouncedCheckAllRowsTimer = null;
+      checkAllRowsTextOverflow();
+    }, delay);
+  }
+
   // Инлайн-проверка переполнения для всех строк таблицы товаров
   function checkAllRowsTextOverflow() {
     const rows = document.querySelectorAll('.item-row');
@@ -13041,10 +13241,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const currentSize = itemsData[idx].titleSize || parseFloat(titleSize ? titleSize.value : 13) || 13;
       try {
-        const maxFit = fitTitleSize(titleText, family, weight);
+        const maxFit = fitTitleSize(titleText, family, weight, idx);
         if (maxFit != null && maxFit < currentSize - 0.75) {
           warnBtn.style.display = 'inline-flex';
-          warnBtn.title = `Текст названия не помещается в ценник (текущий: ${currentSize}pt, влезает: ${maxFit.toFixed(0)}pt).\nНажмите, чтобы подогнать размер!`;
+          warnBtn.title = `Текст названия выходит за рамку ценника (текущий: ${currentSize} pt, помещается: ${maxFit.toFixed(0)} pt).\nНажмите для автоподгонки шрифта!`;
         } else {
           warnBtn.style.display = 'none';
         }
@@ -13062,7 +13262,7 @@ document.addEventListener('DOMContentLoaded', () => {
       refitActiveTitle(true);
       autoFitFontSize();
       checkTextOverflow();
-      showToast('Размер шрифта автоматически подогнан под границы ценника!', 'success', 2200);
+      showToast('Размер шрифта подогнан под границы ценника', 'success', 2000);
     });
   }
 
@@ -13371,7 +13571,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const filledItems = [];
     if (isMultiMode) {
       itemsData.forEach((it, idx) => {
-        if (it && it.title && it.title.trim()) {
+        if (it && it.title && it.title.trim() && !it.skipPrint) {
           filledItems.push({ it, idx });
         }
       });
@@ -13511,7 +13711,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (cr < 2.8) {
             issues.push({
               type: 'warn',
-              msg: `Товар №${idx + 1} «${it.title}»: низкая контрастность названия (${cr.toFixed(1)}:1, WCAG советует ≥ 3:1). Рекомендуется включить тень.${qtySuffix}`,
+              msg: `Товар №${idx + 1} «${it.title}»: белый текст слабо различим на светлом фоне. Рекомендуется добавить тень для четкости.${qtySuffix}`,
               actionType: 'contrast',
               templateKey: activeKey,
               itemIndex: idx,
@@ -13538,7 +13738,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const emptySpots = sheetCapacity - remainder;
       issues.push({
         type: 'info',
-        msg: `На последнем листе остаётся ${emptySpots} ${emptySpots === 1 ? 'свободное место' : 'свободных мест'} (${remainder} из ${sheetCapacity} занято). Всего к печати: ${totalCards} шт. на ${totalSheets} лист(ах) А4.`,
+        msg: `На последнем листе свободно ${emptySpots} ${emptySpots === 1 ? 'место' : (emptySpots < 5 ? 'места' : 'мест')} (занято ${remainder} из ${sheetCapacity}). Всего к печати: ${totalCards} ценников на ${totalSheets} лист(ах) А4.`,
         actionType: 'info'
       });
     }
@@ -14202,7 +14402,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       refitActiveTitle(true);
       updatePreview();
-      if (typeof showToast === 'function') showToast('⚡ Кегль принудительно пересчитан!', 'success', 2000);
+      if (typeof showToast === 'function') showToast('⚡ Размер шрифта пересчитан', 'success', 2000);
     });
   }
 

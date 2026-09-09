@@ -393,6 +393,144 @@
       color: #64748b;
       opacity: 0.7;
     }
+
+    /* Интерактивная инструкция GainUp (Вариант 1) */
+    .gainup-inst-details {
+      background: #f0fdf4;
+      border: 1.5px solid #86efac;
+      border-radius: 6px;
+      overflow: hidden;
+      font-size: 7.3pt;
+      margin-top: 4px;
+    }
+
+    .gainup-inst-summary {
+      padding: 5px 8px;
+      background: #dcfce7;
+      color: #14532d;
+      font-size: 7.6pt;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      user-select: none;
+    }
+
+    .gainup-inst-summary:hover {
+      background: #bbf7d0;
+    }
+
+    .gainup-badge {
+      font-size: 6.8pt;
+      background: #15803d;
+      color: #fff;
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-weight: 600;
+    }
+
+    .gainup-inst-content {
+      padding: 7px 9px;
+      background: #ffffff;
+      border-top: 1px solid #bbf7d0;
+    }
+
+    .gainup-inst-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      margin-bottom: 6px;
+    }
+
+    .gainup-step-line {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      color: #334155;
+    }
+
+    .gainup-step-line .step-circle {
+      width: 14px;
+      height: 14px;
+      background: #16a34a;
+      color: #fff;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 6.8pt;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .gainup-inst-actions {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 5px;
+    }
+
+    .inst-btn {
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 7.2pt;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border: none;
+      transition: background 0.15s ease;
+    }
+
+    .inst-btn-primary {
+      background: #16a34a;
+      color: #fff;
+    }
+    .inst-btn-primary:hover {
+      background: #15803d;
+    }
+
+    .inst-btn-secondary {
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid #cbd5e1;
+    }
+    .inst-btn-secondary:hover {
+      background: #e2e8f0;
+    }
+
+    .gainup-inst-code {
+      font-family: Consolas, monospace;
+      font-size: 6.4pt;
+      background: #0f172a;
+      color: #38bdf8;
+      padding: 6px 8px;
+      border-radius: 4px;
+      max-height: 110px;
+      overflow-y: auto;
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .gainup-inst-link {
+      color: #0284c7;
+      text-decoration: underline;
+      font-weight: 700;
+    }
+    .gainup-inst-link:hover {
+      color: #0369a1;
+    }
+
+    @media print {
+      .gainup-inst-details[open] .gainup-inst-code,
+      .gainup-inst-actions {
+        display: none !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -439,18 +577,22 @@
           <span class="strike">Пиво бутылочное</span><span class="take-title">Mjolnir Страж хеймдалль/Медовуха 0,5 ст</span>&emsp;<span class="take-price">315</span>&emsp;<span class="ignored">1&emsp;315&emsp;0&emsp;315</span>
         </div>
 
-        <div class="hl-grid-3" style="margin-bottom: 4px;">
+        <div class="hl-grid-4" style="margin-bottom: 4px;">
+          <div class="hl-subcard" style="border-left: 2.5px solid #2563eb;">
+            <strong style="color: #2563eb;">🏷️ Касса GainUp (F4)</strong>
+            <p>Нажмите <b>«🏷️ В ценники»</b> или <span class="kbd-key">F4</span> прямо в окне кассы GainUp ➔ в окне программы нажмите <span class="kbd-key">Ctrl+V</span>. Всё наполнится за секунду!</p>
+          </div>
           <div class="hl-subcard" style="border-left: 2.5px solid #0d9488;">
-            <strong style="color: #0d9488;">⚡ Способ 1: Хоткей Ctrl+V</strong>
-            <p>Скопируйте в кассе (<span class="kbd-key">Ctrl+C</span>) ➔ в окне программы нажмите <span class="kbd-key">Ctrl+V</span> в любом месте. Таблица заполнится за 1 секунду без лишних кликов!</p>
+            <strong style="color: #0d9488;">⚡ Хоткей Ctrl+V</strong>
+            <p>Скопируйте в кассе (<span class="kbd-key">Ctrl+C</span>) ➔ в окне программы нажмите <span class="kbd-key">Ctrl+V</span> в любом месте. Таблица заполнится без лишних кликов!</p>
           </div>
           <div class="hl-subcard" style="border-left: 2.5px solid #0284c7;">
-            <strong style="color: #0284c7;">📑 Способ 2: Шторка «Товары»</strong>
-            <p>Кнопка <b>«Товары»</b> внизу слева ➔ кнопка <b>«📋 Вставить список из Excel / 1C»</b> ➔ вставьте строки и нажмите <b>«Вставить список»</b>. Удобно для проверки всей таблицы.</p>
+            <strong style="color: #0284c7;">📑 Шторка «Товары»</strong>
+            <p>Кнопка <b>«Товары»</b> внизу слева ➔ <b>«📋 Вставить список»</b> ➔ вставьте строки и нажмите <b>«Вставить»</b>. Удобно для проверки всей таблицы.</p>
           </div>
           <div class="hl-subcard" style="border-left: 2.5px solid #d97706;">
-            <strong style="color: #d97706;">📋 Способ 3: Сайдбар «📋 Excel»</strong>
-            <p>В левом меню откройте <b>Раздел 2</b> ➔ разверните компактный блок <b>«📋 Excel»</b> ➔ вставьте строки ➔ нажмите <b>«📋 Применить к таблице»</b>.</p>
+            <strong style="color: #d97706;">📋 Сайдбар «Excel»</strong>
+            <p>В меню откройте <b>Раздел 2</b> ➔ разверните блок <b>«📋 Excel»</b> ➔ вставьте строки ➔ нажмите <b>«📋 Применить к таблице»</b>.</p>
           </div>
         </div>
 
@@ -474,8 +616,152 @@
         </div>
 
         <div style="margin-top: 3px; font-size: 7.2pt; color: #134e4a; line-height: 1.25;">
-          💡 <b>Форматы данных:</b> Поддерживаются кассовые чеки (5–6 колонок), стандартный Excel в 2 или 3 колонки (<i>«Наименование» + «Вес» + «Цена»</i>) и простые текстовые списки с ценой на конце. Отмена вставки — <span class="kbd-key">Ctrl+Z</span>.
+          💡 <b>Интеграция с GainUp:</b> файл скрипта <code>gainup_to_wobbler.user.js</code> лежит в папке программы. Подключите его в <a href="https://www.tampermonkey.net/" target="_blank" rel="noopener" class="gainup-inst-link">Tampermonkey</a> — в чеке появится кнопка «🏷️ В ценники (F4)». Также поддерживаются кассовые чеки и Excel. Отмена — <span class="kbd-key">Ctrl+Z</span>.
         </div>
+
+        <!-- Подробная интерактивная инструкция GainUp (Вариант 1) -->
+        <details class="gainup-inst-details">
+          <summary class="gainup-inst-summary">
+            <span>🏷️ <b>Инструкция по настройке кнопки в кассе GainUp (Tampermonkey)</b> ▾</span>
+            <span class="gainup-badge">Скрипт и шаги</span>
+          </summary>
+          <div class="gainup-inst-content">
+            <div class="gainup-inst-steps">
+              <div class="gainup-step-line">
+                <span class="step-circle">1</span>
+                <div><b>Установите <a href="https://www.tampermonkey.net/" target="_blank" rel="noopener" class="gainup-inst-link">Tampermonkey</a>:</b> официальный сайт расширения для Chrome, Яндекс.Браузера или Edge.</div>
+              </div>
+              <div class="gainup-step-line">
+                <span class="step-circle">2</span>
+                <div><b>Добавьте скрипт:</b> значок Tampermonkey ➔ <i>«Создать новый скрипт»</i> ➔ вставьте код ниже ➔ <span class="kbd-key">Ctrl+S</span>.</div>
+              </div>
+              <div class="gainup-step-line">
+                <span class="step-circle">3</span>
+                <div><b>Использование:</b> на кассе GainUp нажмите <b>«🏷️ В ценники»</b> или клавишу <span class="kbd-key">F4</span> ➔ перейдите сюда ➔ <span class="kbd-key">Ctrl+V</span>!</div>
+              </div>
+            </div>
+
+            <div class="gainup-inst-actions">
+              <button type="button" id="copyInstGainupCodeBtn" class="inst-btn inst-btn-primary">
+                📋 Скопировать код скрипта в буфер
+              </button>
+              <a href="gainup_to_wobbler.user.js" download="gainup_to_wobbler.user.js" class="inst-btn inst-btn-secondary">
+                📥 Скачать gainup_to_wobbler.user.js
+              </a>
+            </div>
+
+            <pre class="gainup-inst-code" id="instGainupCode">// ==UserScript==
+// @name         GainUp -> Конструктор ценников
+// @namespace    http://tampermonkey.net/
+// @version      1.1
+// @description  Парсинг набитых товаров из кассы GainUp в программу печати ценников
+// @match        *://*.gainup.ru/mp/retail/sales*
+// @grant        GM_setClipboard
+// @run-at       document-idle
+// ==/UserScript==
+
+(function () {
+  'use strict';
+  const IGNORE_BAGS = true;
+
+  function parseGainupCart() {
+    const items = [];
+    const allTables = Array.from(document.querySelectorAll('table, .cart-table, .sales-table, [class*="table"]'));
+    let cartContainer = allTables.find(t => {
+      const txt = t.textContent.toLowerCase();
+      return txt.includes('наименование') && txt.includes('цена') && (txt.includes('кол-во') || txt.includes('итог'));
+    });
+    if (!cartContainer) {
+      const thName = Array.from(document.querySelectorAll('th, td, div')).find(el => 
+        el.children.length === 0 && el.textContent.trim().toLowerCase() === 'наименование'
+      );
+      if (thName) cartContainer = thName.closest('table') || thName.closest('.cart-table') || thName.parentElement?.parentElement;
+    }
+    const scope = cartContainer || document;
+    const rows = Array.from(scope.querySelectorAll('tr, .cart-row, .order-item'));
+
+    for (const row of rows) {
+      const cells = Array.from(row.querySelectorAll('td, .cell, [class*="col"]'));
+      if (cells.length < 2) continue;
+      const rowText = row.textContent.trim().toLowerCase();
+      if (rowText.includes('наименование') && rowText.includes('цена')) continue;
+
+      const hasQtyButtons = (row.textContent.includes('-') && row.textContent.includes('+')) || !!row.querySelector('button, [class*="minus"], [class*="plus"]');
+      const hasDeleteBtn = row.textContent.includes('✕') || row.textContent.includes('X') || !!row.querySelector('.fa-times, .close, [class*="delete"], [class*="remove"]');
+      if (!hasQtyButtons && !hasDeleteBtn && cells.length < 5) continue;
+
+      let nameCell = null;
+      let priceCell = null;
+      if (cells.length >= 3) {
+        const firstText = cells[0].innerText.trim().toLowerCase();
+        if (firstText === 'i' || firstText === '' || cells[0].querySelector('.info, i, svg')) {
+          nameCell = cells[1]; priceCell = cells[2];
+        } else {
+          nameCell = cells[0]; priceCell = cells[1];
+        }
+      } else if (cells.length === 2) {
+        nameCell = cells[0]; priceCell = cells[1];
+      }
+
+      if (nameCell && priceCell) {
+        let title = nameCell.innerText.replace(/^i\\s*/i, '').replace(/\\s+/g, ' ').trim();
+        let price = priceCell.innerText.replace(/[^\\d.,]/g, '').trim();
+        if (!/[а-яёa-z]/i.test(title)) continue;
+        const lower = title.toLowerCase();
+        if (lower.startsWith('итог') || lower.startsWith('стоимость') || lower.startsWith('скидка') || lower === 'принято' || lower === 'сдача') continue;
+        if (IGNORE_BAGS && /пакет\\b/i.test(title)) continue;
+        if (title && price) items.push({ title, price });
+      }
+    }
+    return items;
+  }
+
+  function copyCartToClipboard() {
+    const items = parseGainupCart();
+    if (!items || items.length === 0) { showToast('⚠️ Товары в чеке не найдены', '#f59e0b'); return; }
+    const tsvText = items.map(it => `${it.title}\\t${it.price}`).join('\\n');
+    if (typeof GM_setClipboard === 'function') GM_setClipboard(tsvText);
+    else navigator.clipboard.writeText(tsvText);
+    showToast(`🏷️ Скопировано товаров: ${items.length}! Перейдите в Конструктор и нажмите Ctrl+V`, '#10b981');
+  }
+
+  function showToast(message, bgColor = '#10b981') {
+    let toast = document.getElementById('gainup-wobbler-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'gainup-wobbler-toast';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.style.cssText = `position:fixed;top:24px;right:24px;background:${bgColor};color:#fff;padding:14px 22px;border-radius:12px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:15px;font-weight:700;z-index:9999999;box-shadow:0 10px 25px rgba(0,0,0,0.3);transition:all 0.3s ease;display:block;pointer-events:none;`;
+    clearTimeout(window.__gainupToastTimer);
+    window.__gainupToastTimer = setTimeout(() => { if (toast) toast.style.display = 'none'; }, 3500);
+  }
+
+  function injectButton() {
+    if (document.getElementById('gainup-to-wobbler-btn')) return;
+    const btn = document.createElement('button');
+    btn.id = 'gainup-to-wobbler-btn';
+    btn.type = 'button';
+    btn.innerHTML = '🏷️ В ценники <span style="font-size:11px;opacity:0.8;font-weight:normal;">(F4)</span>';
+    btn.style.cssText = 'background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:1px solid #1e40af;border-radius:8px;padding:8px 16px;font-size:14px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(37,99,235,0.3);transition:transform 0.1s ease,background 0.2s ease;user-select:none;';
+    btn.addEventListener('mouseenter', () => btn.style.transform = 'translateY(-1px)');
+    btn.addEventListener('mouseleave', () => btn.style.transform = 'translateY(0)');
+    btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); copyCartToClipboard(); });
+
+    const topNav = document.querySelector('.header, .top-bar, .navbar, .header-buttons') ||
+                   Array.from(document.querySelectorAll('div')).find(d => 
+                     d.children.length >= 2 && Array.from(d.children).some(c => c.textContent.includes('ЭДО') || c.textContent.includes('ЕГАИС'))
+                   );
+    if (topNav) { btn.style.marginLeft = '16px'; topNav.appendChild(btn); }
+    else { btn.style.position = 'fixed'; btn.style.top = '12px'; btn.style.right = '70px'; btn.style.zIndex = '999999'; document.body.appendChild(btn); }
+  }
+
+  window.addEventListener('keydown', (e) => { if (e.key === 'F4') { e.preventDefault(); copyCartToClipboard(); } });
+  setInterval(injectButton, 1000);
+})();</pre>
+          </div>
+        </details>
       </div>
     </div>
 
@@ -774,5 +1060,18 @@
     </div>
   </div>
 
+  <script>
+    const copyInstBtn = document.getElementById('copyInstGainupCodeBtn');
+    if (copyInstBtn) {
+      copyInstBtn.addEventListener('click', () => {
+        const code = document.getElementById('instGainupCode')?.textContent || '';
+        navigator.clipboard.writeText(code).then(() => {
+          const orig = copyInstBtn.textContent;
+          copyInstBtn.textContent = '✅ Код скопирован!';
+          setTimeout(() => { copyInstBtn.textContent = orig; }, 2500);
+        });
+      });
+    }
+  </script>
 </body>
 </html>
