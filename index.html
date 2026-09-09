@@ -651,6 +651,37 @@
     </button>
   </div>
 
+  <!-- Диагностическая Debug-плашка (Панель отладки геометрии и автоподгона) -->
+  <div class="debug-toolbar no-print" id="debugToolbar" role="region" aria-label="Панель отладки">
+    <div class="debug-header-row">
+      <div class="debug-title-group">
+        <span class="debug-tag-title">🛠️ DEBUG-HUD</span>
+        <span class="debug-badge debug-badge-version" id="dbgBuildVer">v1.9.5-DEBUG [09.09 16:00]</span>
+        <span class="debug-pill">Экран: <b id="dbgScreen">—</b></span>
+        <span class="debug-pill">Окно: <b id="dbgWin">—</b></span>
+        <span class="debug-pill">DPR: <b id="dbgDpr">—</b></span>
+        <span class="debug-pill">Шрифты: <b id="dbgFonts">—</b></span>
+      </div>
+      <div class="debug-actions-group">
+        <button type="button" class="debug-btn debug-btn-primary" id="dbgRefitBtn" title="Принудительно пересчитать кегль активного товара без ручных ограничений">⚡ Пересчитать</button>
+        <button type="button" class="debug-btn" id="dbgCopyBtn" title="Скопировать все отладочные параметры в буфер обмена для отправки разработчику">📋 Копировать отчет</button>
+        <button type="button" class="debug-btn debug-btn-danger" id="dbgResetBtn" title="Очистить сохраненную сессию в кэше браузера и перезагрузить страницу">🧹 Сброс сессии</button>
+        <button type="button" class="debug-btn" id="dbgToggleBtn" title="Свернуть или развернуть панель отладки">▲ Свернуть</button>
+      </div>
+    </div>
+    <div class="debug-body" id="debugBody">
+      <span class="debug-pill">Шаблон: <b id="dbgTemplate">—</b></span>
+      <span class="debug-pill">Товар: <b id="dbgItem">—</b></span>
+      <span class="debug-pill">Название: <span id="dbgTitleText">—</span></span>
+      <span class="debug-pill">Шрифт: <b id="dbgFontName">—</b></span>
+      <span class="debug-pill">Зона budget: <b id="dbgBudget">—</b></span>
+      <span class="debug-pill">Кегль в макете: <b id="dbgCurSize" style="color:#38bdf8;">—</b></span>
+      <span class="debug-pill">Расчет fitTitle: <b id="dbgFitSize" style="color:#38bdf8;">—</b></span>
+      <span class="debug-pill">Замер Probe: <b id="dbgProbe">—</b></span>
+      <span class="debug-pill">Ручной кегль (manual): <b id="dbgManual">—</b></span>
+    </div>
+  </div>
+
   <main class="main-layout no-print">
     <!-- Left Sidebar Controls -->
     <aside class="controls-sidebar sidebar-mode-tabs" id="controlsSidebar">

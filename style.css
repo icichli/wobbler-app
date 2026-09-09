@@ -8927,3 +8927,156 @@ label:has(input:focus-visible) {
     scroll-behavior: auto !important;
   }
 }
+
+/* ===== Панель отладки и диагностики геометрии (Debug-плашка) ===== */
+.debug-toolbar {
+  flex-shrink: 0;
+  width: 100%;
+  background: #0f172a;
+  border-bottom: 1px solid #334155;
+  color: #f1f5f9;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, monospace;
+  font-size: 11px;
+  line-height: 1.4;
+  padding: 5px 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  z-index: 100;
+  box-sizing: border-box;
+  transition: padding 0.15s ease;
+}
+
+.debug-toolbar.is-collapsed {
+  padding: 3px 16px;
+}
+
+.debug-toolbar.is-collapsed .debug-body {
+  display: none !important;
+}
+
+.debug-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.debug-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.debug-tag-title {
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.debug-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.debug-badge-version {
+  background: #1e293b;
+  color: #f59e0b;
+  border: 1px solid #d97706;
+}
+
+.debug-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.debug-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: #1e293b;
+  color: #e2e8f0;
+  border: 1px solid #475569;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.debug-btn:hover {
+  background: #334155;
+  color: #ffffff;
+  border-color: #64748b;
+}
+
+.debug-btn:active {
+  transform: translateY(1px);
+}
+
+.debug-btn-primary {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #38bdf8;
+}
+
+.debug-btn-primary:hover {
+  background: #0369a1;
+}
+
+.debug-btn-danger {
+  background: #881337;
+  color: #fecdd3;
+  border-color: #e11d48;
+}
+
+.debug-btn-danger:hover {
+  background: #9f1239;
+  color: #fff;
+}
+
+.debug-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-top: 5px;
+  padding-top: 5px;
+  border-top: 1px dashed #334155;
+}
+
+.debug-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #1e293b;
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 1px solid #334155;
+  color: #cbd5e1;
+  white-space: nowrap;
+}
+
+.debug-pill b {
+  color: #f8fafc;
+  font-weight: 700;
+}
+
+@media print {
+  .debug-toolbar {
+    display: none !important;
+  }
+}
