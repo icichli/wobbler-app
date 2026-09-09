@@ -2591,7 +2591,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // 2) Таблицы товаров всех шаблонов (с их per-item настройками).
     TEMPLATE_KEYS.forEach(k => {
       if (Array.isArray(s.items[k])) {
-        templateItems[k] = s.items[k].map(it => (it && typeof it === 'object') ? it : freshItem());
+        templateItems[k] = s.items[k].map(it => {
+          const item = (it && typeof it === 'object') ? it : freshItem();
+          // Очистка испорченных значений кегля из-за старого сбоя probe (>= 90pt или <= 7pt), если не были заданы вручную
+          if (!item.titleSizeManual) {
+            if (item.titleSize >= 90 || item.titleSize <= 7) delete item.titleSize;
+            if (item.fonts && (item.fonts.titleSize >= 90 || item.fonts.titleSize <= 7)) delete item.fonts.titleSize;
+          }
+          return item;
+        });
       }
     });
 
@@ -4585,7 +4593,7 @@ document.addEventListener('DOMContentLoaded', () => {
       syncFontControlsToContext();
       syncDecorControlsToContext();
       syncBgControlsToContext();
-      updatePreview();
+      refitActiveTitle();
     });
     titleInput.addEventListener('keydown', (e) => handleTableNavKeyDown(e, titleInput, 'item-title-input', i));
 
@@ -4627,7 +4635,7 @@ document.addEventListener('DOMContentLoaded', () => {
         syncFontControlsToContext();
         syncDecorControlsToContext();
         syncBgControlsToContext();
-        updatePreview();
+        refitActiveTitle();
       });
       subInput.addEventListener('keydown', (e) => handleTableNavKeyDown(e, subInput, 'item-subtitle-input', i));
       subInput.addEventListener('input', (e) => {
@@ -4652,7 +4660,7 @@ document.addEventListener('DOMContentLoaded', () => {
       syncFontControlsToContext();
       syncDecorControlsToContext();
       syncBgControlsToContext();
-      updatePreview();
+      refitActiveTitle();
     });
     priceInput.addEventListener('keydown', (e) => handleTableNavKeyDown(e, priceInput, 'item-price-input', i));
 
@@ -5974,6 +5982,7 @@ document.addEventListener('DOMContentLoaded', () => {
           : Math.max(2, headerHm * Math.max(0.05, 1 - ts.top - ts.bottom));
       }
     } else {
+      const hasPrice = isTemplatePriceSlotAvailable(activeTemplateRef, currentLayout, rybaPriceInBottom && currentLayout === 'split');
       const isTsDefault = (ts.top === 0 && ts.bottom === 0);
       if (isTsDefault) {
         tzMm = hasPrice ? (headerHm * 0.45) : contentHm;
@@ -6185,9 +6194,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const family = titleFont ? titleFont.value : 'Arial, sans-serif';
     const weight = titleWeight ? titleWeight.value : '800';
     let count = 0;
-    itemsData.forEach((it) => {
+    itemsData.forEach((it, idx) => {
       if (!it || !it.title || !it.title.trim()) return;
-      const fit = fitTitleSize(it.title, family, weight);
+      const fit = fitTitleSize(it.title, family, weight, idx);
       if (fit != null) {
         delete it.titleSizeManual;
         it.titleSize = fit;
