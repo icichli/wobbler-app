@@ -28,7 +28,7 @@
       href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@400..700&family=Comfortaa:wght@300..700&family=Lobster&family=Marck+Script&family=Neucha&family=Oswald:wght@200..700&family=Pacifico&family=Pattaya&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Press+Start+2P&family=Roboto:ital,wght@0,100..900;1,100..900&family=Rubik:ital,wght@0,300..900;1,300..900&family=Ruslan+Display&display=swap"
       rel="stylesheet">
   </noscript>
-  <link rel="stylesheet" href="style.css?v=59">
+  <link rel="stylesheet" href="style.css?v=63">
   <script>
     try {
       if (localStorage.getItem('wobbler_ui_theme') === 'light') {
@@ -2016,183 +2016,182 @@
 
     <!-- Right Interactive Workspace -->
     <section class="workspace-panel" id="workspacePanel">
-      <!-- Interactive Preview Header with Custom Size Controls -->
       <div class="workspace-header">
-        <div class="workspace-header-left">
-          <button type="button" id="togglePreviewBtn" class="collapse-btn" title="Скрыть/показать предпросмотр">
-            <span class="collapse-arrow">▼</span>
-          </button>
-          <h2>Предпросмотр <span id="previewItemBadge" class="preview-item-badge" style="display:none;"></span></h2>
-          <!-- Степпер навигации по ценникам в режиме «Разные товары» -->
-          <div id="previewItemNav" class="preview-item-nav" style="display:none;">
-            <button type="button" id="prevItemBtn" class="btn-icon-sm" title="Предыдущий ценник (Alt+←)">◀</button>
-            <div class="item-nav-dropdown-wrap">
-              <button type="button" id="itemNavSelectBtn" class="item-nav-btn" title="Выбрать ценник из списка">
-                <span id="previewItemNavText">Товар 1 из 1</span>
-                <span class="dropdown-arrow">▾</span>
-              </button>
-              <div id="itemNavDropdownMenu" class="item-nav-dropdown-menu" style="display: none;"></div>
-            </div>
-            <button type="button" id="nextItemBtn" class="btn-icon-sm" title="Следующий ценник (Alt+→)">▶</button>
-          </div>
-        </div>
-        <span id="sizeReadout" class="size-readout">6,5 × 3,5 см</span>
-
-        <!-- Чип области применения правок активной секции (Шрифты/Фоны/Оформление) -->
-        <span id="canvasScopeChip" class="canvas-scope-chip" style="display:none;"
-          title="Куда применяются правки активной секции панели слева (Шрифты, Фоны или Оформление). Режим переключается в самой секции."><span
-            class="csc-dot"></span><span id="canvasScopeChipText">правки: этот ценник</span></span>
-
-        <!-- Переключатель масштаба монтажного стола: Ценник крупно / Лист А4 -->
-        <div class="workspace-view-toggle" id="workspaceViewToggle" title="Режим отображения монтажного стола">
-          <button type="button" class="wvt-btn active" id="viewModeTagBtn"
-            title="Крупный детальный просмотр одного ценника">
-            <span class="wvt-icon"><svg class="ico">
-                <use href="#i-search" />
-              </svg></span> <span class="wvt-text">Ценник</span>
-          </button>
-          <button type="button" class="wvt-btn" id="viewModeSheetBtn" title="Обзор раскладки всего листа А4">
-            <span class="wvt-icon"><svg class="ico">
-                <use href="#i-file" />
-              </svg></span> <span class="wvt-text">Лист А4</span>
-          </button>
-        </div>
-
-        <div class="preview-toolbar">
-          <!-- Компактное выпадающее меню инструментов правки макета -->
-          <div class="preview-tools-dropdown-wrap" id="previewToolsDropdownWrap">
-            <button type="button" id="previewToolsDropdownBtn" class="btn btn-secondary btn-sm preview-tools-btn"
-              title="Инструменты ручной подгонки, перетаскивания и сброса">
-              <span class="tools-btn-icon"><svg class="ico">
-                  <use href="#i-sliders" />
-                </svg></span>
-              <span class="tools-btn-text">Правка</span>
-              <span id="activeToolsBadge" class="tools-active-badge" style="display:none;"></span>
-              <span class="tools-btn-arrow">▾</span>
+        <div class="workspace-header-start">
+          <div class="workspace-header-left">
+            <button type="button" id="togglePreviewBtn" class="collapse-btn" title="Скрыть/показать предпросмотр">
+              <span class="collapse-arrow">▼</span>
             </button>
-            <div id="previewToolsMenu" class="preview-tools-menu" style="display:none;">
-              <div class="ptm-group-title">Перетаскивание мышью</div>
-              <button type="button" id="dragModeToggle" class="ptm-item"
-                title="Свободное перетаскивание надписей мышью: смещения применятся ко всем ценникам">
+            <!-- Степпер навигации по ценникам в режиме «Разные товары» -->
+            <div id="previewItemNav" class="preview-item-nav" style="display:none;">
+              <button type="button" id="prevItemBtn" class="btn-icon-sm" title="Предыдущий ценник (Alt+←)">◀</button>
+              <div class="item-nav-dropdown-wrap">
+                <button type="button" id="itemNavSelectBtn" class="item-nav-btn" title="Выбрать ценник из списка">
+                  <span id="previewItemNavText">Товар 1 из 1</span>
+                  <span class="dropdown-arrow">▾</span>
+                </button>
+                <div id="itemNavDropdownMenu" class="item-nav-dropdown-menu" style="display: none;"></div>
+              </div>
+              <button type="button" id="nextItemBtn" class="btn-icon-sm" title="Следующий ценник (Alt+→)">▶</button>
+            </div>
+          </div>
+          <span id="sizeReadout" class="size-readout">6,5 × 3,5 см</span>
+        </div>
 
-                <span class="ptm-text">Двигать надписи (все)</span>
+        <div class="workspace-header-end">
+          <!-- Переключатель масштаба монтажного стола: Ценник крупно / Лист А4 -->
+          <div class="workspace-view-toggle" id="workspaceViewToggle" title="Режим отображения монтажного стола">
+            <button type="button" class="wvt-btn active" id="viewModeTagBtn"
+              title="Крупный детальный просмотр одного ценника">
+              <span class="wvt-icon"><svg class="ico">
+                  <use href="#i-search" />
+                </svg></span> <span class="wvt-text">Ценник</span>
+            </button>
+            <button type="button" class="wvt-btn" id="viewModeSheetBtn" title="Обзор раскладки всего листа А4">
+              <span class="wvt-icon"><svg class="ico">
+                  <use href="#i-file" />
+                </svg></span> <span class="wvt-text">Лист А4</span>
+            </button>
+          </div>
+
+          <div class="preview-toolbar">
+            <!-- Компактное выпадающее меню инструментов правки макета -->
+            <div class="preview-tools-dropdown-wrap" id="previewToolsDropdownWrap">
+              <button type="button" id="previewToolsDropdownBtn" class="btn btn-secondary btn-sm preview-tools-btn"
+                title="Инструменты ручной подгонки, перетаскивания и сброса">
+                <span class="tools-btn-icon"><svg class="ico">
+                    <use href="#i-sliders" />
+                  </svg></span>
+                <span class="tools-btn-text">Правка</span>
+                <span id="activeToolsBadge" class="tools-active-badge" style="display:none;"></span>
+                <span class="tools-btn-arrow">▾</span>
               </button>
-              <button type="button" id="dragModeSoloToggle" class="ptm-item"
-                title="Свободное перетаскивание надписей мышью: смещения применятся только к выбранному ценнику">
+              <div id="previewToolsMenu" class="preview-tools-menu" style="display:none;">
+                <div class="ptm-group-title">Перетаскивание мышью</div>
+                <button type="button" id="dragModeToggle" class="ptm-item"
+                  title="Свободное перетаскивание надписей мышью: смещения применятся ко всем ценникам">
 
-                <span class="ptm-text">Двигать отдельно (соло)</span>
-              </button>
-              <button type="button" id="safeEditToggle" class="ptm-item"
-                title="Настроить границы названия: потяните рамку на ценнике, чтобы ограничить область для длинного текста (отступы в мм)">
+                  <span class="ptm-text">Двигать надписи (все)</span>
+                </button>
+                <button type="button" id="dragModeSoloToggle" class="ptm-item"
+                  title="Свободное перетаскивание надписей мышью: смещения применятся только к выбранному ценнику">
 
-                <span class="ptm-text">Границы текста</span>
-              </button>
+                  <span class="ptm-text">Двигать отдельно (соло)</span>
+                </button>
+                <button type="button" id="safeEditToggle" class="ptm-item"
+                  title="Настроить границы названия: потяните рамку на ценнике, чтобы ограничить область для длинного текста (отступы в мм)">
 
-              <div class="ptm-divider"></div>
-              <div class="ptm-group-title">Выравнивание и декор</div>
-              <button type="button" id="decorPosToggle" class="ptm-item decor-pos-toggle"
-                title="Переключить положение блока оформления (сверху / снизу ценника)">Блок: сверху</button>
+                  <span class="ptm-text">Границы текста</span>
+                </button>
 
-              <div class="ptm-divider"></div>
-              <div class="ptm-group-title">Сброс к шаблону</div>
-              <button type="button" id="resetLabelPosBtn" class="ptm-item"
-                title="Сбросить смещения надписей выбранного ценника к исходному виду шаблона">
+                <div class="ptm-divider"></div>
+                <div class="ptm-group-title">Выравнивание и декор</div>
+                <button type="button" id="decorPosToggle" class="ptm-item decor-pos-toggle"
+                  title="Переключить положение блока оформления (сверху / снизу ценника)">Блок: сверху</button>
 
-                <span class="ptm-text">Сбросить активный ценник</span>
-              </button>
-              <button type="button" id="resetAllLabelPosBtn" class="ptm-item ptm-danger"
-                title="Сбросить смещения надписей у ВСЕХ ценников листа к исходному виду шаблона">
+                <div class="ptm-divider"></div>
+                <div class="ptm-group-title">Сброс к шаблону</div>
+                <button type="button" id="resetLabelPosBtn" class="ptm-item"
+                  title="Сбросить смещения надписей выбранного ценника к исходному виду шаблона">
 
-                <span class="ptm-text">Сбросить ВСЕ ценники</span>
-              </button>
+                  <span class="ptm-text">Сбросить активный ценник</span>
+                </button>
+                <button type="button" id="resetAllLabelPosBtn" class="ptm-item ptm-danger"
+                  title="Сбросить смещения надписей у ВСЕХ ценников листа к исходному виду шаблона">
+
+                  <span class="ptm-text">Сбросить ВСЕ ценники</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Компактная числовая плашка точной подстройки границ текста (мм) -->
+            <div class="safe-edit-bar" id="safeEditBar" style="display: none;">
+              <div class="seb-badge" title="Режим настройки границ текста">
+                <svg class="ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h18"/></svg>
+                <span>Границы текста</span>
+              </div>
+
+              <div class="seb-group">
+                <label for="safeBarTop" title="Отступ сверху в мм">Верх</label>
+                <div class="seb-stepper">
+                  <input type="number" id="safeBarTop" step="0.5" min="0" max="100" value="0.0">
+                  <span class="seb-unit">мм</span>
+                  <div class="seb-arrows">
+                    <button type="button" class="seb-arr" data-safe-step="top" data-safe-delta="0.5" title="Увеличить на 0.5 мм (вверх)">▲</button>
+                    <button type="button" class="seb-arr" data-safe-step="top" data-safe-delta="-0.5" title="Уменьшить на 0.5 мм (вниз)">▼</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="seb-group">
+                <label for="safeBarBottom" title="Отступ снизу в мм">Низ</label>
+                <div class="seb-stepper">
+                  <input type="number" id="safeBarBottom" step="0.5" min="0" max="100" value="0.0">
+                  <span class="seb-unit">мм</span>
+                  <div class="seb-arrows">
+                    <button type="button" class="seb-arr" data-safe-step="bottom" data-safe-delta="0.5" title="Увеличить на 0.5 мм">▲</button>
+                    <button type="button" class="seb-arr" data-safe-step="bottom" data-safe-delta="-0.5" title="Уменьшить на 0.5 мм">▼</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="seb-group">
+                <label for="safeBarLeft" title="Отступ слева в мм">Лев</label>
+                <div class="seb-stepper">
+                  <input type="number" id="safeBarLeft" step="0.5" min="0" max="100" value="0.0">
+                  <span class="seb-unit">мм</span>
+                  <div class="seb-arrows">
+                    <button type="button" class="seb-arr" data-safe-step="left" data-safe-delta="0.5" title="Увеличить на 0.5 мм">▲</button>
+                    <button type="button" class="seb-arr" data-safe-step="left" data-safe-delta="-0.5" title="Уменьшить на 0.5 мм">▼</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="seb-group">
+                <label for="safeBarRight" title="Отступ справа в мм">Прав</label>
+                <div class="seb-stepper">
+                  <input type="number" id="safeBarRight" step="0.5" min="0" max="100" value="0.0">
+                  <span class="seb-unit">мм</span>
+                  <div class="seb-arrows">
+                    <button type="button" class="seb-arr" data-safe-step="right" data-safe-delta="0.5" title="Увеличить на 0.5 мм">▲</button>
+                    <button type="button" class="seb-arr" data-safe-step="right" data-safe-delta="-0.5" title="Уменьшить на 0.5 мм">▼</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="seb-readout" id="safeBarSizeDisplay" title="Результирующий размер зоны текста в мм">
+                Зона: <strong>0.0 × 0.0 мм</strong>
+              </div>
+
+              <button type="button" id="closeSafeEditBarBtn" class="seb-close-btn" title="Завершить настройку границ текста">Готово</button>
             </div>
           </div>
 
-          <!-- Компактная числовая плашка точной подстройки границ текста (мм) -->
-          <div class="safe-edit-bar" id="safeEditBar" style="display: none;">
-            <div class="seb-badge" title="Режим настройки границ текста">
-              <svg class="ico" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h18"/></svg>
-              <span>Границы текста</span>
-            </div>
-
-            <div class="seb-group">
-              <label for="safeBarTop" title="Отступ сверху в мм">Верх</label>
-              <div class="seb-stepper">
-                <input type="number" id="safeBarTop" step="0.5" min="0" max="100" value="0.0">
-                <span class="seb-unit">мм</span>
-                <div class="seb-arrows">
-                  <button type="button" class="seb-arr" data-safe-step="top" data-safe-delta="0.5" title="Увеличить на 0.5 мм (вверх)">▲</button>
-                  <button type="button" class="seb-arr" data-safe-step="top" data-safe-delta="-0.5" title="Уменьшить на 0.5 мм (вниз)">▼</button>
-                </div>
-              </div>
-            </div>
-
-            <div class="seb-group">
-              <label for="safeBarBottom" title="Отступ снизу в мм">Низ</label>
-              <div class="seb-stepper">
-                <input type="number" id="safeBarBottom" step="0.5" min="0" max="100" value="0.0">
-                <span class="seb-unit">мм</span>
-                <div class="seb-arrows">
-                  <button type="button" class="seb-arr" data-safe-step="bottom" data-safe-delta="0.5" title="Увеличить на 0.5 мм">▲</button>
-                  <button type="button" class="seb-arr" data-safe-step="bottom" data-safe-delta="-0.5" title="Уменьшить на 0.5 мм">▼</button>
-                </div>
-              </div>
-            </div>
-
-            <div class="seb-group">
-              <label for="safeBarLeft" title="Отступ слева в мм">Лев</label>
-              <div class="seb-stepper">
-                <input type="number" id="safeBarLeft" step="0.5" min="0" max="100" value="0.0">
-                <span class="seb-unit">мм</span>
-                <div class="seb-arrows">
-                  <button type="button" class="seb-arr" data-safe-step="left" data-safe-delta="0.5" title="Увеличить на 0.5 мм">▲</button>
-                  <button type="button" class="seb-arr" data-safe-step="left" data-safe-delta="-0.5" title="Уменьшить на 0.5 мм">▼</button>
-                </div>
-              </div>
-            </div>
-
-            <div class="seb-group">
-              <label for="safeBarRight" title="Отступ справа в мм">Прав</label>
-              <div class="seb-stepper">
-                <input type="number" id="safeBarRight" step="0.5" min="0" max="100" value="0.0">
-                <span class="seb-unit">мм</span>
-                <div class="seb-arrows">
-                  <button type="button" class="seb-arr" data-safe-step="right" data-safe-delta="0.5" title="Увеличить на 0.5 мм">▲</button>
-                  <button type="button" class="seb-arr" data-safe-step="right" data-safe-delta="-0.5" title="Уменьшить на 0.5 мм">▼</button>
-                </div>
-              </div>
-            </div>
-
-            <div class="seb-readout" id="safeBarSizeDisplay" title="Результирующий размер зоны текста в мм">
-              Зона: <strong>0.0 × 0.0 мм</strong>
-            </div>
-
-            <button type="button" id="closeSafeEditBarBtn" class="seb-close-btn" title="Завершить настройку границ текста">Готово</button>
+          <!-- Ползунок размера шрифта наименования (дублирует #titleSize из настроек) -->
+          <div class="preview-title-size" title="Размер шрифта наименования товара в пунктах (pt)">
+            <span class="preview-title-size-label">Размер</span>
+            <input type="range" id="titleSizePreview" min="7" max="100" value="13"
+              title="Регулировка размера шрифта названия (pt)">
+            <span class="preview-title-size-val" id="titleSizePreviewVal">13</span>
+            <button type="button" id="previewAutoFitBtn" class="preview-autofit-btn"
+              title="Автоматически подогнать размер шрифта наименования под ценник">
+              <svg class="ico"><use href="#i-fit" /></svg>
+            </button>
           </div>
-        </div>
 
-        <!-- Ползунок размера шрифта наименования (дублирует #titleSize из настроек) -->
-        <div class="preview-title-size" title="Размер шрифта наименования товара в пунктах (pt)">
-          <span class="preview-title-size-label">Размер</span>
-          <input type="range" id="titleSizePreview" min="7" max="100" value="13"
-            title="Регулировка размера шрифта названия (pt)">
-          <span class="preview-title-size-val" id="titleSizePreviewVal">13</span>
-          <button type="button" id="previewAutoFitBtn" class="preview-autofit-btn"
-            title="Автоматически подогнать размер шрифта наименования под ценник">
-            <svg class="ico"><use href="#i-fit" /></svg>
-            <span>Подогнать</span>
-          </button>
-        </div>
-
-        <!-- Size inputs: скрыты, размер задаётся только пресетами/шаблонами -->
-        <div class="size-inputs-hidden" style="display:none;">
-          <input type="number" id="wobblerWidthInput" min="3.0" max="20.0" step="0.1" value="6.5">
-          <input type="number" id="wobblerHeightInput" min="3.0" max="28.0" step="0.1" value="3.5">
+          <!-- Size inputs: скрыты, размер задаётся только пресетами/шаблонами -->
+          <div class="size-inputs-hidden" style="display:none;">
+            <input type="number" id="wobblerWidthInput" min="3.0" max="20.0" step="0.1" value="6.5">
+            <input type="number" id="wobblerHeightInput" min="3.0" max="28.0" step="0.1" value="3.5">
+          </div>
         </div>
       </div>
 
       <!-- Single Tag Real Preview -->
       <div class="single-preview-container">
+        <!-- Floating Scope & Item Badge (в левом верхнем углу предпросмотра ценника) -->
+        <span id="previewItemBadge" class="preview-item-badge" style="display:none;"></span>
+
         <!-- Floating Side Navigation Buttons (Вариант 1) -->
         <button type="button" id="previewSidePrevBtn" class="preview-side-nav-btn prev"
           title="Предыдущий ценник (Alt+←)" aria-label="Предыдущий ценник" style="display: none;">
@@ -2627,7 +2626,7 @@
 
   <!-- html2pdf.bundle.min.js for offline, high-quality client-side A4 PDF export -->
   <script src="html2pdf.bundle.min.js"></script>
-  <script src="script.js?v=59"></script>
+  <script src="script.js?v=63"></script>
 </body>
 
 </html>
