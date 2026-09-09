@@ -2897,19 +2897,39 @@ input[type="range"]::-webkit-slider-thumb:hover {
   gap: 1.5rem;
   width: 100%;
   overflow-x: hidden;
+  min-width: 0;
 }
 
 .workspace-header {
+  position: relative;
+  z-index: 95;
   display: flex;
   justify-content: space-between;
   align-items: center;
   background: var(--bg-card);
-  padding: 0.8rem 1rem;
+  padding: 0.65rem 0.85rem;
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-color);
-  flex-wrap: wrap;
-  gap: 8px;
+  flex-wrap: nowrap;
+  gap: 10px;
   width: 100%;
+  box-sizing: border-box;
+}
+
+.workspace-header-start {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.workspace-header-end {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .workspace-header h2 {
@@ -2918,12 +2938,19 @@ input[type="range"]::-webkit-slider-thumb:hover {
   display: flex;
   align-items: center;
   gap: 8px;
+  white-space: nowrap;
+  margin: 0;
+}
+
+.workspace-header h2:empty {
+  display: none;
 }
 
 .workspace-header-left {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 /* Кнопка свернуть/развернуть предпросмотр */
@@ -3177,7 +3204,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .preview-title-size input[type=range] {
-  width: 80px;
+  width: 65px;
 }
 
 .preview-title-size-val {
@@ -3192,14 +3219,12 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .preview-autofit-btn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
   background: var(--surface-2, rgba(255, 255, 255, 0.08));
   color: var(--studio-text-high, #f1f5f9);
   border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
   border-radius: var(--radius-sm, 4px);
-  padding: 2px 7px;
-  font-size: 0.72rem;
-  font-weight: 600;
+  padding: 3px 6px;
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.15s ease;
@@ -3218,8 +3243,8 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .preview-autofit-btn .ico {
-  width: 12px;
-  height: 12px;
+  width: 13px;
+  height: 13px;
   stroke-width: 2;
 }
 
@@ -3356,14 +3381,59 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .preview-item-badge {
-  font-size: 0.68rem;
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  z-index: 45;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.74rem;
   font-weight: 700;
-  background: var(--accent-blue);
-  color: #0f172a;
-  padding: 2px 8px;
-  border-radius: 20px;
-  letter-spacing: 0.03em;
-  vertical-align: middle;
+  padding: 4px 11px;
+  border-radius: 9999px;
+  letter-spacing: 0.02em;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--accent-blue);
+  color: var(--accent-blue);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  user-select: none;
+  white-space: nowrap;
+  transition: all 0.18s ease;
+  pointer-events: none;
+}
+
+.preview-item-badge.mode-item {
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  color: #f1f5f9;
+}
+
+.preview-item-badge.mode-template {
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid var(--accent-blue);
+  color: var(--accent-blue);
+}
+
+body.theme-light .preview-item-badge {
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid #2563eb;
+  color: #1d4ed8;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+body.theme-light .preview-item-badge.mode-item {
+  background: rgba(255, 255, 255, 0.94);
+  border-color: rgba(100, 116, 139, 0.45);
+  color: #334155;
+}
+
+body.theme-light .preview-item-badge.mode-template {
+  background: rgba(255, 255, 255, 0.94);
+  border-color: #2563eb;
+  color: #1d4ed8;
 }
 
 /* Stepper & Navigator between items in preview */
@@ -3440,8 +3510,8 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .item-nav-dropdown-menu {
   position: absolute;
   top: calc(100% + 6px);
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+  transform: none;
   background: rgba(15, 23, 42, 0.96);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -5611,6 +5681,9 @@ body.is-pdf-exporting #printArea {
 .pdf-export-flow .print-page {
   width: 210mm !important;
   min-height: 297mm !important;
+  height: 297mm !important;
+  max-height: 297mm !important;
+  overflow: hidden !important;
   padding: 10mm 4mm 4mm 4mm !important;
   box-sizing: border-box !important;
   display: grid !important;
@@ -5618,6 +5691,7 @@ body.is-pdf-exporting #printArea {
   align-content: start !important;
   justify-content: start !important;
   page-break-after: always !important;
+  break-after: page !important;
   background: #ffffff !important;
   -webkit-print-color-adjust: exact !important;
   print-color-adjust: exact !important;
@@ -5628,6 +5702,7 @@ body.is-pdf-exporting #printArea {
 #printArea .print-page:last-child,
 #pdfExportWrapper .print-page:last-child {
   page-break-after: auto !important;
+  break-after: auto !important;
 }
 
 .print-page.multi-print-page,
@@ -5709,22 +5784,21 @@ body.is-pdf-exporting #printArea {
   color-adjust: exact !important;
 }
 
-.print-wobbler-wrapper .wobbler-outside-top,
-.print-wobbler-wrapper .wobbler-outside-bottom,
-.print-wobbler-wrapper .wobbler-inside-top,
-#printArea .print-wobbler-wrapper .wobbler-outside-top,
-#printArea .print-wobbler-wrapper .wobbler-outside-bottom,
-#printArea .print-wobbler-wrapper .wobbler-inside-top,
-#pdfExportWrapper .print-wobbler-wrapper .wobbler-outside-top,
-#pdfExportWrapper .print-wobbler-wrapper .wobbler-outside-bottom,
-#pdfExportWrapper .print-wobbler-wrapper .wobbler-inside-top {
+.print-wobbler-wrapper,
+.print-wobbler-wrapper *,
+#printArea .print-wobbler-wrapper,
+#printArea .print-wobbler-wrapper *,
+#pdfExportWrapper .print-wobbler-wrapper,
+#pdfExportWrapper .print-wobbler-wrapper * {
   box-shadow: none !important;
   border-radius: 0 !important;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+  color-adjust: exact !important;
 }
 
 @media print {
   @page {
-    size: A4 portrait;
     margin: 0;
   }
 
@@ -5757,6 +5831,11 @@ body.is-pdf-exporting #printArea {
   .main-layout,
   .controls-sidebar,
   .workspace-panel {
+    display: none !important;
+  }
+
+  /* Строгая изоляция печати: скрыть любые случайные модалки, тосты и подсказки на верхнем уровне body */
+  body > :not(#printArea):not(#dynamicPrintPageOrientation) {
     display: none !important;
   }
 

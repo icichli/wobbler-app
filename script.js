@@ -220,10 +220,51 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // === Бейджи области применения («этот ценник» / «весь шаблон») ===
-  // Показывают в заголовках секций 3/4/5 и в чипе у холста, куда попадут правки.
+  // Показывают в заголовках секций 3/4/5 и в бейдже предпросмотра, куда попадут правки.
   // Только чтение состояния; сами режимы меняются сегментами внутри секций.
   function scopeBadgeLabel(mode) {
     return mode === 'template' ? 'весь шаблон' : 'этот ценник';
+  }
+
+  function renderPreviewItemBadge() {
+    const badge = document.getElementById('previewItemBadge');
+    if (!badge) return;
+
+    const activeTab = document.querySelector('.sidebar-tab-btn.active');
+    const target = activeTab ? activeTab.getAttribute('data-target') : '';
+    const modeMap = { section3: fontApplyMode, section4: bgApplyMode, section5: decorApplyMode };
+    const activeScopeMode = modeMap[target]; // 'item' | 'template' | undefined
+
+    const isMulti = (typeof isMultiModeNow === 'function')
+      ? isMultiModeNow()
+      : (document.querySelector('input[name="printMode"]:checked')?.value === 'multi');
+    const itemIndex = (typeof activePreviewIndex === 'number') ? activePreviewIndex : 0;
+
+    if (isMulti) {
+      badge.style.display = 'inline-flex';
+      if (activeScopeMode) {
+        const label = activeScopeMode === 'template' ? 'шаблон' : 'этот ценник';
+        badge.textContent = `№${itemIndex + 1} · ${label}`;
+        badge.title = `Ценник №${itemIndex + 1}. Правки активного раздела: ${activeScopeMode === 'template' ? 'весь шаблон (все ценники)' : 'только этот ценник'}.`;
+        badge.classList.toggle('mode-template', activeScopeMode === 'template');
+        badge.classList.toggle('mode-item', activeScopeMode !== 'template');
+      } else {
+        badge.textContent = `№${itemIndex + 1}`;
+        badge.title = `Активный ценник №${itemIndex + 1}`;
+        badge.classList.remove('mode-template', 'mode-item');
+      }
+    } else {
+      if (activeScopeMode && activeScopeMode === 'item') {
+        badge.style.display = 'inline-flex';
+        badge.textContent = 'этот ценник';
+        badge.title = 'Правки активного раздела: только этот ценник';
+        badge.classList.remove('mode-template');
+        badge.classList.add('mode-item');
+      } else {
+        badge.style.display = 'none';
+        badge.classList.remove('mode-template', 'mode-item');
+      }
+    }
   }
 
   function updateScopeBadges() {
@@ -240,21 +281,9 @@ document.addEventListener('DOMContentLoaded', () => {
       el.classList.toggle('mode-item', mode !== 'template');
     });
     const chip = document.getElementById('canvasScopeChip');
-    if (chip) {
-      const activeTab = document.querySelector('.sidebar-tab-btn.active');
-      const target = activeTab ? activeTab.getAttribute('data-target') : '';
-      const modeMap = { section3: fontApplyMode, section4: bgApplyMode, section5: decorApplyMode };
-      const mode = modeMap[target];
-      if (mode) {
-        const chipText = document.getElementById('canvasScopeChipText');
-        if (chipText) chipText.textContent = 'правки: ' + scopeBadgeLabel(mode);
-        chip.classList.toggle('mode-template', mode === 'template');
-        chip.classList.toggle('mode-item', mode !== 'template');
-        chip.style.display = '';
-      } else {
-        chip.style.display = 'none';
-      }
-    }
+    if (chip) chip.style.display = 'none';
+
+    renderPreviewItemBadge();
   }
   const resetItemBgBtn = document.getElementById('resetItemBgBtn');
 
@@ -706,7 +735,7 @@ document.addEventListener('DOMContentLoaded', () => {
       priceAlign: alignState.price || 'center',
       priceOffsetY: priceOffsetY ? priceOffsetY.value : 0,
       priceShadow: buildShadow(priceShadow ? priceShadow.value : 0, priceShadowColor ? priceShadowColor.value : '#000000'),
-      currency: inputCurrency ? inputCurrency.value : '₽',
+      currency: inputCurrency ? inputCurrency.value : '',
       priceCross: !!(priceCrossToggle && priceCrossToggle.checked),
       priceCrossColor: priceCrossColor ? priceCrossColor.value : '#e63946',
       priceCrossWidth: priceCrossWidth ? parseFloat(priceCrossWidth.value) || 7 : 7
@@ -750,7 +779,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (priceShadow) priceShadow.value = psh.strength;
       if (priceShadowColor) priceShadowColor.value = psh.color;
     }
-    if (inputCurrency) inputCurrency.value = get('currency', '₽');
+    if (inputCurrency) inputCurrency.value = get('currency', '');
     alignState.price = get('priceAlign', 'center');
     if (priceCrossToggle) priceCrossToggle.checked = !!get('priceCross', false);
     if (priceCrossColor) priceCrossColor.value = get('priceCrossColor', '#e63946');
@@ -1989,7 +2018,7 @@ document.addEventListener('DOMContentLoaded', () => {
       priceOffsetY: 0,
       priceSlotTop: 54.94,
       price: '',
-      currency: '',            // пустая по умолчанию — пользователь введёт сам
+      currency: '',
       subtitleColor: '#ffffff',
       subtitleSize: 13,
       subtitleWeight: '700',
@@ -1998,23 +2027,23 @@ document.addEventListener('DOMContentLoaded', () => {
       bgImage: 'sort_nedeli_bg.jpg',
       customBgData: null,
       headerHeight: 90,
-      titleSlotTop: 0,
-      titleZoneH: 44.1,
+      titleSlotTop: 32.5,
+      titleZoneH: 50.0,
       layout: 'full',
       borderMm: 4,             // белая рамка 4 мм вокруг графики (поля под обрез)
       layerRotate: -2.45,      // наклон цены и текста акции как у графики
       // Позиции слоёв (мм, относительно базовой flex-раскладки header-content):
       // цена сдвинута ВВЕРХ — на белый блок (верхняя треть ценника),
-      // название акции — ВНИЗ, в красную зону под белым блоком.
+      // наименование отцентровано на красном фоне.
       labelPos: {
-        title: { x: -1.2, y: 22 },
+        title: { x: 0, y: 0 },
         subtitle: { x: 0, y: 0 },
         price: { x: -7.3, y: -41.6 },
         priceDigits: [],
         currency: { x: 0, y: 0 }
       },
       // Safe-зона названия — красная зона под белым блоком. Доли от сторон шапки.
-      titleSafe: { left: 0.010129539709908075, right: 0.04710601613004029, top: 0.45, bottom: 0.06 }
+      titleSafe: { left: 0.025, right: 0.025, top: 0.401, bottom: 0.047 }
     },
     // «Корона А5»: графика 14,5×8,8 см + поля 3 мм под вырезание (итого 15,1×9,4 см, 3 шт./лист).
     // Только наименование, занимающее всю ширину нижнего жёлтого прямоугольника.
@@ -2029,7 +2058,7 @@ document.addEventListener('DOMContentLoaded', () => {
       titleWeight: '900',
       titleItalic: false,
       titleAlign: 'center',
-      titleOffsetY: 1,
+      titleOffsetY: 0,
       titleShadow: '1px 1px 0 #000000, 2px 2px 0 #000000, 3px 3px 0 #000000, 4px 4px 0 #000000, 5px 5px 0 #000000, 5px 5px 10px #000000',
       showPrice: false,
       priceFont: "'Montserrat', sans-serif",
@@ -2055,7 +2084,7 @@ document.addEventListener('DOMContentLoaded', () => {
       titleFitFloor: 14,
       autofitTitleOnly: true,
       labelPos: {
-        title: { x: 0, y: 12 },
+        title: { x: 0, y: 0 },
         subtitle: { x: 0, y: 0 },
         price: { x: 0, y: 0 },
         priceDigits: [],
@@ -2610,6 +2639,41 @@ document.addEventListener('DOMContentLoaded', () => {
             it.fonts.titleOffsetY = 0;
           }
           if (it.labelPos && it.labelPos.title) {
+            it.labelPos.title = { x: 0, y: 0 };
+          }
+        }
+      });
+    }
+    // Миграция сохранённой сессии для шаблона «Корона А5»: центрирование наименования (сброс устаревшего смещения y: 12)
+    if (at && at.kind === 'builtin' && (at.key === 'korona_a5' || at.key === 'aktsiya_a5') && s.state) {
+      if (s.state.titleOffsetY === 1) {
+        s.state.titleOffsetY = 0;
+      }
+      if (s.state.labelPos && s.state.labelPos.title && s.state.labelPos.title.y === 12) {
+        s.state.labelPos.title = { x: 0, y: 0 };
+      }
+    }
+    if (Array.isArray(templateItems.korona_a5)) {
+      templateItems.korona_a5.forEach(it => {
+        if (it) {
+          if (it.fonts && it.fonts.titleOffsetY === 1) it.fonts.titleOffsetY = 0;
+          if (it.labelPos && it.labelPos.title && it.labelPos.title.y === 12) it.labelPos.title = { x: 0, y: 0 };
+        }
+      });
+    }
+    // Миграция сохранённой сессии для шаблона «Сорт недели»: центрирование наименования на красном фоне и значок ₽
+    if (at && at.kind === 'builtin' && at.key === 'sort_nedeli' && s.state) {
+      s.state.titleSlotTop = builtInPresets.sort_nedeli.titleSlotTop;
+      s.state.titleZoneH = builtInPresets.sort_nedeli.titleZoneH;
+      s.state.titleSafe = JSON.parse(JSON.stringify(builtInPresets.sort_nedeli.titleSafe));
+      if (s.state.labelPos && s.state.labelPos.title && (s.state.labelPos.title.y === 22 || s.state.labelPos.title.x === -1.2)) {
+        s.state.labelPos.title = { x: 0, y: 0 };
+      }
+    }
+    if (Array.isArray(templateItems.sort_nedeli)) {
+      templateItems.sort_nedeli.forEach(it => {
+        if (it) {
+          if (it.labelPos && it.labelPos.title && (it.labelPos.title.y === 22 || it.labelPos.title.x === -1.2)) {
             it.labelPos.title = { x: 0, y: 0 };
           }
         }
@@ -4552,6 +4616,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Прогрессивный рост/схлопывание строк по факту ввода.
       syncRowExtent(idx);
       if (typeof checkAllRowsTextOverflow === 'function') checkAllRowsTextOverflow();
+      updatePreview();
     });
 
     const subInput = row.querySelector('.item-subtitle-input');
@@ -5028,14 +5093,19 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderItemsListInputs() {
     normalizeItemsArray();
     itemsListContainer.innerHTML = '';
+    const fragSidebar = document.createDocumentFragment();
     for (let i = 0; i < itemsData.length; i++) {
-      itemsListContainer.appendChild(createItemRow(i));
+      fragSidebar.appendChild(createItemRow(i));
     }
+    itemsListContainer.appendChild(fragSidebar);
+
     if (idrItemsList) {
       idrItemsList.innerHTML = '';
+      const fragDrawer = document.createDocumentFragment();
       for (let i = 0; i < itemsData.length; i++) {
-        idrItemsList.appendChild(createItemRow(i));
+        fragDrawer.appendChild(createItemRow(i));
       }
+      idrItemsList.appendChild(fragDrawer);
     }
     // Авто-подгон высоты текстовых полей после добавления в DOM (чтобы 2-я строка наименования не обрезалась)
     itemsListContainer.querySelectorAll('textarea').forEach(autoGrowTextarea);
@@ -5158,7 +5228,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Если товар весовой (рыба весовая, снеки весовые):
     // на кассе цена указана за 1 кг, на ценнике нужна за 100 г — убираем последний символ (делим на 10)
     if (posCfg && posCfg.stripLastPriceDigit && price) {
-      if (price.length > 1 && /\d$/.test(price)) {
+      const p = splitPriceAndCurrency(price);
+      if (p.price.length > 1 && /\d$/.test(p.price)) {
+        p.price = p.price.slice(0, -1);
+        price = p.currency ? `${p.price} ${p.currency}` : p.price;
+      } else if (price.length > 1 && /\d$/.test(price)) {
         price = price.slice(0, -1);
       }
       if (!subtitle && posCfg.defaultSubtitle) {
@@ -5371,9 +5445,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!idrItemsList) return;
     idrItemsList.innerHTML = '';
     normalizeItemsArray();
+    const frag = document.createDocumentFragment();
     for (let i = 0; i < itemsData.length; i++) {
-      idrItemsList.appendChild(createItemRow(i));
+      frag.appendChild(createItemRow(i));
     }
+    idrItemsList.appendChild(frag);
     syncDigitControlsVisibility();
   }
 
@@ -5710,14 +5786,50 @@ document.addEventListener('DOMContentLoaded', () => {
   // содержимого глифа (включая выступающие за advance части «0»/«8»), поэтому
   // пробел получит ту же ширину, что и самая широкая цифра, а сами цифры (без
   // overflow:hidden) не обрежутся.
-  // Очистка ввода цены от текстового мусора и незначащих нулей
+  // Разделение строки цены на числовую часть и символ валюты (если валюта введена прямо в поле цены).
+  // Поддерживает суффиксы и префиксы: "150 ₽", "150.00 ₽", "150р", "150 руб", "15$", "$15", "20 €", "500 ₸", "350".
+  function splitPriceAndCurrency(rawPrice) {
+    if (rawPrice == null) return { price: '', currency: '' };
+    let s = String(rawPrice).trim();
+    if (!s) return { price: '', currency: '' };
+
+    // 1. Валюта в конце строки (суффикс): "150 ₽", "150 руб.", "150р", "150$", "150 €", "150 ₸"
+    const suffixRegex = /^(.*?)\s*([₽$€£¥₸]|(?:руб(?:л[ея]й)?|р(?:\.|\b)|грн|тг|Br))\s*$/i;
+    const suffixMatch = s.match(suffixRegex);
+    if (suffixMatch && suffixMatch[1].trim()) {
+      let p = suffixMatch[1].trim();
+      let c = suffixMatch[2].trim();
+      if (/^(?:руб(?:л[ея]й)?|р(?:\.|\b))$/i.test(c)) c = '₽';
+      else if (/^тг$/i.test(c)) c = '₸';
+      return { price: p, currency: c };
+    }
+
+    // 2. Валюта в начале строки (префикс): "$ 15", "$15", "€ 20", "₽ 150"
+    const prefixRegex = /^\s*([₽$€£¥₸]|(?:руб(?:л[ея]й)?|р(?:\.|\b)|грн|тг|Br))\s*(.*?)$/i;
+    const prefixMatch = s.match(prefixRegex);
+    if (prefixMatch && prefixMatch[2].trim()) {
+      let c = prefixMatch[1].trim();
+      let p = prefixMatch[2].trim();
+      if (/^(?:руб(?:л[ея]й)?|р(?:\.|\b))$/i.test(c)) c = '₽';
+      else if (/^тг$/i.test(c)) c = '₸';
+      return { price: p, currency: c };
+    }
+
+    return { price: s, currency: '' };
+  }
+
+  // Очистка ввода цены от текстового мусора и незначащих нулей. Сохраняет введённый значок валюты!
   function cleanPriceInput(val) {
     if (!val) return '';
     let s = String(val).trim();
     s = s.replace(/,/g, '.');
     s = s.replace(/([0-9])o([0-9])/gi, '$10$2');
-    s = s.replace(/\s*(?:руб(?:л[ея]й)?|р(?:\.|\b)|₽)\s*/gi, '');
     s = s.replace(/\.00(?!\d)/, '');
+    // Если введено 150р или 150руб, аккуратно преобразуем в официальный символ "150 ₽"
+    s = s.replace(/\s*(?:руб(?:л[ея]й)?|р(?:\.|\b))\s*$/i, ' ₽');
+    // Если знак валюты введен слитно с цифрами (напр. "150₽" или "15$"), добавляем аккуратный пробел
+    s = s.replace(/(\d)\s*([₽$€£¥₸])\s*$/g, '$1 $2');
+    s = s.replace(/^\s*([₽$€£¥₸])\s*(\d)/g, '$1 $2');
     s = s.replace(/\s+/g, ' ').trim();
     return s;
   }
@@ -5727,7 +5839,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!targetEl) return;
     targetEl.innerHTML = '';
     const lp = Array.isArray(priceDigitsLp) ? priceDigitsLp : [];
-    const str = String(priceText || '').trim();
+    const parsed = splitPriceAndCurrency(priceText);
+    const str = String(parsed.price || '').trim();
     const match = enableSupCents ? str.match(/^([0-9\s]+)[.,]([0-9]{1,2})$/) : null;
     if (match) {
       const rubPart = match[1];
@@ -5911,14 +6024,19 @@ document.addEventListener('DOMContentLoaded', () => {
   // force=true принудительно подгоняет, даже если размер был задан вручную (titleSizeManual).
   function refitActiveTitle(force = false) {
     const isMultiMode = document.querySelector('input[name="printMode"]:checked').value === 'multi';
-    const family = titleFont ? titleFont.value : '';
-    const weight = titleWeight ? titleWeight.value : '800';
+    let family = titleFont ? titleFont.value : '';
+    let weight = titleWeight ? titleWeight.value : '800';
     if (isMultiMode) {
       const it = itemsData[activePreviewIndex] || (itemsData[activePreviewIndex] = {});
+      if (it && it.fontsCustomized && it.fonts) {
+        if (it.fonts.titleFont) family = it.fonts.titleFont;
+        if (it.fonts.titleWeight) weight = it.fonts.titleWeight;
+      }
       if (!force && it.titleSizeManual) {
+        updatePreview();
         return;
       }
-      const fit = fitTitleSize(it.title, family, weight);
+      const fit = fitTitleSize(it.title, family, weight, activePreviewIndex);
       if (fit != null) {
         it.titleSize = fit;
         if (!it.fonts) it.fonts = {};
@@ -6364,14 +6482,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
     }
+    const parsedPrice = splitPriceAndCurrency(item && item.price);
     // Цена: пересобираем по цифрам с позициями priceDigits (и копейками верхним индексом, если включено).
     if (pElem) {
       const priceCentsSup = !!(document.getElementById('priceCentsSupToggle') && document.getElementById('priceCentsSupToggle').checked);
-      renderPriceElement(pElem, String((item && item.price) || ''), lp.priceDigits, priceCentsSup);
+      renderPriceElement(pElem, String(parsedPrice.price || ''), lp.priceDigits, priceCentsSup);
     }
     if (curr) {
       const tf3 = templateFonts || {};
-      curr.textContent = (fontOf(item, 'currency', tf3.currency != null ? tf3.currency : '') || '').trim();
+      const tf3Cur = (tf3.currency != null) ? tf3.currency : (inputCurrency ? inputCurrency.value : '');
+      const curFallback = fontOf(item, 'currency', tf3Cur) || (inputCurrency ? inputCurrency.value : '') || '';
+      const cloneCurVal = (parsedPrice.currency ? parsedPrice.currency : curFallback).trim();
+      curr.textContent = cloneCurVal;
+      curr.style.display = cloneCurVal ? '' : 'none';
       curr.style.fontFamily = fontOf(item, 'priceFont', tf3.priceFont);
       curr.style.fontSize = `${fontOf(item, 'priceSize', tf3.priceSize != null ? tf3.priceSize : 40)}pt`;
       curr.style.fontWeight = fontOf(item, 'priceWeight', tf3.priceWeight);
@@ -6569,7 +6692,7 @@ document.addEventListener('DOMContentLoaded', () => {
       priceAlign: preset.priceAlign || 'center',
       priceOffsetY: preset.priceOffsetY != null ? preset.priceOffsetY : 0,
       priceShadow: preset.priceShadow || '',
-      currency: preset.currency != null ? preset.currency : '₽',
+      currency: preset.currency != null ? preset.currency : '',
       priceCross: !!preset.priceCross,
       priceCrossColor: preset.priceCrossColor || '#e63946',
       priceCrossWidth: preset.priceCrossWidth != null ? preset.priceCrossWidth : 7
@@ -6773,11 +6896,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // Применяет к клону шрифты/decor/bg/positions под конкретный preset (а не активный).
   // Контракт тот же, что у applyItemToClone, но все глобальные чтения заменены на ctx.
   function applyTemplateStyleToClone(clone, item, ctx) {
-    const { tf, td, tb, ts, layout, headerH, rybaPib, insideWidth, labelPos: presetLp } = ctx;
+    const { tf, td, tb, ts, layout, headerH, rybaPib, insideWidth, labelPos: presetLp, preset } = ctx;
     const wMm = ctx.wMm || 65;
     const hMm = ctx.hMm || 45;
     const lp = cloneLabelPos((item && item.labelPos) ? item.labelPos : presetLp);
-    const digits = String((item && item.price) || '').split('');
+    const parsedPrice = splitPriceAndCurrency(item && item.price);
+    const digits = String(parsedPrice.price || '').split('');
 
     const tElem = clone.querySelector('.wobbler-title');
     const pElem = clone.querySelector('.price-val');
@@ -6858,7 +6982,10 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
     if (curr) {
-      curr.textContent = (fontOf(item, 'currency', tf.currency) || '').trim();
+      const jobCurFallback = fontOf(item, 'currency', (tf && tf.currency != null) ? tf.currency : (preset && preset.currency != null ? preset.currency : '')) || '';
+      const jobCur = (parsedPrice.currency ? parsedPrice.currency : jobCurFallback).trim();
+      curr.textContent = jobCur;
+      curr.style.display = jobCur ? '' : 'none';
       curr.style.fontFamily = fontOf(item, 'priceFont', tf.priceFont);
       curr.style.fontSize = `${fontOf(item, 'priceSize', tf.priceSize)}pt`;
       curr.style.fontWeight = fontOf(item, 'priceWeight', tf.priceWeight);
@@ -7234,22 +7361,16 @@ document.addEventListener('DOMContentLoaded', () => {
     syncDigitControlsVisibility();
 
     // Update preview item badge
-    const previewItemBadge = document.getElementById('previewItemBadge');
-    if (previewItemBadge) {
-      if (isMultiMode) {
-        previewItemBadge.style.display = 'inline-block';
-        previewItemBadge.textContent = `№${activePreviewIndex + 1}`;
-      } else {
-        previewItemBadge.style.display = 'none';
-      }
-    }
+    renderPreviewItemBadge();
     if (typeof updatePreviewItemNav === 'function') updatePreviewItemNav();
 
     // Price Toggle & Custom Styling (Currency icon matches exact price font & weight!)
     if (showPriceToggle.checked) {
       priceFieldsBlock.classList.remove('price-off');
       previewPriceBox.style.display = 'flex';
-      const activePriceText = isMultiMode ? (activeItem?.price || '') : inputPrice.value.trim();
+      const rawPriceText = isMultiMode ? (activeItem?.price || '') : inputPrice.value.trim();
+      const parsedPrice = splitPriceAndCurrency(rawPriceText);
+      const activePriceText = parsedPrice.price;
       const priceCentsSup = !!(document.getElementById('priceCentsSupToggle') && document.getElementById('priceCentsSupToggle').checked);
       if (document.activeElement !== previewPrice) {
         renderPriceElement(previewPrice, activePriceText, lp.priceDigits, priceCentsSup);
@@ -7266,7 +7387,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (__pw) previewPrice.style.setProperty('--price-digit-w', `${__pw}px`);
       }
 
-      previewCurrency.textContent = (fontOf(activeItem, 'currency', tf.currency != null ? tf.currency : inputCurrency.value) || '').trim();
+      const tfCur = (tf.currency != null) ? tf.currency : (inputCurrency ? inputCurrency.value : '');
+      const curFallback = fontOf(activeItem, 'currency', tfCur) || (inputCurrency ? inputCurrency.value : '') || '';
+      const curVal = (parsedPrice.currency ? parsedPrice.currency : curFallback).trim();
+      previewCurrency.textContent = curVal;
+      previewCurrency.style.display = curVal ? '' : 'none';
       previewCurrency.style.fontFamily = fontOf(activeItem, 'priceFont', tf.priceFont || priceFont.value);
       previewCurrency.style.fontSize = `${fontOf(activeItem, 'priceSize', tf.priceSize != null ? tf.priceSize : priceSize.value)}pt`;
       previewCurrency.style.fontWeight = fontOf(activeItem, 'priceWeight', tf.priceWeight || priceWeight.value);
@@ -8845,7 +8970,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function inlineAllBackgroundImages(container) {
-    const elements = container.querySelectorAll('*');
+    const elements = [container, ...container.querySelectorAll('*')];
     const promises = [];
 
     const processEl = async (el) => {
@@ -8950,7 +9075,7 @@ document.addEventListener('DOMContentLoaded', () => {
       filename: filename,
       image: { type: 'jpeg', quality: 0.95 },
       html2canvas: {
-        scale: 2,
+        scale: 2.5,
         useCORS: true,
         allowTaint: false,
         logging: false,
@@ -9027,14 +9152,14 @@ document.addEventListener('DOMContentLoaded', () => {
       priceAlign: state.priceAlign || 'center',
       priceOffsetY: state.priceOffsetY != null ? state.priceOffsetY : 0,
       priceShadow: state.priceShadow || '',
-      currency: state.currency != null ? state.currency : '₽',
+      currency: (state.currency !== undefined && state.currency !== null) ? String(state.currency) : '',
       priceCross: !!state.priceCross,
       priceCrossColor: state.priceCrossColor || '#e63946',
       priceCrossWidth: state.priceCrossWidth != null ? state.priceCrossWidth : 7
     };
     // inputCurrency/inputPrice — это текстовые поля ценника, а не шрифтовые настройки;
     // синхронизируем их напрямую из state.
-    inputCurrency.value = templateFonts.currency;
+    if (inputCurrency) inputCurrency.value = templateFonts.currency || '';
     inputPrice.value = state.price || '350';
     // Слой «большая цифра» (напр. «Снеки с цифрой»): стили — шаблонные,
     // значение per-item/single — заполняется отдельно (таблица / вкладка «Цифра»).
@@ -9605,8 +9730,8 @@ document.addEventListener('DOMContentLoaded', () => {
               delete item.fontsCustomized;
               delete item.fonts;
               delete item.titleSize;
-              if (key === 'yellow_tag') {
-                if (item.labelPos && item.labelPos.title) {
+              if (key === 'yellow_tag' || key === 'korona_a5' || key === 'aktsiya_a5' || key === 'sort_nedeli') {
+                if (item.labelPos && item.labelPos.title && (key === 'yellow_tag' || item.labelPos.title.y === 12 || item.labelPos.title.y === 22 || item.labelPos.title.x === -1.2)) {
                   item.labelPos.title = { x: 0, y: 0 };
                 }
               }
@@ -9615,10 +9740,10 @@ document.addEventListener('DOMContentLoaded', () => {
           renderItemsListInputs();
         }
         applyState(p);
-        if (key === 'yellow_tag') {
-          if (titleOffsetY) titleOffsetY.value = '0';
-          if (titleOffsetYVal) titleOffsetYVal.textContent = '0';
-          if (templateFonts) templateFonts.titleOffsetY = 0;
+        if (key === 'yellow_tag' || key === 'korona_a5' || key === 'aktsiya_a5') {
+          if (titleOffsetY && (key === 'yellow_tag' || titleOffsetY.value === '1')) titleOffsetY.value = '0';
+          if (titleOffsetYVal && (key === 'yellow_tag' || titleOffsetYVal.textContent === '1')) titleOffsetYVal.textContent = '0';
+          if (templateFonts && (key === 'yellow_tag' || templateFonts.titleOffsetY === 1)) templateFonts.titleOffsetY = 0;
         }
         if (key === 'sneki') {
           applyAutoBgToAllItems();
@@ -10173,6 +10298,7 @@ document.addEventListener('DOMContentLoaded', () => {
         checkAutoBgForSingleMode(inputTitle.value);
       }
       refitActiveTitle();
+      updatePreview();
     });
   }
   if (inputSubtitle) {
@@ -10218,15 +10344,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Свободный ввод цены: любое событие 'input' в поле сразу обновляет предпросмотр, на 'blur' выполняется гигиеническая очистка.
   if (priceFreeInput) {
-    priceFreeInput.addEventListener('input', () => updatePreview());
+    priceFreeInput.addEventListener('input', () => {
+      if (isMultiModeNow()) {
+        const it = itemsData[activePreviewIndex] || (itemsData[activePreviewIndex] = freshItem());
+        it.price = priceFreeInput.value;
+        const rowInp = document.querySelector(`.item-price-input[data-index="${activePreviewIndex}"]`);
+        if (rowInp && rowInp.value !== priceFreeInput.value) rowInp.value = priceFreeInput.value;
+      }
+      updatePreview();
+    });
     priceFreeInput.addEventListener('blur', (e) => {
       const cleaned = cleanPriceInput(e.target.value);
       if (cleaned !== e.target.value) {
         e.target.value = cleaned;
+        if (isMultiModeNow()) {
+          const it = itemsData[activePreviewIndex];
+          if (it) it.price = cleaned;
+          const rowInp = document.querySelector(`.item-price-input[data-index="${activePreviewIndex}"]`);
+          if (rowInp) rowInp.value = cleaned;
+        }
         updatePreview();
         scheduleSessionSave();
       }
     });
+  }
+
+  if (inputCurrency) {
+    const onCurrencyChange = () => {
+      const cur = inputCurrency.value;
+      if (!templateFonts) templateFonts = {};
+      templateFonts.currency = cur;
+      if (isMultiModeNow()) {
+        const it = itemsData[activePreviewIndex];
+        if (it) {
+          if (!it.fonts) it.fonts = {};
+          it.fonts.currency = cur;
+          it.currency = cur;
+        }
+      }
+      updatePreview();
+      scheduleSessionSave();
+    };
+    inputCurrency.addEventListener('input', onCurrencyChange);
+    inputCurrency.addEventListener('change', onCurrencyChange);
   }
 
   // === Выпадающее меню ручной правки макета в панели предпросмотра ===
@@ -12905,24 +13065,32 @@ document.addEventListener('DOMContentLoaded', () => {
             });
           }
 
-          // 1. Проверка цен с учётом тиража
-          const priceVal = (it.price || '').trim();
-          if (!priceVal) {
-            issues.push({
-              type: 'err',
-              msg: `[${tplName}] Товар №${idx + 1} «${it.title}»: не указана цена!${qtySuffix}`,
-              actionType: 'focusPrice',
-              templateKey: tplKey,
-              itemIndex: idx
-            });
-          } else if (priceVal === '0' || priceVal === '0.00' || priceVal === '0,00') {
-            issues.push({
-              type: 'warn',
-              msg: `[${tplName}] Товар №${idx + 1} «${it.title}»: цена указана как 0 ₽${qtySuffix}`,
-              actionType: 'focusPrice',
-              templateKey: tplKey,
-              itemIndex: idx
-            });
+          // 1. Проверка цен с учётом тиража (шаблоны без цены исключены из проверки)
+          const isPriceExempt = (
+            tplKey === 'korona_a5' || tplKey === 'aktsiya_a5' || tplKey === 'a5' ||
+            tplKey === 'novy_vkus' || tplKey === 'novinka' || tplKey === 'tomat' || tplKey === 'sladko' ||
+            (preset && preset.showPrice === false)
+          );
+          if (!isPriceExempt) {
+            const priceParsed = splitPriceAndCurrency(it.price);
+            const priceVal = priceParsed.price.trim();
+            if (!priceVal) {
+              issues.push({
+                type: 'err',
+                msg: `[${tplName}] Товар №${idx + 1} «${it.title}»: не указана цена!${qtySuffix}`,
+                actionType: 'focusPrice',
+                templateKey: tplKey,
+                itemIndex: idx
+              });
+            } else if (priceVal === '0' || priceVal === '0.00' || priceVal === '0,00') {
+              issues.push({
+                type: 'warn',
+                msg: `[${tplName}] Товар №${idx + 1} «${it.title}»: цена указана как 0 ₽${qtySuffix}`,
+                actionType: 'focusPrice',
+                templateKey: tplKey,
+                itemIndex: idx
+              });
+            }
           }
 
           // 2. Проверка переполнения текста через probe
@@ -13059,7 +13227,14 @@ document.addEventListener('DOMContentLoaded', () => {
       return { hasErrors: true, hasWarnings: false, isEmpty: true, issues, totalCards: 0, totalSheets: 0, sheetCapacity, filledItemsCount: 0, isMultiJob: false, copiesDetail: '0 ценников' };
     }
 
-    // 1. Проверка цен и тиража
+    // 1. Проверка цен и тиража (шаблоны без цены исключены из проверки)
+    const activePreset = (typeof getActivePreset === 'function') ? getActivePreset() : null;
+    const isSinglePriceExempt = (
+      activeKey === 'korona_a5' || activeKey === 'aktsiya_a5' || activeKey === 'a5' ||
+      activeKey === 'novy_vkus' || activeKey === 'novinka' || activeKey === 'tomat' || activeKey === 'sladko' ||
+      (activePreset && activePreset.showPrice === false) ||
+      (showPriceToggle && !showPriceToggle.checked)
+    );
     filledItems.forEach(({ it, idx }) => {
       const qty = Math.max(1, parseInt(it.count, 10) || 1);
       const qtySuffix = qty > 1 ? ` (тираж: ${qty} шт.)` : '';
@@ -13074,23 +13249,26 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       }
 
-      const priceVal = (it.price || '').trim();
-      if (!priceVal) {
-        issues.push({
-          type: 'err',
-          msg: `Товар №${idx + 1} «${it.title}»: не указана цена!${qtySuffix}`,
-          actionType: 'focusPrice',
-          templateKey: activeKey,
-          itemIndex: idx
-        });
-      } else if (priceVal === '0' || priceVal === '0.00' || priceVal === '0,00') {
-        issues.push({
-          type: 'warn',
-          msg: `Товар №${idx + 1} «${it.title}»: цена указана как 0 ₽${qtySuffix}`,
-          actionType: 'focusPrice',
-          templateKey: activeKey,
-          itemIndex: idx
-        });
+      if (!isSinglePriceExempt) {
+        const priceParsed = splitPriceAndCurrency(it.price);
+        const priceVal = priceParsed.price.trim();
+        if (!priceVal) {
+          issues.push({
+            type: 'err',
+            msg: `Товар №${idx + 1} «${it.title}»: не указана цена!${qtySuffix}`,
+            actionType: 'focusPrice',
+            templateKey: activeKey,
+            itemIndex: idx
+          });
+        } else if (priceVal === '0' || priceVal === '0.00' || priceVal === '0,00') {
+          issues.push({
+            type: 'warn',
+            msg: `Товар №${idx + 1} «${it.title}»: цена указана как 0 ₽${qtySuffix}`,
+            actionType: 'focusPrice',
+            templateKey: activeKey,
+            itemIndex: idx
+          });
+        }
       }
     });
 
