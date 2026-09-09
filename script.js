@@ -2591,7 +2591,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // 2) Таблицы товаров всех шаблонов (с их per-item настройками).
     TEMPLATE_KEYS.forEach(k => {
       if (Array.isArray(s.items[k])) {
-        templateItems[k] = s.items[k].map(it => (it && typeof it === 'object') ? it : freshItem());
+        templateItems[k] = s.items[k].map(it => {
+          const item = (it && typeof it === 'object') ? it : freshItem();
+          // Очистка испорченных значений кегля из-за старого сбоя probe (>= 90pt или <= 7pt), если не были заданы вручную
+          if (!item.titleSizeManual) {
+            if (item.titleSize >= 90 || item.titleSize <= 7) delete item.titleSize;
+            if (item.fonts && (item.fonts.titleSize >= 90 || item.fonts.titleSize <= 7)) delete item.fonts.titleSize;
+          }
+          return item;
+        });
       }
     });
 
@@ -2680,6 +2688,18 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
+    // Очистка испорченного глобального кегля шаблона (>= 90pt или <= 7pt) из-за старого сбоя probe
+    if (s.state) {
+      if (s.state.titleSize >= 90 || s.state.titleSize <= 7) {
+        const bp = (at && at.kind === 'builtin' && builtInPresets[at.key]) ? builtInPresets[at.key] : null;
+        s.state.titleSize = bp ? bp.titleSize : 20;
+      }
+      if (s.state.templateFonts && (s.state.templateFonts.titleSize >= 90 || s.state.templateFonts.titleSize <= 7)) {
+        const bp = (at && at.kind === 'builtin' && builtInPresets[at.key]) ? builtInPresets[at.key] : null;
+        s.state.templateFonts.titleSize = bp ? bp.titleSize : 20;
+      }
+    }
+
     // 4) Полное визуальное состояние активного шаблона (шрифты/фон/декор/размеры).
     applyState(s.state);
 
@@ -2690,6 +2710,7 @@ document.addEventListener('DOMContentLoaded', () => {
     itemsData = templateItems[itemsKey] || templateItems.alaska_dots;
     renderItemsListInputs();
     updatePreview();
+    if (typeof refitActiveTitle === 'function') refitActiveTitle(true);
 
     // 6) Подсветить карточку активного шаблона в панели слева.
     document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('active'));
@@ -4585,7 +4606,7 @@ document.addEventListener('DOMContentLoaded', () => {
       syncFontControlsToContext();
       syncDecorControlsToContext();
       syncBgControlsToContext();
-      updatePreview();
+      refitActiveTitle();
     });
     titleInput.addEventListener('keydown', (e) => handleTableNavKeyDown(e, titleInput, 'item-title-input', i));
 
@@ -4627,7 +4648,7 @@ document.addEventListener('DOMContentLoaded', () => {
         syncFontControlsToContext();
         syncDecorControlsToContext();
         syncBgControlsToContext();
-        updatePreview();
+        refitActiveTitle();
       });
       subInput.addEventListener('keydown', (e) => handleTableNavKeyDown(e, subInput, 'item-subtitle-input', i));
       subInput.addEventListener('input', (e) => {
@@ -4652,7 +4673,7 @@ document.addEventListener('DOMContentLoaded', () => {
       syncFontControlsToContext();
       syncDecorControlsToContext();
       syncBgControlsToContext();
-      updatePreview();
+      refitActiveTitle();
     });
     priceInput.addEventListener('keydown', (e) => handleTableNavKeyDown(e, priceInput, 'item-price-input', i));
 
@@ -5974,6 +5995,7 @@ document.addEventListener('DOMContentLoaded', () => {
           : Math.max(2, headerHm * Math.max(0.05, 1 - ts.top - ts.bottom));
       }
     } else {
+      const hasPrice = isTemplatePriceSlotAvailable(activeTemplateRef, currentLayout, rybaPriceInBottom && currentLayout === 'split');
       const isTsDefault = (ts.top === 0 && ts.bottom === 0);
       if (isTsDefault) {
         tzMm = hasPrice ? (headerHm * 0.45) : contentHm;
@@ -6011,17 +6033,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let best = floor;
     let lo = floor, hi = TITLE_FIT_MAX;
-    const maxAllowedW = Math.max(budgetW + 1.5, Math.ceil(budgetW) + 1);
     while (lo <= hi) {
       const mid = Math.round(((lo + hi) / 2) * 2) / 2;
       probe.style.fontSize = `${mid}pt`;
       const rect = probe.getBoundingClientRect();
       const measuredH = (rect && rect.height > 0) ? rect.height : probe.offsetHeight;
       const measuredW = probe.scrollWidth;
+      const clientW = probe.clientWidth || budgetW;
+      const overflowsX = (measuredW - clientW) > 3.5 || measuredW > (budgetW + 6);
 
       // Текст помещается, если его реальная высота не превышает зону названия и не вылезает по ширине.
       // Защита от сбоя видеокарт/браузеров: measuredH должен быть строго > 0.
-      if (measuredH > 0 && measuredH <= budgetH + 0.5 && measuredW <= maxAllowedW) {
+      if (measuredH > 0 && measuredH <= (budgetH + 1.5) && !overflowsX) {
         best = mid;
         lo = mid + 0.5;
       } else {
@@ -6185,9 +6208,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const family = titleFont ? titleFont.value : 'Arial, sans-serif';
     const weight = titleWeight ? titleWeight.value : '800';
     let count = 0;
-    itemsData.forEach((it) => {
+    itemsData.forEach((it, idx) => {
       if (!it || !it.title || !it.title.trim()) return;
-      const fit = fitTitleSize(it.title, family, weight);
+      const fit = fitTitleSize(it.title, family, weight, idx);
       if (fit != null) {
         delete it.titleSizeManual;
         it.titleSize = fit;
@@ -6897,15 +6920,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let best = floor;
     let lo = floor, hi = TITLE_FIT_MAX;
-    const maxAllowedW = Math.max(budgetW + 1.5, Math.ceil(budgetW) + 1);
     while (lo <= hi) {
       const mid = Math.round(((lo + hi) / 2) * 2) / 2;
       probe.style.fontSize = `${mid}pt`;
       const rect = probe.getBoundingClientRect();
       const measuredH = (rect && rect.height > 0) ? rect.height : probe.offsetHeight;
       const measuredW = probe.scrollWidth;
+      const clientW = probe.clientWidth || budgetW;
+      const overflowsX = (measuredW - clientW) > 3.5 || measuredW > (budgetW + 6);
 
-      if (measuredH > 0 && measuredH <= budgetH + 0.5 && measuredW <= maxAllowedW) {
+      if (measuredH > 0 && measuredH <= (budgetH + 1.5) && !overflowsX) {
         best = mid;
         lo = mid + 0.5;
       } else {
@@ -7695,6 +7719,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Обновляем живой статус предпечатного аудита в шапке
     if (typeof updatePreflightPill === 'function') updatePreflightPill();
+
+    // Обновляем диагностическую Debug-плашку
+    if (typeof updateDebugToolbar === 'function') updateDebugToolbar();
 
     // Любое значимое изменение завершается этим рендером — планируем
     // автосохранение сессии (дебаунс внутри).
@@ -12820,10 +12847,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const rect = probe.getBoundingClientRect();
       const measuredH = (rect && rect.height > 0) ? rect.height : probe.offsetHeight;
       const measuredW = probe.scrollWidth;
-      const maxAllowedW = Math.max(budgetW + 1.5, Math.ceil(budgetW) + 1);
+      const clientW = probe.clientWidth || budgetW;
+      const overflowsX = (measuredW - clientW) > 3.5 || measuredW > (budgetW + 6);
 
       // Если текст при текущем размере не умещается по высоте или ширине
-      if ((measuredH > 0 && measuredH > budgetH + 1) || measuredW > maxAllowedW) {
+      if ((measuredH > 0 && measuredH > budgetH + 1.5) || overflowsX) {
         isOverflowing = true;
       }
     } catch (err) {
@@ -13136,9 +13164,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const rect = probe.getBoundingClientRect();
             const measuredH = (rect && rect.height > 0) ? rect.height : probe.offsetHeight;
             const measuredW = probe.scrollWidth;
-            const maxAllowedW = Math.max(budgetW + 1.5, Math.ceil(budgetW) + 1);
+            const clientW = probe.clientWidth || budgetW;
+            const overflowsX = (measuredW - clientW) > 3.5 || measuredW > (budgetW + 6);
 
-            if ((measuredH > 0 && measuredH > budgetH + 1) || measuredW > maxAllowedW) {
+            if ((measuredH > 0 && measuredH > budgetH + 1.5) || overflowsX) {
               issues.push({
                 type: 'warn',
                 msg: `[${tplName}] Товар №${idx + 1} «${it.title}»: текст названия выходит за границы ценника${qtySuffix}`,
@@ -13342,9 +13371,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const rect = probe.getBoundingClientRect();
         const measuredH = (rect && rect.height > 0) ? rect.height : probe.offsetHeight;
         const measuredW = probe.scrollWidth;
-        const maxAllowedW = Math.max(budgetW + 1.5, Math.ceil(budgetW) + 1);
+        const clientW = probe.clientWidth || budgetW;
+        const overflowsX = (measuredW - clientW) > 3.5 || measuredW > (budgetW + 6);
 
-        if ((measuredH > 0 && measuredH > budgetH + 1) || measuredW > maxAllowedW) {
+        if ((measuredH > 0 && measuredH > budgetH + 1.5) || overflowsX) {
           issues.push({
             type: 'warn',
             msg: `Товар №${idx + 1} «${titleText}»: текст названия выходит за границы ценника${qtySuffix}`,
@@ -13930,4 +13960,221 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
   });
+
+  // ===== Панель отладки геометрии и автоподгона (Debug-HUD) =====
+  function updateDebugToolbar() {
+    const tb = document.getElementById('debugToolbar');
+    if (!tb) return;
+
+    try {
+      const screenEl = document.getElementById('dbgScreen');
+      const winEl = document.getElementById('dbgWin');
+      const dprEl = document.getElementById('dbgDpr');
+      const fontsEl = document.getElementById('dbgFonts');
+      const fontNameEl = document.getElementById('dbgFontName');
+      const tmplEl = document.getElementById('dbgTemplate');
+      const itemEl = document.getElementById('dbgItem');
+      const titleTextEl = document.getElementById('dbgTitleText');
+      const budgetEl = document.getElementById('dbgBudget');
+      const curSizeEl = document.getElementById('dbgCurSize');
+      const fitSizeEl = document.getElementById('dbgFitSize');
+      const probeEl = document.getElementById('dbgProbe');
+      const manualEl = document.getElementById('dbgManual');
+
+      // 1. Экран и окно браузера
+      if (screenEl) screenEl.textContent = `${window.screen.width}×${window.screen.height}`;
+      if (winEl) winEl.textContent = `${window.innerWidth}×${window.innerHeight}`;
+      const dprVal = window.devicePixelRatio || 1;
+      if (dprEl) dprEl.textContent = `${dprVal.toFixed(2)} (${Math.round(dprVal * 100)}%)`;
+
+      // 2. Статус шрифтов
+      const fStatus = (document.fonts && document.fonts.status) ? document.fonts.status : 'нет API';
+      if (fontsEl) {
+        fontsEl.textContent = fStatus;
+        fontsEl.style.color = fStatus === 'loaded' ? '#34d399' : '#fbbf24';
+      }
+
+      const isMultiMode = document.querySelector('input[name="printMode"]:checked')?.value === 'multi';
+      const it = (itemsData && itemsData[activePreviewIndex]) ? itemsData[activePreviewIndex] : null;
+      const fam = (it && it.fontsCustomized && it.fonts && it.fonts.titleFont) || (templateFonts && templateFonts.titleFont) || (titleFont ? titleFont.value : 'Arial');
+      const wgt = (it && it.fontsCustomized && it.fonts && it.fonts.titleWeight) || (templateFonts && templateFonts.titleWeight) || (titleWeight ? titleWeight.value : '800');
+      if (fontNameEl) fontNameEl.textContent = `${fam} (${wgt})`;
+
+      // 3. Шаблон и товар
+      const tmplKey = activeTemplateRef ? (activeTemplateRef.key || activeTemplateRef.name) : 'default';
+      if (tmplEl) tmplEl.textContent = tmplKey;
+
+      const totalItems = itemsData ? itemsData.length : 1;
+      const curIdx = isMultiMode ? activePreviewIndex : 0;
+      if (itemEl) itemEl.textContent = `#${curIdx + 1}/${totalItems}`;
+
+      const rawTitle = isMultiMode
+        ? (it ? (it.title || '') : '')
+        : (inputTitle ? inputTitle.value : '');
+      if (titleTextEl) {
+        const trimmed = (rawTitle || '').trim();
+        titleTextEl.textContent = trimmed ? `«${trimmed.length > 25 ? trimmed.slice(0, 25) + '…' : trimmed}» (${trimmed.length} симв.)` : '—';
+      }
+
+      // 4. Геометрия зоны названия (budget)
+      const wCm = parseFloat(wobblerWidthInput ? wobblerWidthInput.value : 6.5) || 6.5;
+      const hCm = parseFloat(wobblerHeightInput ? wobblerHeightInput.value : 4.5) || 4.5;
+      const wMm = wCm * 10;
+      const hMm = hCm * 10;
+      const ts = resolveItemBg(curIdx).titleSafe;
+      const headerHm = currentLayout === 'full' ? hMm : hMm * (parseFloat(headerHeightRange ? headerHeightRange.value : 20.45) || 20.45) / 100;
+      const isSplit = currentLayout === 'split';
+      const padMm = (borderMm > 0) ? borderMm : (isSplit ? 0 : 3);
+      const contentHm = isSplit ? headerHm : Math.max(1, headerHm - padMm * 2);
+      const activePreset = getActivePreset();
+      let slotTop = 0;
+      let tzMm = 0;
+      if (isSplit) {
+        tzMm = contentHm;
+      } else if (activePreset && activePreset.titleSlotTop != null) {
+        tzMm = (activePreset.titleZoneH != null) ? parseFloat(activePreset.titleZoneH) : Math.max(2, headerHm * Math.max(0.05, 1 - ts.top - ts.bottom));
+      } else {
+        const hasPrice = isTemplatePriceSlotAvailable(activeTemplateRef, currentLayout, rybaPriceInBottom && currentLayout === 'split');
+        tzMm = (ts.top === 0 && ts.bottom === 0) ? (hasPrice ? headerHm * 0.45 : contentHm) : Math.max(2, headerHm * Math.max(0.05, 1 - ts.top - ts.bottom));
+      }
+      const pxPerMm = 96 / 25.4;
+      const titleW_mm = Math.min(Math.max(10, wMm - padMm * 2), wMm * (1 - ts.left - ts.right));
+      const budgetW = Math.max(10, (titleW_mm - 1.5) * pxPerMm);
+      const budgetH = tzMm * pxPerMm;
+
+      if (budgetEl) budgetEl.textContent = `W:${budgetW.toFixed(1)}px × H:${budgetH.toFixed(1)}px (${tzMm.toFixed(1)}мм)`;
+
+      // 5. Кегль в макете
+      const curSizePt = previewTitle && previewTitle.style.fontSize ? parseFloat(previewTitle.style.fontSize) : (parseFloat(titleSize ? titleSize.value : 13) || 13);
+      if (curSizeEl) curSizeEl.textContent = `${curSizePt}pt`;
+
+      // 6. Расчет fitTitleSize
+      let fitPt = null;
+      try {
+        fitPt = fitTitleSize(rawTitle, fam, wgt, curIdx);
+      } catch (e) {
+        fitPt = null;
+      }
+      if (fitSizeEl) {
+        fitSizeEl.textContent = fitPt != null ? `${fitPt}pt` : 'null';
+        fitSizeEl.style.color = (fitPt != null && Math.abs(curSizePt - fitPt) > 1) ? '#fbbf24' : '#38bdf8';
+      }
+
+      // 7. Проба текста (Probe)
+      if (typeof fitPt === 'number' && fitPt > 0 && typeof getTitleProbe === 'function') {
+        try {
+          const probe = getTitleProbe(budgetW);
+          probe.style.fontFamily = fam || 'Arial, sans-serif';
+          probe.style.fontWeight = wgt || '800';
+          probe.style.fontSize = `${fitPt}pt`;
+          probe.textContent = formatSmartTitle(rawTitle);
+          const rect = probe.getBoundingClientRect();
+          const pH = (rect && rect.height > 0) ? rect.height : probe.offsetHeight;
+          const pW = probe.scrollWidth;
+          if (probeEl) probeEl.textContent = `H:${Math.round(pH)}px, W:${Math.round(pW)}px`;
+        } catch (_) {
+          if (probeEl) probeEl.textContent = 'ошибка';
+        }
+      } else {
+        if (probeEl) probeEl.textContent = '—';
+      }
+
+      // 8. Флаг ручного размера
+      const isManual = isMultiMode ? !!(it && it.titleSizeManual) : false;
+      if (manualEl) {
+        manualEl.textContent = isManual ? 'ДА (зафиксирован)' : 'НЕТ (авто)';
+        manualEl.style.color = isManual ? '#fbbf24' : '#34d399';
+      }
+    } catch (err) {
+      console.warn('Debug toolbar update exception:', err);
+    }
+  }
+
+  // Обработчики кнопок панели отладки
+  const dbgRefitBtn = document.getElementById('dbgRefitBtn');
+  if (dbgRefitBtn) {
+    dbgRefitBtn.addEventListener('click', () => {
+      const isMulti = document.querySelector('input[name="printMode"]:checked')?.value === 'multi';
+      if (isMulti && itemsData && itemsData[activePreviewIndex]) {
+        delete itemsData[activePreviewIndex].titleSizeManual;
+      }
+      refitActiveTitle(true);
+      updatePreview();
+      if (typeof showToast === 'function') showToast('⚡ Кегль принудительно пересчитан!', 'success', 2000);
+    });
+  }
+
+  const dbgCopyBtn = document.getElementById('dbgCopyBtn');
+  if (dbgCopyBtn) {
+    dbgCopyBtn.addEventListener('click', () => {
+      try {
+        const it = (itemsData && itemsData[activePreviewIndex]) ? itemsData[activePreviewIndex] : null;
+        const titleStr = previewTitle ? (previewTitle.textContent || '') : '';
+        const info = [
+          '=== WOBBLER DESIGNER DEBUG INFO ===',
+          'Сборка: v1.9.6-DEBUG [09.09 16:15]',
+          `Экран: ${window.screen.width}×${window.screen.height} (доступно: ${window.screen.availWidth}×${window.screen.availHeight})`,
+          `Окно браузера: ${window.innerWidth}×${window.innerHeight}, DPR/Масштаб: ${window.devicePixelRatio || 1}`,
+          `Статус document.fonts: ${document.fonts ? document.fonts.status : 'нет API'}`,
+          `Шаблон: ${activeTemplateRef ? activeTemplateRef.key : 'default'} (макет: ${currentLayout || 'default'})`,
+          `Товар: #${activePreviewIndex + 1}/${itemsData ? itemsData.length : 1}`,
+          `Название: "${titleStr}" (${titleStr.length} симв.)`,
+          `Шрифт названия: ${previewTitle ? previewTitle.style.fontFamily : ''}, вес: ${previewTitle ? previewTitle.style.fontWeight : ''}`,
+          `Текущий кегль в DOM (.style.fontSize): ${previewTitle ? previewTitle.style.fontSize : 'нет'}`,
+          `Расчет fitTitleSize: ${fitTitleSize(titleStr, previewTitle ? previewTitle.style.fontFamily : '', previewTitle ? previewTitle.style.fontWeight : '', activePreviewIndex)}pt`,
+          `Зона budget: ${document.getElementById('dbgBudget')?.textContent || '—'}`,
+          `Замер Probe: ${document.getElementById('dbgProbe')?.textContent || '—'}`,
+          `Флаг manual size: ${it && it.titleSizeManual ? 'ДА' : 'нет'}`,
+          `User Agent: ${navigator.userAgent}`
+        ].join('\n');
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(info).then(() => {
+            if (typeof showToast === 'function') showToast('📋 Отчет скопирован в буфер обмена!', 'success', 2500);
+          }).catch(() => {
+            prompt('Скопируйте отладочную информацию (Ctrl+C):', info);
+          });
+        } else {
+          prompt('Скопируйте отладочную информацию (Ctrl+C):', info);
+        }
+      } catch (err) {
+        alert('Ошибка сбора данных: ' + err.message);
+      }
+    });
+  }
+
+  const dbgResetBtn = document.getElementById('dbgResetBtn');
+  if (dbgResetBtn) {
+    dbgResetBtn.addEventListener('click', () => {
+      if (confirm('Сбросить сохраненные товары и настройки шаблона в кэше браузера (localStorage) и перезагрузить страницу?')) {
+        try {
+          localStorage.removeItem('wobbler_session_v1');
+          localStorage.removeItem('wobbler_custom_templates_gas');
+        } catch (_) {}
+        location.reload(true);
+      }
+    });
+  }
+
+  const dbgToggleBtn = document.getElementById('dbgToggleBtn');
+  const debugToolbarEl = document.getElementById('debugToolbar');
+  if (dbgToggleBtn && debugToolbarEl) {
+    if (localStorage.getItem('wobbler_dbg_collapsed') === '1') {
+      debugToolbarEl.classList.add('is-collapsed');
+      dbgToggleBtn.textContent = '▼ Развернуть';
+    }
+    dbgToggleBtn.addEventListener('click', () => {
+      const isCol = debugToolbarEl.classList.toggle('is-collapsed');
+      dbgToggleBtn.textContent = isCol ? '▼ Развернуть' : '▲ Свернуть';
+      try {
+        localStorage.setItem('wobbler_dbg_collapsed', isCol ? '1' : '0');
+      } catch (_) {}
+    });
+  }
+
+  window.addEventListener('resize', () => {
+    if (typeof updateDebugToolbar === 'function') updateDebugToolbar();
+  });
+
+  // Первичная инициализация панели отладки
+  updateDebugToolbar();
 });
