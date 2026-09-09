@@ -14071,7 +14071,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ===== Панель отладки геометрии и автоподгона (Debug-HUD) =====
   function updateDebugToolbar() {
     const tb = document.getElementById('debugToolbar');
-    if (!tb) return;
+    if (!tb || tb.style.display === 'none') return;
 
     try {
       const screenEl = document.getElementById('dbgScreen');
@@ -14273,10 +14273,77 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // ===== Секретный триггер вызова Debug-HUD: 5 быстрых кликов по логотипу =====
+  let logoClickCount = 0;
+  let logoClickTimer = null;
+  const logoEl = document.getElementById('appLogo') || document.querySelector('.app-header .logo') || document.querySelector('.logo');
+  const dbgCloseBtn = document.getElementById('dbgCloseBtn');
+
+  function setDebugHudVisible(visible) {
+    if (!debugToolbarEl) return;
+    if (visible) {
+      debugToolbarEl.classList.add('is-visible');
+      debugToolbarEl.style.display = 'block';
+      try { localStorage.setItem('wobbler_debug_hud_visible', '1'); } catch (_) {}
+      updateDebugToolbar();
+    } else {
+      debugToolbarEl.classList.remove('is-visible');
+      debugToolbarEl.style.display = 'none';
+      try { localStorage.removeItem('wobbler_debug_hud_visible'); } catch (_) {}
+    }
+  }
+
+  function toggleDebugHud() {
+    if (!debugToolbarEl) return;
+    const isVis = debugToolbarEl.classList.contains('is-visible') || debugToolbarEl.style.display === 'block';
+    setDebugHudVisible(!isVis);
+    if (typeof showToast === 'function') {
+      showToast(!isVis ? '🛠️ Панель отладки активирована' : 'Панель отладки скрыта', 'info', 2200);
+    }
+  }
+
+  if (logoEl) {
+    logoEl.addEventListener('click', () => {
+      logoClickCount++;
+      clearTimeout(logoClickTimer);
+      logoClickTimer = setTimeout(() => {
+        logoClickCount = 0;
+      }, 2000);
+
+      if (logoClickCount >= 5) {
+        logoClickCount = 0;
+        clearTimeout(logoClickTimer);
+        toggleDebugHud();
+      }
+    });
+  }
+
+  // Дополнительно: секретная комбинация клавиш Ctrl + Shift + D
+  window.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.code === 'KeyD' || e.key === 'D' || e.key === 'd' || e.key === 'В' || e.key === 'в')) {
+      e.preventDefault();
+      toggleDebugHud();
+    }
+  });
+
+  if (dbgCloseBtn) {
+    dbgCloseBtn.addEventListener('click', () => {
+      setDebugHudVisible(false);
+      if (typeof showToast === 'function') showToast('Панель отладки скрыта', 'info', 1500);
+    });
+  }
+
+  // Восстановление состояния при перезагрузке (если администратор оставил её открытой)
+  try {
+    if (localStorage.getItem('wobbler_debug_hud_visible') === '1') {
+      setDebugHudVisible(true);
+    }
+  } catch (_) {}
+
   window.addEventListener('resize', () => {
     if (typeof updateDebugToolbar === 'function') updateDebugToolbar();
   });
 
-  // Первичная инициализация панели отладки
+  // Первичная инициализация панели отладки (если видима)
   updateDebugToolbar();
 });

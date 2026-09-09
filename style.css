@@ -132,6 +132,9 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .logo-icon {
@@ -8930,6 +8933,7 @@ label:has(input:focus-visible) {
 
 /* ===== Панель отладки и диагностики геометрии (Debug-плашка) ===== */
 .debug-toolbar {
+  display: none;
   flex-shrink: 0;
   width: 100%;
   background: #0f172a;
@@ -8943,6 +8947,10 @@ label:has(input:focus-visible) {
   z-index: 100;
   box-sizing: border-box;
   transition: padding 0.15s ease;
+}
+
+.debug-toolbar.is-visible {
+  display: block;
 }
 
 .debug-toolbar.is-collapsed {
