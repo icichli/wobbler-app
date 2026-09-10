@@ -1,0 +1,14 @@
+﻿# Temporary scratch and dev files
+scratch/
+.agents/
+.zcode/
+
+# OS metadata
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+# Temporary files and logs
+*.tmp
+*.log

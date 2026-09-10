@@ -158,17 +158,23 @@ document.addEventListener('DOMContentLoaded', () => {
   // Массив растёт прогрессивно: стартует с 1 пустой строки; при вводе в последнее
   // поле появляется следующая пустая (см. syncRowExtent / normalizeItemsArray).
   const MAX_ITEMS = 100; // мягкий защитный потолок (только для вставки больших таблиц)
-  const TEMPLATE_KEYS = ['alaska_dots', 'yellow_tag', 'ryba', 'sneki', 'sneki_5', 'sneki_digit', 'novy_vkus', 'novinka', 'tomat', 'sladko', 'sort_nedeli', 'korona_a5', 'a5'];
+  const TEMPLATE_KEYS = ['alaska_dots', 'yellow_tag', 'ryba', 'sneki', 'sneki_5', 'sneki_digit', 'novy_vkus', 'novinka', 'tomat', 'sladko', 'sort_nedeli', 'korona_a5', 'a5', 'beer_a5', 'beer_a5_aktsiya'];
   const templateItems = {};
   function freshItem() {
-    return { title: '', price: '', subtitle: '', subtitleManual: false, titleSizeManual: false, digit: '', count: 1 };
+    return {
+      title: '', price: '', subtitle: '', subtitleManual: false, titleSizeManual: false, digit: '', count: 1,
+      titleScaleX: 1, priceScaleX: 1,
+      price2: '', priceLabel: '1л -', price2Label: '1.5л -', promoMode: 'volumes',
+      beerPhoto: '', beerStrength: '', beerBitterness: '', beerDensity: '', beerType: '', beerStyle: '', composition: ''
+    };
   }
-  // Пуста ли строка: все поля (наименование/вес/цена) не заполнены.
+  // Пуста ли строка: все поля (наименование/вес/цена/состав) не заполнены.
   function isItemEmpty(it) {
     return !it || (
       !(it.title || '').trim() &&
       !(it.subtitle || '').trim() &&
-      !(it.price || '').trim()
+      !(it.price || '').trim() &&
+      !(it.composition || '').trim()
     );
   }
   // Заполнена ли строка (введено ХОТЯ БЫ в одно из трёх полей) — для роста списка.
@@ -177,11 +183,15 @@ document.addEventListener('DOMContentLoaded', () => {
     return [freshItem()]; // стартовая 1 пустая строка-«добавить»
   }
   TEMPLATE_KEYS.forEach(k => { templateItems[k] = freshItems(); });
+  templateItems.beer_a5_aktsiya = templateItems.beer_a5; // Единая общая база сортов между А5 и АКЦИЕЙ
   let itemsData = templateItems.alaska_dots;   // активный массив (старт — Бутылки)
 
   // Index of the item currently shown in the single preview (multi mode)
   let activePreviewIndex = 0;
   let draggedRowIndex = null;
+  var beerPreviewFitMode = true;
+  var _lastFitWinW = 0, _lastFitWinH = 0, _lastFitScale = 1;
+  var _lastAppliedPreviewScale = null;
 
   // === Per-item шрифты/цвета ===
   // templateFonts — источник истины для оформления всего шаблона (title/price/subtitle
@@ -219,11 +229,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // === Бейджи области применения («этот ценник» / «весь шаблон») ===
+  // === Бейджи области применения («ценник №X» / «весь шаблон») ===
   // Показывают в заголовках секций 3/4/5 и в бейдже предпросмотра, куда попадут правки.
   // Только чтение состояния; сами режимы меняются сегментами внутри секций.
   function scopeBadgeLabel(mode) {
-    return mode === 'template' ? 'весь шаблон' : 'этот ценник';
+    if (mode === 'template') return 'весь шаблон';
+    const isMulti = (typeof isMultiModeNow === 'function')
+      ? isMultiModeNow()
+      : (document.querySelector('input[name="printMode"]:checked')?.value === 'multi');
+    const itemNum = (typeof activePreviewIndex === 'number') ? activePreviewIndex + 1 : 1;
+    return isMulti ? `ценник №${itemNum}` : 'этот ценник';
   }
 
   function renderPreviewItemBadge() {
@@ -243,9 +258,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isMulti) {
       badge.style.display = 'inline-flex';
       if (activeScopeMode) {
-        const label = activeScopeMode === 'template' ? 'шаблон' : 'этот ценник';
-        badge.textContent = `№${itemIndex + 1} · ${label}`;
-        badge.title = `Ценник №${itemIndex + 1}. Правки активного раздела: ${activeScopeMode === 'template' ? 'весь шаблон (все ценники)' : 'только этот ценник'}.`;
+        const label = activeScopeMode === 'template' ? 'весь шаблон' : `ценник №${itemIndex + 1}`;
+        badge.textContent = `${label}`;
+        badge.title = `Правки активного раздела: ${activeScopeMode === 'template' ? 'весь шаблон (все ценники)' : `только ценник №${itemIndex + 1}`}.`;
         badge.classList.toggle('mode-template', activeScopeMode === 'template');
         badge.classList.toggle('mode-item', activeScopeMode !== 'template');
       } else {
@@ -280,6 +295,16 @@ document.addEventListener('DOMContentLoaded', () => {
       el.classList.toggle('mode-template', mode === 'template');
       el.classList.toggle('mode-item', mode !== 'template');
     });
+
+    const isMulti = (typeof isMultiModeNow === 'function')
+      ? isMultiModeNow()
+      : (document.querySelector('input[name="printMode"]:checked')?.value === 'multi');
+    const itemNum = (typeof activePreviewIndex === 'number') ? activePreviewIndex + 1 : 1;
+    const itemBtnLabel = isMulti ? `Ценник №${itemNum}` : 'Этот ценник';
+    document.querySelectorAll('.mode-item-text').forEach(span => {
+      span.textContent = itemBtnLabel;
+    });
+
     const chip = document.getElementById('canvasScopeChip');
     if (chip) chip.style.display = 'none';
 
@@ -494,6 +519,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const saveTemplateBtn = document.getElementById('saveTemplateBtn');
   const saveModal = document.getElementById('saveModal');
+  const closeSaveModalBtn = document.getElementById('closeSaveModalBtn');
   const cancelSaveModal = document.getElementById('cancelSaveModal');
   const confirmSaveModal = document.getElementById('confirmSaveModal');
   const newTemplateNameInput = document.getElementById('newTemplateNameInput');
@@ -1240,6 +1266,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const isSneki = (activeTemplateRef && activeTemplateRef.key === 'sneki');
     const isSneki5 = (activeTemplateRef && activeTemplateRef.key === 'sneki_5');
     const isNoExtra = (activeTemplateRef && (
+      activeTemplateRef.key === 'beer_a5' ||
+      activeTemplateRef.key === 'beer_a5_aktsiya' ||
       activeTemplateRef.key === 'yellow_tag' ||
       activeTemplateRef.key === 'sneki_digit' ||
       activeTemplateRef.key === 'novy_vkus' ||
@@ -1523,10 +1551,21 @@ document.addEventListener('DOMContentLoaded', () => {
   function resolveItemBg(i) {
     const it = itemsData[i];
     const tb = templateBg || {};
-    const currentBgImg = bgOf(it, 'bgImage', tb.bgImage || 'none');
+    let currentBgImg = bgOf(it, 'bgImage', tb.bgImage || 'none');
+    let currentHeaderBg = bgOf(it, 'headerBg', tb.headerBg || '#ffffff');
+    if (typeof isBeerA5Active === 'function' && isBeerA5Active()) {
+      const isPromo = typeof isBeerA5PromoActive === 'function' && isBeerA5PromoActive();
+      const defBeerBg = isPromo ? 'pivo_a5_aktsiya_bg.jpg' : 'pivo_a5_bg.jpg';
+      if (!currentBgImg || currentBgImg === 'none' || currentBgImg === 'dots_bg.jpg') {
+        currentBgImg = defBeerBg;
+      }
+      if (!currentHeaderBg || currentHeaderBg === '#18181b') {
+        currentHeaderBg = '#ffffff';
+      }
+    }
     const isVygodno = currentBgImg === 'bgother:ryba_vygodno.png' || (typeof currentBgImg === 'string' && currentBgImg.includes('ryba_vygodno'));
     return {
-      headerBg: bgOf(it, 'headerBg', tb.headerBg || '#ffffff'),
+      headerBg: currentHeaderBg,
       bgImage: currentBgImg,
       customBg: bgOf(it, 'customBgData', tb.customBgData != null ? tb.customBgData : null),
       titleSafe: normTitleSafe(isVygodno ? RYBA_VYGODNO_TITLE_SAFE : readGlobalTitleSafe())
@@ -1589,10 +1628,18 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   function bgFromItemCtx(item, tb, titleSafe) {
     tb = tb || {};
-    const currentBgImg = bgOf(item, 'bgImage', tb.bgImage || 'none');
+    let currentBgImg = bgOf(item, 'bgImage', tb.bgImage || 'none');
+    let currentHeaderBg = bgOf(item, 'headerBg', tb.headerBg || '#ffffff');
+    const isBeer = (tb.bgImage === 'pivo_a5_bg.jpg' || tb.bgImage === 'pivo_a5_aktsiya_bg.jpg') || (typeof activeTemplateRef !== 'undefined' && activeTemplateRef && (activeTemplateRef.key === 'beer_a5' || activeTemplateRef.key === 'beer_a5_aktsiya'));
+    if (isBeer) {
+      if (!currentBgImg || currentBgImg === 'none') {
+        currentBgImg = (activeTemplateRef && activeTemplateRef.key === 'beer_a5_aktsiya') ? 'pivo_a5_aktsiya_bg.jpg' : 'pivo_a5_bg.jpg';
+      }
+      if (!currentHeaderBg || currentHeaderBg === '#18181b') currentHeaderBg = '#ffffff';
+    }
     const isVygodno = currentBgImg === 'bgother:ryba_vygodno.png' || (typeof currentBgImg === 'string' && currentBgImg.includes('ryba_vygodno'));
     return {
-      headerBg: bgOf(item, 'headerBg', tb.headerBg || '#ffffff'),
+      headerBg: currentHeaderBg,
       bgImage: currentBgImg,
       customBg: bgOf(item, 'customBgData', tb.customBgData != null ? tb.customBgData : null),
       titleSafe: normTitleSafe(isVygodno ? RYBA_VYGODNO_TITLE_SAFE : (titleSafe || readGlobalTitleSafe()))
@@ -2453,6 +2500,186 @@ document.addEventListener('DOMContentLoaded', () => {
       digitSize: 67,
       digitWeight: '900',
       labelPos: { title: { x: -4.2, y: 0.3 }, subtitle: { x: -2.1, y: -0.6 }, price: { x: 0, y: 0 }, priceDigits: [{ x: -8.1, y: 0.4 }, { x: -5.7, y: 0.4 }, { x: -3.3, y: 0.4 }], currency: { x: -1.5, y: 0.2 }, bigdigit: { x: 2.6, y: 5.7 } }
+    },
+    // «Пиво А5» — ценник для разливного пива 15,5 × 21,82 см (+2 мм поля под резку)
+    beer_a5: {
+      name: 'Пиво А5',
+      widthCm: 15.9,
+      heightCm: 22.22,
+      borderMm: 2,
+      title: '',
+      subtitle: '',
+      composition: '',
+      beerPhoto: '',
+      beerStrength: '',
+      beerBitterness: '',
+      beerDensity: '',
+      beerType: '',
+      beerStyle: '',
+      titleFont: "'Montserrat', Arial, sans-serif",
+      titleColor: '#ffffff',
+      titleSize: 34,
+      titleWeight: '900',
+      titleItalic: false,
+      titleAlign: 'center',
+      titleOffsetY: 0,
+      titleShadow: '',
+      subtitleColor: '#ffffff',
+      subtitleSize: 11,
+      subtitleWeight: '400',
+      subtitleAlign: 'center',
+      showPrice: true,
+      priceFont: "'Montserrat', Arial, sans-serif",
+      priceSize: 64,
+      priceWeight: '900',
+      priceColor: '#000000',
+      priceAlign: 'center',
+      priceOffsetY: 0,
+      priceSlotTop: 133.0,
+      price: '',
+      currency: '₽',
+      headerBg: '#ffffff',
+      bgImage: 'pivo_a5_bg.jpg',
+      customBgData: null,
+      headerHeight: 100,
+      titleSlotTop: 26.0,
+      titleZoneH: 15.0,
+      titleSafe: { left: 0.08, right: 0.08, top: 0.11, bottom: 0.81 },
+      layout: 'full',
+      priceInBottom: false,
+      subtitleCorner: false,
+      pricePlate: false,
+      decorOutsideShow: false,
+      decorOutsideText: 'АКЦИЯ',
+      decorOutsideBg: '#e63946',
+      decorOutsideBgImg: 'none',
+      decorOutsideCustomBg: null,
+      decorOutsideColor: '#ffffff',
+      decorOutsideFontSize: 14,
+      decorOutsideHeight: 12,
+      decorInsideShow: false,
+      decorInsideText: 'АКЦИЯ',
+      decorInsideBg: '#e63946',
+      decorInsideBgImg: 'none',
+      decorInsideCustomBg: null,
+      decorInsideColor: '#ffffff',
+      decorInsideFontSize: 11,
+      decorInsideHeight: 8,
+      decorInsideWidth: 50,
+      decorBottomShow: false,
+      decorBottomText: 'АКЦИЯ',
+      decorBottomBg: '#e63946',
+      decorBottomBgImg: 'none',
+      decorBottomCustomBg: null,
+      decorBottomColor: '#ffffff',
+      decorBottomFontSize: 14,
+      decorBottomHeight: 12,
+      gapMm: 0,
+      titleFitFloor: 12,
+      autofitTitleOnly: true,
+      labelPos: {
+        title: { x: 0, y: 0 },
+        subtitle: { x: 0, y: 0 },
+        price: { x: 0, y: 0 },
+        priceDigits: [
+          { x: 0, y: 0 },
+          { x: 0, y: 0 },
+          { x: 0, y: 0 }
+        ],
+        currency: { x: 0, y: 0 }
+      }
+    },
+    // «Пиво А5 АКЦИЯ» — ценник для разливного пива 15,42 × 21,59 см (+2 мм поля под резку = 15.82 × 21.99 см)
+    beer_a5_aktsiya: {
+      name: 'Пиво А5 АКЦИЯ',
+      widthCm: 15.82,
+      heightCm: 21.99,
+      borderMm: 2,
+      title: '',
+      subtitle: '',
+      composition: '',
+      beerPhoto: '',
+      beerStrength: '',
+      beerBitterness: '',
+      beerDensity: '',
+      beerType: '',
+      beerStyle: '',
+      titleFont: "'Montserrat', Arial, sans-serif",
+      titleColor: '#ffffff',
+      titleSize: 32,
+      titleWeight: '900',
+      titleItalic: false,
+      titleAlign: 'center',
+      titleOffsetY: 0,
+      titleShadow: '',
+      subtitleColor: '#ffffff',
+      subtitleSize: 10,
+      subtitleWeight: '700',
+      subtitleAlign: 'center',
+      showPrice: true,
+      priceFont: "'Montserrat', Arial, sans-serif",
+      priceSize: 52,
+      priceWeight: '900',
+      priceColor: '#000000',
+      priceAlign: 'center',
+      priceOffsetY: 0,
+      priceSlotTop: 124.22,
+      price: '',
+      priceLabel: '1л -',
+      price2: '',
+      price2Label: '1.5л -',
+      currency: '₽',
+      headerBg: '#ffffff',
+      bgImage: 'pivo_a5_aktsiya_bg.jpg',
+      customBgData: null,
+      headerHeight: 100,
+      titleSlotTop: 26.5,
+      titleZoneH: 12.0,
+      titleSafe: { left: 0.08, right: 0.08, top: 0.12, bottom: 0.81 },
+      layout: 'full',
+      priceInBottom: false,
+      subtitleCorner: false,
+      pricePlate: false,
+      decorOutsideShow: false,
+      decorOutsideText: 'АКЦИЯ',
+      decorOutsideBg: '#e63946',
+      decorOutsideBgImg: 'none',
+      decorOutsideCustomBg: null,
+      decorOutsideColor: '#ffffff',
+      decorOutsideFontSize: 14,
+      decorOutsideHeight: 12,
+      decorInsideShow: false,
+      decorInsideText: 'АКЦИЯ',
+      decorInsideBg: '#e63946',
+      decorInsideBgImg: 'none',
+      decorInsideCustomBg: null,
+      decorInsideColor: '#ffffff',
+      decorInsideFontSize: 11,
+      decorInsideHeight: 8,
+      decorInsideWidth: 50,
+      decorBottomShow: false,
+      decorBottomText: 'АКЦИЯ',
+      decorBottomBg: '#e63946',
+      decorBottomBgImg: 'none',
+      decorBottomCustomBg: null,
+      decorBottomColor: '#ffffff',
+      decorBottomFontSize: 14,
+      decorBottomHeight: 12,
+      decorBlockPos: 'outside',
+      printGapMm: 0,
+      titleFitFloor: 16,
+      autofitTitleOnly: true,
+      labelPos: {
+        title: { x: 0, y: 0 },
+        subtitle: { x: 0, y: 0 },
+        price: { x: 0, y: 0 },
+        priceDigits: [
+          { x: 0, y: 0 },
+          { x: 0, y: 0 },
+          { x: 0, y: 0 }
+        ],
+        currency: { x: 0, y: 0 }
+      }
     }
   };
   builtInPresets.aktsiya_a5 = builtInPresets.korona_a5;
@@ -2557,10 +2784,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // Дебаунс: любые изменения (ввод в таблице, смена шаблона, шрифты/фон/позиции)
   // завершаются вызовом updatePreview — оттуда и планируем сохранение.
   function scheduleSessionSave() {
-    setAutosaveStatus('saving');
     if (__sessionSaveTimer) clearTimeout(__sessionSaveTimer);
     __sessionSaveTimer = setTimeout(() => {
       __sessionSaveTimer = null;
+      setAutosaveStatus('saving');
       saveSessionNow();
     }, 600);
   }
@@ -2688,6 +2915,66 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
+    // Миграция сохранённой сессии для шаблонов семейства «Пиво А5»
+    if (at && at.kind === 'builtin' && (at.key === 'beer_a5' || at.key === 'beer_a5_aktsiya')) {
+      if (s.state) {
+        const correctBeerBg = (at.key === 'beer_a5_aktsiya') ? 'pivo_a5_aktsiya_bg.jpg' : 'pivo_a5_bg.jpg';
+        if (!s.state.bgImage || s.state.bgImage === 'none' || s.state.bgImage === 'dots_bg.jpg') {
+          s.state.bgImage = correctBeerBg;
+        }
+        if (!s.state.headerBg || s.state.headerBg === '#18181b') {
+          s.state.headerBg = '#ffffff';
+        }
+        if (!s.state.priceColor || s.state.priceColor === '#ffffff') {
+          s.state.priceColor = '#000000';
+        }
+        if (at.key === 'beer_a5') {
+          s.state.widthCm = 15.9;
+          s.state.heightCm = 22.22;
+          s.state.borderMm = 2;
+          s.state.priceSlotTop = 133.0;
+        } else {
+          s.state.widthCm = 15.82;
+          s.state.heightCm = 21.99;
+          s.state.borderMm = 2;
+          s.state.priceSlotTop = 124.22;
+          s.state.titleSlotTop = 26.5;
+          s.state.titleZoneH = 12.0;
+        }
+        if (s.state.templateBg) {
+          if (!s.state.templateBg.bgImage || s.state.templateBg.bgImage === 'none' || s.state.templateBg.bgImage === 'dots_bg.jpg') {
+            s.state.templateBg.bgImage = (at.key === 'beer_a5_aktsiya') ? 'pivo_a5_aktsiya_bg.jpg' : 'pivo_a5_bg.jpg';
+          }
+          if (!s.state.templateBg.headerBg || s.state.templateBg.headerBg === '#18181b') {
+            s.state.templateBg.headerBg = '#ffffff';
+          }
+        }
+        if (s.state.templateFonts) {
+          if (!s.state.templateFonts.priceColor || s.state.templateFonts.priceColor === '#ffffff') {
+            s.state.templateFonts.priceColor = '#000000';
+          }
+        }
+      }
+      const rawBeerArr = (Array.isArray(templateItems.beer_a5) && templateItems.beer_a5.some(it => it && (it.title || '').trim()))
+        ? templateItems.beer_a5
+        : (Array.isArray(templateItems.beer_a5_aktsiya) && templateItems.beer_a5_aktsiya.some(it => it && (it.title || '').trim())
+          ? templateItems.beer_a5_aktsiya
+          : (templateItems.beer_a5 && templateItems.beer_a5.length ? templateItems.beer_a5 : [freshItem()]));
+      templateItems.beer_a5 = rawBeerArr;
+      templateItems.beer_a5_aktsiya = rawBeerArr;
+      templateItems.beer_a5.forEach(it => {
+        if (it) {
+          delete it.bgCustomized;
+          delete it.bg;
+          if (it.priceLabel == null) it.priceLabel = '1л -';
+          if (it.price2Label == null) it.price2Label = '1.5л -';
+          if (it.fonts && (it.fonts.priceColor === '#ffffff' || !it.fonts.priceColor)) {
+            it.fonts.priceColor = '#000000';
+          }
+        }
+      });
+    }
+
     // Очистка испорченного глобального кегля шаблона (>= 90pt или <= 7pt) из-за старого сбоя probe
     if (s.state) {
       if (s.state.titleSize >= 90 || s.state.titleSize <= 7) {
@@ -2720,6 +3007,10 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       const card = userTemplatesContainer.children[activeTemplateRef.index];
       if (card && card.classList.contains('preset-card')) card.classList.add('active');
+    }
+    syncBeerControlsVisibility();
+    if (typeof syncWorkspaceViewModeForCurrentTemplate === 'function') {
+      syncWorkspaceViewModeForCurrentTemplate();
     }
     return true;
   }
@@ -2864,6 +3155,60 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateItemsEmptyHint() {
     const emptyHint = document.getElementById('itemsEmptyHint');
     if (emptyHint) emptyHint.style.display = itemsData.some(isItemFilled) ? 'none' : '';
+  }
+
+  // Быстрые действия из карточки пустого списка товаров
+  const idrEmptyPasteBtn = document.getElementById('idrEmptyPasteBtn');
+  if (idrEmptyPasteBtn) {
+    idrEmptyPasteBtn.addEventListener('click', () => {
+      const pasteBox = document.getElementById('idrPasteBox');
+      const pasteInput = document.getElementById('idrPasteInput');
+      if (pasteBox) pasteBox.style.display = 'block';
+      if (pasteInput) {
+        pasteInput.focus();
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          navigator.clipboard.readText().then(clipText => {
+            if (clipText && clipText.trim()) {
+              pasteInput.value = clipText.trim();
+              if (typeof showToast === 'function') {
+                showToast('Данные из буфера обмена вставлены в поле', 'info', 2000);
+              }
+            }
+          }).catch(() => { });
+        }
+      }
+    });
+  }
+
+  const idrEmptySampleBtn = document.getElementById('idrEmptySampleBtn');
+  if (idrEmptySampleBtn) {
+    idrEmptySampleBtn.addEventListener('click', () => {
+      itemsData.length = 0;
+      initialExcelItems.forEach(item => {
+        if (item.title) {
+          itemsData.push({
+            title: item.title,
+            price: item.price || '',
+            subtitle: item.subtitle || '',
+            subtitleManual: false,
+            titleSizeManual: false,
+            digit: '',
+            count: 1
+          });
+        }
+      });
+      if (!itemsData.length) {
+        itemsData.push({ title: 'Светлое Нефильтрованное', price: '180', subtitle: '1 л', count: 1 });
+        itemsData.push({ title: 'Рыба Корюшка вяленая', price: '450', subtitle: '100 г', count: 1 });
+        itemsData.push({ title: 'Арахис в глазури', price: '120', subtitle: '100 г', count: 1 });
+      }
+      normalizeItemsArray();
+      renderItemsListInputs();
+      updatePreview();
+      if (typeof showToast === 'function') {
+        showToast('Загружены демонстрационные товары', 'success', 2500);
+      }
+    });
   }
 
   // ===== Светлые фоны (Б/А, Живое, Рыба Выгодно, Сорт недели Желтый, А5): выбор → чёрный текст наименования/веса/цены =====
@@ -3060,8 +3405,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function refreshAutolinkBtns() {
     document.querySelectorAll('.autolink-toggle').forEach(b => {
       b.classList.toggle('active', bgDecorAutolinkEnabled);
-      b.title = 'Автоприменение оформления при выборе фона: ' +
-        (bgDecorAutolinkEnabled ? 'ВКЛ (клик — выключить)' : 'ВЫКЛ (клик — включить)');
+      b.title = 'Автопривязка стиля к фону: ' +
+        (bgDecorAutolinkEnabled ? 'ВКЛ (нажмите, чтобы выключить)' : 'ВЫКЛ (нажмите, чтобы включить)');
     });
   }
 
@@ -3095,8 +3440,8 @@ document.addEventListener('DOMContentLoaded', () => {
       b.innerHTML = (b.id === 'decorPosToggle')
         ? (top ? 'Блок: сверху' : 'Блок: снизу')
         : (top ? '<svg class="ico"><use href="#i-arrow-up"/></svg>' : '<svg class="ico"><use href="#i-arrow-down"/></svg>');
-      b.title = 'Положение блока оформления для двухблочных пресетов (Живое, Новинка): ' +
-        (top ? 'СВЕРХУ ценника (клик — переключить снизу)' : 'СНИЗУ ценника (клик — переключить сверху)');
+      b.title = 'Положение промо-плашек («Живое», «Новинка»): ' +
+        (top ? 'СВЕРХУ ценника (нажмите, чтобы переместить вниз)' : 'СНИЗУ ценника (нажмите, чтобы переместить наверх)');
     });
   }
 
@@ -3801,6 +4146,1759 @@ document.addEventListener('DOMContentLoaded', () => {
     return key === 'sneki_digit' || bgVal === 'sneki_digit_bg.jpg' || itemBg === 'sneki_digit_bg.jpg';
   }
 
+  // Проверяет, активен ли любой шаблон семейства «Пиво А5»
+  function isBeerA5Active() {
+    const key = (activeTemplateRef && activeTemplateRef.key) || null;
+    const bgVal = (bgImageSelect && bgImageSelect.value) || '';
+    return key === 'beer_a5' || key === 'beer_a5_aktsiya' || bgVal === 'pivo_a5_bg.jpg' || bgVal === 'pivo_a5_aktsiya_bg.jpg';
+  }
+
+  // Проверяет, активен ли акционный шаблон с двумя ценами «Пиво А5 АКЦИЯ»
+  function isBeerA5PromoActive() {
+    const key = (activeTemplateRef && activeTemplateRef.key) || null;
+    const bgVal = (bgImageSelect && bgImageSelect.value) || '';
+    return key === 'beer_a5_aktsiya' || bgVal === 'pivo_a5_aktsiya_bg.jpg';
+  }
+
+  // Рендерит цену в 4 белые плашки ячеек промо-сетки (3 цифры + 1 символ валюты/4-я цифра)
+  function renderBeerPromoPriceBox(pValEl, pCurrEl, priceStr, defaultCurrency) {
+    if (!pValEl) return;
+    const parsed = splitPriceAndCurrency(priceStr);
+    let rawDigits = String(parsed.price || '').replace(/\s+/g, '').split('');
+    let cur = (parsed.currency || defaultCurrency || '₽').trim();
+
+    pValEl.innerHTML = '';
+    if (rawDigits.length > 3 && !parsed.currency) {
+      cur = rawDigits.pop();
+    }
+    while (rawDigits.length < 3) {
+      rawDigits.unshift(' ');
+    }
+    rawDigits.slice(-3).forEach(d => {
+      const span = document.createElement('span');
+      const isSpace = d === ' ';
+      span.className = 'price-digit' + (isSpace ? ' price-space' : '');
+      span.textContent = isSpace ? '\u00A0' : d;
+      pValEl.appendChild(span);
+    });
+    if (pCurrEl) {
+      pCurrEl.textContent = cur;
+      pCurrEl.style.display = cur ? 'flex' : 'none';
+    }
+  }
+
+  // Карта загруженных в память фотографий пива: Map<string, string(dataURL)>
+  const beerPhotosMap = new Map();
+
+  function getBeerPhotoUrl(item) {
+    if (!item) return '';
+    let p = (item.beerPhoto || '').trim();
+    if (p) {
+      if (beerPhotosMap.has(p.toLowerCase())) return beerPhotosMap.get(p.toLowerCase());
+      if (p.startsWith('data:') || p.startsWith('blob:') || p.startsWith('http://') || p.startsWith('https://') || p.startsWith('images/')) {
+        return p;
+      }
+      return `images/beer/${p}`;
+    }
+    const t = (item.title || '').trim().toLowerCase();
+    if (t) {
+      if (beerPhotosMap.has(t)) return beerPhotosMap.get(t);
+      if (beerPhotosMap.has(`${t}.jpg`)) return beerPhotosMap.get(`${t}.jpg`);
+      if (t === 'банька') return 'images/beer/banka.jpg';
+      if (t.includes('вишня') || t.includes('миндаль')) return 'images/beer/sidr_vishnya_mindal.jpg';
+      if (t.includes('груша')) return 'images/beer/sidr_grusha.jpg';
+      if (t.includes('дыня') || t.includes('маракуй')) return 'images/beer/sidr_dynya_marakuya.jpg';
+      return '';
+    }
+  }
+
+  // Удаляет сотые доли из крепости и плотности (например: "11,00%" -> "11,0%", "14,30%" -> "14,3%", "4,10%" -> "4,1%")
+  function stripBeerMetric(val) {
+    if (val == null) return '';
+    let s = String(val).trim();
+    if (!s || s === '-') return s;
+    return s.replace(/(\d+)[,\.](\d)\d+\s*(%?)$/, '$1,$2$3');
+  }
+
+  // Проверяет, скрыт ли блок «ПИВО: [вид]» (тогда блок стиля центруется по горизонтали)
+  function isBeerItemTypeHidden(item) {
+    if (!item) return false;
+    if (item.hideBeerType !== undefined) {
+      return !!item.hideBeerType;
+    }
+    const bt = (item.beerType !== undefined && item.beerType !== null) ? String(item.beerType).trim() : '';
+    return bt === '-' || bt === '—' || bt === '';
+  }
+
+  // Переключает режим отображения «Пиво + стиль» / «Только стиль (по центру)»
+  function toggleBeerItemType(idx) {
+    const it = itemsData[idx];
+    if (!it) return;
+    const currentlyHidden = isBeerItemTypeHidden(it);
+    if (currentlyHidden) {
+      it.hideBeerType = false;
+      if (it.beerType === '-' || it.beerType === '—' || !it.beerType) {
+        it.beerType = it._prevBeerType || 'светлое фильтрованное';
+      }
+    } else {
+      it.hideBeerType = true;
+      if (it.beerType && it.beerType !== '-' && it.beerType !== '—') {
+        it._prevBeerType = it.beerType;
+      }
+      it.beerType = '-';
+    }
+    updatePreview();
+    if (typeof renderBeerSidebarActiveCard === 'function') renderBeerSidebarActiveCard();
+    if (typeof renderBeerDrawerCards === 'function') renderBeerDrawerCards();
+    renderItemsListInputs();
+    if (typeof scheduleSheetPreviewUpdate === 'function') scheduleSheetPreviewUpdate();
+    scheduleSessionSave();
+    if (typeof showToast === 'function') {
+      showToast(it.hideBeerType ? 'Строка «Пиво» скрыта, стиль центрован' : 'Отображение «Пиво + стиль» включено', 'info', 1600);
+    }
+  }
+
+  // ==========================================================================
+  // --- Постоянный Справочник сортов разливного пива (Beer Catalog Database) ---
+  // ==========================================================================
+  const BEER_CATALOG_KEY = 'wobbler_beer_catalog_v6';
+
+    const DEFAULT_BEER_CATALOG = [
+    {
+      title: 'Банька',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,1%',
+      beerBitterness: '-',
+      beerDensity: '11,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч.,сахар, хмель, дрожжи',
+      beerPhoto: 'banka.jpg'
+    },
+    {
+      title: 'Горный Карачай',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,0%',
+      beerBitterness: '-',
+      beerDensity: '11,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Gornyj_Karachaj.jpg'
+    },
+    {
+      title: 'Домбай Горный',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,5%',
+      beerBitterness: '-',
+      beerDensity: '12,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Dombaj_Gornyj.jpg'
+    },
+    {
+      title: 'Жигулевское ЛПЗ',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,0%',
+      beerBitterness: '-',
+      beerDensity: '11,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Zhigulevskoe_LPZ.jpg'
+    },
+    {
+      title: 'Жигулевское Самарское',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,5%',
+      beerBitterness: '-',
+      beerDensity: '11,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Zhigulevskoe_Samarskoe.jpg'
+    },
+    {
+      title: 'Венское Экспорт',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '5,1%',
+      beerBitterness: '-',
+      beerDensity: '13,1%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Venskoe_Eksport.jpg'
+    },
+    {
+      title: 'Майкопское Светлое',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,0%',
+      beerBitterness: '-',
+      beerDensity: '11,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Majkopskoe_Svetloe.jpg'
+    },
+    {
+      title: 'Особое Поручение',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '5,0%',
+      beerBitterness: '-',
+      beerDensity: '12,0%',
+      beerType: 'светлое нефильтрованное',
+      beerStyle: 'Лагер НФ',
+      composition: 'СОСТАВ: вода, солод пив. яч., сахар, хмель, аромат. пищ. нат., дрожжи',
+      beerPhoto: 'Osoboe_Poruchenie.jpg'
+    },
+    {
+      title: 'Пятигорское',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,0%',
+      beerBitterness: '-',
+      beerDensity: '11,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Pyatigorskoe.jpg'
+    },
+    {
+      title: 'Рижское Барное',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,5%',
+      beerBitterness: '-',
+      beerDensity: '12,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Rizhskoe_Barnoe.jpg'
+    },
+    {
+      title: 'Макарий Живое Н/Ф',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,0%',
+      beerBitterness: '-',
+      beerDensity: '11,0%',
+      beerType: 'светлое нефильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Makarij_Zhivoe_NF.jpg'
+    },
+    {
+      title: 'МАКАРЫЧ Ремесленное',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '5,0%',
+      beerBitterness: '-',
+      beerDensity: '12,3%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Makarych_Remeslennoe.jpg'
+    },
+    {
+      title: 'Моршанское',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,5%',
+      beerBitterness: '-',
+      beerDensity: '12,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., крупа кукурузная, хмель, дрожжи',
+      beerPhoto: 'Morshanskoe.jpg'
+    },
+    {
+      title: 'Мюнхенское',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,7%',
+      beerBitterness: '-',
+      beerDensity: '12,2%',
+      beerType: 'светлое нефильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Myunhenskoe.jpg'
+    },
+    {
+      title: 'Новая Бавария',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,6%',
+      beerBitterness: '-',
+      beerDensity: '12,1%',
+      beerType: 'темное фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., яч.кар., хмель, дрожжи',
+      beerPhoto: 'Novaya_Bavariya.jpg'
+    },
+    {
+      title: 'Советский ГОСТ',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,0%',
+      beerBitterness: '-',
+      beerDensity: '12,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод ячмен., хмель, дрожжи',
+      beerPhoto: 'Sovetskij_GOST.jpg'
+    },
+    {
+      title: 'Старая Крепость',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,5%',
+      beerBitterness: '-',
+      beerDensity: '12,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'светлое',
+      composition: 'СОСТАВ: вода, солод ячмен., крупа рисовая, сахар, хмель, дрожжи',
+      beerPhoto: 'Staraya_Krepost.jpg'
+    },
+    {
+      title: 'Старопражское',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '5,0%',
+      beerBitterness: '-',
+      beerDensity: '12,3%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Staroprazhskoe.jpg'
+    },
+    {
+      title: 'Сыктывкарское Светлое',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,0%',
+      beerBitterness: '-',
+      beerDensity: '11,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Syktyvkarskoe_Svetloe.jpg'
+    },
+    {
+      title: 'Хадыженское',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,5%',
+      beerBitterness: '-',
+      beerDensity: '11,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Hadyzhenskoe.jpg'
+    },
+    {
+      title: 'Уездное',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '5,3%',
+      beerBitterness: '-',
+      beerDensity: '14,2%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Uezdnoe.jpg'
+    },
+    {
+      title: 'Чешская Деситка',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,0%',
+      beerBitterness: '-',
+      beerDensity: '10,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Cheshskaya_Desitka.jpg'
+    },
+    {
+      title: 'Чешское Домашнее',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '3,2%',
+      beerBitterness: '-',
+      beerDensity: '9,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Cheshskoe_Domashnee.jpg'
+    },
+    {
+      title: 'Чешское Элитное',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,7%',
+      beerBitterness: '-',
+      beerDensity: '12,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Cheshskoe_Elitnoe.jpg'
+    },
+    {
+      title: 'Алтайский ГОСТ',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,0%',
+      beerBitterness: '-',
+      beerDensity: '11,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Altajskij_GOST.jpg'
+    },
+    {
+      title: 'Koruna Ceska',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,5%',
+      beerBitterness: '-',
+      beerDensity: '12,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч.,хмель, дрожжи',
+      beerPhoto: 'Koruna_Ceska.jpg'
+    },
+    {
+      title: 'GINTARAS Бархатное',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,4%',
+      beerBitterness: '-',
+      beerDensity: '12,0%',
+      beerType: 'темное фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч.кар., сахар, хмель, дрожжи',
+      beerPhoto: 'Gintaras_Barhatnoe.jpg'
+    },
+    {
+      title: 'Макарий Export',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,4%',
+      beerBitterness: '-',
+      beerDensity: '11,1%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Makarij_Export.jpg'
+    },
+    {
+      title: 'Ирландский Эль',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '6,5%',
+      beerBitterness: '-',
+      beerDensity: '16,0%',
+      beerType: 'темное фильтрованное',
+      beerStyle: 'Темный Эль',
+      composition: 'СОСТАВ: вода, солод пив. яч., яч. кар., хмель, дрожжи',
+      beerPhoto: 'Irlandskij_El.jpg'
+    },
+    {
+      title: 'Weiss-Berg',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,7%',
+      beerBitterness: '-',
+      beerDensity: '12,0%',
+      beerType: 'светлое нефильтрованное',
+      beerStyle: 'Пшеничное/Бланш',
+      composition: 'СОСТАВ: вода, солод пив. пшен./яч., хмель, дрожжи',
+      beerPhoto: 'Weiss_Berg.jpg'
+    },
+    {
+      title: 'Крафтовое Белое',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,5%',
+      beerBitterness: '-',
+      beerDensity: '12,0%',
+      beerType: 'светлое нефильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод ячмен., крупа рисовая, сахар, хмель, дрожжи',
+      beerPhoto: 'Kraftovoe_Beloe.jpg'
+    },
+    {
+      title: 'Клостербрау',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,0%',
+      beerBitterness: '-',
+      beerDensity: '12,0%',
+      beerType: 'светлое нефильтрованное',
+      beerStyle: 'Пшеничное/бланш',
+      composition: 'СОСТАВ: вода, солод пив. яч., пшеничный, дрожжи',
+      beerPhoto: 'Klosterbrau.jpg'
+    },
+    {
+      title: 'Schneider Weisse TAP 1 Hefeweissbier Naturtrub',
+      category: 'Импорт',
+      categories: ["Импорт"],
+      price: '',
+      beerStrength: '4,9%',
+      beerBitterness: '13',
+      beerDensity: '11,3%',
+      beerType: 'светлое нефильтрованное',
+      beerStyle: 'Weissbier',
+      composition: 'СОСТАВ: вода, солод пивовар. яч.  пшен., хмель, дрожжи',
+      beerPhoto: 'Schneider_Weisse_TAP_1.jpg'
+    },
+    {
+      title: 'Kurpfalz Brau',
+      category: 'Импорт',
+      categories: ["Импорт"],
+      price: '',
+      beerStrength: '5,2%',
+      beerBitterness: '16',
+      beerDensity: '12,5%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер Хель',
+      composition: 'СОСТАВ: вода, солод пивовар. яч., хмель, дрожжи',
+      beerPhoto: 'Kurpfalz_Brau.jpg'
+    },
+    {
+      title: 'Iron Woods Stout',
+      category: 'Крафт, Глетчер',
+      categories: ["Крафт", "Глетчер"],
+      price: '',
+      beerStrength: '4,8%',
+      beerBitterness: '35',
+      beerDensity: '11,0%',
+      beerType: 'темное фильтрованное',
+      beerStyle: 'Стаут',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Iron_Woods_Stout.jpg'
+    },
+    {
+      title: 'Milk of Amnesia',
+      category: 'Крафт, Глетчер',
+      categories: ["Крафт", "Глетчер"],
+      price: '',
+      beerStrength: '5,5%',
+      beerBitterness: '35',
+      beerDensity: '14,3%',
+      beerType: 'светлое нефильтрованное',
+      beerStyle: 'Милкшейк ИПА',
+      composition: 'СОСТАВ: вода, солод пив. яч., пшен., овсян., хмель, лактоза, конц.сок троп., дрожжи',
+      beerPhoto: 'Milk_of_Amnesia.jpg'
+    },
+    {
+      title: 'Ausweis',
+      category: 'Крафт, Глетчер',
+      categories: ["Крафт", "Глетчер"],
+      price: '',
+      beerStrength: '5,2%',
+      beerBitterness: '15',
+      beerDensity: '13,0%',
+      beerType: 'светлое нефильтрованное',
+      beerStyle: 'Пшеничный Эль',
+      composition: 'СОСТАВ: вода, солод пив. пшен., яч., ячм карам., хмель, дрожжи',
+      beerPhoto: 'Ausweis.jpg'
+    },
+    {
+      title: 'Pilsner',
+      category: 'Крафт, Самовар/МП',
+      categories: ["Крафт", "Самовар/МП"],
+      price: '',
+      beerStrength: '4,5%',
+      beerBitterness: '-',
+      beerDensity: '12,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер/Пилс',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Samovar.jpg'
+    },
+    {
+      title: 'Premium Lager',
+      category: 'Крафт, Самовар/МП',
+      categories: ["Крафт", "Самовар/МП"],
+      price: '',
+      beerStrength: '4,7%',
+      beerBitterness: '-',
+      beerDensity: '12,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Samovar.jpg'
+    },
+    {
+      title: 'White Ale',
+      category: 'Крафт, Самовар/МП',
+      categories: ["Крафт", "Самовар/МП"],
+      price: '',
+      beerStrength: '4,5%',
+      beerBitterness: '-',
+      beerDensity: '13,0%',
+      beerType: 'светлое нефильтрованное',
+      beerStyle: 'Пшеничное',
+      composition: 'СОСТАВ: вода, солод пив. яч., пшенич., хмель, дрожжи',
+      beerPhoto: 'Samovar.jpg'
+    },
+    {
+      title: 'Heidegger Hell',
+      category: 'Крафт, Глетчер',
+      categories: ["Крафт", "Глетчер"],
+      price: '',
+      beerStrength: '4,7%',
+      beerBitterness: '-',
+      beerDensity: '12,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер Хель',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Heidegger_Hell.jpg'
+    },
+    {
+      title: 'Blue Monkey',
+      category: 'Крафт, Глетчер',
+      categories: ["Крафт", "Глетчер"],
+      price: '',
+      beerStrength: '5,4%',
+      beerBitterness: '15',
+      beerDensity: '12,7%',
+      beerType: 'светлое нефильтрованное',
+      beerStyle: 'Витбир/Бланш',
+      composition: 'СОСТАВ: вода, солод пив. пшен., яч., овсян., ., хмель, цедра, кориандр, дрожжи',
+      beerPhoto: 'Blue_Monkey.jpg'
+    },
+    {
+      title: 'Kriek De Lutin',
+      category: 'Крафт',
+      categories: ["Крафт"],
+      price: '',
+      beerStrength: '4,0%',
+      beerBitterness: '-',
+      beerDensity: '15,0%',
+      beerType: 'темное нефильтрованное',
+      beerStyle: 'Ламбик',
+      composition: 'СОСТАВ: вода, солод пив. яч., вишневый сок, хмель, дрожжи',
+      beerPhoto: 'Kriek_De_Lutin.jpg'
+    },
+    {
+      title: 'Карамбуляж',
+      category: 'Крафт',
+      categories: ["Крафт"],
+      price: '',
+      beerStrength: '8,6%',
+      beerBitterness: '70',
+      beerDensity: '20,0%',
+      beerType: 'светлое нефильтрованное',
+      beerStyle: 'Дабл ИПА',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Karambulyazh.jpg'
+    },
+    {
+      title: 'Ruby Road',
+      category: 'Крафт, Глетчер',
+      categories: ["Крафт", "Глетчер"],
+      price: '',
+      beerStrength: '7,0%',
+      beerBitterness: '15',
+      beerDensity: '18,0%',
+      beerType: 'темное фильтрованное',
+      beerStyle: 'Фруктовый Эль',
+      composition: 'СОСТАВ: вода, солод пив. яч. яч. карам., пшен., вишн. конц. сок., хмель, дрожжи',
+      beerPhoto: 'Ruby_Road.jpg'
+    },
+    {
+      title: 'Nut Butter',
+      category: 'Крафт, Глетчер',
+      categories: ["Крафт", "Глетчер"],
+      price: '',
+      beerStrength: '5,5%',
+      beerBitterness: '10',
+      beerDensity: '14,0%',
+      beerType: 'темное нефильтрованное',
+      beerStyle: 'Браун Эль',
+      composition: 'СОСТАВ: вода, солод пив. яч. яч. карам., хмель, сироп лесной орех, дрожжи',
+      beerPhoto: 'Nut_Butter.jpg'
+    },
+    {
+      title: 'ТА’IPA',
+      category: 'Крафт',
+      categories: ["Крафт"],
+      price: '',
+      beerStrength: '6,5%',
+      beerBitterness: '-',
+      beerDensity: '16,0%',
+      beerType: 'светлое нефильтрованное',
+      beerStyle: 'ИПА',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'TA_IPA.jpg'
+    },
+    {
+      title: 'India Pale Ale',
+      category: 'Крафт, Самовар/МП',
+      categories: ["Крафт", "Самовар/МП"],
+      price: '',
+      beerStrength: '6,0%',
+      beerBitterness: '-',
+      beerDensity: '14,0%',
+      beerType: 'светлое нефильтрованное',
+      beerStyle: 'ИПА',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Samovar.jpg'
+    },
+    {
+      title: 'Kölsch Кёльш',
+      category: 'Крафт, Самовар/МП',
+      categories: ["Крафт", "Самовар/МП"],
+      price: '',
+      beerStrength: '4,8%',
+      beerBitterness: '-',
+      beerDensity: '12,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Кёльш',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Samovar.jpg'
+    },
+    {
+      title: 'Friday Avenue',
+      category: 'Крафт, Глетчер',
+      categories: ["Крафт", "Глетчер"],
+      price: '',
+      beerStrength: '4,7%',
+      beerBitterness: '24',
+      beerDensity: '11,7%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'АПА',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Friday_Avenue.jpg'
+    },
+    {
+      title: 'Дюшес',
+      category: 'БА',
+      categories: ["БА"],
+      price: '',
+      beerStrength: '-',
+      beerBitterness: '-',
+      beerDensity: '-',
+      beerType: '-',
+      beerStyle: 'Лимонад',
+      composition: 'СОСТАВ: вода, сок груши, сахар',
+      beerPhoto: 'Dyushes.jpg'
+    },
+    {
+      title: 'Лимонад',
+      category: 'БА',
+      categories: ["БА"],
+      price: '',
+      beerStrength: '-',
+      beerBitterness: '-',
+      beerDensity: '-',
+      beerType: '-',
+      beerStyle: 'Лимонад',
+      composition: 'СОСТАВ: вода, сок лимона, сахар',
+      beerPhoto: 'Limonad.jpg'
+    },
+    {
+      title: 'Квас Деревенский',
+      category: 'БА',
+      categories: ["БА"],
+      price: '',
+      beerStrength: '-',
+      beerBitterness: '-',
+      beerDensity: '-',
+      beerType: '-',
+      beerStyle: 'Квас Светлый',
+      composition: 'СОСТАВ: вода, сахар, концентрат квасного сусла, дрожжи',
+      beerPhoto: 'Kvas_Derevenskij.jpg'
+    },
+    {
+      title: 'Квас Домашний',
+      category: 'БА',
+      categories: ["БА"],
+      price: '',
+      beerStrength: '-',
+      beerBitterness: '-',
+      beerDensity: '-',
+      beerType: '-',
+      beerStyle: 'Квас Темный',
+      composition: 'СОСТАВ: вода, сахар, концентрат квасного сусла, дрожжи',
+      beerPhoto: 'Kvas_Domashnij.jpg'
+    },
+    {
+      title: 'Сидр Вишня-Миндаль',
+      category: 'Сидр/Медовуха',
+      categories: ["Сидр/Медовуха"],
+      price: '',
+      beerStrength: '5,0%',
+      beerBitterness: '-',
+      beerDensity: '-',
+      beerType: '-',
+      beerStyle: 'Сидр',
+      composition: 'СОСТАВ: вода, яблочный сок, вишневый сок, миндаль',
+      beerPhoto: 'sidr_vishnya_mindal.jpg'
+    },
+    {
+      title: 'Сидр Груша',
+      category: 'Сидр/Медовуха',
+      categories: ["Сидр/Медовуха"],
+      price: '',
+      beerStrength: '5,0%',
+      beerBitterness: '-',
+      beerDensity: '-',
+      beerType: '-',
+      beerStyle: 'Сидр',
+      composition: 'СОСТАВ: вода, яблочный сок, грушевый сок',
+      beerPhoto: 'sidr_grusha.jpg'
+    },
+    {
+      title: 'Сидр Дыня-Маракуйя',
+      category: 'Сидр/Медовуха',
+      categories: ["Сидр/Медовуха"],
+      price: '',
+      beerStrength: '5,0%',
+      beerBitterness: '-',
+      beerDensity: '-',
+      beerType: '-',
+      beerStyle: 'Сидр',
+      composition: 'СОСТАВ: вода, яблочный сок, сок дыни, сок маракуйи',
+      beerPhoto: 'sidr_dynya_marakuya.jpg'
+    },
+    {
+      title: 'Сидр Малина',
+      category: 'Сидр/Медовуха',
+      categories: ["Сидр/Медовуха"],
+      price: '',
+      beerStrength: '5,0%',
+      beerBitterness: '-',
+      beerDensity: '-',
+      beerType: '-',
+      beerStyle: 'Сидр',
+      composition: 'СОСТАВ: вода, яблочный сок, сок малины',
+      beerPhoto: 'sidr_malina.jpg'
+    },
+    {
+      title: 'Сидр Смородина',
+      category: 'Сидр/Медовуха',
+      categories: ["Сидр/Медовуха"],
+      price: '',
+      beerStrength: '5,0%',
+      beerBitterness: '-',
+      beerDensity: '-',
+      beerType: '-',
+      beerStyle: 'Сидр',
+      composition: 'СОСТАВ: вода, яблочный сок, сок смородины',
+      beerPhoto: 'sidr_smorodina.jpg'
+    },
+    {
+      title: 'Сидр Яблоко',
+      category: 'Сидр/Медовуха',
+      categories: ["Сидр/Медовуха"],
+      price: '',
+      beerStrength: '5,0%',
+      beerBitterness: '-',
+      beerDensity: '-',
+      beerType: '-',
+      beerStyle: 'Сидр',
+      composition: 'СОСТАВ: вода, яблочный сок, дрожжи',
+      beerPhoto: 'sidr_yabloko.jpg'
+    },
+    {
+      title: 'Сидр Лесные Ягоды',
+      category: 'Сидр/Медовуха',
+      categories: ["Сидр/Медовуха"],
+      price: '',
+      beerStrength: '5,0%',
+      beerBitterness: '-',
+      beerDensity: '-',
+      beerType: '-',
+      beerStyle: 'Сидр',
+      composition: 'СОСТАВ: вода, яблочный сок, ежевичный сок',
+      beerPhoto: 'sidr_lesnye_yagody.jpg'
+    }
+  ];
+  let beerCatalog = loadBeerCatalog();
+  autoLoadBeerCatalogFromCsv();
+
+    function getBeerCategories(b) {
+    if (!b) return ['Отечка'];
+    if (Array.isArray(b.categories) && b.categories.length > 0) {
+      return b.categories;
+    }
+    if (b.category && typeof b.category === 'string') {
+      const split = b.category.split(',').map(s => s.trim()).filter(Boolean);
+      if (split.length > 0) return split;
+    }
+    return [classifyBeer(b)];
+  }
+
+  function classifyBeer(b) {
+    if (!b) return 'Отечка';
+    if (b.category && typeof b.category === 'string' && b.category.trim()) {
+      return b.category.trim();
+    }
+    const t = (b.title || '').toLowerCase();
+    const s = (b.beerStyle || '').toLowerCase();
+    const type = (b.beerType || '').toLowerCase();
+    const str = (b.beerStrength || '').toLowerCase();
+
+    // 1. Сидр / Медовуха / Пуаре
+    if (t.includes('сидр') || s.includes('сидр') || t.includes('медовух') || s.includes('медовух') || s.includes('пуаре')) {
+      return 'Сидр/Медовуха';
+    }
+
+    // 2. БА (безалкогольное, лимонад, квас)
+    if (t.includes('лимонад') || s.includes('лимонад') || t.includes('квас') || s.includes('квас') ||
+        t.includes('дюшес') || t.includes('тархун') || t.includes('б/а') || t.includes('безалк') ||
+        type.includes('безалк') || s.includes('безалк') || str === '0%' || str === '0,0%' || str === '0,5%' || str === '0,00%') {
+      return 'БА';
+    }
+
+    // 3. Крафт (IPA, APA, Stout, Porter, Sour, Blanche, Weisse, Lambic, etc.)
+    if (s.includes('ипа') || s.includes('ipa') || s.includes('апа') || s.includes('apa') ||
+        s.includes('стаут') || s.includes('stout') || s.includes('портер') || s.includes('porter') ||
+        s.includes('эль') || s.includes('ale') || s.includes('бланш') || s.includes('blanche') ||
+        s.includes('витбир') || s.includes('ламбик') || s.includes('вайс') || s.includes('weiss') ||
+        t.includes('крафтов') || t.includes('amnesia') || t.includes('iron woods') || t.includes('blue monkey') ||
+        t.includes('ruby road') || t.includes('nut butter') || t.includes('friday avenue') || t.includes('карамбуляж') ||
+        t.includes('ausweis') || s.includes('кёльш') || s.includes('kölsch')) {
+      return 'Крафт';
+    }
+
+    // 4. Импорт (латиница в названии или зарубежные сорта)
+    if (/[a-zA-Z]{3,}/.test(b.title || '') || s.includes('хель') || s.includes('hell') ||
+        t.includes('клостербрау') || t.includes('koruna') || t.includes('kurpfalz') || t.includes('heidegger') ||
+        t.includes('schneider') || t.includes('kriek') || t.includes('pilsner') || t.includes('lager') ||
+        s.includes('пилс') || s.includes('pils')) {
+      return 'Импорт';
+    }
+
+    // 5. Отечественное по умолчанию
+    return 'Отечка';
+  }
+
+  function loadBeerCatalog() {
+    try {
+      const raw = localStorage.getItem(BEER_CATALOG_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const map = new Map();
+          DEFAULT_BEER_CATALOG.forEach(b => map.set((b.title || '').trim().toLowerCase(), Object.assign({}, b, { category: classifyBeer(b) })));
+          parsed.forEach(b => {
+            if (b && b.title) {
+              const prev = map.get(b.title.trim().toLowerCase()) || {};
+              const merged = Object.assign({}, prev, b);
+              if (!merged.category) merged.category = classifyBeer(merged);
+              map.set(b.title.trim().toLowerCase(), merged);
+            }
+          });
+          return Array.from(map.values());
+        }
+      }
+    } catch (_) { }
+    return DEFAULT_BEER_CATALOG.map(b => Object.assign({}, b, { category: classifyBeer(b) }));
+  }
+
+  function saveBeerCatalog(cat) {
+    try {
+      if (Array.isArray(cat)) {
+        beerCatalog = cat;
+        localStorage.setItem(BEER_CATALOG_KEY, JSON.stringify(cat));
+      }
+      refreshBeerCatalogDatalist();
+    } catch (_) { }
+  }
+
+  function addOrUpdateBeerToCatalog(beerData) {
+    if (!beerData || !beerData.title || !beerData.title.trim()) return;
+    const titleKey = beerData.title.trim().toLowerCase();
+    const cat = (beerData.category && beerData.category.trim()) || classifyBeer(beerData) || 'Отечка';
+    const idx = beerCatalog.findIndex(b => (b.title || '').trim().toLowerCase() === titleKey);
+    if (idx >= 0) {
+      const existing = beerCatalog[idx];
+      beerCatalog[idx] = {
+        title: beerData.title.trim(),
+        price: beerData.price || existing.price || '',
+        beerStrength: beerData.beerStrength || existing.beerStrength || '',
+        beerBitterness: beerData.beerBitterness || existing.beerBitterness || '',
+        beerDensity: beerData.beerDensity || existing.beerDensity || '',
+        beerType: beerData.beerType || existing.beerType || '',
+        beerStyle: beerData.beerStyle || existing.beerStyle || '',
+        composition: beerData.composition || beerData.subtitle || existing.composition || '',
+        beerPhoto: beerData.beerPhoto || existing.beerPhoto || '',
+        category: beerData.category || existing.category || cat
+      };
+    } else {
+      beerCatalog.push({
+        title: beerData.title.trim(),
+        price: beerData.price || '',
+        beerStrength: beerData.beerStrength || '',
+        beerBitterness: beerData.beerBitterness || '',
+        beerDensity: beerData.beerDensity || '',
+        beerType: beerData.beerType || '',
+        beerStyle: beerData.beerStyle || '',
+        composition: beerData.composition || beerData.subtitle || '',
+        beerPhoto: beerData.beerPhoto || '',
+        category: cat
+      });
+    }
+    saveBeerCatalog(beerCatalog);
+  }
+
+  
+  // Автоматическая подгрузка актуального Шаблон_Пиво_А5.csv при работе через веб-сервер
+  function autoLoadBeerCatalogFromCsv() {
+    if (typeof window !== 'undefined' && window.location && window.location.protocol.startsWith('http')) {
+      fetch('Шаблон_Пиво_А5.csv?_t=' + Date.now())
+        .then(res => {
+          if (!res.ok) throw new Error('Cannot fetch CSV');
+          return res.arrayBuffer();
+        })
+        .then(buffer => {
+          let text = '';
+          try {
+            const utf8Decoder = new TextDecoder('utf-8', { fatal: true });
+            text = utf8Decoder.decode(buffer);
+          } catch (_) {
+            const cp1251Decoder = new TextDecoder('windows-1251');
+            text = cp1251Decoder.decode(buffer);
+          }
+          text = text.replace(/\uFEFF/g, '');
+          const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+          if (!lines.length) return;
+
+          let currentSectionCategory = 'Отечка';
+          const catalogMap = new Map();
+          for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            if (line.replace(/;/g, '').trim() === '') continue;
+            if (line.startsWith('#') || (line.startsWith('[') && line.includes(']'))) {
+              const rawHeader = line.split(';')[0].split('\t')[0].split(',')[0];
+              const parsedCat = rawHeader.replace(/^[#\s\[]+|[\]\s]+$/g, '').trim();
+              if (parsedCat) currentSectionCategory = parsedCat;
+              continue;
+            }
+            const delim = line.includes(';') ? ';' : (line.includes('\t') ? '\t' : ',');
+            const parts = line.split(delim).map(p => p.trim());
+            const title = parts[0];
+            if (!title) continue;
+
+            const strength = parts[2] ? parts[2].replace(/([,\.]\d)0%?/g, '$1%') : '';
+            const density = parts[4] ? parts[4].replace(/([,\.]\d)0%?/g, '$1%') : '';
+            const key = title.toLowerCase();
+
+            if (catalogMap.has(key)) {
+              const existing = catalogMap.get(key);
+              if (!existing.categories.includes(currentSectionCategory)) {
+                existing.categories.push(currentSectionCategory);
+                existing.category = existing.categories.join(', ');
+              }
+            } else {
+              catalogMap.set(key, {
+                title: title,
+                category: currentSectionCategory,
+                categories: [currentSectionCategory],
+                price: parts[1] || '',
+                beerStrength: strength,
+                beerBitterness: parts[3] || '',
+                beerDensity: density,
+                beerType: parts[5] || '',
+                beerStyle: parts[6] || '',
+                composition: parts[7] || '',
+                beerPhoto: parts[8] || ''
+              });
+            }
+          }
+          const newCatalog = Array.from(catalogMap.values());
+          if (newCatalog.length > 0) {
+            beerCatalog = newCatalog;
+            saveBeerCatalog(beerCatalog);
+            refreshBeerCatalogDatalist();
+          }
+        })
+        .catch(() => {
+          // Игнорируем сетевые ошибки / file:// режим
+        });
+    }
+  }
+
+  function refreshBeerCatalogDatalist() {
+    const datalist = document.getElementById('beerCatalogDatalist');
+    if (datalist) {
+      let html = '';
+      const seen = new Set();
+      beerCatalog.forEach(b => {
+        const t = (b.title || '').trim();
+        if (t && !seen.has(t.toLowerCase())) {
+          seen.add(t.toLowerCase());
+          const safeT = t.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          html += `<option value="${safeT}">`;
+        }
+      });
+      datalist.innerHTML = html;
+    }
+    // Если открыт умный выпадающий список — обновить в нем данные
+    if (activeDropdownInput) {
+      renderBeerDropdownChips();
+      renderBeerDropdownList();
+    }
+  }
+
+  // ==========================================================================
+  // --- Умный компактный выпадающий список сортов пива (Smart Beer Dropdown) ---
+  // ==========================================================================
+  let activeDropdownInput = null;
+  let activeDropdownItemIndex = -1;
+  let currentDropdownCategory = 'all';
+  let selectedDropdownIndex = -1;
+  let dropdownFilteredItems = [];
+
+  function escapeRegexHelper(s) {
+    return (s || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function escapeHtmlHelper(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function getCategoryEmoji(catName) {
+    const c = (catName || '').toLowerCase();
+    if (c.includes('отеч')) return '🍺';
+    if (c.includes('импорт')) return '🌍';
+    if (c.includes('сидр') || c.includes('медов')) return '🍎';
+    if (c.includes('ба') || c.includes('безалк') || c.includes('лимонад') || c.includes('квас')) return '🥤';
+    if (c.includes('крафт')) return '🌿';
+    if (c.includes('глетчер')) return '🏔️';
+    if (c.includes('самовар') || c.includes('мп')) return '🫖';
+    return '🏷️';
+  }
+
+  function getAvailableBeerCategories() {
+    const counts = new Map();
+    counts.set('all', beerCatalog.length);
+    beerCatalog.forEach(b => {
+      const cats = getBeerCategories(b);
+      cats.forEach(cat => {
+        counts.set(cat, (counts.get(cat) || 0) + 1);
+      });
+    });
+    return counts;
+  }
+
+  function positionBeerDropdown(inputEl) {
+    const dd = document.getElementById('beerCatalogDropdown');
+    if (!dd || !inputEl) return;
+    const rect = inputEl.getBoundingClientRect();
+    const ddWidth = Math.min(420, window.innerWidth - 20);
+    // Расширение влево (выравнивание по правому краю поля ввода)
+    let left = rect.right - ddWidth;
+    if (left < 10) {
+      left = rect.left;
+    }
+    if (left + ddWidth > window.innerWidth - 10) {
+      left = window.innerWidth - ddWidth - 10;
+    }
+    if (left < 10) left = 10;
+
+    let top = rect.bottom + 4;
+    const estimatedHeight = 310;
+    if (top + estimatedHeight > window.innerHeight && rect.top > estimatedHeight) {
+      top = rect.top - estimatedHeight - 4;
+    }
+
+    dd.style.width = ddWidth + 'px';
+    dd.style.left = left + 'px';
+    dd.style.top = top + 'px';
+  }
+
+  function openBeerDropdown(inputEl, itemIndex) {
+    if (!isBeerA5Active() || !inputEl) return;
+    const dd = document.getElementById('beerCatalogDropdown');
+    if (!dd) return;
+
+    activeDropdownInput = inputEl;
+    activeDropdownItemIndex = itemIndex;
+    selectedDropdownIndex = -1;
+
+    positionBeerDropdown(inputEl);
+    renderBeerDropdownChips();
+    renderBeerDropdownList();
+    dd.style.display = 'flex';
+  }
+
+  function closeBeerDropdown() {
+    const dd = document.getElementById('beerCatalogDropdown');
+    if (dd) dd.style.display = 'none';
+    activeDropdownInput = null;
+    activeDropdownItemIndex = -1;
+    selectedDropdownIndex = -1;
+  }
+
+  function renderBeerDropdownChips() {
+    const chipsWrap = document.getElementById('bcdChipsWrap');
+    if (!chipsWrap) return;
+    const catCounts = getAvailableBeerCategories();
+
+    const standardOrder = ['Отечка', 'Импорт', 'Крафт', 'БА', 'Сидр/Медовуха', 'Глетчер', 'Самовар/МП'];
+    const otherCategories = Array.from(catCounts.keys()).filter(k => k !== 'all' && !standardOrder.includes(k));
+    const allOrdered = ['all', ...standardOrder.filter(c => catCounts.has(c)), ...otherCategories];
+
+    let html = '';
+    allOrdered.forEach(cat => {
+      const count = catCounts.get(cat) || 0;
+      const isAll = cat === 'all';
+      let label = isAll ? 'Все' : cat;
+      if (cat === 'Сидр/Медовуха') label = 'Сидры';
+      const tooltip = (cat === 'Сидр/Медовуха') ? 'Сидр / Медовуха' : (isAll ? 'Все сорта' : cat);
+      const icon = isAll ? '★' : getCategoryEmoji(cat);
+      const isActive = currentDropdownCategory === cat;
+      html += `
+        <button type="button" class="bcd-chip ${isActive ? 'active' : ''}" data-cat="${escapeHtmlHelper(cat)}" title="${escapeHtmlHelper(tooltip)}">
+          <span>${icon} ${escapeHtmlHelper(label)}</span>
+          <span class="bcd-chip-count">${count}</span>
+        </button>
+      `;
+    });
+    chipsWrap.innerHTML = html;
+
+    chipsWrap.querySelectorAll('.bcd-chip').forEach(btn => {
+      btn.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const cat = btn.getAttribute('data-cat');
+        currentDropdownCategory = cat;
+        selectedDropdownIndex = -1;
+        chipsWrap.querySelectorAll('.bcd-chip').forEach(b => {
+          b.classList.toggle('active', b.getAttribute('data-cat') === cat);
+        });
+        renderBeerDropdownList();
+        if (activeDropdownInput) activeDropdownInput.focus();
+      });
+    });
+  }
+
+  function renderBeerDropdownList() {
+    const listEl = document.getElementById('bcdList');
+    const emptyEl = document.getElementById('bcdEmpty');
+    if (!listEl) return;
+
+    const query = (activeDropdownInput ? activeDropdownInput.value : '').trim().toLowerCase();
+
+    dropdownFilteredItems = beerCatalog.filter(b => {
+      const cats = getBeerCategories(b);
+      if (currentDropdownCategory !== 'all' && !cats.includes(currentDropdownCategory)) {
+        return false;
+      }
+      if (!query) return true;
+      const t = (b.title || '').toLowerCase();
+      const s = (b.beerStyle || '').toLowerCase();
+      return t.includes(query) || s.includes(query);
+    });
+
+    if (dropdownFilteredItems.length === 0) {
+      listEl.innerHTML = '';
+      if (emptyEl) {
+        emptyEl.style.display = 'block';
+        const span = emptyEl.querySelector('span');
+        if (span) span.textContent = query ? `Сорт «${query}» не найден в базе` : 'В этой категории нет сортов';
+      }
+      return;
+    }
+
+    if (emptyEl) emptyEl.style.display = 'none';
+
+    let html = '';
+    dropdownFilteredItems.forEach((b, idx) => {
+      const cat = (b.category && b.category.trim()) || classifyBeer(b);
+      const icon = getCategoryEmoji(cat);
+      const photoUrl = getBeerPhotoUrl(b);
+      const isSel = idx === selectedDropdownIndex;
+
+      let highlightedTitle = escapeHtmlHelper(b.title || '');
+      if (query && (b.title || '').toLowerCase().includes(query)) {
+        const regex = new RegExp(`(${escapeRegexHelper(query)})`, 'gi');
+        highlightedTitle = highlightedTitle.replace(regex, '<mark>$1</mark>');
+      }
+
+      const styleTag = b.beerStyle ? `<span class="bcd-style-tag">· ${escapeHtmlHelper(b.beerStyle)}</span>` : '';
+      const priceTag = b.price ? `<span class="bcd-price">${escapeHtmlHelper(b.price)} ₽</span>` : '';
+
+      html += `
+        <div class="bcd-item ${isSel ? 'is-selected' : ''}" data-idx="${idx}" role="option" aria-selected="${isSel}">
+          <div class="bcd-avatar">
+            ${photoUrl ? `<img src="${photoUrl}" alt="Фото">` : `<span>${icon}</span>`}
+          </div>
+          <div class="bcd-info">
+            <span class="bcd-name">${highlightedTitle}</span>
+            ${styleTag}
+          </div>
+          ${priceTag}
+        </div>
+      `;
+    });
+
+    listEl.innerHTML = html;
+
+    listEl.querySelectorAll('.bcd-item').forEach(itemEl => {
+      itemEl.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        const idx = parseInt(itemEl.getAttribute('data-idx'), 10);
+        if (dropdownFilteredItems[idx]) {
+          selectBeerFromDropdown(dropdownFilteredItems[idx]);
+        }
+      });
+    });
+  }
+
+  function updateDropdownSelectionHighlight() {
+    const listEl = document.getElementById('bcdList');
+    if (!listEl) return;
+    const items = listEl.querySelectorAll('.bcd-item');
+    items.forEach((item, idx) => {
+      const isSel = idx === selectedDropdownIndex;
+      item.classList.toggle('is-selected', isSel);
+      item.setAttribute('aria-selected', String(isSel));
+      if (isSel) {
+        item.scrollIntoView({ block: 'nearest' });
+      }
+    });
+  }
+
+  function handleBeerDropdownKeydown(e) {
+    const dd = document.getElementById('beerCatalogDropdown');
+    if (!dd || dd.style.display === 'none') return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (dropdownFilteredItems.length === 0) return;
+      selectedDropdownIndex = Math.min(selectedDropdownIndex + 1, dropdownFilteredItems.length - 1);
+      updateDropdownSelectionHighlight();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (dropdownFilteredItems.length === 0) return;
+      selectedDropdownIndex = Math.max(selectedDropdownIndex - 1, 0);
+      updateDropdownSelectionHighlight();
+    } else if (e.key === 'Enter') {
+      if (selectedDropdownIndex >= 0 && selectedDropdownIndex < dropdownFilteredItems.length) {
+        e.preventDefault();
+        selectBeerFromDropdown(dropdownFilteredItems[selectedDropdownIndex]);
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      closeBeerDropdown();
+    }
+  }
+
+  function selectBeerFromDropdown(beer) {
+    if (!beer) return;
+    const itemIdx = activeDropdownItemIndex;
+    if (itemIdx < 0 || itemIdx >= itemsData.length) return;
+
+    const it = itemsData[itemIdx];
+    it.title = beer.title || it.title;
+    it.beerStrength = stripBeerMetric(beer.beerStrength || '');
+    it.beerBitterness = beer.beerBitterness || '-';
+    it.beerDensity = stripBeerMetric(beer.beerDensity || '');
+    it.beerType = beer.beerType || '';
+    it.beerStyle = beer.beerStyle || '';
+    it.composition = beer.composition || '';
+    it.subtitle = beer.composition || '';
+    it.beerPhoto = beer.beerPhoto || '';
+    it.category = beer.category || classifyBeer(beer);
+    if (beer.price) {
+      it.price = beer.price;
+    }
+
+    const trimmed = (it.beerType || '').trim();
+    it.hideBeerType = (trimmed === '-' || trimmed === '—' || trimmed === '');
+
+    if (activeDropdownInput) {
+      activeDropdownInput.value = it.title;
+    }
+
+    if (itemIdx === activePreviewIndex) {
+      const sTitle = document.getElementById('beerSidebarTitle');
+      if (sTitle && sTitle !== activeDropdownInput) sTitle.value = it.title;
+      const sPrice = document.getElementById(isBeerA5PromoActive() ? 'beerSidebarPrice1' : 'beerSidebarPrice');
+      if (sPrice && it.price) sPrice.value = it.price;
+      if (typeof renderBeerSidebarActiveCard === 'function') renderBeerSidebarActiveCard();
+      updatePreview();
+    } else {
+      setActiveItemIndex(itemIdx, false);
+      if (typeof renderBeerSidebarActiveCard === 'function') renderBeerSidebarActiveCard();
+      updatePreview();
+    }
+
+    if (typeof syncBeerDrawerCardField === 'function') {
+      syncBeerDrawerCardField(itemIdx, 'title', it.title);
+      syncBeerDrawerCardField(itemIdx, 'price', it.price);
+      syncBeerDrawerCardField(itemIdx, 'beerStrength', it.beerStrength);
+      syncBeerDrawerCardField(itemIdx, 'beerBitterness', it.beerBitterness);
+      syncBeerDrawerCardField(itemIdx, 'beerDensity', it.beerDensity);
+      syncBeerDrawerCardField(itemIdx, 'beerType', it.beerType);
+      syncBeerDrawerCardField(itemIdx, 'beerStyle', it.beerStyle);
+      syncBeerDrawerCardField(itemIdx, 'composition', it.composition);
+      syncBeerDrawerCardField(itemIdx, 'photo', getBeerPhotoUrl(it));
+    }
+
+    closeBeerDropdown();
+    scheduleSessionSave();
+    showToast(`🍺 Сорт «${beer.title}» выбран: характеристики подставлены`, 'success', 2200);
+  }
+
+  // Глобальные обработчики для закрытия и позиционирования дропдауна
+  const beerDropdownEl = document.getElementById('beerCatalogDropdown');
+  if (beerDropdownEl) {
+    beerDropdownEl.addEventListener('mousedown', (e) => {
+      e.stopPropagation();
+    });
+  }
+
+  document.addEventListener('mousedown', (e) => {
+    const dd = document.getElementById('beerCatalogDropdown');
+    if (!dd || dd.style.display === 'none') return;
+    if (dd.contains(e.target)) return;
+    if (activeDropdownInput && (e.target === activeDropdownInput || activeDropdownInput.contains(e.target))) return;
+    closeBeerDropdown();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const dd = document.getElementById('beerCatalogDropdown');
+      if (dd && dd.style.display !== 'none') {
+        closeBeerDropdown();
+      }
+    }
+  });
+
+  window.addEventListener('scroll', () => {
+    if (activeDropdownInput) positionBeerDropdown(activeDropdownInput);
+  }, { passive: true });
+  window.addEventListener('resize', () => {
+    if (activeDropdownInput) positionBeerDropdown(activeDropdownInput);
+  }, { passive: true });
+
+  let lastAutoBeerToastTitle = '';
+  let autoBeerDebounceTimer = null;
+
+  function checkAutoBeerByTitle(index, title, isManualInput = true, isBlurOrCommit = false) {
+    if (!isBeerA5Active() || typeof title !== 'string') return;
+    const rawTitle = title.trim();
+    if (!rawTitle) return;
+
+    if (autoBeerDebounceTimer) clearTimeout(autoBeerDebounceTimer);
+
+    if (isBlurOrCommit) {
+      executeAutoBeerMatch(index, rawTitle, isManualInput, true);
+    } else {
+      autoBeerDebounceTimer = setTimeout(() => {
+        executeAutoBeerMatch(index, rawTitle, isManualInput, false);
+      }, 300);
+    }
+  }
+
+  function executeAutoBeerMatch(index, rawTitle, isManualInput = true, isBlurOrCommit = false) {
+    if (!isBeerA5Active() || !rawTitle) return;
+    if (index < 0 || index >= itemsData.length) return;
+    const it = itemsData[index];
+    if (!it) return;
+
+    const lower = rawTitle.toLowerCase().trim();
+    if (!lower) return;
+
+    const norm = (s) => (s || '').toLowerCase().replace(/[-—–]/g, ' ').replace(/[«»"']/g, '').replace(/\s+/g, ' ').trim();
+    const targetNorm = norm(rawTitle);
+
+    // 1. Поиск точного совпадения в справочнике
+    let match = beerCatalog.find(b => norm(b.title) === targetNorm);
+
+    // 2. Префиксное совпадение: название сорта из базы стоит в начале введенного текста
+    // (например: ввели "Чешский Лев 1л разливное" -> найдет "Чешский Лев")
+    if (!match && targetNorm.length >= 3) {
+      match = beerCatalog.find(b => {
+        const bt = norm(b.title);
+        return bt && bt.length >= 3 && (targetNorm.startsWith(bt + ' ') || targetNorm.startsWith(bt));
+      });
+    }
+
+    // 3. Обратное префиксное совпадение при blur / commit: введенный текст в начале названия сорта
+    if (!match && isBlurOrCommit && targetNorm.length >= 3) {
+      match = beerCatalog.find(b => {
+        const bt = norm(b.title);
+        return bt && bt.startsWith(targetNorm);
+      });
+    }
+
+    if (match) {
+      it.title = match.title || it.title;
+      it.beerStrength = stripBeerMetric(match.beerStrength || '');
+      it.beerBitterness = match.beerBitterness || '-';
+      it.beerDensity = stripBeerMetric(match.beerDensity || '');
+      it.beerType = match.beerType || '';
+      it.beerStyle = match.beerStyle || '';
+      it.composition = match.composition || '';
+      it.subtitle = match.composition || '';
+      it.beerPhoto = match.beerPhoto || '';
+      if (match.price) {
+        it.price = match.price;
+        if (index === activePreviewIndex) {
+          const sPrice = document.getElementById('beerSidebarPrice');
+          if (sPrice && sPrice !== document.activeElement) sPrice.value = it.price;
+          if (inputPrice && inputPrice !== document.activeElement) inputPrice.value = it.price;
+        }
+      }
+
+      if (index === activePreviewIndex) {
+        const sTitle = document.getElementById('beerSidebarTitle');
+        if (sTitle && sTitle !== document.activeElement && sTitle.value !== it.title) sTitle.value = it.title;
+        if (inputTitle && inputTitle !== document.activeElement && inputTitle.value !== it.title) inputTitle.value = it.title;
+        if (typeof renderBeerSidebarActiveCard === 'function') renderBeerSidebarActiveCard();
+        updatePreview();
+      }
+      if (typeof syncBeerDrawerCardField === 'function') {
+        syncBeerDrawerCardField(index, 'title', it.title);
+        syncBeerDrawerCardField(index, 'price', it.price);
+        syncBeerDrawerCardField(index, 'beerStrength', it.beerStrength);
+        syncBeerDrawerCardField(index, 'beerBitterness', it.beerBitterness);
+        syncBeerDrawerCardField(index, 'beerDensity', it.beerDensity);
+        syncBeerDrawerCardField(index, 'beerType', it.beerType);
+        syncBeerDrawerCardField(index, 'beerStyle', it.beerStyle);
+        syncBeerDrawerCardField(index, 'composition', it.composition);
+        syncBeerDrawerCardField(index, 'photo', getBeerPhotoUrl(it));
+      }
+      scheduleSessionSave();
+
+      if (isManualInput && lastAutoBeerToastTitle !== targetNorm) {
+        lastAutoBeerToastTitle = targetNorm;
+        showToast(`🍺 Сорт «${match.title}» выбран: характеристики подставлены из базы`, 'success', 2500);
+      }
+      return;
+    }
+
+    // Если сорт НЕ найден в справочнике:
+    // Показываем предупреждение и применяем эвристику ТОЛЬКО при завершении ввода (blur / commit)!
+    // При наборе по буквам НЕ беспокоим пользователя всплывающими сообщениями!
+    if (isBlurOrCommit) {
+      let heuristicApplied = false;
+      if (lower.includes('пшеничн') || lower.includes('weiss') || lower.includes('вайс')) {
+        if (!it.beerStyle || it.beerStyle === 'Лагер') { it.beerStyle = 'Пшеничное'; heuristicApplied = true; }
+        if (!it.beerType || it.beerType === 'светлое фильтрованное') { it.beerType = 'светлое нефильтрованное'; heuristicApplied = true; }
+        if (!it.composition) { it.composition = 'СОСТАВ: вода, солод пшеничный, солод ячменный, хмель, дрожжи'; it.subtitle = it.composition; heuristicApplied = true; }
+      } else if (lower.includes('темн') || lower.includes('стаут') || lower.includes('stout') || lower.includes('портер') || lower.includes('porter')) {
+        if (!it.beerStyle || it.beerStyle === 'Лагер') { it.beerStyle = lower.includes('портер') ? 'Портер' : 'Стаут'; heuristicApplied = true; }
+        if (!it.beerType || it.beerType === 'светлое фильтрованное') { it.beerType = 'темное фильтрованное'; heuristicApplied = true; }
+        if (!it.composition) { it.composition = 'СОСТАВ: вода, солод ячменный, солод карамельный, хмель, дрожжи'; it.subtitle = it.composition; heuristicApplied = true; }
+      } else if (lower.includes('ipa') || lower.includes('ипа') || lower.includes('эль') || lower.includes('ale')) {
+        if (!it.beerStyle || it.beerStyle === 'Лагер') { it.beerStyle = (lower.includes('ipa') || lower.includes('ипа')) ? 'IPA' : 'Эль'; heuristicApplied = true; }
+        if (!it.beerType) { it.beerType = 'светлое нефильтрованное'; heuristicApplied = true; }
+      } else if (lower.includes('безалк') || lower.includes('б/а')) {
+        if (!it.beerType) { it.beerType = 'безалкогольное'; heuristicApplied = true; }
+        if (!it.beerStrength) { it.beerStrength = '0,5%'; heuristicApplied = true; }
+      }
+
+      if (heuristicApplied) {
+        if (index === activePreviewIndex) {
+          if (typeof renderBeerSidebarActiveCard === 'function') renderBeerSidebarActiveCard();
+          updatePreview();
+        }
+        if (typeof syncBeerDrawerCardField === 'function') {
+          syncBeerDrawerCardField(index, 'beerType', it.beerType);
+          syncBeerDrawerCardField(index, 'beerStyle', it.beerStyle);
+          syncBeerDrawerCardField(index, 'composition', it.composition);
+        }
+        scheduleSessionSave();
+      }
+
+      if (isManualInput && rawTitle.length >= 3 && lastAutoBeerToastTitle !== lower) {
+        lastAutoBeerToastTitle = lower;
+        showToast(`⚠️ Сорт «${rawTitle}» не найден в базе — укажите параметры вручную`, 'warning', 3000);
+      }
+    }
+  }
+
+  function importBeerCatalogFile(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      let buffer = e.target.result;
+      let text = '';
+      try {
+        const utf8Decoder = new TextDecoder('utf-8', { fatal: true });
+        text = utf8Decoder.decode(buffer);
+      } catch (_) {
+        const cp1251Decoder = new TextDecoder('windows-1251');
+        text = cp1251Decoder.decode(buffer);
+      }
+      text = text.replace(/\uFEFF/g, '');
+      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      if (!lines.length) return;
+
+      let addedCount = 0;
+      let colMap = { title: 0, price: 1, strength: 2, bitterness: 3, density: 4, type: 5, style: 6, comp: 7, photo: 8, category: -1 };
+      let startIndex = 0;
+      let currentSectionCategory = '';
+
+      // Проверяем первую строку на наличие заголовков
+      const firstLine = lines[0].toLowerCase();
+      if (firstLine.includes('наименование') || firstLine.includes('название') || firstLine.includes('сорт') || firstLine.includes('пиво')) {
+        const delim = firstLine.includes(';') ? ';' : (firstLine.includes('\t') ? '\t' : ',');
+        const headers = firstLine.split(delim).map(h => h.trim().toLowerCase());
+
+        const fTitle = headers.findIndex(h => h.includes('наименование') || h.includes('название') || h.includes('сорт') || h === 'name' || h === 'пиво');
+        const fPrice = headers.findIndex(h => h.includes('цена') || h === 'price');
+        const fStr = headers.findIndex(h => h.includes('креп') || h.includes('алк') || h.includes('str'));
+        const fBit = headers.findIndex(h => h.includes('гор') || h.includes('ibu') || h.includes('bit'));
+        const fDen = headers.findIndex(h => h.includes('плот') || h.includes('экстр') || h.includes('den'));
+        const fType = headers.findIndex(h => h.includes('вид') || h.includes('type'));
+        const fStyle = headers.findIndex(h => h.includes('стиль') || h.includes('style'));
+        const fComp = headers.findIndex(h => h.includes('состав') || h.includes('ингред') || h.includes('comp'));
+        const fPhoto = headers.findIndex(h => h.includes('фото') || h.includes('картин') || h.includes('img') || h.includes('photo'));
+        const fCat = headers.findIndex(h => h.includes('категор') || h.includes('раздел') || h.includes('фильтр') || h.includes('группа') || h === 'category');
+
+        if (fTitle >= 0) colMap.title = fTitle;
+        if (fPrice >= 0) colMap.price = fPrice;
+        if (fStr >= 0) colMap.strength = fStr;
+        if (fBit >= 0) colMap.bitterness = fBit;
+        if (fDen >= 0) colMap.density = fDen;
+        if (fType >= 0) colMap.type = fType;
+        if (fStyle >= 0) colMap.style = fStyle;
+        if (fComp >= 0) colMap.comp = fComp;
+        if (fPhoto >= 0) colMap.photo = fPhoto;
+        if (fCat >= 0) colMap.category = fCat;
+
+        startIndex = 1;
+      }
+
+      for (let i = startIndex; i < lines.length; i++) {
+        const line = lines[i];
+
+        // Проверка на заголовок секции: например "# Отечка", "## Импорт", "[Сидр/Медовуха]"
+        if (line.startsWith('#') || (line.startsWith('[') && line.includes(']'))) {
+          const rawHeader = line.split(';')[0].split('\t')[0].split(',')[0];
+          currentSectionCategory = rawHeader.replace(/^[#\s\[]+|[\]\s]+$/g, '').trim();
+          continue;
+        }
+
+        const delim = line.includes(';') ? ';' : (line.includes('\t') ? '\t' : ',');
+        const parts = line.split(delim).map(p => p.trim());
+
+        // Если в строке нет разделителей и она не пустая — возможно это текстовое название секции
+        if (parts.length === 1 && !line.includes(';') && !line.includes('\t') && !line.includes(',')) {
+          currentSectionCategory = line.trim();
+          continue;
+        }
+
+        const title = parts[colMap.title];
+        if (!title) continue;
+
+        const rowCat = (colMap.category >= 0 && parts[colMap.category]) || currentSectionCategory;
+
+        addOrUpdateBeerToCatalog({
+          title: title,
+          price: (colMap.price >= 0 && parts[colMap.price]) || '',
+          beerStrength: (colMap.strength >= 0 && parts[colMap.strength]) || '',
+          beerBitterness: (colMap.bitterness >= 0 && parts[colMap.bitterness]) || '',
+          beerDensity: (colMap.density >= 0 && parts[colMap.density]) || '',
+          beerType: (colMap.type >= 0 && parts[colMap.type]) || '',
+          beerStyle: (colMap.style >= 0 && parts[colMap.style]) || '',
+          composition: (colMap.comp >= 0 && parts[colMap.comp]) || '',
+          beerPhoto: (colMap.photo >= 0 && parts[colMap.photo]) || '',
+          category: rowCat || ''
+        });
+        addedCount++;
+      }
+      showToast(`Загружено сортов в базу магазина: ${addedCount} (Всего в базе: ${beerCatalog.length})`, 'success', 3500);
+      refreshBeerCatalogDatalist();
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function exportBeerCatalogFile() {
+    if (!beerCatalog.length) {
+      showToast('База сортов пуста', 'warning');
+      return;
+    }
+
+    // Группировка по категориям
+    const grouped = new Map();
+    beerCatalog.forEach(b => {
+      const cat = (b.category && b.category.trim()) || classifyBeer(b);
+      if (!grouped.has(cat)) grouped.set(cat, []);
+      grouped.get(cat).push(b);
+    });
+
+    let csv = '\uFEFF';
+    for (const [cat, items] of grouped.entries()) {
+      csv += `# ${cat}\r\n`;
+      items.forEach(b => {
+        const row = [
+          (b.title || '').replace(/;/g, ' '),
+          (b.price || '').replace(/;/g, ' '),
+          (b.beerStrength || '').replace(/;/g, ' '),
+          (b.beerBitterness || '').replace(/;/g, ' '),
+          (b.beerDensity || '').replace(/;/g, ' '),
+          (b.beerType || '').replace(/;/g, ' '),
+          (b.beerStyle || '').replace(/;/g, ' '),
+          (b.composition || '').replace(/;/g, ' '),
+          (b.beerPhoto || '').replace(/;/g, ' ')
+        ];
+        csv += row.join(';') + '\r\n';
+      });
+      csv += '\r\n';
+    }
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'База_сортов_пива.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast(`Выгружено ${beerCatalog.length} сортов в файл «База_сортов_пива.csv»`, 'success', 3000);
+  }
+
   const SWATCH_COLORS = {
     '': '#ffffff',
     'bgother:sort_nedeli_yellow.jpg': '#facc15',
@@ -3976,8 +6074,66 @@ document.addEventListener('DOMContentLoaded', () => {
       inp.style.display = isSnekiDigit ? '' : 'none';
     });
 
+    // 5. Синхронизация видимости пивных элементов
+    syncBeerControlsVisibility();
+
     renderActiveTemplateColorBar();
     updateItemsStatsBadge();
+  }
+
+  function syncBeerControlsVisibility() {
+    const isBeer = isBeerA5Active();
+    const beerSingleGroup = document.getElementById('beerSingleParamsGroup');
+    if (beerSingleGroup) beerSingleGroup.style.display = isBeer ? 'block' : 'none';
+
+    const idrBeerTools = document.getElementById('idrBeerTools');
+    if (idrBeerTools) idrBeerTools.style.display = isBeer ? 'flex' : 'none';
+
+    // Сайдбар: карточка активного пива вверху, таблица товаров доступна ниже
+    const beerSidebarCard = document.getElementById('beerSidebarActiveCard');
+    const sidebarTableHeader = document.querySelector('#multiItemSection .items-table-header');
+    const sidebarTableWrapper = document.querySelector('#multiItemSection .items-table-wrapper');
+    if (beerSidebarCard) beerSidebarCard.style.display = isBeer ? 'flex' : 'none';
+    if (sidebarTableHeader) sidebarTableHeader.style.display = '';
+    if (sidebarTableWrapper) sidebarTableWrapper.style.display = '';
+
+    // Шторка: переключение между карточками пива и классической таблицей
+    const beerCardsDrawer = document.getElementById('beerCardsDrawerSection');
+    const idrTableHeader = document.querySelector('.idr-table-section .items-table-header');
+    const idrTableWrapper = document.querySelector('.idr-table-section .idr-table-wrapper');
+    const isTableMode = window.__beerDrawerShowTable === true;
+    if (beerCardsDrawer) beerCardsDrawer.style.display = (isBeer && !isTableMode) ? 'flex' : 'none';
+    if (idrTableHeader) idrTableHeader.style.display = (isBeer && !isTableMode) ? 'none' : '';
+    if (idrTableWrapper) idrTableWrapper.style.display = (isBeer && !isTableMode) ? 'none' : '';
+
+    const toggleCardsBtn = document.getElementById('idrBeerToggleCardsBtn');
+    const toggleTableBtn = document.getElementById('idrBeerToggleTableBtn');
+    if (toggleCardsBtn) toggleCardsBtn.classList.toggle('active', !isTableMode);
+    if (toggleTableBtn) toggleTableBtn.classList.toggle('active', !!isTableMode);
+
+    if (toggleCardsBtn && !toggleCardsBtn.__wired) {
+      toggleCardsBtn.__wired = true;
+      toggleCardsBtn.addEventListener('click', () => {
+        window.__beerDrawerShowTable = false;
+        syncBeerControlsVisibility();
+        if (typeof renderBeerDrawerCards === 'function') renderBeerDrawerCards(true);
+      });
+    }
+    if (toggleTableBtn && !toggleTableBtn.__wired) {
+      toggleTableBtn.__wired = true;
+      toggleTableBtn.addEventListener('click', () => {
+        window.__beerDrawerShowTable = true;
+        syncBeerControlsVisibility();
+        renderItemsListInputs();
+      });
+    }
+
+    const zoomCtrl = document.getElementById('previewZoomControl');
+    if (zoomCtrl) zoomCtrl.style.display = isBeer ? 'flex' : '';
+
+    if (isBeer) {
+      if (typeof renderBeerSidebarActiveCard === 'function') renderBeerSidebarActiveCard();
+    }
   }
 
   // Опции быстрого меню фона строки товара (иконка 🖼). Порядок = порядок в меню.
@@ -4033,6 +6189,8 @@ document.addEventListener('DOMContentLoaded', () => {
       ];
     }
     if (
+      key === 'beer_a5' ||
+      key === 'beer_a5_aktsiya' ||
       key === 'yellow_tag' ||
       key === 'sneki_digit' ||
       key === 'novy_vkus' ||
@@ -4527,6 +6685,8 @@ document.addEventListener('DOMContentLoaded', () => {
     row.setAttribute('data-index', String(i));
     const isSel = (typeof selectedItemIndices !== 'undefined') && selectedItemIndices.has(i);
     if (isSel) row.classList.add('is-selected');
+    const isSkipped = !!(item && item.skipPrint);
+    if (isSkipped) row.classList.add('is-skipped');
     const safeTitle = (item.title || '').replace(/"/g, '&quot;');
     const safeSub = (item.subtitle || '').replace(/"/g, '&quot;');
     const safePrice = (item.price || '').replace(/"/g, '&quot;');
@@ -4536,6 +6696,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const multipleClass = isMultiple ? 'has-multiple' : '';
     const bgBadgeClass = item.bgCustomized ? 'has-dot-badge' : '';
     const decorBadgeClass = item.decorCustomized ? 'has-dot-badge' : '';
+    const isBeer = isBeerA5Active();
+    const beerDisplay = isBeer ? '' : 'display:none;';
+    const subDisplay = isBeer ? 'display:none;' : '';
+    if (item.beerPhoto === undefined) item.beerPhoto = '';
+    if (item.beerStrength === undefined) item.beerStrength = '';
+    if (item.beerBitterness === undefined) item.beerBitterness = '';
+    if (item.beerDensity === undefined) item.beerDensity = '';
+    if (item.beerType === undefined) item.beerType = '';
+    if (item.beerStyle === undefined) item.beerStyle = '';
+    if (item.composition === undefined) item.composition = '';
+
+    const safeStrength = (item.beerStrength || '').replace(/"/g, '&quot;');
+    const safeBitterness = (item.beerBitterness || '').replace(/"/g, '&quot;');
+    const safeDensity = (item.beerDensity || '').replace(/"/g, '&quot;');
+    const safeType = (item.beerType || '').replace(/"/g, '&quot;');
+    const safeStyle = (item.beerStyle || '').replace(/"/g, '&quot;');
+    const safeComp = (item.composition || '').replace(/"/g, '&quot;');
+    const photoUrl = getBeerPhotoUrl(item);
+    const photoThumbHtml = photoUrl ? `<img src="${photoUrl}" alt="Крышка">` : '🍺';
+
     row.innerHTML = `
       <div class="item-move-wrap" title="Порядок товара (перетащите ⠿ для изменения)">
         <span class="item-drag-handle" draggable="true" data-index="${i}" title="Перетащите мышью для изменения порядка товаров (Drag & Drop)">⠿</span>
@@ -4546,19 +6726,58 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
       <label class="item-chk-wrap" title="Выбрать строку для пакетных действий"><input type="checkbox" class="item-select-chk" data-index="${i}" ${isSel ? 'checked' : ''}></label>
       <span class="item-num">${i + 1}</span>
+      <div class="item-beer-photo-wrap item-beer-field" style="${beerDisplay}" title="Фото для крышки пива (кликните для смены)">
+        <button type="button" class="item-beer-photo-btn" data-index="${i}">${photoThumbHtml}</button>
+      </div>
       <div class="item-title-wrap">
         <textarea class="item-title-input" rows="1" placeholder="Наименование товара №${i + 1}" data-index="${i}">${safeTitle}</textarea>
         <button type="button" class="item-overflow-warn-btn" data-index="${i}" title="Текст названия выходит за границы ценника! Нажмите для автоподгонки размера шрифта" style="display:none;"><svg class="ico"><use href="#i-alert"/></svg></button>
       </div>
-      <textarea class="item-subtitle-input" rows="1" placeholder="Вес" data-index="${i}">${safeSub}</textarea>
+      <textarea class="item-subtitle-input" rows="1" placeholder="Вес" data-index="${i}" style="${subDisplay}">${safeSub}</textarea>
       <textarea class="item-price-input" rows="1" placeholder="Цена" data-index="${i}">${safePrice}</textarea>
+      <input type="text" class="item-beer-strength-input item-beer-field" placeholder="Кр%" title="Крепость (алк. %)" data-index="${i}" value="${safeStrength}" style="${beerDisplay}">
+      <input type="text" class="item-beer-bitterness-input item-beer-field" placeholder="Гор" title="Горечь (IBU)" data-index="${i}" value="${safeBitterness}" style="${beerDisplay}">
+      <input type="text" class="item-beer-density-input item-beer-field" placeholder="Пл%" title="Плотность (OG %)" data-index="${i}" value="${safeDensity}" style="${beerDisplay}">
+      <input type="text" class="item-beer-type-input item-beer-field" placeholder="Вид пива" title="Вид пива" data-index="${i}" value="${safeType}" style="${beerDisplay}">
+      <input type="text" class="item-beer-style-input item-beer-field" placeholder="Стиль" title="Стиль" data-index="${i}" value="${safeStyle}" style="${beerDisplay}">
+      <textarea class="item-beer-comp-input item-beer-field" rows="1" placeholder="Состав" title="Состав" data-index="${i}" style="${beerDisplay}">${safeComp}</textarea>
       <div class="item-qty-wrap" title="Тираж копий на листе А4"><input type="number" class="item-qty-input ${multipleClass}" min="1" max="99" value="${countVal}" data-multiple="${isMultiple}" data-index="${i}" title="Тираж копий на листе А4 (колесико мыши: +/-)"></div>
       <input type="text" class="item-digit-input" maxlength="3" placeholder="№" data-index="${i}" title="Большая цифра (слой «Цифра»)" value="${safeDigit}" style="${isSnekiDigitActive() ? '' : 'display:none;'}">
-      <button type="button" class="item-cross-btn" data-index="${i}" title="Перечеркнуть цену (акция/скидка)"><s>₽</s></button>
-      <button type="button" class="item-bg-btn ${bgBadgeClass}" data-index="${i}" title="Фон этого ценника"><svg class="ico"><use href="#i-image"/></svg></button>
-      <button type="button" class="item-decor-btn ${decorBadgeClass}" data-index="${i}" title="Оформление этого ценника"><svg class="ico"><use href="#i-palette"/></svg></button>
-      <button type="button" class="item-delete-btn" data-index="${i}" title="Удалить товар №${i + 1}"><svg class="ico"><use href="#i-trash"/></svg></button>
+      <div class="item-tools-wrap">
+        <button type="button" class="item-print-btn ${isSkipped ? 'is-skipped' : ''}" data-index="${i}" title="${isSkipped ? 'Ценник исключён из печати (нажмите, чтобы включить)' : 'Печатать этот ценник (нажмите, чтобы исключить)'}"><svg class="ico"><use href="${isSkipped ? '#i-eye' : '#i-printer'}"/></svg></button>
+        <button type="button" class="item-cross-btn" data-index="${i}" title="Зачеркнуть цену (акция со скидкой / распродажа)"><s>₽</s></button>
+        <button type="button" class="item-bg-btn ${bgBadgeClass}" data-index="${i}" title="Индивидуальный фон для ценника №${i + 1}"><svg class="ico"><use href="#i-image"/></svg></button>
+        <button type="button" class="item-decor-btn ${decorBadgeClass}" data-index="${i}" title="Промо-плашки и оформление для ценника №${i + 1}"><svg class="ico"><use href="#i-palette"/></svg></button>
+        <button type="button" class="item-beer-type-btn ${isBeerItemTypeHidden(itemsData[i]) ? 'is-only-style' : ''}" data-index="${i}" title="${isBeerItemTypeHidden(itemsData[i]) ? 'Сорт без вида пива (стиль по центру). Нажмите, чтобы включить вид' : 'Скрыть «ПИВО:» и центровать стиль'}" style="${beerDisplay}">${isBeerItemTypeHidden(itemsData[i]) ? '🥤' : '🍺'}</button>
+        <button type="button" class="item-delete-btn" data-index="${i}" title="Удалить строку №${i + 1}"><svg class="ico"><use href="#i-trash"/></svg></button>
+      </div>
     `;
+
+    const printToggleBtn = row.querySelector('.item-print-btn');
+    if (printToggleBtn) {
+      printToggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const idx = parseInt(printToggleBtn.getAttribute('data-index'), 10);
+        if (itemsData[idx]) {
+          itemsData[idx].skipPrint = !itemsData[idx].skipPrint;
+          const nowSkipped = !!itemsData[idx].skipPrint;
+          document.querySelectorAll(`.item-row[data-index="${idx}"]`).forEach(r => {
+            r.classList.toggle('is-skipped', nowSkipped);
+            const b = r.querySelector('.item-print-btn');
+            if (b) {
+              b.classList.toggle('is-skipped', nowSkipped);
+              b.title = nowSkipped ? 'Ценник исключён из печати (нажмите, чтобы включить)' : 'Печатать этот ценник (нажмите, чтобы исключить)';
+              b.innerHTML = `<svg class="ico"><use href="${nowSkipped ? '#i-eye' : '#i-printer'}"/></svg>`;
+            }
+          });
+          if (typeof scheduleSheetPreviewUpdate === 'function') scheduleSheetPreviewUpdate();
+          scheduleSessionSave();
+          if (typeof showToast === 'function') {
+            showToast(nowSkipped ? `Ценник №${idx + 1} исключён из печати` : `Ценник №${idx + 1} включён в печать`, 'info', 1600);
+          }
+        }
+      });
+    }
 
     const selChk = row.querySelector('.item-select-chk');
     if (selChk) {
@@ -4624,6 +6843,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       activePreviewIndex = idx;
       checkAutoBgForTitle(idx, e.target.value);
+      if (isBeerA5Active()) checkAutoBeerByTitle(idx, e.target.value, true, false);
       // Синхронизируем инпут в параллельном списке (если открыта шторка или сайдбар)
       document.querySelectorAll(`.item-title-input[data-index="${idx}"]`).forEach(inp => {
         if (inp !== e.target && inp.value !== e.target.value) {
@@ -4636,8 +6856,19 @@ document.addEventListener('DOMContentLoaded', () => {
       refitActiveTitle();
       // Прогрессивный рост/схлопывание строк по факту ввода.
       syncRowExtent(idx);
-      if (typeof checkAllRowsTextOverflow === 'function') checkAllRowsTextOverflow();
+      if (typeof checkSingleRowTextOverflow === 'function') {
+        checkSingleRowTextOverflow(idx);
+        debouncedCheckAllRowsOverflow(350);
+      } else if (typeof checkAllRowsTextOverflow === 'function') {
+        checkAllRowsTextOverflow();
+      }
       updatePreview();
+    });
+
+    titleInput.addEventListener('blur', () => {
+      if (isBeerA5Active() && itemsData[idx] && itemsData[idx].title) {
+        checkAutoBeerByTitle(idx, itemsData[idx].title, true, true);
+      }
     });
 
     const subInput = row.querySelector('.item-subtitle-input');
@@ -4727,6 +6958,69 @@ document.addEventListener('DOMContentLoaded', () => {
         const panelField = document.getElementById('digitText');
         if (panelField && panelField.value !== e.target.value) panelField.value = e.target.value;
         updatePreview();
+      });
+    }
+
+    // Слушатели пивных полей строки товара
+    ['beerStrength', 'beerBitterness', 'beerDensity', 'beerType', 'beerStyle', 'composition'].forEach(field => {
+      const clsMap = {
+        beerStrength: '.item-beer-strength-input',
+        beerBitterness: '.item-beer-bitterness-input',
+        beerDensity: '.item-beer-density-input',
+        beerType: '.item-beer-type-input',
+        beerStyle: '.item-beer-style-input',
+        composition: '.item-beer-comp-input'
+      };
+      const inp = row.querySelector(clsMap[field]);
+      if (inp) {
+        inp.addEventListener('focus', () => {
+          activePreviewIndex = i;
+          updatePreview();
+        });
+        inp.addEventListener('input', (e) => {
+          const idx = parseInt(e.target.getAttribute('data-index'), 10);
+          if (itemsData[idx]) itemsData[idx][field] = e.target.value;
+          activePreviewIndex = idx;
+          if (field === 'beerType' && itemsData[idx]) {
+            const trimmed = (e.target.value || '').trim();
+            if (trimmed === '-' || trimmed === '—' || trimmed === '') {
+              itemsData[idx].hideBeerType = true;
+            } else {
+              itemsData[idx].hideBeerType = false;
+              itemsData[idx]._prevBeerType = e.target.value;
+            }
+            const typeBtn = row.querySelector('.item-beer-type-btn');
+            if (typeBtn) {
+              const isHidden = isBeerItemTypeHidden(itemsData[idx]);
+              typeBtn.classList.toggle('is-only-style', isHidden);
+              typeBtn.textContent = isHidden ? '🥤' : '🍺';
+            }
+          }
+          document.querySelectorAll(`${clsMap[field]}[data-index="${idx}"]`).forEach(el => {
+            if (el !== e.target && el.value !== e.target.value) el.value = e.target.value;
+          });
+          updatePreview();
+          if (typeof renderBeerSidebarActiveCard === 'function') renderBeerSidebarActiveCard();
+        });
+      }
+    });
+
+    const beerTypeBtn = row.querySelector('.item-beer-type-btn');
+    if (beerTypeBtn) {
+      beerTypeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const idx = parseInt(beerTypeBtn.getAttribute('data-index'), 10);
+        toggleBeerItemType(idx);
+      });
+    }
+
+    const photoBtn = row.querySelector('.item-beer-photo-btn');
+    if (photoBtn) {
+      photoBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        activePreviewIndex = i;
+        const fileInput = document.getElementById('beerCapFileInput');
+        if (fileInput) fileInput.click();
       });
     }
 
@@ -5120,19 +7414,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     itemsListContainer.appendChild(fragSidebar);
 
-    if (idrItemsList) {
+    // Оптимизация (Zero Idle Render): не пересоздаём DOM шторки, если она закрыта
+    const isDrawerVisible = itemsDrawer && (itemsDrawer.classList.contains('open') || document.body.classList.contains('drawer-docked'));
+    if (idrItemsList && isDrawerVisible) {
       idrItemsList.innerHTML = '';
       const fragDrawer = document.createDocumentFragment();
       for (let i = 0; i < itemsData.length; i++) {
         fragDrawer.appendChild(createItemRow(i));
       }
       idrItemsList.appendChild(fragDrawer);
+      idrItemsList.querySelectorAll('textarea').forEach(autoGrowTextarea);
     }
     // Авто-подгон высоты текстовых полей после добавления в DOM (чтобы 2-я строка наименования не обрезалась)
     itemsListContainer.querySelectorAll('textarea').forEach(autoGrowTextarea);
-    if (idrItemsList) idrItemsList.querySelectorAll('textarea').forEach(autoGrowTextarea);
     updateItemsEmptyHint();
     syncDigitControlsVisibility();
+    if (isBeerA5Active()) {
+      if (typeof renderBeerSidebarActiveCard === 'function') renderBeerSidebarActiveCard();
+      if (typeof renderBeerDrawerCards === 'function') renderBeerDrawerCards();
+    }
     if (typeof updateItemsDrawerHeader === 'function') updateItemsDrawerHeader();
     if (typeof applyGoodsFilter === 'function') applyGoodsFilter();
     if (typeof refreshAllItemBadges === 'function') refreshAllItemBadges();
@@ -5160,6 +7460,11 @@ document.addEventListener('DOMContentLoaded', () => {
     },
     {
       prefix: 'пиво бутылочное',
+      stripLastPriceDigit: false,
+      defaultSubtitle: ''
+    },
+    {
+      prefix: 'пиво разливное',
       stripLastPriceDigit: false,
       defaultSubtitle: ''
     }
@@ -5198,9 +7503,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!line || !line.trim()) return null;
     const raw = line.trim();
 
-    // Разделение по табуляции (или 2+ пробелам при копировании из некоторых кассовых программ)
+    // Разделение по табуляции, точке с запятой (CSV) или 2+ пробелам
     let parts = raw.split('\t').map(p => p.trim());
-    if (parts.length === 1 && /\s{2,}/.test(raw)) {
+    if (parts.length === 1 && raw.includes(';')) {
+      parts = raw.split(';').map(p => p.trim());
+    } else if (parts.length === 1 && /\s{2,}/.test(raw)) {
       parts = raw.split(/\s{2,}/).map(p => p.trim());
     }
 
@@ -5208,8 +7515,31 @@ document.addEventListener('DOMContentLoaded', () => {
     let title = '';
     let price = '';
     let subtitle = '';
+    let beerStrength = '';
+    let beerBitterness = '';
+    let beerDensity = '';
+    let beerType = '';
+    let beerStyle = '';
+    let composition = '';
+    let beerPhoto = '';
 
-    if (parts.length === 1) {
+    // Если скопирована строка-заголовок (Наименование, Цена...) — пропускаем
+    if (/^(наименование|название|товар|пиво)/i.test(parts[0]) && /цена/i.test(parts[1] || '')) {
+      return null;
+    }
+
+    if (isBeerA5Active() && parts.length >= 4) {
+      // Многоколоночный формат Excel для пива
+      title = stripPosTitlePrefix(parts[0]);
+      price = cleanPriceInput(parts[1]);
+      beerStrength = parts[2] || '';
+      beerBitterness = parts[3] || '';
+      beerDensity = parts[4] || '';
+      beerType = parts[5] || '';
+      beerStyle = parts[6] || '';
+      composition = parts[7] || '';
+      beerPhoto = parts[8] || '';
+    } else if (parts.length === 1) {
       // 1 колонка: пробуем найти цену в конце строки (например "Konix 0,45 ст 175")
       const match = raw.match(/^(.*?)\s+([\d\s₽,.]+)\s*$/);
       if (match) {
@@ -5266,7 +7596,7 @@ document.addEventListener('DOMContentLoaded', () => {
       title = title.charAt(0).toUpperCase() + title.slice(1);
     }
 
-    if (!title && !price && !subtitle) return null;
+    if (!title && !price && !subtitle && !composition) return null;
 
     return {
       title: title || '',
@@ -5274,7 +7604,14 @@ document.addEventListener('DOMContentLoaded', () => {
       price: price || '',
       digit: '',
       count: 1,
-      subtitleManual: !!subtitle
+      subtitleManual: !!subtitle,
+      beerStrength,
+      beerBitterness,
+      beerDensity,
+      beerType,
+      beerStyle,
+      composition,
+      beerPhoto
     };
   }
 
@@ -5329,6 +7666,17 @@ document.addEventListener('DOMContentLoaded', () => {
         parsedCount++;
       }
     });
+
+    if (isBeerA5Active()) {
+      itemsData.forEach((it, idx) => {
+        if (!it || !it.title) return;
+        if (it.beerStrength || it.beerType || it.beerStyle || it.composition) {
+          addOrUpdateBeerToCatalog(it);
+        } else {
+          executeAutoBeerMatch(idx, it.title, false);
+        }
+      });
+    }
 
     if (itemsData.length === 0) {
       itemsData.push({ ...freshItem(), labelPos: cloneLabelPos(baseLabelPos) });
@@ -5432,7 +7780,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.classList.add('drawer-open');
     if (itemsDrawerBackdrop) itemsDrawerBackdrop.classList.add('open');
     updateItemsDrawerHeader();
-    renderDrawerItems();
+    if (isBeerA5Active() && typeof renderBeerDrawerCards === 'function') {
+      renderBeerDrawerCards();
+    } else {
+      renderDrawerItems();
+    }
   }
 
   function closeItemsDrawer() {
@@ -5471,6 +7823,7 @@ document.addEventListener('DOMContentLoaded', () => {
       frag.appendChild(createItemRow(i));
     }
     idrItemsList.appendChild(frag);
+    idrItemsList.querySelectorAll('textarea').forEach(autoGrowTextarea);
     syncDigitControlsVisibility();
   }
 
@@ -5854,7 +8207,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ctx.font = formatCanvasFont(fontSizePt, family, weight, isItalic);
     try {
       ctx.letterSpacing = '-0.2px';
-    } catch (_) {}
+    } catch (_) { }
 
     const sizePx = fontSizePt * (96 / 72);
     const lineHeightPx = sizePx * 1.05;
@@ -6071,14 +8424,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  const _priceDigitWidthCache = new Map();
   function maxPriceDigitWidth(refEl) {
     try {
       if (!refEl) return null;
-      const probes = [];
-      let max = 0;
       const fs = refEl.style.fontSize || '';
       const ff = refEl.style.fontFamily || '';
       const fw = refEl.style.fontWeight || '';
+      const cacheKey = `${fs}__${ff}__${fw}`;
+      if (_priceDigitWidthCache.has(cacheKey)) {
+        return _priceDigitWidthCache.get(cacheKey);
+      }
+      const probes = [];
+      let max = 0;
       for (let i = 0; i <= 9; i++) {
         const span = document.createElement('span');
         span.className = 'price-digit';
@@ -6098,7 +8456,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (w > max) max = w;
       }
       probes.forEach(p => p.remove());
-      return max > 0 ? max : null; // px
+      const res = max > 0 ? max : null; // px
+      if (res && _priceDigitWidthCache.size < 100) {
+        _priceDigitWidthCache.set(cacheKey, res);
+      }
+      return res;
     } catch (e) {
       return null;
     }
@@ -6532,7 +8894,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Интерактивная фокусировка и мягкая подсветка строки товара в таблице
   function focusItemTableRow(idx) {
     if (typeof idx !== 'number' || idx < 0) return;
-    const row = document.querySelector(`.idr-table-wrapper .item-row[data-index="${idx}"], .items-table-wrapper .item-row[data-index="${idx}"]`);
+    const isDrawerVisible = itemsDrawer && (itemsDrawer.classList.contains('open') || document.body.classList.contains('drawer-docked'));
+    const container = isDrawerVisible ? idrItemsList : itemsListContainer;
+    const row = container?.querySelector(`.item-row[data-index="${idx}"]`) || document.querySelector(`.item-row[data-index="${idx}"]`);
     if (row) {
       row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       row.classList.remove('flash-highlight');
@@ -6542,7 +8906,7 @@ document.addEventListener('DOMContentLoaded', () => {
         row.classList.remove('flash-highlight');
       }, 1600);
 
-      const titleInput = row.querySelector('.col-title input, input[name="title"], textarea');
+      const titleInput = row.querySelector('.item-title-input, textarea');
       if (titleInput && document.activeElement !== titleInput) {
         titleInput.focus({ preventScroll: true });
       }
@@ -6638,7 +9002,9 @@ document.addEventListener('DOMContentLoaded', () => {
       tElem.style.justifyContent = tAlign === 'left' ? 'flex-start' : (tAlign === 'right' ? 'flex-end' : 'center');
       const tOff = parseFloat(fontOf(item, 'titleOffsetY', tf.titleOffsetY != null ? tf.titleOffsetY : titleOffsetYVal)) || 0;
       const tSkew = isTitleItalic ? ' skewX(-11deg)' : '';
-      tElem.style.transform = `translate(${lp.title.x}mm, ${tOff + lp.title.y}mm) rotate(${layerRotate}deg)${tSkew}`;
+      const tScaleX = (item && item.titleScaleX != null) ? item.titleScaleX : 1;
+      const tScaleStr = tScaleX !== 1 ? ` scaleX(${tScaleX})` : '';
+      tElem.style.transform = `translate(${lp.title.x}mm, ${tOff + lp.title.y}mm) rotate(${layerRotate}deg)${tSkew}${tScaleStr}`;
     }
     if (sElem) {
       const tf2 = templateFonts || {};
@@ -6712,7 +9078,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const priceAlign = fontOf(item, 'priceAlign', tf5.priceAlign || 'center');
       box.style.justifyContent = priceAlign === 'left' ? 'flex-start' : (priceAlign === 'right' ? 'flex-end' : 'center');
       const yOffset = (parseFloat(fontOf(item, 'priceOffsetY', tf5.priceOffsetY != null ? tf5.priceOffsetY : priceOffsetYVal)) || 0) + lp.price.y;
-      box.style.transform = `translate(${lp.price.x}mm, ${yOffset}mm) rotate(${layerRotate}deg)`;
+      const pScaleX = (item && item.priceScaleX != null) ? item.priceScaleX : 1;
+      const pScaleStr = pScaleX !== 1 ? ` scaleX(${pScaleX})` : '';
+      box.style.transform = `translate(${lp.price.x}mm, ${yOffset}mm) rotate(${layerRotate}deg)${pScaleStr}`;
     }
 
     // Красный крест на цене (клон печати/раскладки)
@@ -6852,8 +9220,71 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     clone.style.setProperty('--price-slot-top', `${_priceTop.toFixed(2)}mm`);
 
-    // Декоративные блоки (СВЕРХУ / ВНУТРИ / СНИЗУ) отрисованы выше через
-    // applyCloneDecorBlock() — единый хелпер для всех трёх блоков клона.
+    // Пиво А5: рендер специфичных полей товара на клоне
+    const isBeerClone = isBeerA5Active() || clone.classList.contains('is-beer-a5');
+    clone.classList.toggle('is-beer-a5', isBeerClone);
+    const cloneBeerCap = clone.querySelector('.beer-cap-photo-wrap');
+    const cloneBeerPhoto = clone.querySelector('.beer-cap-img');
+    const cloneBeerComp = clone.querySelector('.beer-composition');
+    const cloneBeerMetrics = clone.querySelector('.beer-metrics-row');
+    const cloneBeerStr = clone.querySelector('.circle-strength .metric-val');
+    const cloneBeerBit = clone.querySelector('.circle-bitterness .metric-val');
+    const cloneBeerDen = clone.querySelector('.circle-density .metric-val');
+    const cloneBeerBot = clone.querySelector('.beer-bottom-row');
+    const cloneBeerType = clone.querySelector('.beer-type-val');
+    const cloneBeerStyle = clone.querySelector('.beer-style-val');
+
+    if (isBeerClone) {
+      const cloneSub = clone.querySelector('.wobbler-subtitle');
+      if (cloneSub) cloneSub.style.display = 'none';
+      if (pElem) pElem.style.color = '#000000';
+      if (curr) curr.style.color = '#000000';
+      const photoUrl = getBeerPhotoUrl(item);
+      if (cloneBeerCap) {
+        cloneBeerCap.style.display = photoUrl ? 'flex' : 'none';
+        cloneBeerCap.style.borderRadius = '50%';
+        cloneBeerCap.style.overflow = 'hidden';
+        cloneBeerCap.style.clipPath = 'circle(50% at 50% 50%)';
+        cloneBeerCap.style.webkitClipPath = 'circle(50% at 50% 50%)';
+        cloneBeerCap.style.background = 'transparent';
+      }
+      if (cloneBeerPhoto) {
+        if (photoUrl) {
+          cloneBeerPhoto.src = photoUrl;
+          cloneBeerPhoto.style.display = 'block';
+          cloneBeerPhoto.style.borderRadius = '50%';
+          cloneBeerPhoto.style.overflow = 'hidden';
+          cloneBeerPhoto.style.clipPath = 'circle(50% at 50% 50%)';
+          cloneBeerPhoto.style.webkitClipPath = 'circle(50% at 50% 50%)';
+          cloneBeerPhoto.style.objectFit = 'cover';
+        } else {
+          cloneBeerPhoto.removeAttribute('src');
+          cloneBeerPhoto.style.display = 'none';
+        }
+      }
+      if (cloneBeerComp) {
+        cloneBeerComp.style.display = 'block';
+      }
+      if (cloneBeerMetrics) cloneBeerMetrics.style.display = 'block';
+      if (cloneBeerBot) cloneBeerBot.style.display = 'flex';
+      if (cloneBeerComp) {
+        cloneBeerComp.textContent = (item && (item.composition || item.subtitle)) || '';
+      }
+      if (cloneBeerStr) cloneBeerStr.textContent = stripBeerMetric((item && item.beerStrength) || '');
+      if (cloneBeerBit) cloneBeerBit.textContent = (item && item.beerBitterness) || '';
+      if (cloneBeerDen) cloneBeerDen.textContent = stripBeerMetric((item && item.beerDensity) || '');
+      if (cloneBeerType) cloneBeerType.textContent = (item && item.beerType) || '';
+      if (cloneBeerStyle) cloneBeerStyle.textContent = (item && item.beerStyle) || '';
+      if (cloneBeerBot) {
+        const isHidden = isBeerItemTypeHidden(item);
+        cloneBeerBot.classList.toggle('is-style-centered', isHidden);
+      }
+    } else {
+      if (cloneBeerCap) cloneBeerCap.style.display = 'none';
+      if (cloneBeerComp) cloneBeerComp.style.display = 'none';
+      if (cloneBeerMetrics) cloneBeerMetrics.style.display = 'none';
+      if (cloneBeerBot) cloneBeerBot.style.display = 'none';
+    }
   }
 
   // ===== Мульти-печать: рендер ценника под ПРОИЗВОЛЬНЫЙ preset =====
@@ -6999,6 +9430,51 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
           </div>
           <div class="wobbler-bigdigit"></div>
+          <!-- Элементы шаблона «Пиво А5» -->
+          <div class="beer-cap-photo-wrap" style="display:none;"><img class="beer-cap-img" alt="Фото пива" src=""></div>
+          <div class="beer-composition" style="display:none;"></div>
+          <div class="beer-metrics-row" style="display:none;">
+            <div class="beer-metric-circle circle-strength"><span class="metric-label">КРЕПОСТЬ</span><span class="metric-val"></span></div>
+            <div class="beer-metric-circle circle-bitterness"><span class="metric-label">ГОРЕЧЬ</span><span class="metric-val"></span></div>
+            <div class="beer-metric-circle circle-density"><span class="metric-label">ПЛОТНОСТЬ</span><span class="metric-val"></span></div>
+          </div>
+          <div class="beer-bottom-row" style="display:none;">
+            <div class="beer-bottom-type">ПИВО: <span class="beer-type-val"></span></div>
+            <div class="beer-bottom-style">СТИЛЬ: <span class="beer-style-val"></span></div>
+          </div>
+          <!-- Элементы шаблона «Пиво А5 АКЦИЯ» -->
+          <div class="beer-promo-row beer-promo-row-top" style="display:none;">
+            <div class="beer-promo-label beer-promo-label-top"></div>
+            <div class="beer-promo-price-box beer-promo-price-top">
+              <div class="price-box-inner">
+                <span class="price-val"></span>
+                <span class="price-curr">₽</span>
+                <div class="price-cross-overlay beer-promo-cross-overlay" aria-hidden="true" style="display:none;">
+                  <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <line x1="0" y1="0" x2="100" y2="100" stroke="#e3000f" stroke-width="6.5" stroke-linecap="square"/>
+                    <line x1="100" y1="0" x2="0" y2="100" stroke="#e3000f" stroke-width="6.5" stroke-linecap="square"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <div class="beer-promo-circle circle-strength">
+              <span class="metric-label">КРЕПОСТЬ</span>
+              <span class="metric-val"></span>
+            </div>
+          </div>
+          <div class="beer-promo-row beer-promo-row-bottom" style="display:none;">
+            <div class="beer-promo-label beer-promo-label-bottom"></div>
+            <div class="beer-promo-price-box beer-promo-price-bottom">
+              <div class="price-box-inner">
+                <span class="price-val"></span>
+                <span class="price-curr">₽</span>
+              </div>
+            </div>
+            <div class="beer-promo-circle circle-density">
+              <span class="metric-label">ПЛОТНОСТЬ</span>
+              <span class="metric-val"></span>
+            </div>
+          </div>
         </div>
       </div>
       <div class="wobbler-bottom" style="display:none;"></div>
@@ -7126,7 +9602,9 @@ document.addEventListener('DOMContentLoaded', () => {
       tElem.style.justifyContent = tAlign === 'left' ? 'flex-start' : (tAlign === 'right' ? 'flex-end' : 'center');
       const tOff = parseFloat(fontOf(item, 'titleOffsetY', tf.titleOffsetY)) || 0;
       const tSkew = isTitleItalic ? ' skewX(-11deg)' : '';
-      tElem.style.transform = `translate(${lp.title.x}mm, ${tOff + lp.title.y}mm) rotate(${ctx.layerRotate || 0}deg)${tSkew}`;
+      const tScaleX = (item && item.titleScaleX != null) ? item.titleScaleX : 1;
+      const tScaleStr = tScaleX !== 1 ? ` scaleX(${tScaleX})` : '';
+      tElem.style.transform = `translate(${lp.title.x}mm, ${tOff + lp.title.y}mm) rotate(${ctx.layerRotate || 0}deg)${tSkew}${tScaleStr}`;
     }
     if (sElem) {
       sElem.textContent = (item && item.subtitle != null) ? item.subtitle : '';
@@ -7196,7 +9674,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const priceAlign = fontOf(item, 'priceAlign', tf.priceAlign || 'center');
       box.style.justifyContent = priceAlign === 'left' ? 'flex-start' : (priceAlign === 'right' ? 'flex-end' : 'center');
       const yOffset = (parseFloat(fontOf(item, 'priceOffsetY', tf.priceOffsetY)) || 0) + lp.price.y;
-      box.style.transform = `translate(${lp.price.x}mm, ${yOffset}mm) rotate(${ctx.layerRotate || 0}deg)`;
+      const pScaleX = (item && item.priceScaleX != null) ? item.priceScaleX : 1;
+      const pScaleStr = pScaleX !== 1 ? ` scaleX(${pScaleX})` : '';
+      box.style.transform = `translate(${lp.price.x}mm, ${yOffset}mm) rotate(${ctx.layerRotate || 0}deg)${pScaleStr}`;
     }
 
     // Красный крест на цене (мульти-печать)
@@ -7324,6 +9804,120 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     clone.style.setProperty('--price-slot-top', `${_priceTop.toFixed(2)}mm`);
+
+    // Пиво А5 / Пиво А5 АКЦИЯ: рендер специфичных полей товара на клоне
+    const isBeerPreset = (ctx.key === 'beer_a5' || ctx.key === 'beer_a5_aktsiya' || ctx.tb?.bgImage === 'pivo_a5_bg.jpg' || ctx.tb?.bgImage === 'pivo_a5_aktsiya_bg.jpg' || clone.classList.contains('is-beer-a5'));
+    const isBeerPromo = (ctx.key === 'beer_a5_aktsiya' || ctx.tb?.bgImage === 'pivo_a5_aktsiya_bg.jpg' || clone.classList.contains('is-beer-a5-aktsiya'));
+    clone.classList.toggle('is-beer-a5', isBeerPreset);
+    clone.classList.toggle('is-beer-a5-aktsiya', isBeerPromo);
+    const cloneBeerCap = clone.querySelector('.beer-cap-photo-wrap');
+    const cloneBeerPhoto = clone.querySelector('.beer-cap-img');
+    const cloneBeerComp = clone.querySelector('.beer-composition');
+    const cloneBeerMetrics = clone.querySelector('.beer-metrics-row');
+    const cloneBeerStr = clone.querySelector('.circle-strength .metric-val');
+    const cloneBeerBit = clone.querySelector('.circle-bitterness .metric-val');
+    const cloneBeerDen = clone.querySelector('.circle-density .metric-val');
+    const cloneBeerBot = clone.querySelector('.beer-bottom-row');
+    const cloneBeerType = clone.querySelector('.beer-type-val');
+    const cloneBeerStyle = clone.querySelector('.beer-style-val');
+
+    const clonePromoTop = clone.querySelector('.beer-promo-row-top');
+    const clonePromoBottom = clone.querySelector('.beer-promo-row-bottom');
+
+    if (isBeerPreset) {
+      const cloneSub = clone.querySelector('.wobbler-subtitle');
+      if (cloneSub) cloneSub.style.display = 'none';
+      if (pElem) pElem.style.color = '#000000';
+      if (curr) curr.style.color = '#000000';
+      const photoUrl = getBeerPhotoUrl(item);
+      if (cloneBeerCap) {
+        cloneBeerCap.style.display = photoUrl ? 'flex' : 'none';
+        cloneBeerCap.style.borderRadius = '50%';
+        cloneBeerCap.style.overflow = 'hidden';
+        cloneBeerCap.style.clipPath = 'circle(50% at 50% 50%)';
+        cloneBeerCap.style.webkitClipPath = 'circle(50% at 50% 50%)';
+        cloneBeerCap.style.background = 'transparent';
+      }
+      if (cloneBeerPhoto) {
+        if (photoUrl) {
+          cloneBeerPhoto.src = photoUrl;
+          cloneBeerPhoto.style.display = 'block';
+          cloneBeerPhoto.style.borderRadius = '50%';
+          cloneBeerPhoto.style.overflow = 'hidden';
+          cloneBeerPhoto.style.clipPath = 'circle(50% at 50% 50%)';
+          cloneBeerPhoto.style.webkitClipPath = 'circle(50% at 50% 50%)';
+          cloneBeerPhoto.style.objectFit = 'cover';
+        } else {
+          cloneBeerPhoto.removeAttribute('src');
+          cloneBeerPhoto.style.display = 'none';
+        }
+      }
+      if (cloneBeerComp) {
+        cloneBeerComp.style.display = 'block';
+        cloneBeerComp.textContent = (item && (item.composition || item.subtitle)) || '';
+      }
+      if (cloneBeerBot) {
+        cloneBeerBot.style.display = 'flex';
+        const isHidden = isBeerItemTypeHidden(item);
+        cloneBeerBot.classList.toggle('is-style-centered', isHidden);
+      }
+      if (cloneBeerType) cloneBeerType.textContent = (item && item.beerType) || '';
+      if (cloneBeerStyle) cloneBeerStyle.textContent = (item && item.beerStyle) || '';
+
+      if (isBeerPromo) {
+        if (cloneBeerMetrics) cloneBeerMetrics.style.display = 'none';
+        const cPriceBox = clone.querySelector('.wobbler-price-box');
+        if (cPriceBox) cPriceBox.style.display = 'none';
+
+        const isDiscount = (item && item.promoMode === 'discount');
+        clone.classList.toggle('is-promo-discount', isDiscount);
+
+        if (clonePromoTop) {
+          clonePromoTop.style.display = 'flex';
+          const lbl = clonePromoTop.querySelector('.beer-promo-label');
+          if (lbl) {
+            lbl.textContent = (item && item.priceLabel) || '1л -';
+            lbl.style.display = isDiscount ? 'none' : 'flex';
+          }
+          const pVal = clonePromoTop.querySelector('.price-val');
+          const pCur = clonePromoTop.querySelector('.price-curr');
+          renderBeerPromoPriceBox(pVal, pCur, (item && item.price) || '', '₽');
+          const crossEl = clonePromoTop.querySelector('.beer-promo-cross-overlay');
+          if (crossEl) crossEl.style.display = isDiscount ? 'block' : 'none';
+          const strEl = clonePromoTop.querySelector('.circle-strength .metric-val');
+          if (strEl) strEl.textContent = stripBeerMetric((item && item.beerStrength) || '') || '4,0%';
+        }
+        if (clonePromoBottom) {
+          clonePromoBottom.style.display = 'flex';
+          const lbl2 = clonePromoBottom.querySelector('.beer-promo-label');
+          if (lbl2) {
+            lbl2.textContent = (item && item.price2Label) || '1.5л -';
+            lbl2.style.display = isDiscount ? 'none' : 'flex';
+          }
+          const pVal2 = clonePromoBottom.querySelector('.price-val');
+          const pCur2 = clonePromoBottom.querySelector('.price-curr');
+          renderBeerPromoPriceBox(pVal2, pCur2, (item && item.price2) || '', '₽');
+          if (pVal2) pVal2.style.color = isDiscount ? '#e3000f' : '#000000';
+          if (pCur2) pCur2.style.color = isDiscount ? '#e3000f' : '#000000';
+          const denEl = clonePromoBottom.querySelector('.circle-density .metric-val');
+          if (denEl) denEl.textContent = stripBeerMetric((item && item.beerDensity) || '') || '11,0%';
+        }
+      } else {
+        if (clonePromoTop) clonePromoTop.style.display = 'none';
+        if (clonePromoBottom) clonePromoBottom.style.display = 'none';
+        if (cloneBeerMetrics) cloneBeerMetrics.style.display = 'block';
+        if (cloneBeerStr) cloneBeerStr.textContent = stripBeerMetric((item && item.beerStrength) || '');
+        if (cloneBeerBit) cloneBeerBit.textContent = (item && item.beerBitterness) || '';
+        if (cloneBeerDen) cloneBeerDen.textContent = stripBeerMetric((item && item.beerDensity) || '');
+      }
+    } else {
+      if (cloneBeerCap) cloneBeerCap.style.display = 'none';
+      if (cloneBeerComp) cloneBeerComp.style.display = 'none';
+      if (cloneBeerMetrics) cloneBeerMetrics.style.display = 'none';
+      if (cloneBeerBot) cloneBeerBot.style.display = 'none';
+      if (clonePromoTop) clonePromoTop.style.display = 'none';
+      if (clonePromoBottom) clonePromoBottom.style.display = 'none';
+    }
   }
 
   // Строит клон ценника, одетый под preset (геометрия/layout/стили из preset,
@@ -7433,6 +10027,34 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Batch preview updates to next animation frame (Rule 6: Preview RAF Debounce)
+  let previewRafId = null;
+  function schedulePreviewUpdate() {
+    if (previewRafId) return;
+    previewRafId = requestAnimationFrame(() => {
+      previewRafId = null;
+      updatePreview();
+    });
+  }
+
+  let _checkOverflowTimer = null;
+  function debouncedCheckTextOverflow() {
+    if (_checkOverflowTimer) clearTimeout(_checkOverflowTimer);
+    _checkOverflowTimer = setTimeout(() => {
+      _checkOverflowTimer = null;
+      if (typeof checkTextOverflow === 'function') checkTextOverflow();
+    }, 150);
+  }
+
+  let _preflightDebounceTimer = null;
+  function debouncedUpdatePreflightPill() {
+    if (_preflightDebounceTimer) clearTimeout(_preflightDebounceTimer);
+    _preflightDebounceTimer = setTimeout(() => {
+      _preflightDebounceTimer = null;
+      if (typeof updatePreflightPill === 'function') updatePreflightPill();
+    }, 250);
+  }
+
   // Update Wobbler Preview & Sizes
   function updatePreview() {
     const widthCm = parseFloat(wobblerWidthInput.value) || 6.5;
@@ -7469,11 +10091,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (singleRepeatWrap) singleRepeatWrap.style.display = isMultiMode ? 'none' : 'block';
 
     // Title styling — use activePreviewIndex for current item preview
-    const activeItem = isMultiMode ? (itemsData[activePreviewIndex] || itemsData[0] || { title: '', price: '' }) : null;
+    const activeItem = isMultiMode
+      ? (itemsData[activePreviewIndex] || itemsData[0] || { title: '', price: '' })
+      : (itemsData[0] || (itemsData[0] = freshItem()));
     const lp = activeLabelPos();   // позиции текущего режима/товара (для перетаскивания)
-    const activeTitleText = isMultiMode
-      ? (activeItem.title != null && activeItem.title !== '' ? activeItem.title : `Товар №${activePreviewIndex + 1}`)
-      : (inputTitle.value !== '' ? inputTitle.value : 'ЗАГОЛОВОК');
+    const isBeerTplNow = isBeerA5Active();
+    const activeTitleText = isBeerTplNow
+      ? (activeItem.title != null && activeItem.title !== '' ? activeItem.title : '')
+      : (isMultiMode
+        ? (activeItem.title != null && activeItem.title !== '' ? activeItem.title : `Товар №${activePreviewIndex + 1}`)
+        : (inputTitle.value !== '' ? inputTitle.value : 'ЗАГОЛОВОК'));
     // Шрифтовые значения — из активного контекста (per-item override ценника,
     // иначе templateFonts). Инпуты DOM синхронизированы с этим контекстом
     // отдельно (syncFontControlsToContext); здесь только читаем источник истины.
@@ -7495,7 +10122,9 @@ document.addEventListener('DOMContentLoaded', () => {
     previewTitle.style.justifyContent = tAlign === 'left' ? 'flex-start' : (tAlign === 'right' ? 'flex-end' : 'center');
     const tOffsetY = parseFloat(fontOf(activeItem, 'titleOffsetY', tf.titleOffsetY != null ? tf.titleOffsetY : titleOffsetY.value)) || 0;
     const tSkew = isTitleItalic ? ' skewX(-11deg)' : '';
-    previewTitle.style.transform = `translate(${lp.title.x}mm, ${tOffsetY + lp.title.y}mm) rotate(${layerRotate}deg)${tSkew}`;
+    const tScaleX = (activeItem && activeItem.titleScaleX != null) ? activeItem.titleScaleX : 1;
+    const tScaleStr = tScaleX !== 1 ? ` scaleX(${tScaleX})` : '';
+    previewTitle.style.transform = `translate(${lp.title.x}mm, ${tOffsetY + lp.title.y}mm) rotate(${layerRotate}deg)${tSkew}${tScaleStr}`;
     // Держим слайдер и индикатор в синхроне с активным товаром.
     if (titleSize.value != effTitleSize) titleSize.value = String(effTitleSize);
     titleSizeVal.textContent = titleSize.value;
@@ -7507,11 +10136,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Независимый слой: собственные размер/цвет/толщина/выравнивание
     // (шрифт наследуется от наименования).
     if (previewSubtitle) {
+      const isBeerTpl = isBeerA5Active();
       const subText = isMultiMode ? (activeItem?.subtitle || '') : (inputSubtitle?.value || '');
       if (document.activeElement !== previewSubtitle) {
         previewSubtitle.textContent = subText || '';
       }
-      previewSubtitle.style.display = subText || document.activeElement === previewSubtitle ? 'block' : 'none';
+      previewSubtitle.style.display = (!isBeerTpl && (subText || document.activeElement === previewSubtitle)) ? 'block' : 'none';
       const subPt = fontOf(activeItem, 'subtitleSize', tf.subtitleSize != null ? tf.subtitleSize : (subtitleSize ? subtitleSize.value : 11));
       // Шрифт подзаголовка наследуется от шрифта наименования (исторически).
       previewSubtitle.style.fontFamily = fontOf(activeItem, 'titleFont', tf.titleFont || titleFont.value);
@@ -7548,6 +10178,147 @@ document.addEventListener('DOMContentLoaded', () => {
         if (document.activeElement !== previewBigDigit) previewBigDigit.innerHTML = '';
       }
     }
+
+    // === Отрисовка шаблона «Пиво А5» ===
+    const isBeer = isBeerA5Active();
+    wobblerPreview.classList.toggle('is-beer-a5', isBeer);
+
+    const beerCapWrap = document.getElementById('beerCapPhotoWrap');
+    const previewBeerPhoto = document.getElementById('previewBeerPhoto');
+    const previewBeerComp = document.getElementById('previewBeerComposition');
+    const previewBeerMetrics = document.getElementById('previewBeerMetrics');
+    const previewBeerStr = document.getElementById('previewBeerStrength');
+    const previewBeerBit = document.getElementById('previewBeerBitterness');
+    const previewBeerDen = document.getElementById('previewBeerDensity');
+    const previewBeerBot = document.getElementById('previewBeerBottomRow');
+    const previewBeerType = document.getElementById('previewBeerType');
+    const previewBeerStyle = document.getElementById('previewBeerStyle');
+
+    if (isBeer) {
+      if (beerCapWrap) beerCapWrap.style.display = 'flex';
+      if (previewBeerComp) previewBeerComp.style.display = 'block';
+      if (previewBeerMetrics) previewBeerMetrics.style.display = 'block';
+      if (previewBeerBot) previewBeerBot.style.display = 'flex';
+
+      const photoUrl = getBeerPhotoUrl(activeItem);
+      if (beerCapWrap) {
+        beerCapWrap.style.display = photoUrl ? 'flex' : 'none';
+        beerCapWrap.style.borderRadius = '50%';
+        beerCapWrap.style.overflow = 'hidden';
+        beerCapWrap.style.clipPath = 'circle(50% at 50% 50%)';
+        beerCapWrap.style.webkitClipPath = 'circle(50% at 50% 50%)';
+      }
+      if (previewBeerPhoto) {
+        if (photoUrl) {
+          previewBeerPhoto.src = photoUrl;
+          previewBeerPhoto.style.display = 'block';
+          previewBeerPhoto.style.borderRadius = '50%';
+          previewBeerPhoto.style.overflow = 'hidden';
+          previewBeerPhoto.style.clipPath = 'circle(50% at 50% 50%)';
+          previewBeerPhoto.style.webkitClipPath = 'circle(50% at 50% 50%)';
+          previewBeerPhoto.style.objectFit = 'cover';
+        } else {
+          previewBeerPhoto.removeAttribute('src');
+          previewBeerPhoto.style.display = 'none';
+        }
+      }
+
+      const compText = (activeItem && (activeItem.composition || activeItem.subtitle)) || (document.getElementById('beerCompositionInput') ? document.getElementById('beerCompositionInput').value : '') || '';
+      if (previewBeerComp && document.activeElement !== previewBeerComp) previewBeerComp.textContent = compText;
+
+      const strText = stripBeerMetric((activeItem && activeItem.beerStrength) || (document.getElementById('beerStrengthInput') ? document.getElementById('beerStrengthInput').value : '') || '');
+      const bitText = (activeItem && activeItem.beerBitterness) || (document.getElementById('beerBitternessInput') ? document.getElementById('beerBitternessInput').value : '') || '';
+      const denText = stripBeerMetric((activeItem && activeItem.beerDensity) || (document.getElementById('beerDensityInput') ? document.getElementById('beerDensityInput').value : '') || '');
+      if (previewBeerStr && document.activeElement !== previewBeerStr) previewBeerStr.textContent = strText;
+      if (previewBeerBit && document.activeElement !== previewBeerBit) previewBeerBit.textContent = bitText;
+      if (previewBeerDen && document.activeElement !== previewBeerDen) previewBeerDen.textContent = denText;
+
+      const typeText = (activeItem && activeItem.beerType) || (document.getElementById('beerTypeInput') ? document.getElementById('beerTypeInput').value : '') || '';
+      const styleText = (activeItem && activeItem.beerStyle) || (document.getElementById('beerStyleInput') ? document.getElementById('beerStyleInput').value : '') || '';
+      if (previewBeerType && document.activeElement !== previewBeerType) previewBeerType.textContent = typeText;
+      if (previewBeerStyle && document.activeElement !== previewBeerStyle) previewBeerStyle.textContent = styleText;
+      if (previewBeerBot) {
+        const isHidden = isBeerItemTypeHidden(activeItem);
+        previewBeerBot.classList.toggle('is-style-centered', isHidden);
+      }
+
+      // Синхронизируем инпуты в сайдбаре
+      const sComp = document.getElementById('beerCompositionInput');
+      if (sComp && document.activeElement !== sComp) sComp.value = compText;
+      const sStr = document.getElementById('beerStrengthInput');
+      if (sStr && document.activeElement !== sStr) sStr.value = strText;
+      const sBit = document.getElementById('beerBitternessInput');
+      if (sBit && document.activeElement !== sBit) sBit.value = bitText;
+      const sDen = document.getElementById('beerDensityInput');
+      if (sDen && document.activeElement !== sDen) sDen.value = denText;
+      const sType = document.getElementById('beerTypeInput');
+      if (sType && document.activeElement !== sType) sType.value = typeText;
+      const sStyle = document.getElementById('beerStyleInput');
+      if (sStyle && document.activeElement !== sStyle) sStyle.value = styleText;
+      const sCapFile = document.getElementById('beerCapFilename');
+      if (sCapFile) sCapFile.textContent = (activeItem && activeItem.beerPhoto) || (photoUrl ? photoUrl.split('/').pop() : 'Без фото');
+      const sCapRem = document.getElementById('beerCapRemoveBtn');
+      if (sCapRem) sCapRem.style.display = ((activeItem && activeItem.beerPhoto) || photoUrl) ? '' : 'none';
+      if (typeof renderBeerSidebarActiveCard === 'function') renderBeerSidebarActiveCard();
+      if (typeof autoFitBeerPreviewIfActive === 'function') autoFitBeerPreviewIfActive();
+
+      // Отрисовка промо-строк (Пиво А5 АКЦИЯ)
+      const isPromo = isBeerA5PromoActive();
+      wobblerPreview.classList.toggle('is-beer-a5-aktsiya', isPromo);
+      const isDiscount = isPromo && (activeItem && activeItem.promoMode === 'discount');
+      wobblerPreview.classList.toggle('is-promo-discount', isDiscount);
+
+      const promoRowTop = document.getElementById('previewBeerPromoRowTop');
+      const promoRowBottom = document.getElementById('previewBeerPromoRowBottom');
+      if (isPromo) {
+        if (promoRowTop) {
+          promoRowTop.style.display = 'flex';
+          const lbl = document.getElementById('previewBeerPromoLabelTop');
+          if (lbl && document.activeElement !== lbl) {
+            lbl.textContent = (activeItem && activeItem.priceLabel) || '1л -';
+            lbl.style.display = isDiscount ? 'none' : 'flex';
+          }
+          const valEl = document.getElementById('previewBeerPromoPriceValTop');
+          const curEl = document.getElementById('previewBeerPromoPriceCurrTop');
+          renderBeerPromoPriceBox(valEl, curEl, (activeItem && activeItem.price) || '', '₽');
+          const crossEl = promoRowTop.querySelector('.beer-promo-cross-overlay');
+          if (crossEl) crossEl.style.display = isDiscount ? 'block' : 'none';
+          const strEl = document.getElementById('previewBeerPromoStrength');
+          if (strEl && document.activeElement !== strEl) strEl.textContent = strText || '4,0%';
+        }
+        if (promoRowBottom) {
+          promoRowBottom.style.display = 'flex';
+          const lbl2 = document.getElementById('previewBeerPromoLabelBottom');
+          if (lbl2 && document.activeElement !== lbl2) {
+            lbl2.textContent = (activeItem && activeItem.price2Label) || '1.5л -';
+            lbl2.style.display = isDiscount ? 'none' : 'flex';
+          }
+          const valEl2 = document.getElementById('previewBeerPromoPriceValBottom');
+          const curEl2 = document.getElementById('previewBeerPromoPriceCurrBottom');
+          renderBeerPromoPriceBox(valEl2, curEl2, (activeItem && activeItem.price2) || '', '₽');
+          if (valEl2) valEl2.style.color = isDiscount ? '#e3000f' : '#000000';
+          if (curEl2) curEl2.style.color = isDiscount ? '#e3000f' : '#000000';
+          const denEl = document.getElementById('previewBeerPromoDensity');
+          if (denEl && document.activeElement !== denEl) denEl.textContent = denText || '11,0%';
+        }
+        if (previewBeerMetrics) previewBeerMetrics.style.display = 'none';
+        if (previewPriceBox) previewPriceBox.style.display = 'none';
+      } else {
+        if (promoRowTop) promoRowTop.style.display = 'none';
+        if (promoRowBottom) promoRowBottom.style.display = 'none';
+      }
+    } else {
+      wobblerPreview.classList.remove('is-beer-a5-aktsiya');
+      const promoRowTop = document.getElementById('previewBeerPromoRowTop');
+      const promoRowBottom = document.getElementById('previewBeerPromoRowBottom');
+      if (promoRowTop) promoRowTop.style.display = 'none';
+      if (promoRowBottom) promoRowBottom.style.display = 'none';
+      if (beerCapWrap) beerCapWrap.style.display = 'none';
+      if (previewBeerComp) previewBeerComp.style.display = 'none';
+      if (previewBeerMetrics) previewBeerMetrics.style.display = 'none';
+      if (previewBeerBot) previewBeerBot.style.display = 'none';
+      if (typeof resetBeerPreviewZoom === 'function') resetBeerPreviewZoom();
+    }
     syncDigitControlsVisibility();
 
     // Update preview item badge
@@ -7557,7 +10328,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Price Toggle & Custom Styling (Currency icon matches exact price font & weight!)
     if (showPriceToggle.checked) {
       priceFieldsBlock.classList.remove('price-off');
-      previewPriceBox.style.display = 'flex';
+      const isPromoNow = isBeerA5PromoActive();
+      previewPriceBox.style.display = isPromoNow ? 'none' : 'flex';
       const rawPriceText = isMultiMode ? (activeItem?.price || '') : inputPrice.value.trim();
       const parsedPrice = splitPriceAndCurrency(rawPriceText);
       const activePriceText = parsedPrice.price;
@@ -7568,7 +10340,7 @@ document.addEventListener('DOMContentLoaded', () => {
       previewPrice.style.fontFamily = fontOf(activeItem, 'priceFont', tf.priceFont || priceFont.value);
       previewPrice.style.fontSize = `${fontOf(activeItem, 'priceSize', tf.priceSize != null ? tf.priceSize : priceSize.value)}pt`;
       previewPrice.style.fontWeight = fontOf(activeItem, 'priceWeight', tf.priceWeight || priceWeight.value);
-      previewPrice.style.color = fontOf(activeItem, 'priceColor', tf.priceColor || priceColor.value);
+      previewPrice.style.color = isBeer ? '#000000' : fontOf(activeItem, 'priceColor', tf.priceColor || priceColor.value);
       previewPrice.style.textShadow = fontOf(activeItem, 'priceShadow', tf.priceShadow != null ? tf.priceShadow : buildShadow(priceShadow ? priceShadow.value : 0, priceShadowColor ? priceShadowColor.value : '#000000'));
       // Все цифры цены одинаковой ширины — как самая широкая. Замеряем max по 0–9
       // и кладём в CSS-переменную, которую использует .price-digit { width }.
@@ -7585,14 +10357,16 @@ document.addEventListener('DOMContentLoaded', () => {
       previewCurrency.style.fontFamily = fontOf(activeItem, 'priceFont', tf.priceFont || priceFont.value);
       previewCurrency.style.fontSize = `${fontOf(activeItem, 'priceSize', tf.priceSize != null ? tf.priceSize : priceSize.value)}pt`;
       previewCurrency.style.fontWeight = fontOf(activeItem, 'priceWeight', tf.priceWeight || priceWeight.value);
-      previewCurrency.style.color = fontOf(activeItem, 'priceColor', tf.priceColor || priceColor.value);
+      previewCurrency.style.color = isBeer ? '#000000' : fontOf(activeItem, 'priceColor', tf.priceColor || priceColor.value);
       previewCurrency.style.textShadow = fontOf(activeItem, 'priceShadow', tf.priceShadow != null ? tf.priceShadow : buildShadow(priceShadow ? priceShadow.value : 0, priceShadowColor ? priceShadowColor.value : '#000000'));
       previewCurrency.style.transform = `translate(${lp.currency.x}mm, ${lp.currency.y}mm)`;
 
       const priceAlign = fontOf(activeItem, 'priceAlign', tf.priceAlign || alignState.price || 'center');
       previewPriceBox.style.justifyContent = priceAlign === 'left' ? 'flex-start' : (priceAlign === 'right' ? 'flex-end' : 'center');
       const yOffset = (parseFloat(fontOf(activeItem, 'priceOffsetY', tf.priceOffsetY != null ? tf.priceOffsetY : priceOffsetY.value)) || 0) + lp.price.y;
-      previewPriceBox.style.transform = `translate(${lp.price.x}mm, ${yOffset}mm) rotate(${layerRotate}deg)`;
+      const pScaleX = (activeItem && activeItem.priceScaleX != null) ? activeItem.priceScaleX : 1;
+      const pScaleStr = pScaleX !== 1 ? ` scaleX(${pScaleX})` : '';
+      previewPriceBox.style.transform = `translate(${lp.price.x}mm, ${yOffset}mm) rotate(${layerRotate}deg)${pScaleStr}`;
 
       // Красный крест на цене
       const isCrossed = fontOf(activeItem, 'priceCross', !!tf.priceCross || !!(priceCrossToggle && priceCrossToggle.checked));
@@ -7850,22 +10624,35 @@ document.addEventListener('DOMContentLoaded', () => {
     // Чекбокс — единственный источник состояния.
     wobblerPreview.classList.toggle('price-plate', !!(pricePlateToggle && pricePlateToggle.checked));
 
-    renderSheetPreview(widthMm, heightMm);
+    scheduleSheetPreviewUpdate(widthMm, heightMm);
 
     // Синхронизируем индикаторы активности декор-блоков на суб-табах #5
     if (typeof syncDecorTabDots === 'function') syncDecorTabDots();
 
     // Проверяем переполнение текста названия для показа бейджа ⚠️
-    if (typeof checkTextOverflow === 'function') checkTextOverflow();
+    debouncedCheckTextOverflow();
 
     // Синхронизируем бейджи кастомизации на вкладках сайдбара
     if (typeof updateSidebarCustomBadges === 'function') updateSidebarCustomBadges();
 
     // Обновляем живой статус предпечатного аудита в шапке
-    if (typeof updatePreflightPill === 'function') updatePreflightPill();
+    debouncedUpdatePreflightPill();
 
     // Обновляем диагностическую Debug-плашку
     if (typeof updateDebugToolbar === 'function') updateDebugToolbar();
+
+    // 2D Transform Box для шаблона «Пиво А5»
+    if (typeof setupCard2DTransform === 'function') {
+      if (isBeerA5Active()) {
+        setupCard2DTransform(wobblerPreview, () => activeItem, () => {
+          updatePreview();
+        });
+      } else if (wobblerPreview._transformBoxController) {
+        const oldBox = wobblerPreview.querySelector('.interactive-2d-box');
+        if (oldBox) oldBox.remove();
+        wobblerPreview._transformBoxController = null;
+      }
+    }
 
     // Любое значимое изменение завершается этим рендером — планируем
     // автосохранение сессии (дебаунс внутри).
@@ -8302,6 +11089,703 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let currentSheetPreviewPage = 0;
 
+  // --- Sheet A4 Side Navigation Elements & Handlers ---
+  const sheetSidePrevBtn = document.getElementById('sheetSidePrevBtn');
+  const sheetSideNextBtn = document.getElementById('sheetSideNextBtn');
+  const sheetFloatingIndicator = document.getElementById('sheetFloatingIndicator');
+  const sheetFloatingIndicatorText = document.getElementById('sheetFloatingIndicatorText');
+
+  function updateSheetItemNav(totalPages, curPage) {
+    if (!sheetSidePrevBtn || !sheetSideNextBtn) return;
+    const isSheetMode = workspacePanelEl && workspacePanelEl.classList.contains('view-sheet-mode');
+    const isBeer = isBeerA5Active();
+    const totalCount = (itemsData && itemsData.length) ? itemsData.length : 1;
+    const pages = (typeof totalPages === 'number' && totalPages > 0) ? totalPages : 1;
+    const pageNum = (typeof curPage === 'number') ? curPage : currentSheetPreviewPage;
+
+    // Кнопки навигации по бокам листа А4 показываются, когда мы в режиме «Лист А4»
+    // и товаров или страниц больше 1.
+    const showNav = isSheetMode && (totalCount > 1 || pages > 1);
+
+    sheetSidePrevBtn.style.display = showNav ? 'flex' : 'none';
+    sheetSideNextBtn.style.display = showNav ? 'flex' : 'none';
+    if (sheetFloatingIndicator) {
+      sheetFloatingIndicator.style.display = showNav ? 'block' : 'none';
+    }
+
+    if (!showNav) return;
+
+    if (isBeer) {
+      // Для шаблона «Пиво А5» (1 товар на листе А4):
+      const isFirst = (activePreviewIndex <= 0);
+      const isLast = (activePreviewIndex >= totalCount - 1);
+      sheetSidePrevBtn.disabled = isFirst;
+      sheetSideNextBtn.disabled = isLast;
+      if (sheetFloatingIndicatorText) {
+        sheetFloatingIndicatorText.textContent = `Товар ${activePreviewIndex + 1} из ${totalCount} (Лист ${activePreviewIndex + 1} из ${totalCount})`;
+      }
+    } else {
+      // Для остальных шаблонов:
+      if (pages > 1) {
+        const isFirst = (pageNum <= 0);
+        const isLast = (pageNum >= pages - 1);
+        sheetSidePrevBtn.disabled = isFirst;
+        sheetSideNextBtn.disabled = isLast;
+        if (sheetFloatingIndicatorText) {
+          sheetFloatingIndicatorText.textContent = `Лист ${pageNum + 1} из ${pages} · Всего ${totalCount} товаров`;
+        }
+      } else {
+        const isFirst = (activePreviewIndex <= 0);
+        const isLast = (activePreviewIndex >= totalCount - 1);
+        sheetSidePrevBtn.disabled = isFirst;
+        sheetSideNextBtn.disabled = isLast;
+        if (sheetFloatingIndicatorText) {
+          sheetFloatingIndicatorText.textContent = `Товар ${activePreviewIndex + 1} из ${totalCount}`;
+        }
+      }
+    }
+  }
+
+  function initSheetItemNavigator() {
+    if (sheetSidePrevBtn) {
+      sheetSidePrevBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isBeer = isBeerA5Active();
+        if (isBeer) {
+          if (activePreviewIndex > 0) setActiveItemIndex(activePreviewIndex - 1, true);
+        } else {
+          if (currentSheetPreviewPage > 0) {
+            currentSheetPreviewPage--;
+            updatePreview();
+          } else if (activePreviewIndex > 0) {
+            setActiveItemIndex(activePreviewIndex - 1, true);
+          }
+        }
+      });
+    }
+
+    if (sheetSideNextBtn) {
+      sheetSideNextBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isBeer = isBeerA5Active();
+        if (isBeer) {
+          if (activePreviewIndex < itemsData.length - 1) setActiveItemIndex(activePreviewIndex + 1, true);
+        } else {
+          const wMm = (parseFloat(wobblerWidthInput.value) || 6.5) * 10;
+          const hMm = (parseFloat(wobblerHeightInput.value) || 4.5) * 10;
+          const grid = calcA4Grid(wMm, effectiveCardHeight(hMm));
+          const maxPages = Math.ceil(itemsData.filter(isItemFilled).length / Math.max(1, grid.maxCount));
+          if (currentSheetPreviewPage < maxPages - 1) {
+            currentSheetPreviewPage++;
+            updatePreview();
+          } else if (activePreviewIndex < itemsData.length - 1) {
+            setActiveItemIndex(activePreviewIndex + 1, true);
+          }
+        }
+      });
+    }
+  }
+
+  // --- 2D Transform Box (Вариант Г): растягивание/сжатие (scaleX) и размер шрифта (pt) для «Пиво А5» ---
+  function applyTransformDirect(node, itm, kind) {
+    if (!node || !itm) return;
+    const tf = templateFonts || {};
+    const lp = cloneLabelPos(itm.labelPos || itemsData[0]?.labelPos || defaultLabelPos());
+    if (kind === 'title') {
+      const isItalic = fontOf(itm, 'titleItalic', tf.titleItalic);
+      const tSkew = isItalic ? ' skewX(-11deg)' : '';
+      const tOff = parseFloat(fontOf(itm, 'titleOffsetY', tf.titleOffsetY != null ? tf.titleOffsetY : (titleOffsetY ? titleOffsetY.value : 0))) || 0;
+      const tScaleX = itm.titleScaleX ?? 1;
+      const tScaleStr = tScaleX !== 1 ? ` scaleX(${tScaleX})` : '';
+      node.style.transform = `translate(${lp.title.x}mm, ${tOff + lp.title.y}mm) rotate(${layerRotate}deg)${tSkew}${tScaleStr}`;
+    } else {
+      const yOffset = (parseFloat(fontOf(itm, 'priceOffsetY', tf.priceOffsetY != null ? tf.priceOffsetY : (priceOffsetY ? priceOffsetY.value : 0))) || 0) + lp.price.y;
+      const pScaleX = itm.priceScaleX ?? 1;
+      const pScaleStr = pScaleX !== 1 ? ` scaleX(${pScaleX})` : '';
+      node.style.transform = `translate(${lp.price.x}mm, ${yOffset}mm) rotate(${layerRotate}deg)${pScaleStr}`;
+    }
+  }
+
+  function syncToWobblerPreview(itm, kind) {
+    if (typeof activePreviewIndex !== 'undefined' && itemsData[activePreviewIndex] === itm) {
+      if (kind === 'title' && previewTitle) {
+        applyTransformDirect(previewTitle, itm, 'title');
+      } else if (kind === 'price' && previewPriceBox) {
+        applyTransformDirect(previewPriceBox, itm, 'price');
+      }
+    }
+  }
+
+  function setupCard2DTransform(container, getItem, onUpdate) {
+    if (!container) return null;
+    const headerContent = container.querySelector('.header-content');
+    if (!headerContent) return null;
+
+    if (!isBeerA5Active()) {
+      const existing = headerContent.querySelector('.interactive-2d-box');
+      if (existing) existing.remove();
+      container._transformBoxController = null;
+      return null;
+    }
+
+    if (container._transformBoxController) {
+      container._transformBoxController.update();
+      return container._transformBoxController;
+    }
+
+    let box = headerContent.querySelector('.interactive-2d-box');
+    if (!box) {
+      box = document.createElement('div');
+      box.className = 'interactive-2d-box';
+      box.innerHTML = `
+        <div class="box-readout-pill" title="Двойной клик — сброс 100%">↔ 100%</div>
+        <div class="box-handle handle-e" title="Потяните для растягивания/сжатия (двойной клик — сброс 100%)">↔</div>
+        <div class="box-handle handle-se" title="Потяните для изменения размера шрифта (pt)">↘</div>
+      `;
+      headerContent.appendChild(box);
+    }
+
+    const pill = box.querySelector('.box-readout-pill');
+    const handleE = box.querySelector('.handle-e');
+    const handleSe = box.querySelector('.handle-se');
+
+    const titleEl = container.querySelector('.wobbler-title');
+    const priceBox = container.querySelector('.wobbler-price-box');
+    const priceVal = container.querySelector('.price-val');
+
+    let currentTarget = null; // 'title' | 'price'
+    let targetNode = null;
+    let isDragging = false;
+    let hideTimer = null;
+
+    function getCurrentItem() {
+      return typeof getItem === 'function' ? getItem() : getItem;
+    }
+
+    function updateBoxPosition() {
+      if (!targetNode || !currentTarget) {
+        box.style.display = 'none';
+        box.classList.remove('is-active');
+        return;
+      }
+      if (container.classList.contains('drag-mode') ||
+        container.classList.contains('drag-mode-solo') ||
+        container.classList.contains('safe-edit-mode')) {
+        box.style.display = 'none';
+        box.classList.remove('is-active');
+        return;
+      }
+      const item = getCurrentItem();
+      if (!item) return;
+
+      if (window.getComputedStyle(targetNode).display === 'none') {
+        box.style.display = 'none';
+        box.classList.remove('is-active');
+        return;
+      }
+
+      box.style.display = 'block';
+      box.classList.add('is-active');
+
+      const padX = 4;
+      const padY = 3;
+      box.style.left = (targetNode.offsetLeft - padX) + 'px';
+      box.style.top = (targetNode.offsetTop - padY) + 'px';
+      box.style.width = (targetNode.offsetWidth + padX * 2) + 'px';
+      box.style.height = (targetNode.offsetHeight + padY * 2) + 'px';
+      box.style.transformOrigin = window.getComputedStyle(targetNode).transformOrigin;
+      box.style.transform = targetNode.style.transform;
+
+      const scale = currentTarget === 'title' ? (item.titleScaleX ?? 1) : (item.priceScaleX ?? 1);
+      const size = currentTarget === 'title'
+        ? activeItemTitleSize(item)
+        : (fontOf(item, 'priceSize', (templateFonts && templateFonts.priceSize) ? templateFonts.priceSize : (priceSize ? priceSize.value : 40)));
+
+      if (pill) {
+        const scalePct = Math.round(scale * 100);
+        pill.textContent = `↔ ${scalePct}%  •  ${size} pt`;
+      }
+    }
+
+    function activate(kind, node) {
+      if (container.classList.contains('drag-mode') ||
+        container.classList.contains('drag-mode-solo') ||
+        container.classList.contains('safe-edit-mode')) return;
+      if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+      currentTarget = kind;
+      targetNode = node;
+      updateBoxPosition();
+    }
+
+    function scheduleDeactivate() {
+      if (isDragging) return;
+      if (document.activeElement === targetNode || (targetNode && targetNode.contains(document.activeElement))) return;
+      if (hideTimer) clearTimeout(hideTimer);
+      hideTimer = setTimeout(() => {
+        if (!isDragging && document.activeElement !== targetNode && (!targetNode || !targetNode.contains(document.activeElement))) {
+          currentTarget = null;
+          targetNode = null;
+          box.classList.remove('is-active');
+          box.style.display = 'none';
+        }
+      }, 1200);
+    }
+
+    if (titleEl) {
+      titleEl.addEventListener('pointerenter', () => activate('title', titleEl));
+      titleEl.addEventListener('pointerleave', scheduleDeactivate);
+      titleEl.addEventListener('focus', () => activate('title', titleEl));
+      titleEl.addEventListener('focusin', () => activate('title', titleEl));
+      titleEl.addEventListener('click', () => activate('title', titleEl));
+    }
+
+    const priceTargets = [priceBox, priceVal].filter(Boolean);
+    priceTargets.forEach(el => {
+      el.addEventListener('pointerenter', () => activate('price', priceBox));
+      el.addEventListener('pointerleave', scheduleDeactivate);
+      el.addEventListener('focus', () => activate('price', priceBox));
+      el.addEventListener('focusin', () => activate('price', priceBox));
+      el.addEventListener('click', () => activate('price', priceBox));
+    });
+
+    [box, handleE, handleSe, pill].forEach(el => {
+      if (el) {
+        el.addEventListener('pointerenter', () => {
+          if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+        });
+        el.addEventListener('pointerleave', scheduleDeactivate);
+      }
+    });
+
+    [box, handleE, handleSe, pill].forEach(el => {
+      if (el) {
+        el.addEventListener('click', (e) => { e.stopPropagation(); });
+        el.addEventListener('pointerdown', (e) => { e.stopPropagation(); });
+      }
+    });
+
+    document.addEventListener('pointerdown', (e) => {
+      if (isDragging) return;
+      if (!box || box.style.display === 'none') return;
+      if (box.contains(e.target)) return;
+      if (targetNode && (targetNode === e.target || targetNode.contains(e.target))) return;
+      currentTarget = null;
+      targetNode = null;
+      box.classList.remove('is-active');
+      box.style.display = 'none';
+    });
+
+    // --- Drag Handle East: Horizontal Stretch (scaleX) ---
+    if (handleE) {
+      handleE.addEventListener('pointerdown', (e) => {
+        if (!targetNode || !currentTarget) return;
+        const item = getCurrentItem();
+        if (!item) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+
+        if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+        isDragging = true;
+        box.classList.add('is-dragging');
+        document.body.style.cursor = 'ew-resize';
+        document.body.style.userSelect = 'none';
+
+        const startX = e.clientX;
+        const initScale = currentTarget === 'title' ? (item.titleScaleX ?? 1) : (item.priceScaleX ?? 1);
+        const targetW = targetNode.offsetWidth || 150;
+
+        const cRect = container.getBoundingClientRect();
+        const zoom = (cRect.width > 0 && container.offsetWidth > 0) ? (cRect.width / container.offsetWidth) : 1;
+
+        function onMove(ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          const dx = (ev.clientX - startX) / zoom;
+          let newScale = initScale + (dx / (targetW * 0.5));
+          newScale = Math.max(0.35, Math.min(3.5, newScale));
+          if (Math.abs(newScale - 1.0) < 0.04) newScale = 1.0;
+          newScale = Math.round(newScale * 100) / 100;
+
+          if (currentTarget === 'title') {
+            item.titleScaleX = newScale;
+          } else {
+            item.priceScaleX = newScale;
+          }
+
+          applyTransformDirect(targetNode, item, currentTarget);
+          updateBoxPosition();
+          syncToWobblerPreview(item, currentTarget);
+
+          if (typeof onUpdate === 'function') {
+            onUpdate('drag', newScale);
+          }
+        }
+
+        function onUp(ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          window.removeEventListener('pointermove', onMove, true);
+          window.removeEventListener('pointerup', onUp, true);
+          window.removeEventListener('pointercancel', onUp, true);
+
+          isDragging = false;
+          box.classList.remove('is-dragging');
+          document.body.style.cursor = '';
+          document.body.style.userSelect = '';
+
+          scheduleSessionSave();
+          if (typeof onUpdate === 'function') {
+            onUpdate('done');
+          }
+          updateBoxPosition();
+        }
+
+        window.addEventListener('pointermove', onMove, true);
+        window.addEventListener('pointerup', onUp, true);
+        window.addEventListener('pointercancel', onUp, true);
+      });
+
+      function doResetScale(e) {
+        if (e) { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); }
+        const item = getCurrentItem();
+        if (!item || !currentTarget || !targetNode) return;
+        if (currentTarget === 'title') {
+          item.titleScaleX = 1.0;
+        } else {
+          item.priceScaleX = 1.0;
+        }
+        applyTransformDirect(targetNode, item, currentTarget);
+        syncToWobblerPreview(item, currentTarget);
+        scheduleSessionSave();
+        if (typeof onUpdate === 'function') onUpdate('done');
+        updateBoxPosition();
+      }
+      handleE.addEventListener('dblclick', doResetScale);
+      if (pill) pill.addEventListener('dblclick', doResetScale);
+    }
+
+    // --- Drag Handle South-East: Font Size (pt) ---
+    if (handleSe) {
+      handleSe.addEventListener('pointerdown', (e) => {
+        if (!targetNode || !currentTarget) return;
+        const item = getCurrentItem();
+        if (!item) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+
+        if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+        isDragging = true;
+        box.classList.add('is-dragging');
+        document.body.style.cursor = 'nwse-resize';
+        document.body.style.userSelect = 'none';
+
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const initSize = currentTarget === 'title'
+          ? activeItemTitleSize(item)
+          : (fontOf(item, 'priceSize', (templateFonts && templateFonts.priceSize) ? templateFonts.priceSize : (priceSize ? priceSize.value : 40)));
+
+        const cRect = container.getBoundingClientRect();
+        const zoom = (cRect.width > 0 && container.offsetWidth > 0) ? (cRect.width / container.offsetWidth) : 1;
+
+        function onMove(ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          const dx = (ev.clientX - startX) / zoom;
+          const dy = (ev.clientY - startY) / zoom;
+          const delta = (dx + dy) * 0.25;
+          let newPt = Math.round(initSize + delta);
+          newPt = Math.max(8, Math.min(120, newPt));
+
+          if (currentTarget === 'title') {
+            item.titleSize = newPt;
+            item.titleSizeManual = true;
+            targetNode.style.fontSize = `${newPt}pt`;
+            if (titleSize) titleSize.value = String(newPt);
+            if (titleSizeVal) titleSizeVal.textContent = String(newPt);
+            if (previewTitle && previewTitle !== targetNode) previewTitle.style.fontSize = `${newPt}pt`;
+          } else {
+            if (!item.fonts) item.fonts = {};
+            item.fontsCustomized = true;
+            item.fonts.priceSize = newPt;
+            const pVal = targetNode.querySelector('.price-val') || targetNode;
+            pVal.style.fontSize = `${newPt}pt`;
+            const pCurr = targetNode.querySelector('.price-curr');
+            if (pCurr) pCurr.style.fontSize = `${newPt}pt`;
+            if (priceSize) priceSize.value = String(newPt);
+            if (priceSizeVal) priceSizeVal.textContent = String(newPt);
+            if (previewPrice && previewPrice !== pVal) previewPrice.style.fontSize = `${newPt}pt`;
+            if (previewCurrency && previewCurrency !== pCurr) previewCurrency.style.fontSize = `${newPt}pt`;
+          }
+
+          updateBoxPosition();
+          if (typeof onUpdate === 'function') {
+            onUpdate('drag', newPt);
+          }
+        }
+
+        function onUp(ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          window.removeEventListener('pointermove', onMove, true);
+          window.removeEventListener('pointerup', onUp, true);
+          window.removeEventListener('pointercancel', onUp, true);
+
+          isDragging = false;
+          box.classList.remove('is-dragging');
+          document.body.style.cursor = '';
+          document.body.style.userSelect = '';
+
+          scheduleSessionSave();
+          if (typeof onUpdate === 'function') {
+            onUpdate('done');
+          }
+          updateBoxPosition();
+        }
+
+        window.addEventListener('pointermove', onMove, true);
+        window.addEventListener('pointerup', onUp, true);
+        window.addEventListener('pointercancel', onUp, true);
+      });
+    }
+
+    const controller = {
+      update: updateBoxPosition,
+      activate: activate,
+      box: box
+    };
+    container._transformBoxController = controller;
+    return controller;
+  }
+
+  // --- Интерактивное прямое редактирование ценника на листе А4 ---
+  function makeSheetCloneEditable(cloned, item, origIndex) {
+    if (!cloned || !item) return;
+
+    const isBeer = isBeerA5Active();
+    const tElem = cloned.querySelector('.wobbler-title');
+    const pElem = cloned.querySelector('.price-val');
+    const sElem = cloned.querySelector('.wobbler-subtitle');
+    const compElem = cloned.querySelector('.beer-composition');
+    const strElem = cloned.querySelector('.circle-strength .metric-val');
+    const bitElem = cloned.querySelector('.circle-bitterness .metric-val');
+    const denElem = cloned.querySelector('.circle-density .metric-val');
+    const typeElem = cloned.querySelector('.beer-type-val');
+    const styleElem = cloned.querySelector('.beer-style-val');
+    const capPhotoWrap = cloned.querySelector('.beer-cap-photo-wrap');
+
+    function bindEditable(el, fieldName, onValChange) {
+      if (!el) return;
+      el.setAttribute('contenteditable', 'plaintext-only');
+      el.setAttribute('spellcheck', 'false');
+
+      el.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+      });
+
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (typeof setActiveItemIndex === 'function' && activePreviewIndex !== origIndex) {
+          setActiveItemIndex(origIndex, false);
+        }
+      });
+
+      el.addEventListener('focus', () => {
+        if (typeof setActiveItemIndex === 'function' && activePreviewIndex !== origIndex) {
+          setActiveItemIndex(origIndex, false);
+        }
+        try {
+          const range = document.createRange();
+          range.selectNodeContents(el);
+          const sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+        } catch (_) { }
+      });
+
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && (!compElem || el !== compElem || !e.shiftKey)) {
+          e.preventDefault();
+          el.blur();
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          el.blur();
+        }
+      });
+
+      el.addEventListener('input', () => {
+        const val = (el.innerText || el.textContent || '').trim();
+        onValChange(val);
+        scheduleSessionSave();
+      });
+
+      el.addEventListener('blur', () => {
+        scheduleSessionSave();
+        if (isBeer && fieldName === 'title' && item.title) {
+          checkAutoBeerByTitle(origIndex, item.title, true, true);
+        }
+        if (origIndex === activePreviewIndex) {
+          updatePreview();
+        }
+      });
+    }
+
+    if (tElem) {
+      bindEditable(tElem, 'title', (val) => {
+        const cleanVal = val.replace(/[\r\n]+/g, ' ');
+        item.title = cleanVal;
+        if (origIndex === activePreviewIndex) {
+          if (inputTitle) inputTitle.value = cleanVal;
+          const sTitle = document.getElementById('beerSidebarTitle');
+          if (sTitle && sTitle.value !== cleanVal) sTitle.value = cleanVal;
+        }
+        document.querySelectorAll(`.item-title-input[data-index="${origIndex}"]`).forEach(inp => {
+          if (inp !== document.activeElement && inp.value !== cleanVal) {
+            inp.value = cleanVal;
+            autoGrowTextarea(inp);
+          }
+        });
+        const tf = templateFonts || {};
+        const family = fontOf(item, 'titleFont', tf.titleFont || titleFont.value);
+        const weight = fontOf(item, 'titleWeight', tf.titleWeight || titleWeight.value);
+        const fit = fitTitleSize(cleanVal, family, weight);
+        if (fit != null) {
+          item.titleSize = fit;
+          tElem.style.fontSize = `${fit}pt`;
+        }
+        syncRowExtent(origIndex);
+        updateItemsStatsBadge();
+      });
+    }
+
+    if (pElem) {
+      bindEditable(pElem, 'price', (val) => {
+        const cleanVal = val.replace(/[\r\n]+/g, '');
+        item.price = cleanVal;
+        if (origIndex === activePreviewIndex) {
+          if (inputPrice) inputPrice.value = cleanVal;
+        }
+        document.querySelectorAll(`.item-price-input[data-index="${origIndex}"]`).forEach(inp => {
+          if (inp !== document.activeElement && inp.value !== cleanVal) {
+            inp.value = cleanVal;
+            autoGrowTextarea(inp);
+          }
+        });
+        syncRowExtent(origIndex);
+      });
+    }
+
+    if (sElem && !isBeer) {
+      bindEditable(sElem, 'subtitle', (val) => {
+        item.subtitle = val;
+        item.subtitleManual = true;
+        if (origIndex === activePreviewIndex) {
+          if (inputSubtitle) inputSubtitle.value = val;
+        }
+        document.querySelectorAll(`.item-subtitle-input[data-index="${origIndex}"]`).forEach(inp => {
+          if (inp !== document.activeElement && inp.value !== val) {
+            inp.value = val;
+            autoGrowTextarea(inp);
+          }
+        });
+        syncRowExtent(origIndex);
+      });
+    }
+
+    if (compElem) {
+      bindEditable(compElem, 'composition', (val) => {
+        item.composition = val;
+        if (origIndex === activePreviewIndex) {
+          const sComp = document.getElementById('beerSidebarComposition');
+          if (sComp && sComp.value !== val) sComp.value = val;
+        }
+        const cInp = document.querySelector(`.item-beer-composition-input[data-index="${origIndex}"]`);
+        if (cInp && cInp.value !== val) cInp.value = val;
+      });
+    }
+
+    if (strElem) {
+      bindEditable(strElem, 'beerStrength', (val) => {
+        item.beerStrength = val;
+        if (origIndex === activePreviewIndex) {
+          const sStr = document.getElementById('beerSidebarStrength');
+          if (sStr && sStr.value !== val) sStr.value = val;
+        }
+        const sInp = document.querySelector(`.item-beer-strength-input[data-index="${origIndex}"]`);
+        if (sInp && sInp.value !== val) sInp.value = val;
+      });
+    }
+
+    if (bitElem) {
+      bindEditable(bitElem, 'beerBitterness', (val) => {
+        item.beerBitterness = val;
+        if (origIndex === activePreviewIndex) {
+          const sBit = document.getElementById('beerSidebarBitterness');
+          if (sBit && sBit.value !== val) sBit.value = val;
+        }
+        const bInp = document.querySelector(`.item-beer-bitterness-input[data-index="${origIndex}"]`);
+        if (bInp && bInp.value !== val) bInp.value = val;
+      });
+    }
+
+    if (denElem) {
+      bindEditable(denElem, 'beerDensity', (val) => {
+        item.beerDensity = val;
+        if (origIndex === activePreviewIndex) {
+          const sDen = document.getElementById('beerSidebarDensity');
+          if (sDen && sDen.value !== val) sDen.value = val;
+        }
+        const dInp = document.querySelector(`.item-beer-density-input[data-index="${origIndex}"]`);
+        if (dInp && dInp.value !== val) dInp.value = val;
+      });
+    }
+
+    if (typeElem) {
+      bindEditable(typeElem, 'beerType', (val) => {
+        item.beerType = val;
+        if (origIndex === activePreviewIndex) {
+          const sType = document.getElementById('beerSidebarType');
+          if (sType && sType.value !== val) sType.value = val;
+        }
+      });
+    }
+
+    if (styleElem) {
+      bindEditable(styleElem, 'beerStyle', (val) => {
+        item.beerStyle = val;
+        if (origIndex === activePreviewIndex) {
+          const sStyle = document.getElementById('beerSidebarStyle');
+          if (sStyle && sStyle.value !== val) sStyle.value = val;
+        }
+      });
+    }
+
+    if (capPhotoWrap) {
+      capPhotoWrap.style.cursor = 'pointer';
+      capPhotoWrap.title = 'Нажмите, чтобы выбрать или заменить фото пива для этого ценника';
+      capPhotoWrap.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (typeof setActiveItemIndex === 'function' && activePreviewIndex !== origIndex) {
+          setActiveItemIndex(origIndex, false);
+        }
+        const fileInp = document.getElementById('beerCapFileInput');
+        if (fileInp) fileInp.click();
+      });
+    }
+
+    if (isBeer) {
+      setupCard2DTransform(cloned, item, (action, val) => {
+        if (action === 'done') {
+          syncRowExtent(origIndex);
+        }
+      });
+    }
+  }
+
   function renderMultiSheetPreview() {
     sheetGridPreview.innerHTML = '';
     sheetGridPreview.classList.add('is-multi-mode');
@@ -8393,6 +11877,10 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         sheetPageNav.style.display = 'none';
       }
+    }
+
+    if (typeof updateSheetItemNav === 'function') {
+      updateSheetItemNav(totalPages, currentSheetPreviewPage);
     }
 
     sheetCalcText.textContent = `Мульти: ${rendered.length} ценников (${selected.length} шабл.)${totalPages > 1 ? ` · ${totalPages} стр.` : ''}`;
@@ -8491,6 +11979,34 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Планировщик рендера раскладки А4 (Zero-Lag RAF Coalescing)
+  let sheetPreviewRafId = null;
+  let _sheetPreviewDebounceTimer = null;
+  function scheduleSheetPreviewUpdate(wMm, hMm) {
+    // Если шторка товаров открыта, пользователь работает в ней — фоновый лист А4 дебаунсим до паузы в наборе
+    if (itemsDrawer && (itemsDrawer.classList.contains('open') || document.body.classList.contains('drawer-open'))) {
+      if (_sheetPreviewDebounceTimer) clearTimeout(_sheetPreviewDebounceTimer);
+      _sheetPreviewDebounceTimer = setTimeout(() => {
+        _sheetPreviewDebounceTimer = null;
+        if (sheetPreviewRafId) return;
+        sheetPreviewRafId = requestAnimationFrame(() => {
+          sheetPreviewRafId = null;
+          const widthMm = (typeof wMm === 'number') ? wMm : (parseFloat(wobblerWidthInput ? wobblerWidthInput.value : 6.5) * 10 || 65);
+          const heightMm = (typeof hMm === 'number') ? hMm : (parseFloat(wobblerHeightInput ? wobblerHeightInput.value : 4.5) * 10 || 45);
+          renderSheetPreview(widthMm, heightMm);
+        });
+      }, 300);
+      return;
+    }
+    if (sheetPreviewRafId) return;
+    sheetPreviewRafId = requestAnimationFrame(() => {
+      sheetPreviewRafId = null;
+      const widthMm = (typeof wMm === 'number') ? wMm : (parseFloat(wobblerWidthInput ? wobblerWidthInput.value : 6.5) * 10 || 65);
+      const heightMm = (typeof hMm === 'number') ? hMm : (parseFloat(wobblerHeightInput ? wobblerHeightInput.value : 4.5) * 10 || 45);
+      renderSheetPreview(widthMm, heightMm);
+    });
+  }
+
   function renderSheetPreview(wMm, hMm) {
     sheetGridPreview.innerHTML = '';
 
@@ -8512,20 +12028,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const isMultiMode = document.querySelector('input[name="printMode"]:checked').value === 'multi';
 
-    // В мультирежиме показываем только заполненные ценники с учётом тиража (it.count)
+    // В мультирежиме показываем только заполненные ценники с учётом тиража (it.count) и без исключённых из печати (it.skipPrint)
     let itemsToShow;
     let filledUniqueCount = 0;
+    const isBeerTpl = isBeerA5Active();
     if (isMultiMode) {
       itemsToShow = [];
       itemsData.forEach((it, idx) => {
-        if (it && it.title && it.title.trim()) {
-          filledUniqueCount++;
+        const hasContent = isBeerTpl ? (it != null && !it.skipPrint) : (it && it.title && it.title.trim() && !it.skipPrint);
+        if (hasContent) {
+          if (it && it.title && it.title.trim()) filledUniqueCount++;
           const qty = Math.max(1, parseInt(it.count, 10) || 1);
           for (let q = 0; q < qty; q++) {
             itemsToShow.push({ it, origIndex: idx, copyIndex: q });
           }
         }
       });
+      if (isBeerTpl && itemsToShow.length === 0) {
+        const first = itemsData[0] || (itemsData[0] = freshItem());
+        itemsToShow.push({ it: first, origIndex: 0, copyIndex: 0 });
+      }
     } else {
       // одиночный режим: позиции из singleLabelPos
       const hasTitle = !!(inputTitle && inputTitle.value.trim());
@@ -8572,6 +12094,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    if (typeof updateSheetItemNav === 'function') {
+      updateSheetItemNav(totalPages, currentSheetPreviewPage);
+    }
+
     // Обновляем сводные метрики Print Hub и класс альбомной ориентации
     updatePrintHubMetrics(grid, itemsToShow.length, filledUniqueCount, totalPages);
     sheetGridPreview.classList.toggle('is-landscape', grid.isLandscape);
@@ -8580,11 +12106,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const autoExtra = (grid.mode === 'auto' && grid.benefit > 0) ? ` (+${grid.benefit} на листе)` : '';
     sheetCalcText.textContent = `${itemsToShow.length} заполнено · ${orientTag}${autoExtra} · влезает ${grid.maxCount}/лист (${grid.cols}×${grid.rows})${totalPages > 1 ? ` · ${totalPages} стр.` : ''}`;
     sheetGridPreview.style.boxSizing = 'border-box';
-    sheetGridPreview.style.padding = '10mm 4mm 4mm 4mm';
-    sheetGridPreview.style.display = 'grid';
-    sheetGridPreview.style.gridTemplateColumns = `repeat(${grid.cols}, ${wMm}mm)`;
-    sheetGridPreview.style.gridTemplateRows = `repeat(${grid.rows}, ${effH}mm)`;
-    sheetGridPreview.style.gap = gapMm() + 'mm';
+    if (isBeerTpl) {
+      sheetGridPreview.classList.add('is-beer-page');
+      sheetGridPreview.style.padding = '0';
+      sheetGridPreview.style.display = 'flex';
+      sheetGridPreview.style.justifyContent = 'center';
+      sheetGridPreview.style.alignItems = 'center';
+      sheetGridPreview.style.gridTemplateColumns = '';
+      sheetGridPreview.style.gridTemplateRows = '';
+      sheetGridPreview.style.gap = '0';
+    } else {
+      sheetGridPreview.classList.remove('is-beer-page');
+      sheetGridPreview.style.padding = '10mm 4mm 4mm 4mm';
+      sheetGridPreview.style.display = 'grid';
+      sheetGridPreview.style.gridTemplateColumns = `repeat(${grid.cols}, ${wMm}mm)`;
+      sheetGridPreview.style.gridTemplateRows = `repeat(${grid.rows}, ${effH}mm)`;
+      sheetGridPreview.style.gap = gapMm() + 'mm';
+    }
 
     const startIdx = currentSheetPreviewPage * grid.maxCount;
     const pageItems = itemsToShow.slice(startIdx, startIdx + grid.maxCount);
@@ -8642,9 +12180,15 @@ document.addEventListener('DOMContentLoaded', () => {
         cloned.removeAttribute('id');
         cloned.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
         cloned.classList.remove('drag-mode');
+        cloned.querySelectorAll('.interactive-2d-box').forEach(el => el.remove());
 
         // Применяем тексты и позиции конкретного товара к клону.
         applyItemToClone(cloned, item, titleOffsetY.value, priceOffsetY.value);
+
+        // Интерактивное прямое редактирование ценника на листе А4
+        if (typeof makeSheetCloneEditable === 'function') {
+          makeSheetCloneEditable(cloned, item, origIndex);
+        }
 
         itemWrapper.appendChild(cloned);
 
@@ -8663,7 +12207,7 @@ document.addEventListener('DOMContentLoaded', () => {
             itemWrapper.title = `№${origIndex + 1}${copyStr}: ${item.title || 'Без названия'}${item.price ? ' — ' + item.price + ' ₽' : ''}\nНажмите, чтобы открыть в редакторе и подсветить в таблице`;
             itemWrapper.addEventListener('click', (e) => {
               e.stopPropagation();
-              if (typeof setActiveItemIndex === 'function') {
+              if (typeof setActiveItemIndex === 'function' && origIndex !== activePreviewIndex) {
                 setActiveItemIndex(origIndex, true);
               }
               if (typeof focusItemTableRow === 'function') {
@@ -8671,14 +12215,6 @@ document.addEventListener('DOMContentLoaded', () => {
               }
               if (typeof showToast === 'function') {
                 showToast(`Выбран товар №${origIndex + 1}: «${item.title || 'Без названия'}»`, 'info', 1800);
-              }
-              const workspacePanelEl = document.querySelector('.workspace-panel');
-              const isSheetMode = workspacePanelEl && workspacePanelEl.classList.contains('view-sheet-mode');
-              if (!isSheetMode) {
-                const previewTarget = document.querySelector('.preview-card') || wobblerPreview;
-                if (previewTarget) {
-                  previewTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
               }
             });
           }
@@ -8759,13 +12295,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const isMultiMode = document.querySelector('input[name="printMode"]:checked').value === 'multi';
 
-    // В мультирежиме печатаем только заполненные ценники (есть наименование).
-    // В режиме одного товара дублируем выбранный ценник N раз (singleRepeatCount).
+    // В мультирежиме печатаем только заполненные ценники (есть наименование) без пропущенных
     let itemsToPrint;
     if (isMultiMode) {
       itemsToPrint = [];
       itemsData.forEach(it => {
-        if (it && it.title && it.title.trim()) {
+        if (it && it.title && it.title.trim() && !it.skipPrint) {
           const qty = Math.max(1, parseInt(it.count, 10) || 1);
           for (let q = 0; q < qty; q++) {
             itemsToPrint.push(it);
@@ -8796,20 +12331,32 @@ document.addEventListener('DOMContentLoaded', () => {
     for (let pageNum = 0; pageNum < totalPages; pageNum++) {
       const page = document.createElement('div');
       page.className = 'print-page';
-      page.style.setProperty('padding', '10mm 4mm 4mm 4mm', 'important');
-      if (grid.isLandscape) {
-        page.style.setProperty('width', '297mm', 'important');
-        page.style.setProperty('height', '210mm', 'important');
-        page.style.setProperty('max-height', '210mm', 'important');
-      } else {
+      const isBeerTpl = isBeerA5Active();
+      if (isBeerTpl) {
+        page.classList.add('is-beer-page');
+        page.style.setProperty('padding', '0', 'important');
+        page.style.setProperty('display', 'flex', 'important');
+        page.style.setProperty('justify-content', 'center', 'important');
+        page.style.setProperty('align-items', 'center', 'important');
         page.style.setProperty('width', '210mm', 'important');
         page.style.setProperty('height', '297mm', 'important');
         page.style.setProperty('max-height', '297mm', 'important');
+      } else {
+        page.style.setProperty('padding', '10mm 4mm 4mm 4mm', 'important');
+        if (grid.isLandscape) {
+          page.style.setProperty('width', '297mm', 'important');
+          page.style.setProperty('height', '210mm', 'important');
+          page.style.setProperty('max-height', '210mm', 'important');
+        } else {
+          page.style.setProperty('width', '210mm', 'important');
+          page.style.setProperty('height', '297mm', 'important');
+          page.style.setProperty('max-height', '297mm', 'important');
+        }
+        page.style.gridTemplateColumns = `repeat(${grid.cols}, ${wMm}mm)`;
+        page.style.gridTemplateRows = `repeat(${grid.rows}, ${effH}mm)`;
+        // gap задаём через setProperty, т.к. в @media print у .print-page был !important.
+        page.style.setProperty('gap', gapMm() + 'mm', 'important');
       }
-      page.style.gridTemplateColumns = `repeat(${grid.cols}, ${wMm}mm)`;
-      page.style.gridTemplateRows = `repeat(${grid.rows}, ${effH}mm)`;
-      // gap задаём через setProperty, т.к. в @media print у .print-page был !important.
-      page.style.setProperty('gap', gapMm() + 'mm', 'important');
 
       const startIdx = pageNum * perPage;
       const endIdx = Math.min(startIdx + perPage, totalItems);
@@ -8825,6 +12372,7 @@ document.addEventListener('DOMContentLoaded', () => {
         cleanWobbler.removeAttribute('id');
         // Дубликаты внутренних id ломают getElementById — см. renderWobblerForTemplate.
         cleanWobbler.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+        cleanWobbler.querySelectorAll('.interactive-2d-box').forEach(el => el.remove());
         cleanWobbler.style.boxShadow = 'none';
         cleanWobbler.classList.remove('drag-mode');
 
@@ -8855,9 +12403,9 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const isMultiMode = document.querySelector('input[name="printMode"]:checked').value === 'multi';
       if (isMultiMode) {
-        const filled = itemsData.filter(it => it && it.title && it.title.trim());
+        const filled = itemsData.filter(it => it && it.title && it.title.trim() && !it.skipPrint);
         if (!filled.length) {
-          alert('Нет заполненных ценников для печати. Введите наименование товара.');
+          alert('Нет активных ценников для печати. Включите хотя бы один товар в печать.');
           return;
         }
       } else {
@@ -8867,6 +12415,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
       preparePrintArea();
+      // Гарантируем круглое кадрирование пивных пробок на печатных страницах
+      printArea.querySelectorAll('.beer-cap-photo-wrap').forEach(w => {
+        w.style.borderRadius = '50%';
+        w.style.overflow = 'hidden';
+        w.style.clipPath = 'circle(50% at 50% 50%)';
+        w.style.webkitClipPath = 'circle(50% at 50% 50%)';
+        w.style.background = 'transparent';
+      });
+      printArea.querySelectorAll('.beer-cap-img').forEach(img => {
+        img.style.borderRadius = '50%';
+        img.style.overflow = 'hidden';
+        img.style.clipPath = 'circle(50% at 50% 50%)';
+        img.style.webkitClipPath = 'circle(50% at 50% 50%)';
+        img.style.objectFit = 'cover';
+      });
       document.body.classList.add('is-printing');
       const cleanup = () => {
         document.body.classList.remove('is-printing');
@@ -9077,6 +12640,21 @@ document.addEventListener('DOMContentLoaded', () => {
         alert('Нет заполненных ценников в выбранных шаблонах.');
         return { count: 0, pages: 0 };
       }
+      // Гарантируем круглое кадрирование пивных пробок на мульти-печати
+      printArea.querySelectorAll('.beer-cap-photo-wrap').forEach(w => {
+        w.style.borderRadius = '50%';
+        w.style.overflow = 'hidden';
+        w.style.clipPath = 'circle(50% at 50% 50%)';
+        w.style.webkitClipPath = 'circle(50% at 50% 50%)';
+        w.style.background = 'transparent';
+      });
+      printArea.querySelectorAll('.beer-cap-img').forEach(img => {
+        img.style.borderRadius = '50%';
+        img.style.overflow = 'hidden';
+        img.style.clipPath = 'circle(50% at 50% 50%)';
+        img.style.webkitClipPath = 'circle(50% at 50% 50%)';
+        img.style.objectFit = 'cover';
+      });
       document.body.classList.add('is-printing');
       const cleanup = () => {
         document.body.classList.remove('is-printing');
@@ -9106,12 +12684,57 @@ document.addEventListener('DOMContentLoaded', () => {
   // Кэш base64 DataURL для безопасного экспорта без CORS/Taint ошибок
   const _bgDataUrlCache = new Map();
 
-  async function urlToDataUrl(url) {
+  async function urlToDataUrl(url, asCirclePng = false) {
     if (!url || typeof url !== 'string' || url.startsWith('data:')) return url;
     const cleanUrl = url.trim();
-    if (_bgDataUrlCache.has(cleanUrl)) return _bgDataUrlCache.get(cleanUrl);
+    const cacheKey = asCirclePng ? `circle:${cleanUrl}` : cleanUrl;
+    if (_bgDataUrlCache.has(cacheKey)) return _bgDataUrlCache.get(cacheKey);
 
-    // 1. Первичный метод: fetch -> blob -> FileReader (надежно работает на сервере и localhost)
+    // 1. Метод Image + Canvas (с круглой маской для пробок/фото сортов пива или обычный)
+    try {
+      const dataUrl = await new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            const nw = img.naturalWidth || img.width;
+            const nh = img.naturalHeight || img.height;
+            if (asCirclePng) {
+              const minDim = Math.min(nw, nh);
+              canvas.width = minDim;
+              canvas.height = minDim;
+              const ctx = canvas.getContext('2d');
+              ctx.beginPath();
+              ctx.arc(minDim / 2, minDim / 2, minDim / 2, 0, Math.PI * 2);
+              ctx.closePath();
+              ctx.clip();
+              ctx.drawImage(img, (minDim - nw) / 2, (minDim - nh) / 2, nw, nh);
+              const res = canvas.toDataURL('image/png');
+              resolve(res);
+            } else {
+              canvas.width = nw;
+              canvas.height = nh;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0);
+              const res = canvas.toDataURL('image/jpeg', 0.95);
+              resolve(res);
+            }
+          } catch (e) {
+            reject(e);
+          }
+        };
+        img.onerror = (e) => reject(e);
+        img.src = cleanUrl;
+      });
+      if (dataUrl && typeof dataUrl === 'string' && dataUrl.startsWith('data:')) {
+        _bgDataUrlCache.set(cacheKey, dataUrl);
+        return dataUrl;
+      }
+    } catch (err) {
+      // Fallback к fetch/blob если Image+Canvas не сработал
+    }
+
+    // 2. Метод: fetch -> blob -> FileReader (надежно работает на сервере и localhost)
     try {
       const res = await fetch(cleanUrl);
       if (res && res.ok) {
@@ -9123,40 +12746,12 @@ document.addEventListener('DOMContentLoaded', () => {
           reader.readAsDataURL(blob);
         });
         if (dataUrl && typeof dataUrl === 'string' && dataUrl.startsWith('data:')) {
-          _bgDataUrlCache.set(cleanUrl, dataUrl);
+          _bgDataUrlCache.set(cacheKey, dataUrl);
           return dataUrl;
         }
       }
     } catch (e) {
-      // Игнорируем и пробуем второй способ
-    }
-
-    // 2. Вторичный метод: Image + Canvas (без crossOrigin)
-    try {
-      const dataUrl = await new Promise((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => {
-          try {
-            const canvas = document.createElement('canvas');
-            canvas.width = img.naturalWidth || img.width;
-            canvas.height = img.naturalHeight || img.height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0);
-            const res = canvas.toDataURL('image/jpeg', 0.95);
-            resolve(res);
-          } catch (e) {
-            reject(e);
-          }
-        };
-        img.onerror = (e) => reject(e);
-        img.src = cleanUrl;
-      });
-      if (dataUrl && typeof dataUrl === 'string' && dataUrl.startsWith('data:')) {
-        _bgDataUrlCache.set(cleanUrl, dataUrl);
-        return dataUrl;
-      }
-    } catch (err) {
-      // Fallback
+      // Игнорируем
     }
 
     return cleanUrl;
@@ -9181,6 +12776,36 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     elements.forEach(el => promises.push(processEl(el)));
+
+    // Также инлайним картинки <img> (например фото в крышке пива)
+    const imgElements = container.querySelectorAll('img');
+    imgElements.forEach(img => {
+      const isBeerImg = img.classList.contains('beer-cap-img');
+      if (isBeerImg) {
+        img.style.borderRadius = '50%';
+        img.style.overflow = 'hidden';
+        img.style.clipPath = 'circle(50% at 50% 50%)';
+        img.style.webkitClipPath = 'circle(50% at 50% 50%)';
+        img.style.objectFit = 'cover';
+        if (img.parentElement) {
+          img.parentElement.style.borderRadius = '50%';
+          img.parentElement.style.overflow = 'hidden';
+          img.parentElement.style.clipPath = 'circle(50% at 50% 50%)';
+          img.parentElement.style.webkitClipPath = 'circle(50% at 50% 50%)';
+          img.parentElement.style.background = 'transparent';
+        }
+      }
+      const src = img.getAttribute('src');
+      if (src && !src.startsWith('data:') && !src.startsWith('blob:')) {
+        promises.push((async () => {
+          const dataUrl = await urlToDataUrl(src, isBeerImg);
+          if (dataUrl && typeof dataUrl === 'string' && dataUrl.startsWith('data:')) {
+            img.src = dataUrl;
+          }
+        })());
+      }
+    });
+
     await Promise.all(promises);
   }
 
@@ -9325,6 +12950,10 @@ document.addEventListener('DOMContentLoaded', () => {
     alignState.title = state.titleAlign || 'center';
     alignState.subtitle = state.subtitleAlign || 'left';
     alignState.price = state.priceAlign || 'center';
+    const isBeerTpl = (activeTemplateRef && (activeTemplateRef.key === 'beer_a5' || activeTemplateRef.key === 'beer_a5_aktsiya')) || (state && (state.bgImage === 'pivo_a5_bg.jpg' || state.bgImage === 'pivo_a5_aktsiya_bg.jpg' || (state.templateBg && (state.templateBg.bgImage === 'pivo_a5_bg.jpg' || state.templateBg.bgImage === 'pivo_a5_aktsiya_bg.jpg'))));
+    const isBeerPromo = (activeTemplateRef && activeTemplateRef.key === 'beer_a5_aktsiya') || (state && (state.bgImage === 'pivo_a5_aktsiya_bg.jpg' || (state.templateBg && state.templateBg.bgImage === 'pivo_a5_aktsiya_bg.jpg')));
+    const correctBeerBgImg = isBeerPromo ? 'pivo_a5_aktsiya_bg.jpg' : 'pivo_a5_bg.jpg';
+    const resolvedPriceColor = (isBeerTpl && (!state.priceColor || state.priceColor === '#ffffff')) ? '#000000' : (state.priceColor || (isBeerTpl ? '#000000' : '#ffffff'));
     templateFonts = {
       titleFont: state.titleFont || "Arial, sans-serif",
       titleColor: state.titleColor || '#ffffff',
@@ -9339,7 +12968,7 @@ document.addEventListener('DOMContentLoaded', () => {
       subtitleWeight: state.subtitleWeight || '700',
       subtitleAlign: state.subtitleAlign || 'left',
       priceFont: state.priceFont || "Arial, sans-serif",
-      priceColor: state.priceColor || '#ffffff',
+      priceColor: resolvedPriceColor,
       priceSize: state.priceSize !== undefined ? state.priceSize : 40,
       priceWeight: state.priceWeight || '700',
       priceAlign: state.priceAlign || 'center',
@@ -9376,9 +13005,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Инициализируем templateBg (фон #4) и templateDecor (декор-блоки #5) из state.
     // Это независимые модели; syncBgControlsToContext/syncDecorControlsToContext
     // (в конце applyState) синхронизируют инпуты.
+    let initHeaderBg = state.headerBg || (isBeerTpl ? '#ffffff' : '#18181b');
+    let initBgImage = state.bgImage || (isBeerTpl ? correctBeerBgImg : 'none');
+    if (isBeerTpl) {
+      if (!initBgImage || initBgImage === 'none' || initBgImage === 'dots_bg.jpg') initBgImage = correctBeerBgImg;
+      if (!initHeaderBg || initHeaderBg === '#18181b') initHeaderBg = '#ffffff';
+    }
     templateBg = {
-      headerBg: state.headerBg || '#18181b',
-      bgImage: state.bgImage || 'none',
+      headerBg: initHeaderBg,
+      bgImage: initBgImage,
       customBgData: state.customBgData || null
     };
     templateDecor = {
@@ -9528,6 +13163,10 @@ document.addEventListener('DOMContentLoaded', () => {
     syncDecorControlsToContext();
     syncBgControlsToContext();
     syncDigitControlsVisibility();
+    syncBeerControlsVisibility();
+    if (typeof syncWorkspaceViewModeForCurrentTemplate === 'function') {
+      syncWorkspaceViewModeForCurrentTemplate();
+    }
 
     updatePreview();
   }
@@ -9667,7 +13306,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // шаблон работал даже на другом устройстве без этих файлов.
 
   // Встроенные фоны, которые умеем встраивать в экспорт.
-  const EMBEDDABLE_BGS = ['dots_bg.jpg', 'ryba_bg.jpg', 'yellow_bg.jpg', 'sneki_bg.jpg', 'sneki_5_bg.jpg', 'sneki_digit_bg.jpg', 'sort_nedeli_bg.jpg', 'sort_nedeli_yellow.jpg', 'korona_a5_bg.jpg', 'korona_a5_orange.jpg', 'korona_a5_blue.jpg', 'korona_a5_green.jpg', 'korona_a5_red.jpg', 'a5.jpg', 'a5_orange.jpg', 'a5_red.jpg', 'a5_blue.jpg', 'a5_green.jpg', 'aktsiya_a5_bg.jpg', 'kalmar.png', 'myaso.png', 'syr.png', 'ryb_solomka.png', 'ostryi.png', 'orehi.png', 'grenki.png', 'moreprodukty.png', 'tomatnyj.png', 'vishnevyj.png', 'medovyj.png', 'yablochnyj.png', 'ba.jpg', 'zhivoe.jpg'];
+  const EMBEDDABLE_BGS = ['dots_bg.jpg', 'ryba_bg.jpg', 'yellow_bg.jpg', 'sneki_bg.jpg', 'sneki_5_bg.jpg', 'sneki_digit_bg.jpg', 'sort_nedeli_bg.jpg', 'sort_nedeli_yellow.jpg', 'korona_a5_bg.jpg', 'korona_a5_orange.jpg', 'korona_a5_blue.jpg', 'korona_a5_green.jpg', 'korona_a5_red.jpg', 'a5.jpg', 'a5_orange.jpg', 'a5_red.jpg', 'a5_blue.jpg', 'a5_green.jpg', 'aktsiya_a5_bg.jpg', 'pivo_a5_bg.jpg', 'kalmar.png', 'myaso.png', 'syr.png', 'ryb_solomka.png', 'ostryi.png', 'orehi.png', 'grenki.png', 'moreprodukty.png', 'tomatnyj.png', 'vishnevyj.png', 'medovyj.png', 'yablochnyj.png', 'ba.jpg', 'zhivoe.jpg'];
 
   // Читает встроенный файл фона как data:URL (base64). null при ошибке/отсутствии.
   async function fetchBgAsDataUrl(filename) {
@@ -9914,6 +13553,10 @@ document.addEventListener('DOMContentLoaded', () => {
         activePreviewIndex = 0;
         // Per-template товары: переключаем активный массив товаров этого шаблона.
         // Каждый пресет хранит свой список независимо (см. templateItems).
+        if (key === 'beer_a5' || key === 'beer_a5_aktsiya') {
+          if (!templateItems.beer_a5) templateItems.beer_a5 = [freshItem()];
+          templateItems.beer_a5_aktsiya = templateItems.beer_a5;
+        }
         if (templateItems[key]) {
           itemsData = templateItems[key];
           itemsData.forEach(item => {
@@ -9940,6 +13583,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (key === 'sneki') {
           applyAutoBgToAllItems();
+        }
+        syncBeerControlsVisibility();
+        if (typeof syncWorkspaceViewModeForCurrentTemplate === 'function') {
+          syncWorkspaceViewModeForCurrentTemplate();
         }
         // Авто-подгон кегля названий под геометрию нового шаблона:
         // выполняется синхронно, т.к. CSS-анимации отключены и размеры применены сразу.
@@ -10026,6 +13673,35 @@ document.addEventListener('DOMContentLoaded', () => {
   cancelSaveModal.addEventListener('click', () => {
     saveModal.classList.remove('active');
   });
+
+  if (closeSaveModalBtn) {
+    closeSaveModalBtn.addEventListener('click', () => {
+      saveModal.classList.remove('active');
+    });
+  }
+
+  // Закрытие кликом в любое место вне окна (по темному фону)
+  if (saveModal) {
+    saveModal.addEventListener('click', (e) => {
+      if (e.target === saveModal) {
+        saveModal.classList.remove('active');
+      }
+    });
+  }
+
+  // Горячие клавиши в поле ввода: Escape — закрыть, Enter — сохранить
+  if (newTemplateNameInput) {
+    newTemplateNameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        saveModal.classList.remove('active');
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        confirmSaveModal.click();
+      }
+    });
+  }
 
   confirmSaveModal.addEventListener('click', () => {
     const name = newTemplateNameInput.value.trim();
@@ -10517,7 +14193,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (el.id === 'pasteExcelArea' || el.id === 'idrPasteInput' || el.classList.contains('no-autogrow')) return;
     if (el.classList.contains('item-title-input')) {
       el.style.height = 'auto';
-      el.style.height = `${Math.min(el.scrollHeight, 54)}px`;
+      el.style.height = `${Math.min(el.scrollHeight, 44)}px`;
       return;
     }
     if (el.id === 'inputTitle') {
@@ -11088,6 +14764,20 @@ document.addEventListener('DOMContentLoaded', () => {
         updatePreview();
         scheduleSessionSave();
         if (typeof pushHistoryState === 'function') pushHistoryState(`Правка: ${field}`, true);
+        if (isBeerA5Active()) {
+          const isMultiMode = document.querySelector('input[name="printMode"]:checked').value === 'multi';
+          const targetIdx = isMultiMode ? activePreviewIndex : 0;
+          const it = itemsData[targetIdx];
+          if (field === 'title') {
+            if (it && it.title) {
+              checkAutoBeerByTitle(targetIdx, it.title, true, true);
+            }
+          } else {
+            if (it && it.title && (it.beerStrength || it.beerType || it.beerStyle || it.composition)) {
+              addOrUpdateBeerToCatalog(it);
+            }
+          }
+        }
       });
     }
 
@@ -11102,6 +14792,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!itemsData[activePreviewIndex]) itemsData[activePreviewIndex] = freshItem();
         itemsData[activePreviewIndex].title = val;
         checkAutoBgForTitle(activePreviewIndex, val);
+        if (isBeerA5Active()) {
+          checkAutoBeerByTitle(activePreviewIndex, val, true, false);
+          const sTitle = document.getElementById('beerSidebarTitle');
+          if (sTitle && sTitle !== document.activeElement && sTitle.value !== val) sTitle.value = val;
+        }
 
         // Синхронизируем инпуты наименования в блоке «Товары» (в сайдбаре и в шторке)
         document.querySelectorAll(`.item-title-input[data-index="${activePreviewIndex}"]`).forEach(inp => {
@@ -11163,6 +14858,13 @@ document.addEventListener('DOMContentLoaded', () => {
           syncTitleSizePreview();
         }
         checkAutoBgForSingleMode(val);
+        if (isBeerA5Active()) {
+          if (!itemsData[0]) itemsData[0] = freshItem();
+          itemsData[0].title = val;
+          checkAutoBeerByTitle(0, val, true, false);
+          const sTitle = document.getElementById('beerSidebarTitle');
+          if (sTitle && sTitle !== document.activeElement && sTitle.value !== val) sTitle.value = val;
+        }
       }
 
       // Обновляем мини-раскладку А4
@@ -11285,6 +14987,177 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }, () => {
         previewBigDigit.blur();
+      });
+    }
+
+    // 5. Поля шаблона «Пиво А5» (Состав, Крепость, Горечь, Плотность, Вид, Стиль)
+    const previewBeerComp = document.getElementById('previewBeerComposition');
+    const previewBeerStr = document.getElementById('previewBeerStrength');
+    const previewBeerBit = document.getElementById('previewBeerBitterness');
+    const previewBeerDen = document.getElementById('previewBeerDensity');
+    const previewBeerType = document.getElementById('previewBeerType');
+    const previewBeerStyle = document.getElementById('previewBeerStyle');
+
+    // Клик по кругам характеристик переносит фокус на ввод цифр
+    const strengthCircle = document.querySelector('.beer-metric-circle.circle-strength');
+    if (strengthCircle && previewBeerStr) {
+      strengthCircle.addEventListener('click', (e) => {
+        if (!isDragActive() && document.activeElement !== previewBeerStr) {
+          previewBeerStr.focus();
+        }
+      });
+    }
+
+    const bitternessCircle = document.querySelector('.beer-metric-circle.circle-bitterness');
+    if (bitternessCircle && previewBeerBit) {
+      bitternessCircle.addEventListener('click', (e) => {
+        if (!isDragActive() && document.activeElement !== previewBeerBit) {
+          previewBeerBit.focus();
+        }
+      });
+    }
+
+    const densityCircle = document.querySelector('.beer-metric-circle.circle-density');
+    if (densityCircle && previewBeerDen) {
+      densityCircle.addEventListener('click', (e) => {
+        if (!isDragActive() && document.activeElement !== previewBeerDen) {
+          previewBeerDen.focus();
+        }
+      });
+    }
+
+    const bottomTypeWrap = document.querySelector('.beer-bottom-type');
+    if (bottomTypeWrap && previewBeerType) {
+      bottomTypeWrap.addEventListener('click', () => {
+        if (!isDragActive() && document.activeElement !== previewBeerType) {
+          previewBeerType.focus();
+        }
+      });
+    }
+
+    const bottomStyleWrap = document.querySelector('.beer-bottom-style');
+    if (bottomStyleWrap && previewBeerStyle) {
+      bottomStyleWrap.addEventListener('click', () => {
+        if (!isDragActive() && document.activeElement !== previewBeerStyle) {
+          previewBeerStyle.focus();
+        }
+      });
+    }
+
+    // Авто-выделение содержимого при фокусе для быстрой замены
+    [previewBeerStr, previewBeerBit, previewBeerDen, previewBeerType, previewBeerStyle].forEach(el => {
+      if (!el) return;
+      el.addEventListener('focus', () => {
+        try {
+          const range = document.createRange();
+          range.selectNodeContents(el);
+          const sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+        } catch (_) { }
+      });
+    });
+
+    if (previewBeerComp) {
+      // Разрешаем Shift+Enter для переноса строки
+      previewBeerComp.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && e.shiftKey) {
+          e.stopPropagation();
+        }
+      }, true);
+
+      makeEditable(previewBeerComp, 'composition', (rawText) => {
+        const val = rawText.trim();
+        const it = itemsData[activePreviewIndex] || (itemsData[activePreviewIndex] = freshItem());
+        it.composition = val;
+        it.subtitle = val;
+        const sComp = document.getElementById('beerSidebarComp');
+        if (sComp && sComp !== document.activeElement) sComp.value = val;
+        const sCompLeg = document.getElementById('beerCompositionInput');
+        if (sCompLeg && sCompLeg !== document.activeElement) sCompLeg.value = val;
+        if (typeof syncBeerDrawerCardField === 'function') syncBeerDrawerCardField(activePreviewIndex, 'composition', val);
+      }, () => {
+        if (previewBeerStr) previewBeerStr.focus();
+        else previewBeerComp.blur();
+      });
+    }
+
+    if (previewBeerStr) {
+      makeEditable(previewBeerStr, 'beerStrength', (rawText) => {
+        const val = rawText.trim();
+        const it = itemsData[activePreviewIndex] || (itemsData[activePreviewIndex] = freshItem());
+        it.beerStrength = val;
+        const s = document.getElementById('beerSidebarStrength');
+        if (s && s !== document.activeElement) s.value = val;
+        const sLeg = document.getElementById('beerStrengthInput');
+        if (sLeg && sLeg !== document.activeElement) sLeg.value = val;
+        if (typeof syncBeerDrawerCardField === 'function') syncBeerDrawerCardField(activePreviewIndex, 'beerStrength', val);
+      }, () => {
+        if (previewBeerBit) previewBeerBit.focus();
+        else previewBeerStr.blur();
+      });
+    }
+
+    if (previewBeerBit) {
+      makeEditable(previewBeerBit, 'beerBitterness', (rawText) => {
+        const val = rawText.trim();
+        const it = itemsData[activePreviewIndex] || (itemsData[activePreviewIndex] = freshItem());
+        it.beerBitterness = val;
+        const s = document.getElementById('beerSidebarBitterness');
+        if (s && s !== document.activeElement) s.value = val;
+        const sLeg = document.getElementById('beerBitternessInput');
+        if (sLeg && sLeg !== document.activeElement) sLeg.value = val;
+        if (typeof syncBeerDrawerCardField === 'function') syncBeerDrawerCardField(activePreviewIndex, 'beerBitterness', val);
+      }, () => {
+        if (previewBeerDen) previewBeerDen.focus();
+        else previewBeerBit.blur();
+      });
+    }
+
+    if (previewBeerDen) {
+      makeEditable(previewBeerDen, 'beerDensity', (rawText) => {
+        const val = rawText.trim();
+        const it = itemsData[activePreviewIndex] || (itemsData[activePreviewIndex] = freshItem());
+        it.beerDensity = val;
+        const s = document.getElementById('beerSidebarDensity');
+        if (s && s !== document.activeElement) s.value = val;
+        const sLeg = document.getElementById('beerDensityInput');
+        if (sLeg && sLeg !== document.activeElement) sLeg.value = val;
+        if (typeof syncBeerDrawerCardField === 'function') syncBeerDrawerCardField(activePreviewIndex, 'beerDensity', val);
+      }, () => {
+        if (previewBeerType) previewBeerType.focus();
+        else previewBeerDen.blur();
+      });
+    }
+
+    if (previewBeerType) {
+      makeEditable(previewBeerType, 'beerType', (rawText) => {
+        const val = rawText.trim();
+        const it = itemsData[activePreviewIndex] || (itemsData[activePreviewIndex] = freshItem());
+        it.beerType = val;
+        const s = document.getElementById('beerSidebarType');
+        if (s && s !== document.activeElement) s.value = val;
+        const sLeg = document.getElementById('beerTypeInput');
+        if (sLeg && sLeg !== document.activeElement) sLeg.value = val;
+        if (typeof syncBeerDrawerCardField === 'function') syncBeerDrawerCardField(activePreviewIndex, 'beerType', val);
+      }, () => {
+        if (previewBeerStyle) previewBeerStyle.focus();
+        else previewBeerType.blur();
+      });
+    }
+
+    if (previewBeerStyle) {
+      makeEditable(previewBeerStyle, 'beerStyle', (rawText) => {
+        const val = rawText.trim();
+        const it = itemsData[activePreviewIndex] || (itemsData[activePreviewIndex] = freshItem());
+        it.beerStyle = val;
+        const s = document.getElementById('beerSidebarStyle');
+        if (s && s !== document.activeElement) s.value = val;
+        const sLeg = document.getElementById('beerStyleInput');
+        if (sLeg && sLeg !== document.activeElement) sLeg.value = val;
+        if (typeof syncBeerDrawerCardField === 'function') syncBeerDrawerCardField(activePreviewIndex, 'beerStyle', val);
+      }, () => {
+        previewBeerStyle.blur();
       });
     }
   }
@@ -11666,6 +15539,18 @@ document.addEventListener('DOMContentLoaded', () => {
       r.classList.toggle('active-preview-row', rowIdx === activePreviewIndex);
     });
 
+    // Подсветка карточек пива в шторке
+    document.querySelectorAll('.beer-item-card').forEach((c) => {
+      const cardIdx = parseInt(c.getAttribute('data-index'), 10);
+      const isActive = cardIdx === activePreviewIndex;
+      c.classList.toggle('is-active', isActive);
+      const prevBtn = c.querySelector('.bic-preview-btn');
+      if (prevBtn) {
+        prevBtn.className = `btn btn-xs ${isActive ? 'btn-primary' : 'btn-secondary'} bic-preview-btn`;
+        prevBtn.textContent = isActive ? '★ В превью' : '👁 Предпросмотр';
+      }
+    });
+
     updatePreviewItemNav();
   }
 
@@ -11791,12 +15676,21 @@ document.addEventListener('DOMContentLoaded', () => {
       const isMultiMode = document.querySelector('input[name="printMode"]:checked')?.value === 'multi';
       if (!isMultiMode || itemsData.length <= 1) return;
 
+      const isSheetMode = workspacePanelEl && workspacePanelEl.classList.contains('view-sheet-mode');
       if ((e.altKey || e.ctrlKey) && e.key === 'ArrowLeft') {
         e.preventDefault();
-        if (activePreviewIndex > 0) setActiveItemIndex(activePreviewIndex - 1, true);
+        if (isSheetMode && sheetSidePrevBtn && !sheetSidePrevBtn.disabled) {
+          sheetSidePrevBtn.click();
+        } else if (activePreviewIndex > 0) {
+          setActiveItemIndex(activePreviewIndex - 1, true);
+        }
       } else if ((e.altKey || e.ctrlKey) && e.key === 'ArrowRight') {
         e.preventDefault();
-        if (activePreviewIndex < itemsData.length - 1) setActiveItemIndex(activePreviewIndex + 1, true);
+        if (isSheetMode && sheetSideNextBtn && !sheetSideNextBtn.disabled) {
+          sheetSideNextBtn.click();
+        } else if (activePreviewIndex < itemsData.length - 1) {
+          setActiveItemIndex(activePreviewIndex + 1, true);
+        }
       }
     });
 
@@ -12467,6 +16361,9 @@ document.addEventListener('DOMContentLoaded', () => {
         toggleSheetBtn?.click();
       }
       sheetMiniContainer?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      if (typeof updateSheetItemNav === 'function') {
+        updateSheetItemNav();
+      }
     } else {
       workspacePanelEl.classList.remove('view-sheet-mode');
       viewModeTagBtn?.classList.add('active');
@@ -12475,6 +16372,17 @@ document.addEventListener('DOMContentLoaded', () => {
         togglePreviewBtn?.click();
       }
       singlePreviewContainer?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      if (typeof updateSheetItemNav === 'function') {
+        updateSheetItemNav();
+      }
+    }
+  }
+
+  function syncWorkspaceViewModeForCurrentTemplate() {
+    if (isBeerA5Active()) {
+      setWorkspaceViewMode('sheet');
+    } else {
+      setWorkspaceViewMode('tag');
     }
   }
 
@@ -12716,6 +16624,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Escape (Закрыть открытые модалки, шпаргалку, сбросить выбор)
     if (e.key === 'Escape') {
+      if (saveModal && saveModal.classList.contains('active')) {
+        saveModal.classList.remove('active');
+        return;
+      }
+      if (copyItemsModal && copyItemsModal.classList.contains('active')) {
+        copyItemsModal.classList.remove('active');
+        return;
+      }
       if (typeof shortcutsModal !== 'undefined' && shortcutsModal && shortcutsModal.style.display !== 'none') {
         shortcutsModal.style.display = 'none';
         return;
@@ -13019,6 +16935,50 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof checkAllRowsTextOverflow === 'function') checkAllRowsTextOverflow();
   }
 
+  // Быстрая проверка переполнения для одной активной строки (во время набора)
+  function checkSingleRowTextOverflow(idx) {
+    if (isNaN(idx) || !itemsData[idx]) return;
+    const titleText = (itemsData[idx].title || '').trim();
+    const warnBtns = document.querySelectorAll(`.item-overflow-warn-btn[data-index="${idx}"]`);
+    if (!warnBtns.length) return;
+
+    if (!titleText) {
+      warnBtns.forEach(btn => btn.style.display = 'none');
+      return;
+    }
+
+    let family = (titleFont ? titleFont.value : '') || 'Arial, sans-serif';
+    let weight = (titleWeight ? titleWeight.value : '800') || '800';
+    if (itemsData[idx].fontsCustomized && itemsData[idx].fonts) {
+      if (itemsData[idx].fonts.titleFont) family = itemsData[idx].fonts.titleFont;
+      if (itemsData[idx].fonts.titleWeight) weight = itemsData[idx].fonts.titleWeight;
+    }
+
+    const currentSize = itemsData[idx].titleSize || parseFloat(titleSize ? titleSize.value : 13) || 13;
+    try {
+      const maxFit = fitTitleSize(titleText, family, weight, idx);
+      if (maxFit != null && maxFit < currentSize - 0.75) {
+        warnBtns.forEach(btn => {
+          btn.style.display = 'inline-flex';
+          btn.title = `Текст названия выходит за рамку ценника (текущий: ${currentSize} pt, помещается: ${maxFit.toFixed(0)} pt).\nНажмите для автоподгонки шрифта!`;
+        });
+      } else {
+        warnBtns.forEach(btn => btn.style.display = 'none');
+      }
+    } catch (_) {
+      warnBtns.forEach(btn => btn.style.display = 'none');
+    }
+  }
+
+  let debouncedCheckAllRowsTimer = null;
+  function debouncedCheckAllRowsOverflow(delay = 350) {
+    if (debouncedCheckAllRowsTimer) clearTimeout(debouncedCheckAllRowsTimer);
+    debouncedCheckAllRowsTimer = setTimeout(() => {
+      debouncedCheckAllRowsTimer = null;
+      checkAllRowsTextOverflow();
+    }, delay);
+  }
+
   // Инлайн-проверка переполнения для всех строк таблицы товаров
   function checkAllRowsTextOverflow() {
     const rows = document.querySelectorAll('.item-row');
@@ -13041,10 +17001,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const currentSize = itemsData[idx].titleSize || parseFloat(titleSize ? titleSize.value : 13) || 13;
       try {
-        const maxFit = fitTitleSize(titleText, family, weight);
+        const maxFit = fitTitleSize(titleText, family, weight, idx);
         if (maxFit != null && maxFit < currentSize - 0.75) {
           warnBtn.style.display = 'inline-flex';
-          warnBtn.title = `Текст названия не помещается в ценник (текущий: ${currentSize}pt, влезает: ${maxFit.toFixed(0)}pt).\nНажмите, чтобы подогнать размер!`;
+          warnBtn.title = `Текст названия выходит за рамку ценника (текущий: ${currentSize} pt, помещается: ${maxFit.toFixed(0)} pt).\nНажмите для автоподгонки шрифта!`;
         } else {
           warnBtn.style.display = 'none';
         }
@@ -13062,7 +17022,7 @@ document.addEventListener('DOMContentLoaded', () => {
       refitActiveTitle(true);
       autoFitFontSize();
       checkTextOverflow();
-      showToast('Размер шрифта автоматически подогнан под границы ценника!', 'success', 2200);
+      showToast('Размер шрифта подогнан под границы ценника', 'success', 2000);
     });
   }
 
@@ -13371,7 +17331,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const filledItems = [];
     if (isMultiMode) {
       itemsData.forEach((it, idx) => {
-        if (it && it.title && it.title.trim()) {
+        if (it && it.title && it.title.trim() && !it.skipPrint) {
           filledItems.push({ it, idx });
         }
       });
@@ -13511,7 +17471,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (cr < 2.8) {
             issues.push({
               type: 'warn',
-              msg: `Товар №${idx + 1} «${it.title}»: низкая контрастность названия (${cr.toFixed(1)}:1, WCAG советует ≥ 3:1). Рекомендуется включить тень.${qtySuffix}`,
+              msg: `Товар №${idx + 1} «${it.title}»: белый текст слабо различим на светлом фоне. Рекомендуется добавить тень для четкости.${qtySuffix}`,
               actionType: 'contrast',
               templateKey: activeKey,
               itemIndex: idx,
@@ -13538,7 +17498,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const emptySpots = sheetCapacity - remainder;
       issues.push({
         type: 'info',
-        msg: `На последнем листе остаётся ${emptySpots} ${emptySpots === 1 ? 'свободное место' : 'свободных мест'} (${remainder} из ${sheetCapacity} занято). Всего к печати: ${totalCards} шт. на ${totalSheets} лист(ах) А4.`,
+        msg: `На последнем листе свободно ${emptySpots} ${emptySpots === 1 ? 'место' : (emptySpots < 5 ? 'места' : 'мест')} (занято ${remainder} из ${sheetCapacity}). Всего к печати: ${totalCards} ценников на ${totalSheets} лист(ах) А4.`,
         actionType: 'info'
       });
     }
@@ -14004,7 +17964,17 @@ document.addEventListener('DOMContentLoaded', () => {
   renderMultiPrintTemplates();
   initWobblerInlineEditing();
   initPreviewItemNavigator();
+  if (typeof initSheetItemNavigator === 'function') initSheetItemNavigator();
   initPrintOrientation();
+
+  // Инициализация пивного модуля до восстановления сессии
+  setupBeerPhotoHandlers();
+  refreshBeerCatalogDatalist();
+  setupBeerSidebarActiveCard();
+  setupBeerDrawerCards();
+  setupBeerPreviewZoom();
+  syncBeerControlsVisibility();
+
   // Автосохранённая сессия (таблицы, активный шаблон, режим) — или чистый старт.
   if (!restoreSession()) {
     activeTemplateRef = { kind: 'builtin', key: 'alaska_dots' };
@@ -14202,7 +18172,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       refitActiveTitle(true);
       updatePreview();
-      if (typeof showToast === 'function') showToast('⚡ Кегль принудительно пересчитан!', 'success', 2000);
+      if (typeof showToast === 'function') showToast('⚡ Размер шрифта пересчитан', 'success', 2000);
     });
   }
 
@@ -14251,7 +18221,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
           localStorage.removeItem('wobbler_session_v1');
           localStorage.removeItem('wobbler_custom_templates_gas');
-        } catch (_) {}
+        } catch (_) { }
         location.reload(true);
       }
     });
@@ -14269,7 +18239,7 @@ document.addEventListener('DOMContentLoaded', () => {
       dbgToggleBtn.textContent = isCol ? '▼ Развернуть' : '▲ Свернуть';
       try {
         localStorage.setItem('wobbler_dbg_collapsed', isCol ? '1' : '0');
-      } catch (_) {}
+      } catch (_) { }
     });
   }
 
@@ -14284,12 +18254,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (visible) {
       debugToolbarEl.classList.add('is-visible');
       debugToolbarEl.style.display = 'block';
-      try { localStorage.setItem('wobbler_debug_hud_visible', '1'); } catch (_) {}
+      try { localStorage.setItem('wobbler_debug_hud_visible', '1'); } catch (_) { }
       updateDebugToolbar();
     } else {
       debugToolbarEl.classList.remove('is-visible');
       debugToolbarEl.style.display = 'none';
-      try { localStorage.removeItem('wobbler_debug_hud_visible'); } catch (_) {}
+      try { localStorage.removeItem('wobbler_debug_hud_visible'); } catch (_) { }
     }
   }
 
@@ -14338,7 +18308,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (localStorage.getItem('wobbler_debug_hud_visible') === '1') {
       setDebugHudVisible(true);
     }
-  } catch (_) {}
+  } catch (_) { }
 
   window.addEventListener('resize', () => {
     if (typeof updateDebugToolbar === 'function') updateDebugToolbar();
@@ -14346,4 +18316,1308 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Первичная инициализация панели отладки (если видима)
   updateDebugToolbar();
+
+  function setupBeerPhotoHandlers() {
+    const wrap = document.getElementById('beerCapPhotoWrap');
+    const fileInput = document.getElementById('beerCapFileInput');
+    const chooseBtn = document.getElementById('beerCapChooseBtn');
+    const removeBtn = document.getElementById('beerCapRemoveBtn');
+    const folderInput = document.getElementById('beerFolderInput');
+    const folderBtn = document.getElementById('idrBeerFolderBtn');
+    const sampleBtn = document.getElementById('idrBeerExcelSampleBtn');
+    const loadCatalogBtn = document.getElementById('idrBeerLoadCatalogBtn');
+    const exportCatalogBtn = document.getElementById('idrBeerExportCatalogBtn');
+    const catalogFileInput = document.getElementById('beerCatalogFileInput');
+
+    if (wrap) {
+      wrap.addEventListener('click', () => {
+        if (fileInput) fileInput.click();
+      });
+      wrap.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        wrap.classList.add('drag-over');
+      });
+      wrap.addEventListener('dragleave', () => {
+        wrap.classList.remove('drag-over');
+      });
+      wrap.addEventListener('drop', (e) => {
+        e.preventDefault();
+        wrap.classList.remove('drag-over');
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+          handleSingleBeerPhotoFile(e.dataTransfer.files[0]);
+        }
+      });
+    }
+
+    if (chooseBtn && fileInput) {
+      chooseBtn.addEventListener('click', () => fileInput.click());
+    }
+    if (fileInput) {
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files[0]) {
+          handleSingleBeerPhotoFile(e.target.files[0]);
+          e.target.value = '';
+        }
+      });
+    }
+    if (removeBtn) {
+      removeBtn.addEventListener('click', () => {
+        const it = itemsData[activePreviewIndex] || freshItem();
+        it.beerPhoto = '';
+        const fn = document.getElementById('beerCapFilename');
+        if (fn) fn.textContent = 'Без фото';
+        removeBtn.style.display = 'none';
+        updatePreview();
+        renderItemsListInputs();
+        scheduleSessionSave();
+      });
+    }
+
+    function handleSingleBeerPhotoFile(file) {
+      if (!file || !file.type.startsWith('image/')) {
+        showToast('Пожалуйста, выберите файл изображения (JPG, PNG, WebP)', 'warning');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const dataUrl = ev.target.result;
+        const it = itemsData[activePreviewIndex] || (itemsData[activePreviewIndex] = freshItem());
+        it.beerPhoto = dataUrl;
+        beerPhotosMap.set(file.name.toLowerCase(), dataUrl);
+        const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '').toLowerCase();
+        beerPhotosMap.set(nameWithoutExt, dataUrl);
+        const fn = document.getElementById('beerCapFilename');
+        if (fn) fn.textContent = file.name;
+        if (removeBtn) removeBtn.style.display = '';
+        updatePreview();
+        renderItemsListInputs();
+        scheduleSessionSave();
+        showToast(`Фото «${file.name}» установлено для ценника №${activePreviewIndex + 1}`, 'success');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Пакетная загрузка папки с фото (100 шт)
+    if (folderBtn && folderInput) {
+      folderBtn.addEventListener('click', () => folderInput.click());
+    }
+    if (folderInput) {
+      folderInput.addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files || []).filter(f => f.type.startsWith('image/'));
+        if (!files.length) return;
+        let loadedCount = 0;
+        showToast(`Чтение ${files.length} фото пива...`, 'info', 2000);
+        for (const file of files) {
+          try {
+            const dataUrl = await new Promise((res) => {
+              const r = new FileReader();
+              r.onload = () => res(r.result);
+              r.onerror = () => res(null);
+              r.readAsDataURL(file);
+            });
+            if (dataUrl) {
+              const fullLower = file.name.toLowerCase();
+              const baseLower = file.name.replace(/\.[^/.]+$/, '').toLowerCase();
+              beerPhotosMap.set(fullLower, dataUrl);
+              beerPhotosMap.set(baseLower, dataUrl);
+              loadedCount++;
+            }
+          } catch (_) { }
+        }
+        showToast(`Загружено ${loadedCount} фото пива! Картинки привязаны к ценникам.`, 'success', 3500);
+        updatePreview();
+        renderItemsListInputs();
+        e.target.value = '';
+      });
+    }
+
+    // Скачивание образца Excel
+    if (sampleBtn) {
+      sampleBtn.addEventListener('click', () => {
+        const csvContent = '\uFEFF# Отечка\r\n' +
+          'Банька;240;4,10%;12;11,00%;светлое фильтрованное;Лагер;СОСТАВ: вода, солод пив. яч.,сахар, хмель, дрожжи;banka.jpg\r\n' +
+          'Жигулевское Самарское;180;4,50%;-;11,00%;светлое фильтрованное;Лагер;СОСТАВ: вода, солод пив. яч., хмель, дрожжи;Zhigulevskoe_Samarskoe.jpg\r\n' +
+          'Хадыженское;210;4,50%;-;11,00%;светлое фильтрованное;Лагер;СОСТАВ: вода, солод пив. яч., хмель, дрожжи;Hadyzhenskoe.jpg\r\n\r\n' +
+          '# Импорт\r\n' +
+          'Koruna Ceska;290;4,50%;-;12,00%;светлое фильтрованное;Лагер;СОСТАВ: вода, солод пив. яч.,хмель, дрожжи;Koruna_Ceska.jpg\r\n' +
+          'Kurpfalz Brau;320;5,20%;16;12,50%;светлое фильтрованное;Лагер Хель;СОСТАВ: вода, солод пивовар. яч., хмель, дрожжи;Kurpfalz_Brau.jpg\r\n\r\n' +
+          '# Сидр/Медовуха\r\n' +
+          'Сидр Вишня-Миндаль;330;5,00%;-;-;-;Сидр;СОСТАВ: вода, яблочный сок, вишневый сок, миндаль;sidr_vishnya_mindal.jpg\r\n' +
+          'Сидр Груша;330;5,00%;-;-;-;Сидр;СОСТАВ: вода, яблочный сок, грушевый сок;sidr_grusha.jpg\r\n\r\n' +
+          '# БА\r\n' +
+          'Дюшес;110;0,00%;-;-;-;Лимонад;СОСТАВ: вода, сок груши, сахар;Dyushes.jpg\r\n' +
+          'Квас Деревенский;120;0,00%;-;-;-;Квас Светлый;СОСТАВ: вода, сахар, концентрат квасного сусла, дрожжи;Kvas_Derevenskij.jpg\r\n\r\n' +
+          '# Крафт\r\n' +
+          'Iron Woods Stout;340;4,80%;35;11,00%;темное фильтрованное;Стаут;СОСТАВ: вода, солод пив. яч., хмель, дрожжи;Iron_Woods_Stout.jpg\r\n' +
+          'Milk of Amnesia;360;5,50%;35;14,30%;светлое нефильтрованное;Милкшейк ИПА;СОСТАВ: вода, солод пив. яч., хмель, дрожжи;Milk_of_Amnesia.jpg\r\n';
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'Шаблон_Пиво_А5.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        showToast('Файл «Шаблон_Пиво_А5.csv» скачан. Откройте его в Excel для заполнения базы!', 'success', 4000);
+      });
+    }
+
+    // Загрузка и выгрузка базы сортов пива (Справочник)
+    if (loadCatalogBtn && catalogFileInput) {
+      loadCatalogBtn.addEventListener('click', () => catalogFileInput.click());
+    }
+    if (catalogFileInput) {
+      catalogFileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files[0]) {
+          importBeerCatalogFile(e.target.files[0]);
+          e.target.value = '';
+        }
+      });
+    }
+    if (exportCatalogBtn) {
+      exportCatalogBtn.addEventListener('click', () => {
+        exportBeerCatalogFile();
+      });
+    }
+
+    // Быстрые шаблоны состава
+    document.querySelectorAll('.quick-comp-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const text = btn.getAttribute('data-comp');
+        const inp = document.getElementById('beerCompositionInput');
+        if (inp) {
+          inp.value = text;
+          inp.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      });
+    });
+
+    // Обработчики полей пива в сайдбаре
+    ['beerCompositionInput', 'beerStrengthInput', 'beerBitternessInput', 'beerDensityInput', 'beerTypeInput', 'beerStyleInput'].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const propMap = {
+        beerCompositionInput: 'composition',
+        beerStrengthInput: 'beerStrength',
+        beerBitternessInput: 'beerBitterness',
+        beerDensityInput: 'beerDensity',
+        beerTypeInput: 'beerType',
+        beerStyleInput: 'beerStyle'
+      };
+      const prop = propMap[id];
+      el.addEventListener('input', (e) => {
+        const val = e.target.value;
+        const it = itemsData[activePreviewIndex] || (itemsData[activePreviewIndex] = freshItem());
+        it[prop] = val;
+        const colClassMap = {
+          composition: '.item-beer-comp-input',
+          beerStrength: '.item-beer-strength-input',
+          beerBitterness: '.item-beer-bitterness-input',
+          beerDensity: '.item-beer-density-input',
+          beerType: '.item-beer-type-input',
+          beerStyle: '.item-beer-style-input'
+        };
+        const tableInp = document.querySelector(`${colClassMap[prop]}[data-index="${activePreviewIndex}"]`);
+        if (tableInp && tableInp !== document.activeElement && tableInp.value !== val) {
+          tableInp.value = val;
+        }
+        updatePreview();
+        scheduleSessionSave();
+      });
+    });
+  }
+
+  // ==========================================================================
+  // --- Модули управления шаблоном «Пиво А5»: Карточка в сайдбаре, Карточки в шторке, Зум и On-Canvas ввод ---
+  // ==========================================================================
+
+  function escapeHtmlAttr(str) {
+    return String(str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // 1. Карточка активного товара в сайдбаре (Пиво А5)
+  function renderBeerSidebarActiveCard() {
+    if (!isBeerA5Active()) return;
+    const card = document.getElementById('beerSidebarActiveCard');
+    if (!card) return;
+
+    const it = itemsData[activePreviewIndex] || (itemsData[activePreviewIndex] = freshItem());
+
+    // Степпер навигации
+    const itemNumEl = document.getElementById('beerSidebarItemNum');
+    const totalCountEl = document.getElementById('beerSidebarTotalCount');
+    const listCountEl = document.getElementById('beerSidebarListCount');
+    const prevBtn = document.getElementById('beerSidebarPrevBtn');
+    const nextBtn = document.getElementById('beerSidebarNextBtn');
+
+    if (itemNumEl) itemNumEl.textContent = activePreviewIndex + 1;
+    if (totalCountEl) totalCountEl.textContent = itemsData.length;
+    if (listCountEl) listCountEl.textContent = itemsData.length;
+    if (prevBtn) prevBtn.disabled = activePreviewIndex <= 0;
+    if (nextBtn) nextBtn.disabled = activePreviewIndex >= itemsData.length - 1;
+
+    // Фото крышки
+    const photoUrl = getBeerPhotoUrl(it);
+    const photoImg = document.getElementById('beerSidebarPhotoImg');
+    const photoEmpty = document.getElementById('beerSidebarPhotoEmpty');
+    const photoName = document.getElementById('beerSidebarPhotoName');
+    const remPhotoBtn = document.getElementById('beerSidebarRemovePhotoBtn');
+
+    if (photoUrl) {
+      if (photoImg) {
+        photoImg.src = photoUrl;
+        photoImg.style.display = 'block';
+      }
+      if (photoEmpty) photoEmpty.style.display = 'none';
+    } else {
+      if (photoImg) {
+        photoImg.removeAttribute('src');
+        photoImg.style.display = 'none';
+      }
+      if (photoEmpty) photoEmpty.style.display = 'flex';
+    }
+
+    if (photoName) {
+      let displayName = 'Без фото';
+      if (it.beerPhoto) {
+        displayName = it.beerPhoto.startsWith('data:') ? 'Свое фото' : it.beerPhoto.split('/').pop();
+      } else if (photoUrl) {
+        displayName = photoUrl.split('/').pop();
+      }
+      photoName.textContent = displayName;
+    }
+    if (remPhotoBtn) {
+      remPhotoBtn.style.display = ((it && it.beerPhoto) || photoUrl) ? '' : 'none';
+    }
+
+    // Переключение между стандартным блоком 1 цены и акционным блоком 2 цен
+    const isPromo = isBeerA5PromoActive();
+    const stdPriceRow = document.getElementById('beerSidebarStandardPriceRow');
+    const promoPriceBlock = document.getElementById('beerSidebarPromoPrices');
+    const bitWrap = document.getElementById('beerSidebarBitternessWrap');
+    if (stdPriceRow) stdPriceRow.style.display = isPromo ? 'none' : 'flex';
+    if (promoPriceBlock) promoPriceBlock.style.display = isPromo ? 'flex' : 'none';
+    if (bitWrap) bitWrap.style.display = isPromo ? 'none' : 'flex';
+
+    const isDiscount = isPromo && (it.promoMode === 'discount');
+    const btnVol = document.getElementById('btnPromoModeVolumes');
+    const btnDisc = document.getElementById('btnPromoModeDiscount');
+    if (btnVol) btnVol.classList.toggle('active', !isDiscount);
+    if (btnDisc) btnDisc.classList.toggle('active', isDiscount);
+
+    const fLabel1 = document.getElementById('beerSidebarPriceLabelField');
+    const fLabel2 = document.getElementById('beerSidebarPrice2LabelField');
+    if (fLabel1) fLabel1.style.display = isDiscount ? 'none' : 'block';
+    if (fLabel2) fLabel2.style.display = isDiscount ? 'none' : 'block';
+
+    const p1Title = document.getElementById('beerSidebarPrice1Title');
+    const p2Title = document.getElementById('beerSidebarPrice2Title');
+    if (p1Title) p1Title.textContent = isDiscount ? 'Старая цена (✕):' : 'Верхняя цена (₽):';
+    if (p2Title) p2Title.textContent = isDiscount ? 'Акционная цена (красная):' : 'Нижняя цена (₽):';
+
+    const inpP1 = document.getElementById('beerSidebarPrice1');
+    const inpP2 = document.getElementById('beerSidebarPrice2');
+    if (inpP1) inpP1.classList.toggle('is-strikethrough-input', isDiscount);
+    if (inpP2) inpP2.classList.toggle('is-discount-red-input', isDiscount);
+
+    // Текстовые поля (обновляем только если они не в фокусе ввода прямо сейчас)
+    const fieldMap = [
+      { id: 'beerSidebarTitle', val: it.title || '' },
+      { id: 'beerSidebarPrice', val: it.price || '' },
+      { id: 'beerSidebarCount', val: it.count || 1 },
+      { id: 'beerSidebarPriceLabel', val: it.priceLabel || '1л -' },
+      { id: 'beerSidebarPrice1', val: it.price || '' },
+      { id: 'beerSidebarCountPromo', val: it.count || 1 },
+      { id: 'beerSidebarPrice2Label', val: it.price2Label || '1.5л -' },
+      { id: 'beerSidebarPrice2', val: it.price2 || '' },
+      { id: 'beerSidebarStrength', val: it.beerStrength || '' },
+      { id: 'beerSidebarBitterness', val: it.beerBitterness || '' },
+      { id: 'beerSidebarDensity', val: it.beerDensity || '' },
+      { id: 'beerSidebarType', val: it.beerType || '' },
+      { id: 'beerSidebarStyle', val: it.beerStyle || '' },
+      { id: 'beerSidebarComp', val: it.composition || it.subtitle || '' }
+    ];
+
+    fieldMap.forEach(f => {
+      const el = document.getElementById(f.id);
+      if (el && document.activeElement !== el && el.value !== String(f.val)) {
+        el.value = f.val;
+      }
+    });
+
+    const typeToggleBtn = document.getElementById('beerSidebarTypeToggleBtn');
+    if (typeToggleBtn) {
+      const isHidden = isBeerItemTypeHidden(it);
+      typeToggleBtn.classList.toggle('is-only-style', isHidden);
+      const iconSpan = typeToggleBtn.querySelector('.bsac-type-btn-icon');
+      const textSpan = typeToggleBtn.querySelector('.bsac-type-btn-text');
+      if (iconSpan) iconSpan.textContent = isHidden ? '🥤' : '🍺';
+      if (textSpan) textSpan.textContent = isHidden ? 'Только стиль' : 'Пиво + стиль';
+      typeToggleBtn.title = isHidden ? 'Сорт без вида пива (стиль по центру). Нажмите, чтобы включить вид' : 'Нажмите, чтобы скрыть «ПИВО:» и центровать стиль';
+    }
+
+    const delBtn = document.getElementById('beerSidebarDeleteBtn');
+    if (delBtn) {
+      delBtn.title = itemsData.length > 1 ? `Удалить сорт #${activePreviewIndex + 1}` : 'Очистить данные этого сорта';
+    }
+  }
+
+  function setupBeerSidebarActiveCard() {
+    const prevBtn = document.getElementById('beerSidebarPrevBtn');
+    const nextBtn = document.getElementById('beerSidebarNextBtn');
+    const openDrawerBtn = document.getElementById('beerSidebarOpenDrawerBtn');
+    const choosePhotoBtn = document.getElementById('beerSidebarChoosePhotoBtn');
+    const thumbWrap = document.getElementById('beerSidebarPhotoThumbWrap');
+    const removePhotoBtn = document.getElementById('beerSidebarRemovePhotoBtn');
+    const addBtn = document.getElementById('beerSidebarAddBtn');
+    const deleteBtn = document.getElementById('beerSidebarDeleteBtn');
+    const sidebarTypeToggleBtn = document.getElementById('beerSidebarTypeToggleBtn');
+
+    if (sidebarTypeToggleBtn) {
+      sidebarTypeToggleBtn.addEventListener('click', () => {
+        toggleBeerItemType(activePreviewIndex);
+      });
+    }
+
+    if (prevBtn) {
+      prevBtn.addEventListener('click', () => {
+        if (activePreviewIndex > 0) {
+          setActiveItemIndex(activePreviewIndex - 1, true);
+        }
+      });
+    }
+
+    if (nextBtn) {
+      nextBtn.addEventListener('click', () => {
+        if (activePreviewIndex < itemsData.length - 1) {
+          setActiveItemIndex(activePreviewIndex + 1, true);
+        }
+      });
+    }
+
+    if (openDrawerBtn) {
+      openDrawerBtn.addEventListener('click', () => {
+        openItemsDrawer();
+      });
+    }
+
+    if (choosePhotoBtn) {
+      choosePhotoBtn.addEventListener('click', () => {
+        const fileInput = document.getElementById('beerCapFileInput');
+        if (fileInput) fileInput.click();
+      });
+    }
+
+    if (thumbWrap) {
+      thumbWrap.addEventListener('click', () => {
+        const fileInput = document.getElementById('beerCapFileInput');
+        if (fileInput) fileInput.click();
+      });
+    }
+
+    if (removePhotoBtn) {
+      removePhotoBtn.addEventListener('click', () => {
+        const it = itemsData[activePreviewIndex] || (itemsData[activePreviewIndex] = freshItem());
+        it.beerPhoto = '';
+        renderBeerSidebarActiveCard();
+        renderBeerDrawerCards();
+        updatePreview();
+        scheduleSessionSave();
+        showToast('Фото сорта удалено', 'info', 1500);
+      });
+    }
+
+    const btnVol = document.getElementById('btnPromoModeVolumes');
+    const btnDisc = document.getElementById('btnPromoModeDiscount');
+    if (btnVol) {
+      btnVol.addEventListener('click', () => {
+        const it = itemsData[activePreviewIndex] || (itemsData[activePreviewIndex] = freshItem());
+        it.promoMode = 'volumes';
+        renderBeerSidebarActiveCard();
+        renderBeerDrawerCards();
+        updatePreview();
+        scheduleSessionSave();
+      });
+    }
+    if (btnDisc) {
+      btnDisc.addEventListener('click', () => {
+        const it = itemsData[activePreviewIndex] || (itemsData[activePreviewIndex] = freshItem());
+        it.promoMode = 'discount';
+        renderBeerSidebarActiveCard();
+        renderBeerDrawerCards();
+        updatePreview();
+        scheduleSessionSave();
+      });
+    }
+
+    // Привязка инпутов сайдбара
+    const propMap = {
+      beerSidebarTitle: 'title',
+      beerSidebarPrice: 'price',
+      beerSidebarCount: 'count',
+      beerSidebarPriceLabel: 'priceLabel',
+      beerSidebarPrice1: 'price',
+      beerSidebarCountPromo: 'count',
+      beerSidebarPrice2Label: 'price2Label',
+      beerSidebarPrice2: 'price2',
+      beerSidebarStrength: 'beerStrength',
+      beerSidebarBitterness: 'beerBitterness',
+      beerSidebarDensity: 'beerDensity',
+      beerSidebarType: 'beerType',
+      beerSidebarStyle: 'beerStyle',
+      beerSidebarComp: 'composition'
+    };
+
+    Object.keys(propMap).forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const prop = propMap[id];
+      el.addEventListener('input', (e) => {
+        const it = itemsData[activePreviewIndex] || (itemsData[activePreviewIndex] = freshItem());
+        let val = e.target.value;
+        if (prop === 'count') {
+          val = Math.max(1, parseInt(val, 10) || 1);
+          it.count = val;
+        } else if (prop === 'composition') {
+          it.composition = val;
+          it.subtitle = val;
+        } else {
+          it[prop] = val;
+          if (prop === 'beerType') {
+            const trimmed = val.trim();
+            if (trimmed === '-' || trimmed === '—' || trimmed === '') {
+              it.hideBeerType = true;
+            } else {
+              it.hideBeerType = false;
+              it._prevBeerType = val;
+            }
+            const sBtn = document.getElementById('beerSidebarTypeToggleBtn');
+            if (sBtn) {
+              const isHidden = isBeerItemTypeHidden(it);
+              sBtn.classList.toggle('is-only-style', isHidden);
+              const iconSpan = sBtn.querySelector('.bsac-type-btn-icon');
+              const textSpan = sBtn.querySelector('.bsac-type-btn-text');
+              if (iconSpan) iconSpan.textContent = isHidden ? '🥤' : '🍺';
+              if (textSpan) textSpan.textContent = isHidden ? 'Только стиль' : 'Пиво + стиль';
+            }
+          }
+        }
+        if (prop === 'title') {
+          checkAutoBeerByTitle(activePreviewIndex, val, true, false);
+          openBeerDropdown(el, activePreviewIndex);
+        }
+        syncBeerDrawerCardField(activePreviewIndex, prop, val);
+        schedulePreviewUpdate();
+        scheduleSessionSave();
+      });
+
+      el.addEventListener('focus', () => {
+        if (prop === 'title') {
+          if (typeof el.select === 'function') el.select();
+          openBeerDropdown(el, activePreviewIndex);
+        }
+      });
+
+      el.addEventListener('keydown', (e) => {
+        if (prop === 'title') {
+          handleBeerDropdownKeydown(e);
+        }
+      });
+
+      el.addEventListener('blur', () => {
+        const it = itemsData[activePreviewIndex];
+        if (prop === 'title' && it && it.title) {
+          checkAutoBeerByTitle(activePreviewIndex, it.title, true, true);
+        } else if (prop === 'beerStrength' || prop === 'beerDensity') {
+          if (it && it[prop]) {
+            it[prop] = stripBeerMetric(it[prop]);
+            if (el.value !== it[prop]) el.value = it[prop];
+            syncBeerDrawerCardField(activePreviewIndex, prop, it[prop]);
+            updatePreview();
+            scheduleSessionSave();
+          }
+        }
+      });
+
+      el.addEventListener('change', () => {
+        const it = itemsData[activePreviewIndex];
+        if (prop === 'title') {
+          if (it && it.title) {
+            checkAutoBeerByTitle(activePreviewIndex, it.title, true, true);
+          }
+        } else {
+          if (it && it.title && (it.beerStrength || it.beerType || it.beerStyle || it.composition)) {
+            addOrUpdateBeerToCatalog(it);
+          }
+        }
+      });
+    });
+
+    // Быстрые чипсы состава в сайдбаре
+    document.querySelectorAll('.bsac-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const comp = chip.getAttribute('data-comp');
+        const compInp = document.getElementById('beerSidebarComp');
+        if (compInp) {
+          compInp.value = comp;
+          compInp.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      });
+    });
+
+    // Добавление нового сорта
+    if (addBtn) {
+      addBtn.addEventListener('click', () => {
+        const newItem = freshItem();
+        newItem.title = '';
+        newItem.price = '';
+        newItem.beerStrength = '4,5%';
+        newItem.beerBitterness = '-';
+        newItem.beerDensity = '11,5%';
+        newItem.beerType = 'светлое фильтрованное';
+        newItem.beerStyle = 'Лагер';
+        newItem.composition = 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи';
+        itemsData.push(newItem);
+
+        setActiveItemIndex(itemsData.length - 1, true);
+        renderItemsListInputs();
+        renderBeerDrawerCards();
+        renderBeerSidebarActiveCard();
+        scheduleSessionSave();
+        showToast(`Добавлен новый сорт #${itemsData.length}`, 'success', 2500);
+
+        setTimeout(() => {
+          const t = document.getElementById('beerSidebarTitle');
+          if (t) t.focus();
+        }, 80);
+      });
+    }
+
+    // Удаление активного сорта
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', () => {
+        if (itemsData.length <= 1) {
+          itemsData[0] = freshItem();
+          renderBeerSidebarActiveCard();
+          renderBeerDrawerCards();
+          updatePreview();
+          scheduleSessionSave();
+          showToast('Данные сорта очищены', 'info', 1800);
+          return;
+        }
+
+        const delNum = activePreviewIndex + 1;
+        itemsData.splice(activePreviewIndex, 1);
+        if (activePreviewIndex >= itemsData.length) {
+          activePreviewIndex = itemsData.length - 1;
+        }
+        setActiveItemIndex(activePreviewIndex, true);
+        renderItemsListInputs();
+        renderBeerDrawerCards();
+        renderBeerSidebarActiveCard();
+        scheduleSessionSave();
+        showToast(`Сорт #${delNum} удален`, 'info', 1800);
+      });
+    }
+  }
+
+  // 2. Карточки сортов в шторке товаров (Пиво А5)
+  function renderBeerDrawerCards(force = false) {
+    if (!isBeerA5Active()) return;
+    const list = document.getElementById('beerCardsList');
+    if (!list) return;
+
+    // Защита от сброса фокуса во время активного ввода пользователем
+    const activeEl = document.activeElement;
+    if (!force && activeEl && list.contains(activeEl) && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
+      return;
+    }
+
+    const totalBadge = document.getElementById('beerCardsTotalBadge');
+    if (totalBadge) {
+      totalBadge.textContent = `Всего сортов: ${itemsData.length}`;
+    }
+
+    const isPromo = isBeerA5PromoActive();
+    let html = '';
+    for (let i = 0; i < itemsData.length; i++) {
+      const it = itemsData[i] || {};
+      const isActive = i === activePreviewIndex;
+      const isSkipped = !!it.skipped;
+      const photoUrl = getBeerPhotoUrl(it);
+      const titleSafe = escapeHtmlAttr(it.title || '');
+      const priceSafe = escapeHtmlAttr(it.price || '');
+      const countVal = it.count || 1;
+      const strSafe = escapeHtmlAttr(it.beerStrength || '');
+      const bitSafe = escapeHtmlAttr(it.beerBitterness || '');
+      const denSafe = escapeHtmlAttr(it.beerDensity || '');
+      const typeSafe = escapeHtmlAttr(it.beerType || '');
+      const styleSafe = escapeHtmlAttr(it.beerStyle || '');
+      const compSafe = escapeHtmlAttr(it.composition || it.subtitle || '');
+
+      const isHidden = isBeerItemTypeHidden(it);
+
+      html += `
+        <div class="beer-item-card ${isActive ? 'is-active' : ''} ${isSkipped ? 'is-skipped' : ''}" data-index="${i}">
+          <div class="bic-header">
+            <div class="bic-header-left">
+              <span class="bic-drag-handle" title="Порядковый номер">⋮⋮</span>
+              <span class="bic-num-badge">#${i + 1}</span>
+            </div>
+            <div class="bic-header-right">
+              <button type="button" class="btn btn-xs ${isActive ? 'btn-primary' : 'btn-secondary'} bic-preview-btn" data-index="${i}" title="Показать в окне предпросмотра">
+                ${isActive ? '★ В превью' : '👁 Предпросмотр'}
+              </button>
+              <button type="button" class="bic-type-toggle-btn ${isHidden ? 'is-only-style' : ''}" data-index="${i}" title="${isHidden ? 'Сорт без вида пива (стиль по центру). Нажмите, чтобы включить вид' : 'Нажмите, чтобы скрыть «ПИВО:» и центровать стиль'}">
+                ${isHidden ? '🥤 Только стиль' : '🍺 Пиво + стиль'}
+              </button>
+              ${isPromo ? `
+                <button type="button" class="bic-promo-mode-toggle-btn ${it.promoMode === 'discount' ? 'is-discount' : ''}" data-index="${i}" title="${it.promoMode === 'discount' ? 'Режим: Скидка ✕ (старая зачеркнута, новая красная). Нажмите для переключения на 2 объема' : 'Режим: 2 объема. Нажмите для переключения на скидку со старой ценой'}">
+                  ${it.promoMode === 'discount' ? '🔥 Скидка ✕' : '🥤 2 объема'}
+                </button>
+              ` : ''}
+              <label class="bic-skip-label" title="Не печатать этот сорт на листе А4">
+                <input type="checkbox" class="bic-skip-chk" data-index="${i}" ${isSkipped ? 'checked' : ''}>
+                <span>Скрыть</span>
+              </label>
+              <button type="button" class="btn btn-secondary btn-xs bic-del-btn" data-index="${i}" title="Удалить этот сорт">✕</button>
+            </div>
+          </div>
+
+          <div class="bic-row-main">
+            <div class="bic-photo-box" data-index="${i}" title="Нажмите для загрузки или замены фото крышки">
+              ${photoUrl ? `<img src="${photoUrl}" alt="Фото">` : `<span style="font-size:22px;">🍺</span>`}
+            </div>
+            <div class="bic-title-price-wrap">
+              <input type="text" class="bic-title-input" data-index="${i}" value="${titleSafe}" placeholder="Наименование пива..." autocomplete="off">
+              ${isPromo ? (it.promoMode === 'discount' ? `
+                <div class="bic-promo-prices-wrap is-discount">
+                  <div class="bic-price-qty-row">
+                    <span class="bic-discount-badge old-price-badge" title="Старая зачеркнутая цена">✕ Старая</span>
+                    <div class="bic-price-wrap" style="flex:1;">
+                      <input type="text" class="bic-price-input is-strikethrough-input" data-index="${i}" value="${priceSafe}" placeholder="Старая цена ₽">
+                    </div>
+                    <div class="bic-qty-wrap">
+                      <input type="number" class="bic-qty-input" data-index="${i}" min="1" max="99" value="${countVal}" title="Тираж копий на листе А4">
+                    </div>
+                  </div>
+                  <div class="bic-price-qty-row" style="margin-top: 4px;">
+                    <span class="bic-discount-badge new-price-badge" title="Новая акционная цена (красная)">🔥 Акция</span>
+                    <div class="bic-price-wrap" style="flex:1;">
+                      <input type="text" class="bic-price2-input is-discount-red-input" data-index="${i}" value="${escapeHtmlAttr(it.price2 || '')}" placeholder="Акционная цена ₽">
+                    </div>
+                  </div>
+                </div>
+              ` : `
+                <div class="bic-promo-prices-wrap">
+                  <div class="bic-price-qty-row">
+                    <input type="text" class="bic-promo-label-input bic-label1-input" data-index="${i}" value="${escapeHtmlAttr(it.priceLabel || '1л -')}" placeholder="1л -" style="width:55px;" title="Подпись верхней цены">
+                    <div class="bic-price-wrap">
+                      <input type="text" class="bic-price-input" data-index="${i}" value="${priceSafe}" placeholder="Цена 1 ₽">
+                    </div>
+                    <div class="bic-qty-wrap">
+                      <input type="number" class="bic-qty-input" data-index="${i}" min="1" max="99" value="${countVal}" title="Тираж копий на листе А4">
+                    </div>
+                  </div>
+                  <div class="bic-price-qty-row" style="margin-top: 4px;">
+                    <input type="text" class="bic-promo-label-input bic-label2-input" data-index="${i}" value="${escapeHtmlAttr(it.price2Label || '1.5л -')}" placeholder="1.5л -" style="width:55px;" title="Подпись нижней цены">
+                    <div class="bic-price-wrap" style="flex:1;">
+                      <input type="text" class="bic-price2-input" data-index="${i}" value="${escapeHtmlAttr(it.price2 || '')}" placeholder="Цена 2 ₽">
+                    </div>
+                  </div>
+                </div>
+              `) : `
+                <div class="bic-price-qty-row">
+                  <div class="bic-price-wrap">
+                    <input type="text" class="bic-price-input" data-index="${i}" value="${priceSafe}" placeholder="Цена ₽">
+                  </div>
+                  <div class="bic-qty-wrap">
+                    <input type="number" class="bic-qty-input" data-index="${i}" min="1" max="99" value="${countVal}" title="Тираж копий на листе А4">
+                  </div>
+                </div>
+              `}
+            </div>
+          </div>
+
+          <div class="bic-row-metrics">
+            <div class="bic-metric-col">
+              <label title="Крепость (алкоголь %)">Кр%</label>
+              <input type="text" class="bic-metric-input bic-str-input" data-index="${i}" value="${strSafe}" placeholder="4,1%">
+            </div>
+            ${isPromo ? '' : `
+            <div class="bic-metric-col">
+              <label title="Горечь (IBU)">Гор</label>
+              <input type="text" class="bic-metric-input bic-bit-input" data-index="${i}" value="${bitSafe}" placeholder="-">
+            </div>
+            `}
+            <div class="bic-metric-col">
+              <label title="Плотность (сусло %)">Пл%</label>
+              <input type="text" class="bic-metric-input bic-den-input" data-index="${i}" value="${denSafe}" placeholder="11,0%">
+            </div>
+            <div class="bic-metric-col">
+              <label title="Вид пива">Вид</label>
+              <input type="text" class="bic-metric-input bic-type-input" data-index="${i}" value="${typeSafe}" placeholder="светлое фильтр." list="beerTypeList">
+            </div>
+            <div class="bic-metric-col">
+              <label title="Стиль">Стиль</label>
+              <input type="text" class="bic-metric-input bic-style-input" data-index="${i}" value="${styleSafe}" placeholder="Лагер" list="beerStyleList">
+            </div>
+          </div>
+
+          <div class="bic-row-comp">
+            <div class="bic-comp-header">
+              <label>Состав:</label>
+              <div class="bsac-quick-chips">
+                <button type="button" class="bsac-chip bic-chip-btn" data-index="${i}" data-comp="СОСТАВ: вода, солод пив. яч., хмель, дрожжи">Стандарт</button>
+                <button type="button" class="bsac-chip bic-chip-btn" data-index="${i}" data-comp="СОСТАВ: вода, солод пив. яч.,сахар, хмель, дрожжи">С сахаром</button>
+                <button type="button" class="bsac-chip bic-chip-btn" data-index="${i}" data-comp="СОСТАВ: вода, солод пшеничный, солод ячменный, хмель, дрожжи">Пшеничное</button>
+              </div>
+            </div>
+            <textarea class="bic-comp-input" data-index="${i}" rows="2" placeholder="СОСТАВ: вода, солод, хмель, дрожжи">${compSafe}</textarea>
+          </div>
+        </div>
+      `;
+    }
+
+    list.innerHTML = html;
+  }
+
+  function syncBeerDrawerCardField(index, prop, val) {
+    const list = document.getElementById('beerCardsList');
+    if (!list) return;
+    const card = list.querySelector(`.beer-item-card[data-index="${index}"]`);
+    if (!card) return;
+
+    if (prop === 'photo') {
+      const pBox = card.querySelector('.bic-photo-box');
+      if (pBox) {
+        pBox.innerHTML = val ? `<img src="${val}" alt="Фото">` : `<span style="font-size:22px;">🍺</span>`;
+      }
+      return;
+    }
+
+    const classSelectorMap = {
+      title: '.bic-title-input',
+      price: '.bic-price-input',
+      price2: '.bic-price2-input',
+      priceLabel: '.bic-label1-input',
+      price2Label: '.bic-label2-input',
+      count: '.bic-qty-input',
+      beerStrength: '.bic-str-input',
+      beerBitterness: '.bic-bit-input',
+      beerDensity: '.bic-den-input',
+      beerType: '.bic-type-input',
+      beerStyle: '.bic-style-input',
+      composition: '.bic-comp-input'
+    };
+
+    const sel = classSelectorMap[prop];
+    if (sel) {
+      const inp = card.querySelector(sel);
+      if (inp && inp.value !== String(val)) {
+        inp.value = val;
+      }
+    }
+
+    if (prop === 'beerType') {
+      const it = itemsData[index];
+      const btn = card.querySelector('.bic-type-toggle-btn');
+      if (btn && it) {
+        const isHidden = isBeerItemTypeHidden(it);
+        btn.classList.toggle('is-only-style', isHidden);
+        btn.textContent = isHidden ? '🥤 Только стиль' : '🍺 Пиво + стиль';
+        btn.title = isHidden ? 'Сорт без вида пива (стиль по центру). Нажмите, чтобы включить вид' : 'Нажмите, чтобы скрыть «ПИВО:» и центровать стиль';
+      }
+    }
+  }
+
+  function setupBeerDrawerCards() {
+    const list = document.getElementById('beerCardsList');
+    const addTopBtn = document.getElementById('beerAddCardTopBtn');
+    const fullscreenBtn = document.getElementById('itemsDrawerFullscreenBtn');
+
+    // Кнопка «Во весь экран»
+    if (fullscreenBtn && itemsDrawer) {
+      fullscreenBtn.addEventListener('click', () => {
+        itemsDrawer.classList.toggle('is-fullscreen');
+        const isFs = itemsDrawer.classList.contains('is-fullscreen');
+        const txt = fullscreenBtn.querySelector('.fullscreen-text');
+        if (txt) txt.textContent = isFs ? 'Обычный вид' : 'Во весь экран';
+        fullscreenBtn.title = isFs ? 'Свернуть шторку до обычной ширины' : 'Развернуть шторку во весь экран (удобно для большой базы)';
+      });
+    }
+
+    // Кнопка «+ Добавить сорт пива» вверху шторки
+    if (addTopBtn) {
+      addTopBtn.addEventListener('click', () => {
+        const newItem = freshItem();
+        newItem.beerStrength = '4,5%';
+        newItem.beerBitterness = '-';
+        newItem.beerDensity = '11,5%';
+        newItem.beerType = 'светлое фильтрованное';
+        newItem.beerStyle = 'Лагер';
+        newItem.composition = 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи';
+        itemsData.push(newItem);
+
+        const newIdx = itemsData.length - 1;
+        setActiveItemIndex(newIdx, true);
+        renderItemsListInputs();
+        renderBeerDrawerCards();
+        renderBeerSidebarActiveCard();
+        scheduleSessionSave();
+
+        // Скроллим к новой карточке
+        setTimeout(() => {
+          const newCard = list.querySelector(`.beer-item-card[data-index="${newIdx}"]`);
+          if (newCard) {
+            newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            const titleInp = newCard.querySelector('.bic-title-input');
+            if (titleInp) titleInp.focus();
+          }
+        }, 100);
+      });
+    }
+
+    // Делегированные события внутри списка карточек шторки
+    if (list) {
+      // Клик по карточке / кнопкам превью / удалению / фото
+      list.addEventListener('click', (e) => {
+        const previewBtn = e.target.closest('.bic-preview-btn');
+        if (previewBtn) {
+          const idx = parseInt(previewBtn.getAttribute('data-index'), 10);
+          if (!isNaN(idx)) setActiveItemIndex(idx, true);
+          return;
+        }
+
+        const delBtn = e.target.closest('.bic-del-btn');
+        if (delBtn) {
+          const idx = parseInt(delBtn.getAttribute('data-index'), 10);
+          if (isNaN(idx)) return;
+          if (itemsData.length <= 1) {
+            itemsData[0] = freshItem();
+          } else {
+            itemsData.splice(idx, 1);
+            if (activePreviewIndex >= itemsData.length) {
+              activePreviewIndex = itemsData.length - 1;
+            }
+          }
+          setActiveItemIndex(activePreviewIndex, true);
+          renderItemsListInputs();
+          renderBeerDrawerCards();
+          renderBeerSidebarActiveCard();
+          scheduleSessionSave();
+          showToast(`Сорт пива #${idx + 1} удален`, 'info', 1600);
+          return;
+        }
+
+        const typeToggleBtn = e.target.closest('.bic-type-toggle-btn');
+        if (typeToggleBtn) {
+          const idx = parseInt(typeToggleBtn.getAttribute('data-index'), 10);
+          if (!isNaN(idx)) {
+            toggleBeerItemType(idx);
+          }
+          return;
+        }
+
+        const promoModeBtn = e.target.closest('.bic-promo-mode-toggle-btn');
+        if (promoModeBtn) {
+          const idx = parseInt(promoModeBtn.getAttribute('data-index'), 10);
+          if (!isNaN(idx) && itemsData[idx]) {
+            itemsData[idx].promoMode = (itemsData[idx].promoMode === 'discount') ? 'volumes' : 'discount';
+            renderBeerDrawerCards();
+            if (idx === activePreviewIndex) {
+              renderBeerSidebarActiveCard();
+              updatePreview();
+            }
+            scheduleSessionSave();
+          }
+          return;
+        }
+
+        const photoBox = e.target.closest('.bic-photo-box');
+        if (photoBox) {
+          const idx = parseInt(photoBox.getAttribute('data-index'), 10);
+          if (!isNaN(idx)) {
+            setActiveItemIndex(idx, false);
+            const fileInput = document.getElementById('beerCapFileInput');
+            if (fileInput) fileInput.click();
+          }
+          return;
+        }
+
+        const chipBtn = e.target.closest('.bic-chip-btn');
+        if (chipBtn) {
+          const idx = parseInt(chipBtn.getAttribute('data-index'), 10);
+          const comp = chipBtn.getAttribute('data-comp');
+          if (!isNaN(idx) && itemsData[idx]) {
+            itemsData[idx].composition = comp;
+            itemsData[idx].subtitle = comp;
+            const compInp = list.querySelector(`.bic-comp-input[data-index="${idx}"]`);
+            if (compInp) compInp.value = comp;
+            if (idx === activePreviewIndex) {
+              renderBeerSidebarActiveCard();
+              updatePreview();
+            }
+            scheduleSessionSave();
+          }
+          return;
+        }
+
+        // Клик в любую свободную область карточки активирует её в превью
+        const card = e.target.closest('.beer-item-card');
+        if (card && !e.target.closest('input, textarea, button, label')) {
+          const idx = parseInt(card.getAttribute('data-index'), 10);
+          if (!isNaN(idx) && idx !== activePreviewIndex) {
+            setActiveItemIndex(idx, true);
+          }
+        }
+      });
+
+      // Мгновенная плавная подсветка и переключение превью при фокусе в любое поле карточки
+      list.addEventListener('focusin', (e) => {
+        if (e.target && e.target.classList.contains('bic-title-input')) {
+          const bIdx = parseInt(e.target.getAttribute('data-index'), 10);
+          openBeerDropdown(e.target, bIdx);
+        }
+        const card = e.target.closest('.beer-item-card');
+        if (!card) return;
+        const idx = parseInt(card.getAttribute('data-index'), 10);
+        if (!isNaN(idx) && idx !== activePreviewIndex) {
+          activePreviewIndex = idx;
+          list.querySelectorAll('.beer-item-card.is-active').forEach(c => {
+            if (c !== card) c.classList.remove('is-active');
+          });
+          card.classList.add('is-active');
+          list.querySelectorAll('.bic-preview-btn').forEach(btn => {
+            const bIdx = parseInt(btn.getAttribute('data-index'), 10);
+            if (bIdx === idx) {
+              btn.className = 'btn btn-xs btn-primary bic-preview-btn';
+              btn.textContent = '★ В превью';
+            } else {
+              btn.className = 'btn btn-xs btn-secondary bic-preview-btn';
+              btn.textContent = '👁 Предпросмотр';
+            }
+          });
+          if (typeof renderBeerSidebarActiveCard === 'function') renderBeerSidebarActiveCard();
+          schedulePreviewUpdate();
+        }
+      });
+
+      // Навигация с клавиатуры в инпутах сортов шторки
+      list.addEventListener('keydown', (e) => {
+        if (e.target && e.target.classList.contains('bic-title-input')) {
+          handleBeerDropdownKeydown(e);
+        }
+      });
+
+      // Перепозиционирование дропдауна при скролле списка карточек
+      list.addEventListener('scroll', () => {
+        if (activeDropdownInput) positionBeerDropdown(activeDropdownInput);
+      }, { passive: true });
+
+      // Чекбокс пропуска при печати
+      list.addEventListener('change', (e) => {
+        const skipChk = e.target.closest('.bic-skip-chk');
+        if (skipChk) {
+          const idx = parseInt(skipChk.getAttribute('data-index'), 10);
+          if (!isNaN(idx) && itemsData[idx]) {
+            itemsData[idx].skipped = skipChk.checked;
+            const card = list.querySelector(`.beer-item-card[data-index="${idx}"]`);
+            if (card) card.classList.toggle('is-skipped', skipChk.checked);
+            schedulePreviewUpdate();
+            scheduleSessionSave();
+          }
+        }
+      });
+
+      // Ввод текста в полях карточки (батчинг через schedulePreviewUpdate без микропауз)
+      list.addEventListener('input', (e) => {
+        const inp = e.target;
+        const idx = parseInt(inp.getAttribute('data-index'), 10);
+        if (isNaN(idx) || !itemsData[idx]) return;
+
+        const it = itemsData[idx];
+        const val = inp.value;
+
+        if (inp.classList.contains('bic-title-input')) {
+          it.title = val;
+          checkAutoBeerByTitle(idx, val, true, false);
+          openBeerDropdown(inp, idx);
+          if (idx === activePreviewIndex) {
+            const sTitle = document.getElementById('beerSidebarTitle');
+            if (sTitle && sTitle !== document.activeElement) sTitle.value = val;
+            schedulePreviewUpdate();
+          }
+        } else if (inp.classList.contains('bic-price-input')) {
+          it.price = val;
+          if (idx === activePreviewIndex) {
+            const sPrice = document.getElementById(isBeerA5PromoActive() ? 'beerSidebarPrice1' : 'beerSidebarPrice');
+            if (sPrice && sPrice !== document.activeElement) sPrice.value = val;
+            schedulePreviewUpdate();
+          }
+        } else if (inp.classList.contains('bic-price2-input')) {
+          it.price2 = val;
+          if (idx === activePreviewIndex) {
+            const sPrice2 = document.getElementById('beerSidebarPrice2');
+            if (sPrice2 && sPrice2 !== document.activeElement) sPrice2.value = val;
+            schedulePreviewUpdate();
+          }
+        } else if (inp.classList.contains('bic-label1-input')) {
+          it.priceLabel = val;
+          if (idx === activePreviewIndex) {
+            const sLbl1 = document.getElementById('beerSidebarPriceLabel');
+            if (sLbl1 && sLbl1 !== document.activeElement) sLbl1.value = val;
+            schedulePreviewUpdate();
+          }
+        } else if (inp.classList.contains('bic-label2-input')) {
+          it.price2Label = val;
+          if (idx === activePreviewIndex) {
+            const sLbl2 = document.getElementById('beerSidebarPrice2Label');
+            if (sLbl2 && sLbl2 !== document.activeElement) sLbl2.value = val;
+            schedulePreviewUpdate();
+          }
+        } else if (inp.classList.contains('bic-qty-input')) {
+          const num = Math.max(1, parseInt(val, 10) || 1);
+          it.count = num;
+          if (idx === activePreviewIndex) {
+            const sCount = document.getElementById('beerSidebarCount');
+            if (sCount && sCount !== document.activeElement) sCount.value = num;
+            schedulePreviewUpdate();
+          }
+        } else if (inp.classList.contains('bic-str-input')) {
+          it.beerStrength = val;
+          if (idx === activePreviewIndex) {
+            const s = document.getElementById('beerSidebarStrength');
+            if (s && s !== document.activeElement) s.value = val;
+            schedulePreviewUpdate();
+          }
+        } else if (inp.classList.contains('bic-bit-input')) {
+          it.beerBitterness = val;
+          if (idx === activePreviewIndex) {
+            const s = document.getElementById('beerSidebarBitterness');
+            if (s && s !== document.activeElement) s.value = val;
+            schedulePreviewUpdate();
+          }
+        } else if (inp.classList.contains('bic-den-input')) {
+          it.beerDensity = val;
+          if (idx === activePreviewIndex) {
+            const s = document.getElementById('beerSidebarDensity');
+            if (s && s !== document.activeElement) s.value = val;
+            schedulePreviewUpdate();
+          }
+        } else if (inp.classList.contains('bic-type-input')) {
+          it.beerType = val;
+          const trimmed = (val || '').trim();
+          if (trimmed === '-' || trimmed === '—' || trimmed === '') {
+            it.hideBeerType = true;
+          } else {
+            it.hideBeerType = false;
+            it._prevBeerType = val;
+          }
+          const cardEl = inp.closest('.beer-item-card');
+          if (cardEl) {
+            const btn = cardEl.querySelector('.bic-type-toggle-btn');
+            if (btn) {
+              const isHidden = isBeerItemTypeHidden(it);
+              btn.classList.toggle('is-only-style', isHidden);
+              btn.textContent = isHidden ? '🥤 Только стиль' : '🍺 Пиво + стиль';
+              btn.title = isHidden ? 'Сорт без вида пива (стиль по центру). Нажмите, чтобы включить вид' : 'Нажмите, чтобы скрыть «ПИВО:» и центровать стиль';
+            }
+          }
+          if (idx === activePreviewIndex) {
+            const s = document.getElementById('beerSidebarType');
+            if (s && s !== document.activeElement) s.value = val;
+            const sBtn = document.getElementById('beerSidebarTypeToggleBtn');
+            if (sBtn) {
+              const isHidden = isBeerItemTypeHidden(it);
+              sBtn.classList.toggle('is-only-style', isHidden);
+              const iconSpan = sBtn.querySelector('.bsac-type-btn-icon');
+              const textSpan = sBtn.querySelector('.bsac-type-btn-text');
+              if (iconSpan) iconSpan.textContent = isHidden ? '🥤' : '🍺';
+              if (textSpan) textSpan.textContent = isHidden ? 'Только стиль' : 'Пиво + стиль';
+              sBtn.title = isHidden ? 'Сорт без вида пива (стиль по центру). Нажмите, чтобы включить вид' : 'Нажмите, чтобы скрыть «ПИВО:» и центровать стиль';
+            }
+            schedulePreviewUpdate();
+          }
+        } else if (inp.classList.contains('bic-style-input')) {
+          it.beerStyle = val;
+          if (idx === activePreviewIndex) {
+            const s = document.getElementById('beerSidebarStyle');
+            if (s && s !== document.activeElement) s.value = val;
+            schedulePreviewUpdate();
+          }
+        } else if (inp.classList.contains('bic-comp-input')) {
+          it.composition = val;
+          it.subtitle = val;
+          if (idx === activePreviewIndex) {
+            const s = document.getElementById('beerSidebarComp');
+            if (s && s !== document.activeElement) s.value = val;
+            schedulePreviewUpdate();
+          }
+        }
+
+        scheduleSessionSave();
+      });
+
+      // Авто-обучение справочника сортов при завершении ввода в карточке шторки
+      list.addEventListener('change', (e) => {
+        const inp = e.target;
+        const idx = parseInt(inp.getAttribute('data-index'), 10);
+        if (isNaN(idx) || !itemsData[idx]) return;
+        const it = itemsData[idx];
+        if (inp.classList.contains('bic-title-input')) {
+          if (it && it.title) {
+            checkAutoBeerByTitle(idx, it.title, true, true);
+          }
+        } else {
+          if (it && it.title && (it.beerStrength || it.beerType || it.beerStyle || it.composition)) {
+            addOrUpdateBeerToCatalog(it);
+          }
+        }
+      });
+
+      list.addEventListener('focusin', (e) => {
+        if (e.target.classList.contains('bic-title-input') && typeof e.target.select === 'function') {
+          e.target.select();
+        }
+      });
+
+      list.addEventListener('focusout', (e) => {
+        if (e.target.classList.contains('bic-title-input')) {
+          const idx = parseInt(e.target.getAttribute('data-index'), 10);
+          if (!isNaN(idx) && itemsData[idx] && itemsData[idx].title) {
+            checkAutoBeerByTitle(idx, itemsData[idx].title, true, true);
+          }
+        } else if (e.target.classList.contains('bic-str-input') || e.target.classList.contains('bic-den-input')) {
+          const idx = parseInt(e.target.getAttribute('data-index'), 10);
+          if (!isNaN(idx) && itemsData[idx]) {
+            const prop = e.target.classList.contains('bic-str-input') ? 'beerStrength' : 'beerDensity';
+            if (itemsData[idx][prop]) {
+              itemsData[idx][prop] = stripBeerMetric(itemsData[idx][prop]);
+              if (e.target.value !== itemsData[idx][prop]) e.target.value = itemsData[idx][prop];
+              if (idx === activePreviewIndex) {
+                const sEl = document.getElementById(prop === 'beerStrength' ? 'beerSidebarStrength' : 'beerSidebarDensity');
+                if (sEl && sEl !== document.activeElement) sEl.value = itemsData[idx][prop];
+                schedulePreviewUpdate();
+              }
+              scheduleSessionSave();
+            }
+          }
+        }
+      });
+    }
+  }
+
+  // 3. Масштабирование предпросмотра (Fit to Screen & Zoom Control)
+  function calcFitScale(force = false) {
+    const container = document.querySelector('.single-preview-container');
+    const preview = document.getElementById('wobblerPreview');
+    if (!container || !preview) return 1;
+
+    const winW = window.innerWidth || 1200;
+    const winH = window.innerHeight || 800;
+    if (!force && winW === _lastFitWinW && winH === _lastFitWinH && _lastFitScale) {
+      return _lastFitScale;
+    }
+    _lastFitWinW = winW;
+    _lastFitWinH = winH;
+
+    const contRect = container.getBoundingClientRect();
+    const topOffset = contRect.top > 0 ? contRect.top : 120;
+    const availH = Math.max(340, winH - topOffset - 35);
+    const cardH = preview.offsetHeight || 830;
+
+    const scale = (availH - 20) / cardH;
+    _lastFitScale = Math.max(0.35, Math.min(1.15, Math.round(scale * 100) / 100));
+    return _lastFitScale;
+  }
+
+  function applyPreviewScale(scale, isManual = false) {
+    const stage = document.querySelector('.preview-stage');
+    const zoomVal = document.getElementById('previewZoomVal');
+    const zoomRange = document.getElementById('previewZoomRange');
+    const fitBtn = document.getElementById('previewFitBtn');
+    const p100Btn = document.getElementById('preview100Btn');
+
+    if (!stage) return;
+    if (!isManual && scale === _lastAppliedPreviewScale) return;
+    _lastAppliedPreviewScale = scale;
+
+    stage.style.setProperty('--preview-scale', scale);
+
+    // Компенсируем вертикальное пространство, чтобы не было гигантского пустого скролла снизу
+    if (scale < 1) {
+      const h = stage.offsetHeight || 850;
+      const offset = Math.round((1 - scale) * h);
+      stage.style.marginBottom = `-${offset}px`;
+    } else {
+      stage.style.marginBottom = '0px';
+    }
+
+    const pct = Math.round(scale * 100);
+    if (zoomVal) zoomVal.textContent = `${pct}%`;
+    if (zoomRange && !isManual) zoomRange.value = pct;
+
+    if (fitBtn) fitBtn.classList.toggle('active', !!beerPreviewFitMode);
+    if (p100Btn) p100Btn.classList.toggle('active', !beerPreviewFitMode && pct === 100);
+  }
+
+  function autoFitBeerPreviewIfActive(force = false) {
+    if (typeof isBeerA5Active === 'function' && !isBeerA5Active()) return;
+    if (typeof beerPreviewFitMode !== 'undefined' && !beerPreviewFitMode) return;
+    const scale = calcFitScale(force);
+    applyPreviewScale(scale);
+  }
+
+  function resetBeerPreviewZoom() {
+    _lastAppliedPreviewScale = null;
+    const stage = document.querySelector('.preview-stage');
+    if (stage) {
+      stage.style.setProperty('--preview-scale', '1');
+      stage.style.marginBottom = '0px';
+    }
+  }
+
+  function setupBeerPreviewZoom() {
+    const fitBtn = document.getElementById('previewFitBtn');
+    const p100Btn = document.getElementById('preview100Btn');
+    const zoomRange = document.getElementById('previewZoomRange');
+
+    if (fitBtn) {
+      fitBtn.addEventListener('click', () => {
+        beerPreviewFitMode = true;
+        autoFitBeerPreviewIfActive(true);
+      });
+    }
+
+    if (p100Btn) {
+      p100Btn.addEventListener('click', () => {
+        beerPreviewFitMode = false;
+        applyPreviewScale(1);
+      });
+    }
+
+    if (zoomRange) {
+      zoomRange.addEventListener('input', (e) => {
+        beerPreviewFitMode = false;
+        const scale = parseFloat(e.target.value) / 100;
+        applyPreviewScale(scale, true);
+      });
+    }
+
+    window.addEventListener('resize', () => {
+      if (isBeerA5Active() && beerPreviewFitMode) {
+        autoFitBeerPreviewIfActive(true);
+      }
+    });
+
+    // Экспортируем в глобальную область
+    window.autoFitBeerPreviewIfActive = autoFitBeerPreviewIfActive;
+    window.resetBeerPreviewZoom = resetBeerPreviewZoom;
+  }
+
+  // Финальная синхронизация видимости контролов Пиво А5
+  syncBeerControlsVisibility();
+  if (typeof syncWorkspaceViewModeForCurrentTemplate === 'function') {
+    syncWorkspaceViewModeForCurrentTemplate();
+  }
 });

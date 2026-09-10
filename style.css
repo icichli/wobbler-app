@@ -305,16 +305,25 @@ body.theme-light .btn-theme-toggle:hover {
   border: 1px solid var(--border-color) !important;
   border-radius: var(--radius-md) !important;
   font-weight: 600 !important;
-  padding: 0.42rem 0.75rem !important;
-  font-size: 0.8rem !important;
-  height: 32px;
+  padding: 0 !important;
+  width: 32px !important;
+  min-width: 32px !important;
+  height: 32px !important;
+  justify-content: center !important;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
   cursor: pointer;
   transition: all 0.18s ease;
   white-space: nowrap !important;
   flex-shrink: 0;
+}
+
+.btn-outline-export .btn-text {
+  display: none !important;
+}
+
+.btn-outline-export .icon {
+  margin: 0 !important;
 }
 
 .btn-outline-export:hover {
@@ -1403,7 +1412,6 @@ body.theme-light .btn-theme-toggle:hover {
 /* Excel Quick-Paste Bar & Collapsible Drawer */
 .excel-quick-bar {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   gap: 5px;
   margin-bottom: 6px;
@@ -1414,22 +1422,35 @@ body.theme-light .btn-theme-toggle:hover {
   min-width: 0;
   position: relative;
   z-index: 50;
+  flex-wrap: nowrap;
 }
 
 .quick-bar-left {
   display: flex;
   align-items: center;
-  gap: 5px;
-  flex: 1 1 auto;
+  gap: 4px;
+  flex-shrink: 0;
   min-width: 0;
-  overflow: visible;
+}
+
+.quick-bar-divider {
+  width: 1px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.14);
+  margin: 0 1px;
+  flex-shrink: 0;
 }
 
 .paste-actions {
   display: flex;
   align-items: center;
-  gap: 3px;
-  flex-shrink: 0;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.paste-actions #clearAllItemsBtn {
+  margin-left: auto;
 }
 
 .excel-toggle-btn {
@@ -1550,7 +1571,7 @@ body.theme-light .btn-theme-toggle:hover {
   display: flex;
   align-items: center;
   gap: 2px;
-  padding: 3px 3px;
+  padding: 3px 7px 3px 5px;
   background: rgba(15, 23, 42, 0.85);
   border-radius: 6px;
   margin-top: 4px;
@@ -1574,15 +1595,15 @@ body.theme-light .btn-theme-toggle:hover {
 }
 
 .items-table-header .col-move {
-  flex: 0 0 22px;
-  width: 22px;
-  min-width: 22px;
+  flex: 0 0 20px;
+  width: 20px;
+  min-width: 20px;
 }
 
 .items-table-header .col-chk {
-  flex: 0 0 14px;
-  width: 14px;
-  min-width: 14px;
+  flex: 0 0 16px;
+  width: 16px;
+  min-width: 16px;
   text-align: center;
 }
 
@@ -1595,44 +1616,44 @@ body.theme-light .btn-theme-toggle:hover {
 
 .items-table-header .col-title {
   flex: 1 1 auto;
-  min-width: 70px;
+  min-width: 60px;
   padding-left: 2px;
 }
 
 .items-table-header .col-sub {
+  flex: 0 0 36px;
+  width: 36px;
+  min-width: 36px;
+  text-align: center;
+}
+
+.items-table-header .col-price {
   flex: 0 0 38px;
   width: 38px;
   min-width: 38px;
   text-align: center;
 }
 
-.items-table-header .col-price {
-  flex: 0 0 44px;
-  width: 44px;
-  min-width: 44px;
-  text-align: center;
-}
-
 .items-table-header .col-qty {
-  flex: 0 0 44px;
-  width: 44px;
-  min-width: 44px;
+  flex: 0 0 32px;
+  width: 32px;
+  min-width: 32px;
   text-align: center;
-  font-size: 0.64rem;
-  letter-spacing: -0.01em;
+  font-size: 0.62rem;
+  letter-spacing: -0.02em;
 }
 
 .items-table-header .col-digit {
-  flex: 0 0 24px;
-  width: 24px;
-  min-width: 24px;
+  flex: 0 0 22px;
+  width: 22px;
+  min-width: 22px;
   text-align: center;
 }
 
 .items-table-header .col-tools {
-  flex: 0 0 74px;
-  width: 74px;
-  min-width: 74px;
+  flex: 0 0 93px;
+  width: 93px;
+  min-width: 93px;
   text-align: center;
 }
 
@@ -1645,6 +1666,29 @@ body.theme-light .btn-theme-toggle:hover {
   background: rgba(15, 23, 42, 0.8);
   padding: 2px;
   margin-top: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(127, 184, 176, 0.45) transparent;
+}
+
+.items-table-wrapper::-webkit-scrollbar,
+.idr-table-wrapper::-webkit-scrollbar {
+  width: 4px;
+}
+
+.items-table-wrapper::-webkit-scrollbar-track,
+.idr-table-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.items-table-wrapper::-webkit-scrollbar-thumb,
+.idr-table-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(127, 184, 176, 0.45);
+  border-radius: 2px;
+}
+
+.items-table-wrapper::-webkit-scrollbar-thumb:hover,
+.idr-table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-blue);
 }
 
 .items-list {
@@ -1695,7 +1739,7 @@ body.theme-light .btn-theme-toggle:hover {
 
 .item-title-input {
   flex: 1 1 auto;
-  min-width: 70px;
+  min-width: 60px;
   width: 100%;
   font-size: 0.76rem;
   padding: 3px 4px;
@@ -1703,16 +1747,16 @@ body.theme-light .btn-theme-toggle:hover {
   white-space: pre-wrap;
   word-break: normal;
   overflow-wrap: break-word;
-  line-height: 1.25;
-  min-height: 28px;
-  max-height: 54px !important;
+  line-height: 1.22;
+  min-height: 25px;
+  max-height: 44px !important;
   overflow-y: auto !important;
   overflow-x: hidden;
   overscroll-behavior: contain;
   resize: none;
   box-sizing: border-box;
   scrollbar-width: thin;
-  scrollbar-color: rgba(127, 184, 176, 0.45) rgba(15, 23, 42, 0.4);
+  scrollbar-color: rgba(127, 184, 176, 0.45) transparent;
 }
 
 .item-overflow-warn-btn {
@@ -1738,13 +1782,18 @@ body.theme-light .btn-theme-toggle:hover {
 }
 
 .item-title-input::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 3px;
+  height: 3px;
+}
+
+.item-title-input::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 .item-title-input::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.4);
-  border-radius: 2px;
+  background: transparent;
 }
 
 .item-title-input::-webkit-scrollbar-thumb {
@@ -1757,20 +1806,25 @@ body.theme-light .btn-theme-toggle:hover {
 }
 
 .item-subtitle-input {
-  flex: 0 0 38px;
-  width: 38px;
-  min-width: 38px;
+  flex: 0 0 36px;
+  width: 36px;
+  min-width: 36px;
+  height: 25px;
+  line-height: 19px;
+  box-sizing: border-box;
   font-size: 0.74rem;
   padding: 3px 1px;
   text-align: center;
   border-radius: 3px;
   white-space: nowrap;
+  resize: none;
+  overflow: hidden;
 }
 
 .item-chk-wrap {
-  flex: 0 0 14px;
-  width: 14px;
-  min-width: 14px;
+  flex: 0 0 16px;
+  width: 16px;
+  min-width: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1790,10 +1844,72 @@ body.theme-light .btn-theme-toggle:hover {
   border-color: rgba(59, 130, 246, 0.5);
 }
 
+.item-row.is-skipped {
+  opacity: 0.52;
+  filter: grayscale(0.25);
+  background: rgba(15, 23, 42, 0.4) !important;
+}
+
+.item-row.is-skipped .item-title-input,
+.item-row.is-skipped .item-price-input,
+.item-row.is-skipped .item-subtitle-input {
+  text-decoration: line-through;
+  color: var(--text-muted, #94a3b8) !important;
+}
+
+body.theme-light .item-row.is-skipped {
+  background: rgba(241, 245, 249, 0.6) !important;
+}
+
+.item-print-btn {
+  flex: 0 0 17px;
+  width: 17px;
+  min-width: 17px;
+  height: 23px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  font-size: 0.68rem;
+  line-height: 1;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(15, 23, 42, 0.7);
+  color: #e2e8f0;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  box-sizing: border-box;
+}
+
+.item-print-btn .ico {
+  width: 12px;
+  height: 12px;
+}
+
+.item-print-btn:hover {
+  color: var(--accent-blue, #38bdf8);
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.item-print-btn.is-skipped {
+  color: #ef4444 !important;
+  opacity: 0.85;
+}
+
+.item-print-btn.is-skipped:hover {
+  color: #f87171 !important;
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
 .item-price-input {
-  flex: 0 0 44px;
-  width: 44px;
-  min-width: 44px;
+  flex: 0 0 38px;
+  width: 38px;
+  min-width: 38px;
+  height: 25px;
+  line-height: 19px;
+  box-sizing: border-box;
   font-size: 0.76rem;
   padding: 3px 1px;
   text-align: center;
@@ -1801,12 +1917,14 @@ body.theme-light .btn-theme-toggle:hover {
   font-weight: 700;
   color: var(--accent-yellow);
   white-space: nowrap;
+  resize: none;
+  overflow: hidden;
 }
 
 .item-qty-wrap {
-  flex: 0 0 44px;
-  width: 44px;
-  min-width: 44px;
+  flex: 0 0 32px;
+  width: 32px;
+  min-width: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1814,14 +1932,14 @@ body.theme-light .btn-theme-toggle:hover {
 
 input[type="number"].item-qty-input,
 .item-qty-input {
-  width: 44px !important;
-  min-width: 44px !important;
-  max-width: 44px !important;
+  width: 32px !important;
+  min-width: 32px !important;
+  max-width: 32px !important;
   height: 25px !important;
   min-height: 25px !important;
   padding: 0 1px !important;
   margin: 0 !important;
-  font-size: 0.84rem !important;
+  font-size: 0.8rem !important;
   font-weight: 800 !important;
   text-align: center !important;
   border-radius: 4px !important;
@@ -1832,7 +1950,7 @@ input[type="number"].item-qty-input,
   -webkit-appearance: none !important;
   -moz-appearance: textfield !important;
   appearance: none !important;
-  line-height: 23px !important;
+  line-height: 22px !important;
   cursor: pointer;
   transition: all 0.15s ease;
 }
@@ -1867,9 +1985,12 @@ input[type="number"].item-qty-input[data-multiple="true"] {
 }
 
 .item-digit-input {
-  flex: 0 0 24px;
-  width: 24px;
-  min-width: 24px;
+  flex: 0 0 22px;
+  width: 22px;
+  min-width: 22px;
+  height: 25px;
+  line-height: 19px;
+  box-sizing: border-box;
   font-size: 0.74rem;
   padding: 3px 0;
   text-align: center;
@@ -1929,6 +2050,15 @@ input[type="number"].item-qty-input[data-multiple="true"] {
   transform: scale(1.04);
 }
 
+.item-tools-wrap {
+  flex: 0 0 93px;
+  width: 93px;
+  min-width: 93px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
 .item-bg-btn,
 .item-decor-btn,
 .item-cross-btn,
@@ -1949,6 +2079,7 @@ input[type="number"].item-qty-input[data-multiple="true"] {
   color: #e2e8f0;
   cursor: pointer;
   transition: all 0.12s ease;
+  box-sizing: border-box;
 }
 
 .item-bg-btn:hover {
@@ -3774,7 +3905,8 @@ body.theme-light .preview-item-badge.mode-template {
   justify-content: center;
   align-items: center;
   position: relative;
-  overflow: hidden;
+  overflow: auto;
+  max-height: calc(100vh - 240px);
   box-shadow: var(--shadow-glow);
   min-height: 250px;
   width: 100%;
@@ -3782,10 +3914,11 @@ body.theme-light .preview-item-badge.mode-template {
 
 .preview-stage-wrapper {
   max-width: 100%;
-  overflow-x: auto;
+  overflow: auto;
   display: flex;
   justify-content: center;
   padding: 10px;
+  margin: auto;
 }
 
 .preview-stage {
@@ -4751,8 +4884,76 @@ body.theme-light .preview-item-badge.mode-template {
 .modal-actions {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   gap: 10px;
   margin-top: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.modal-box-save {
+  max-width: 530px;
+  width: 95%;
+}
+
+.modal-header-simple {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.modal-header-simple h3 {
+  margin: 0 !important;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.modal-close-icon-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #94a3b8);
+  font-size: 1.15rem;
+  cursor: pointer;
+  padding: 3px 6px;
+  line-height: 1;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close-icon-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.modal-actions-save {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.modal-actions-save .btn-cancel-left {
+  margin-right: auto;
+}
+
+@media (max-width: 540px) {
+  .modal-actions-save {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .modal-actions-save .btn-cancel-left {
+    margin-right: 0;
+  }
+
+  .modal-actions-save .btn {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 /* Список шаблонов-приёмников в модалке «Перенести на шаблон» */
@@ -4876,6 +5077,7 @@ body.theme-light .preview-item-badge.mode-template {
 }
 
 .sheet-mini-container {
+  position: relative;
   display: flex;
   justify-content: center;
   padding: 1.25rem 0.5rem;
@@ -4884,6 +5086,31 @@ body.theme-light .preview-item-badge.mode-template {
   border: 1px solid var(--border-subtle);
   overflow-x: auto;
   max-width: 100%;
+  min-height: 520px;
+}
+
+/* Floating Navigation Buttons & Indicator on A4 Sheet */
+.sheet-side-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 60;
+}
+
+.sheet-side-btn.prev {
+  left: 14px;
+}
+
+.sheet-side-btn.next {
+  right: 14px;
+}
+
+.sheet-floating-ind {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 55;
 }
 
 .a4-sheet-preview {
@@ -4909,6 +5136,10 @@ body.theme-light .preview-item-badge.mode-template {
   display: none;
 }
 
+.workspace-panel.view-sheet-mode .preview-toolbar {
+  display: none;
+}
+
 .workspace-panel.view-sheet-mode .a4-sheet-preview {
   transform: scale(0.64);
   margin-bottom: -105mm;
@@ -4924,6 +5155,34 @@ body.theme-light .preview-item-badge.mode-template {
 .workspace-panel.view-sheet-mode .a4-sheet-preview.is-landscape {
   transform: scale(0.64);
   margin-bottom: -75mm;
+}
+
+/* Sheet Mini-Wobblers Direct Inline Editing */
+.sheet-mini-item [contenteditable="plaintext-only"] {
+  cursor: text;
+  outline: none;
+  border-radius: 2px;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sheet-mini-item [contenteditable="plaintext-only"]:hover {
+  background: rgba(59, 130, 246, 0.14);
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.45);
+}
+
+.sheet-mini-item [contenteditable="plaintext-only"]:focus {
+  background: rgba(59, 130, 246, 0.22);
+  box-shadow: 0 0 0 2px var(--accent-blue-primary, #3b82f6);
+}
+
+.sheet-mini-item .beer-cap-photo-wrap {
+  cursor: pointer;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.sheet-mini-item .beer-cap-photo-wrap:hover {
+  transform: scale(1.05);
+  filter: brightness(1.15);
 }
 
 /* Sheet Mini-Wobblers Interactive Minimap */
@@ -5332,18 +5591,7 @@ body.theme-light .preview-item-badge.mode-template {
 }
 
 .items-stats-badge {
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--accent-blue);
-  background: rgba(127, 184, 176, 0.12);
-  border: 1px solid rgba(127, 184, 176, 0.25);
-  padding: 2px 6px;
-  border-radius: 5px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 120px;
-  flex-shrink: 1;
+  display: none !important;
 }
 
 .sheet-page-nav {
@@ -5708,6 +5956,147 @@ body.is-pdf-exporting #printArea {
   break-after: auto !important;
 }
 
+/* Centering for Beer A5 on full A4 sheet */
+.print-page.is-beer-page,
+#printArea .print-page.is-beer-page,
+#pdfExportWrapper .print-page.is-beer-page,
+.pdf-export-flow .print-page.is-beer-page {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  grid-template-columns: none !important;
+  grid-template-rows: none !important;
+}
+
+.print-page.is-beer-page .print-wobbler-wrapper,
+#printArea .print-page.is-beer-page .print-wobbler-wrapper,
+#pdfExportWrapper .print-page.is-beer-page .print-wobbler-wrapper {
+  margin: auto !important;
+}
+
+.a4-sheet-preview.is-beer-page .sheet-mini-item,
+.a4-sheet-preview.is-beer-page .sheet-mini-item:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  cursor: default !important;
+}
+
+/* ==========================================================================
+   2D Transform Box: Растягивание / сужение и масштабирование мышкой
+   ========================================================================== */
+.interactive-2d-box {
+  position: absolute;
+  box-sizing: border-box;
+  pointer-events: none;
+  border: 1.5px dashed rgba(59, 130, 246, 0.45);
+  border-radius: 6px;
+  opacity: 0;
+  transition: opacity 0.16s ease, border-color 0.16s ease;
+  z-index: 50;
+}
+
+.wobbler-title:hover>.interactive-2d-box,
+.wobbler-price-box:hover>.interactive-2d-box,
+.interactive-2d-box.is-active,
+.interactive-2d-box.is-dragging {
+  opacity: 1;
+  border-color: var(--accent-blue-primary, #3b82f6);
+}
+
+.interactive-2d-box .box-handle {
+  pointer-events: auto;
+  position: absolute;
+  z-index: 60;
+  background: #0f172a;
+  border: 2px solid var(--accent-blue-primary, #3b82f6);
+  color: #38bdf8;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  touch-action: none;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+  transition: transform 0.12s ease, background-color 0.12s ease, border-color 0.12s ease;
+}
+
+.interactive-2d-box .box-handle:hover {
+  background: var(--accent-blue-primary, #3b82f6);
+  color: #ffffff;
+  border-color: #ffffff;
+  transform: scale(1.2);
+  box-shadow: 0 0 14px rgba(59, 130, 246, 0.9);
+}
+
+/* Side handle East: Horizontal Stretch (scaleX) */
+.interactive-2d-box .handle-e {
+  right: -14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 26px;
+  cursor: ew-resize;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: -1px;
+}
+
+.interactive-2d-box .handle-e:hover {
+  transform: translateY(-50%) scale(1.22);
+}
+
+/* Corner handle South-East: Font Size (pt) */
+.interactive-2d-box .handle-se {
+  right: -12px;
+  bottom: -12px;
+  width: 24px;
+  height: 24px;
+  cursor: nwse-resize;
+  font-size: 12px;
+  font-weight: 900;
+  border-radius: 50%;
+}
+
+.interactive-2d-box .handle-se:hover {
+  transform: scale(1.25);
+}
+
+/* Floating live readout pill */
+.interactive-2d-box .box-readout-pill {
+  pointer-events: auto;
+  cursor: pointer;
+  position: absolute;
+  top: -26px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #0f172a;
+  color: #38bdf8;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-main, sans-serif);
+  padding: 2px 9px;
+  border-radius: 12px;
+  border: 1px solid #38bdf8;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 70;
+}
+
+/* При печати и экспорте PDF элементы управления полностью скрываются */
+@media print {
+  .interactive-2d-box {
+    display: none !important;
+  }
+}
+
+.print-page .interactive-2d-box,
+#printArea .interactive-2d-box,
+#pdfExportWrapper .interactive-2d-box {
+  display: none !important;
+}
+
 .print-page.multi-print-page,
 #printArea .print-page.multi-print-page,
 #pdfExportWrapper .print-page.multi-print-page {
@@ -5838,7 +6227,7 @@ body.is-pdf-exporting #printArea {
   }
 
   /* Строгая изоляция печати: скрыть любые случайные модалки, тосты и подсказки на верхнем уровне body */
-  body > :not(#printArea):not(#dynamicPrintPageOrientation) {
+  body> :not(#printArea):not(#dynamicPrintPageOrientation) {
     display: none !important;
   }
 
@@ -6780,12 +7169,12 @@ body.drawer-docked.drawer-open .bulk-actions-toolbar {
 .item-move-wrap {
   display: flex;
   flex-direction: row;
-  gap: 2px;
+  gap: 1px;
   justify-content: center;
   align-items: center;
-  flex: 0 0 22px;
-  width: 22px;
-  min-width: 22px;
+  flex: 0 0 20px;
+  width: 20px;
+  min-width: 20px;
   margin-right: 0;
 }
 
@@ -8510,6 +8899,10 @@ body.theme-light .bulk-actions-toolbar {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06) !important;
 }
 
+body.theme-light .quick-bar-divider {
+  background: rgba(0, 0, 0, 0.12) !important;
+}
+
 body.theme-light .bulk-toolbar-info {
   color: #475569 !important;
 }
@@ -8890,18 +9283,47 @@ label:has(input:focus-visible) {
 
 /* Пустые состояния с направлением (шторка товаров, поиск, шаблоны) */
 .items-empty-hint {
-  margin: 0 0 10px;
-  padding: 10px 12px;
-  border: 1px dashed rgba(148, 163, 184, 0.45);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin: 12px 6px;
+  padding: 20px 16px;
+  border: 1px dashed rgba(127, 184, 176, 0.35);
   border-radius: var(--radius-md);
-  background: rgba(148, 163, 184, 0.07);
+  background: rgba(127, 184, 176, 0.05);
   color: var(--text-muted);
-  font-size: 0.78rem;
-  line-height: 1.45;
+  gap: 8px;
 }
 
-.items-empty-hint b {
+.empty-hint-icon {
+  font-size: 2rem;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.empty-hint-title {
+  font-weight: 700;
+  font-size: 0.96rem;
+  color: var(--text-main);
+}
+
+.empty-hint-text {
+  font-size: 0.8rem;
+  line-height: 1.45;
+  max-width: 340px;
+  margin-bottom: 6px;
+}
+
+.empty-hint-text b {
   color: var(--accent-blue);
+}
+
+.empty-hint-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .items-no-results {
@@ -9085,6 +9507,1725 @@ label:has(input:focus-visible) {
 
 @media print {
   .debug-toolbar {
+    display: none !important;
+  }
+}
+
+/* ==========================================================================
+   --- Стили шаблона «Пиво А5» (15,5 × 21,82 см) ---
+   ========================================================================== */
+
+.preset-color.beer-a5 {
+  background-image: url('images/pivo_a5_bg.jpg');
+  background-size: cover;
+  background-position: center;
+  border: 1px solid #ca8a04;
+}
+
+.preset-color.beer-a5::after {
+  content: '🍺';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 13px;
+}
+
+.preset-color.beer-a5-aktsiya {
+  background-image: url('images/pivo_a5_aktsiya_bg.jpg');
+  background-size: cover;
+  background-position: center;
+  border: 1px solid #e11d48;
+}
+
+.preset-color.beer-a5-aktsiya::after {
+  content: '🏷️';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 13px;
+}
+
+/* 1. Крышка с фотографией пива */
+.beer-cap-photo-wrap {
+  position: absolute;
+  top: 45.3mm;
+  left: 37.3mm;
+  width: 85.3mm;
+  height: 85.3mm;
+  border-radius: 50% !important;
+  overflow: hidden !important;
+  clip-path: circle(50% at 50% 50%) !important;
+  -webkit-clip-path: circle(50% at 50% 50%) !important;
+  z-index: 3;
+  background: transparent !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.beer-cap-photo-wrap:hover {
+  outline: 2px dashed rgba(255, 255, 255, 0.7);
+  outline-offset: -2px;
+}
+
+.beer-cap-photo-wrap img.beer-cap-img {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 50% !important;
+  overflow: hidden !important;
+  clip-path: circle(50% at 50% 50%) !important;
+  -webkit-clip-path: circle(50% at 50% 50%) !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+
+.beer-cap-photo-wrap .beer-cap-drop-hint {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  color: #ffffff;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  padding: 8px;
+  pointer-events: none;
+}
+
+.beer-cap-photo-wrap.drag-over .beer-cap-drop-hint {
+  display: flex;
+}
+
+/* 2. Блок цены в 4 белых плашках */
+.wobbler-element.is-beer-a5 .wobbler-price-box {
+  position: absolute !important;
+  top: 133.1mm !important;
+  left: 47.8mm !important;
+  width: 64.0mm !important;
+  height: 30.8mm !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  z-index: 4 !important;
+}
+
+.wobbler-element.is-beer-a5 .price-box-inner {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.wobbler-element.is-beer-a5 .price-val {
+  width: 48.0mm !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 0 !important;
+}
+
+.wobbler-element.is-beer-a5 .price-digit {
+  width: 16.0mm !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-family: 'Montserrat', Arial, sans-serif !important;
+  font-size: 64pt !important;
+  font-weight: 900 !important;
+  color: #000000 !important;
+  line-height: 1 !important;
+  box-sizing: border-box !important;
+}
+
+.wobbler-element.is-beer-a5 .price-curr {
+  width: 16.0mm !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-family: 'Montserrat', Arial, sans-serif !important;
+  font-size: 64pt !important;
+  font-weight: 900 !important;
+  color: #000000 !important;
+  line-height: 1 !important;
+  margin-left: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.wobbler-element.is-beer-a5 .wobbler-header {
+  background-color: #ffffff;
+  background-image: url('images/pivo_a5_bg.jpg');
+  background-size: cover;
+  background-position: center;
+}
+
+.wobbler-element.is-beer-a5 .price-val,
+.wobbler-element.is-beer-a5 #previewPrice {
+  color: #000000 !important;
+}
+
+.wobbler-element.is-beer-a5 .wobbler-subtitle {
+  display: none !important;
+}
+
+/* 3. Состав */
+.beer-composition {
+  position: absolute;
+  top: 166.2mm;
+  left: 8mm;
+  right: 8mm;
+  text-align: center;
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-size: 11pt;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.25;
+  z-index: 3;
+  pointer-events: auto;
+  word-break: break-word;
+}
+
+/* 4. Три круглых показателя */
+.beer-metrics-row {
+  position: absolute;
+  top: 175.3mm;
+  left: 0;
+  right: 0;
+  height: 25.0mm;
+  z-index: 3;
+  pointer-events: auto;
+}
+
+.beer-metric-circle {
+  position: absolute;
+  top: 0;
+  height: 25.0mm;
+  width: 29.1mm;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-sizing: border-box;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.beer-metric-circle.circle-strength {
+  left: 28.7mm;
+}
+
+.beer-metric-circle.circle-bitterness {
+  left: 63.9mm;
+}
+
+.beer-metric-circle.circle-density {
+  left: 99.1mm;
+}
+
+.beer-metric-circle .metric-label {
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-size: 6.5pt;
+  font-weight: 800;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 2px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.beer-metric-circle .metric-val {
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-size: 16pt;
+  font-weight: 900;
+  color: #ffffff;
+  line-height: 1;
+  pointer-events: auto;
+}
+
+/* 5. Нижняя строка: вид пива и стиль */
+.beer-bottom-row {
+  position: absolute;
+  top: 203.5mm;
+  left: 14mm;
+  right: 14mm;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-size: 10.5pt;
+  font-weight: 700;
+  color: #ffffff;
+  z-index: 3;
+  pointer-events: auto;
+}
+
+.beer-bottom-type,
+.beer-bottom-style {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.beer-bottom-row.is-style-centered {
+  justify-content: center;
+}
+
+.beer-bottom-row.is-style-centered .beer-bottom-type {
+  display: none !important;
+}
+
+.beer-bottom-row.is-style-centered .beer-bottom-style {
+  text-align: center;
+  margin: 0 auto;
+}
+
+/* ==========================================================================
+   --- Стили шаблона «Пиво А5 АКЦИЯ» (2 цены, уменьшенная пробка) ---
+   ========================================================================== */
+
+.wobbler-element.is-beer-a5-aktsiya .wobbler-header {
+  background-color: #ffffff;
+  background-image: url('images/pivo_a5_aktsiya_bg.jpg');
+  background-size: cover;
+  background-position: center;
+}
+
+/* 0. Наименование пива: строго между логотипом «МЕСТО ПИВО» и пробкой */
+.wobbler-element.is-beer-a5-aktsiya .wobbler-title {
+  top: var(--title-slot-top, 26.5mm) !important;
+  height: var(--title-zone-h, 12.0mm) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1.1 !important;
+  left: 10mm !important;
+  right: 10mm !important;
+  width: auto !important;
+  margin: 0 !important;
+}
+
+/* 1. Уменьшенная пробка (диаметр 65 мм точно по центру векторных зубьев) */
+.wobbler-element.is-beer-a5-aktsiya .beer-cap-photo-wrap {
+  top: 44.82mm !important;
+  left: 44.58mm !important;
+  width: 65.0mm !important;
+  height: 65.0mm !important;
+}
+
+/* 2. Скрываем стандартный одиночный блок цены и 3 нижних кружка */
+.wobbler-element.is-beer-a5-aktsiya .wobbler-price-box,
+.wobbler-element.is-beer-a5-aktsiya .beer-metrics-row,
+.wobbler-element.is-beer-a5-aktsiya .wobbler-subtitle {
+  display: none !important;
+}
+
+/* 3. Две строки цен (промо-сетки: высота ячеек 26.51 мм) */
+.wobbler-element.is-beer-a5-aktsiya .beer-promo-row {
+  position: absolute !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 26.51mm !important;
+  display: flex !important;
+  align-items: center !important;
+  z-index: 4 !important;
+  pointer-events: auto !important;
+}
+
+.wobbler-element.is-beer-a5-aktsiya .beer-promo-row-top {
+  top: 124.22mm !important;
+}
+
+.wobbler-element.is-beer-a5-aktsiya .beer-promo-row-bottom {
+  top: 156.46mm !important;
+}
+
+/* Подпись слева от цены (напр. «1л -») */
+.wobbler-element.is-beer-a5-aktsiya .beer-promo-label {
+  position: absolute !important;
+  left: 10.73mm !important;
+  width: 33.50mm !important;
+  height: 26.51mm !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  font-family: 'Montserrat', Arial, sans-serif !important;
+  font-size: 26pt !important;
+  font-weight: 900 !important;
+  color: #ffffff !important;
+  line-height: 1 !important;
+  box-sizing: border-box !important;
+  padding-right: 1.6mm !important;
+  white-space: nowrap !important;
+  pointer-events: auto !important;
+  cursor: text !important;
+}
+
+/* Сетка цены из 4 ячеек (61.09 мм: 4 ячейки по 15.00 мм + зазоры 0.36 мм) */
+.wobbler-element.is-beer-a5-aktsiya .beer-promo-price-box {
+  position: absolute !important;
+  left: 45.80mm !important;
+  width: 61.09mm !important;
+  height: 26.51mm !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  display: flex !important;
+  align-items: center !important;
+  box-sizing: border-box !important;
+  pointer-events: auto !important;
+}
+
+.wobbler-element.is-beer-a5-aktsiya .beer-promo-price-box .price-box-inner {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.wobbler-element.is-beer-a5-aktsiya .beer-promo-price-box .price-val {
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 0.36mm !important;
+  color: #000000 !important;
+}
+
+.wobbler-element.is-beer-a5-aktsiya .beer-promo-price-box .price-digit {
+  width: 15.00mm !important;
+  height: 26.51mm !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-family: 'Montserrat', Arial, sans-serif !important;
+  font-size: 52pt !important;
+  font-weight: 900 !important;
+  color: #000000 !important;
+  line-height: 1 !important;
+  box-sizing: border-box !important;
+}
+
+.wobbler-element.is-beer-a5-aktsiya .beer-promo-price-box .price-curr {
+  width: 15.00mm !important;
+  height: 26.51mm !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-family: 'Montserrat', Arial, sans-serif !important;
+  font-size: 52pt !important;
+  font-weight: 900 !important;
+  color: #000000 !important;
+  line-height: 1 !important;
+  margin-left: 0.36mm !important;
+  box-sizing: border-box !important;
+}
+
+/* 4. Вариант 2 (Скидка ✕): перечеркивание верхней цены, красная нижняя цена, скрытие подписей слева */
+.beer-promo-cross-overlay {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: none !important;
+  z-index: 10 !important;
+  display: none;
+}
+
+.wobbler-element.is-beer-a5-aktsiya.is-promo-discount .beer-promo-row-top .beer-promo-cross-overlay {
+  display: block !important;
+}
+
+.beer-promo-cross-overlay svg {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+  overflow: visible !important;
+}
+
+.beer-promo-cross-overlay line {
+  stroke: #e3000f !important;
+  stroke-width: 6.5 !important;
+  stroke-linecap: square !important;
+  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.45));
+}
+
+.wobbler-element.is-beer-a5-aktsiya.is-promo-discount .beer-promo-label {
+  display: none !important;
+}
+
+.wobbler-element.is-beer-a5-aktsiya.is-promo-discount .beer-promo-row-bottom .price-digit,
+.wobbler-element.is-beer-a5-aktsiya.is-promo-discount .beer-promo-row-bottom .price-curr {
+  color: #e3000f !important;
+}
+
+/* Переключатель варианта акции в сайдбаре */
+.bsac-promo-mode-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  padding: 4px 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+}
+
+.bsac-promo-mode-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted, #94a3b8);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.bsac-promo-mode-btns {
+  display: flex;
+  gap: 4px;
+}
+
+.bsac-promo-mode-btn {
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-main, #f8fafc);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.bsac-promo-mode-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.bsac-promo-mode-btn.active {
+  background: var(--accent-primary, #3b82f6);
+  border-color: var(--accent-primary, #3b82f6);
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+
+/* Кнопка переключения варианта акции в карточке шторки сортов */
+.bic-promo-mode-toggle-btn {
+  padding: 2px 7px;
+  font-size: 0.72rem;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-main, #f8fafc);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.bic-promo-mode-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.bic-promo-mode-toggle-btn.is-discount {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #ef4444;
+  color: #fca5a5;
+  font-weight: 700;
+}
+
+/* Бейджи Старая / Акция в карточке шторки */
+.bic-discount-badge {
+  flex: 0 0 55px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: 4px;
+  padding: 2px 4px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.bic-discount-badge.old-price-badge {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-muted, #94a3b8);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.bic-discount-badge.new-price-badge {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+/* Стили полей ввода для зачеркнутой и красной цены */
+.is-strikethrough-input {
+  text-decoration: line-through !important;
+  color: #94a3b8 !important;
+}
+
+.is-discount-red-input {
+  color: #ef4444 !important;
+  font-weight: 700 !important;
+}
+
+/* Кружки показателей справа от цен (строго в центре овалов фона) */
+.wobbler-element.is-beer-a5-aktsiya .beer-promo-circle {
+  position: absolute !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  box-sizing: border-box !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Верхний овал (Крепость): центр в PDF (124.99mm, 135.02mm), размеры 24.70 × 24.30 мм */
+.wobbler-element.is-beer-a5-aktsiya .beer-promo-row-top .beer-promo-circle,
+.wobbler-element.is-beer-a5-aktsiya #previewBeerPromoCircleTop {
+  left: 112.64mm !important;
+  top: -1.35mm !important;
+  width: 24.70mm !important;
+  height: 24.30mm !important;
+}
+
+/* Нижний овал (Плотность): центр в PDF (125.35mm, 168.95mm), размеры 24.70 × 24.30 мм */
+.wobbler-element.is-beer-a5-aktsiya .beer-promo-row-bottom .beer-promo-circle,
+.wobbler-element.is-beer-a5-aktsiya #previewBeerPromoCircleBottom {
+  left: 113.01mm !important;
+  top: 0.34mm !important;
+  width: 24.70mm !important;
+  height: 24.30mm !important;
+}
+
+.wobbler-element.is-beer-a5-aktsiya .beer-promo-circle .metric-label {
+  font-family: 'Montserrat', Arial, sans-serif !important;
+  font-size: 6.8pt !important;
+  font-weight: 800 !important;
+  color: #ffffff !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.4px !important;
+  margin: 0 0 1.2mm 0 !important;
+  line-height: 1 !important;
+  pointer-events: none !important;
+}
+
+.wobbler-element.is-beer-a5-aktsiya .beer-promo-circle .metric-val {
+  font-family: 'Montserrat', Arial, sans-serif !important;
+  font-size: 14pt !important;
+  font-weight: 900 !important;
+  color: #ffffff !important;
+  line-height: 1 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  pointer-events: auto !important;
+}
+
+/* Состав пива в акционном шаблоне */
+.wobbler-element.is-beer-a5-aktsiya .beer-composition {
+  top: 188.0mm !important;
+  font-size: 9.5pt !important;
+  left: 12mm !important;
+  right: 12mm !important;
+  width: auto !important;
+  text-align: center !important;
+}
+
+.wobbler-element.is-beer-a5-aktsiya .beer-bottom-row {
+  top: 198.5mm !important;
+  font-size: 10pt !important;
+  left: 12mm !important;
+  right: 12mm !important;
+  width: auto !important;
+}
+
+/* 6. Колонки таблицы товаров в шторке при активном пивном шаблоне */
+.items-table-header .col-beer-field,
+.item-row .item-beer-field {
+  display: flex;
+  align-items: center;
+}
+
+.col-beer-photo,
+.item-beer-photo-wrap {
+  width: 36px;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.item-beer-photo-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color, #3f3f46);
+  background: #27272a;
+  padding: 0;
+  cursor: pointer;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+
+.item-beer-photo-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.item-beer-photo-btn:hover {
+  border-color: #eab308;
+}
+
+.col-beer-strength,
+.item-beer-strength-input {
+  width: 50px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.col-beer-bitterness,
+.item-beer-bitterness-input {
+  width: 44px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.col-beer-density,
+.item-beer-density-input {
+  width: 50px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.col-beer-type,
+.item-beer-type-input {
+  width: 130px;
+  flex-shrink: 0;
+}
+
+.col-beer-style,
+.item-beer-style-input {
+  width: 85px;
+  flex-shrink: 0;
+}
+
+.col-beer-comp,
+.item-beer-comp-input {
+  width: 140px;
+  flex-shrink: 0;
+}
+
+.item-beer-type-btn {
+  flex: 0 0 17px;
+  width: 17px;
+  min-width: 17px;
+  height: 23px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  font-size: 0.68rem;
+  line-height: 1;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(15, 23, 42, 0.7);
+  color: #e2e8f0;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  box-sizing: border-box;
+}
+
+.item-beer-type-btn:hover {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: #f59e0b;
+}
+
+.item-beer-type-btn.is-only-style {
+  background: rgba(245, 158, 11, 0.32);
+  border-color: #f59e0b;
+  color: #fbbf24;
+}
+
+.quick-comp-btn {
+  font-size: 10.5px;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+/* ==========================================================================
+   8. Новая система раздела «Товары» и карточек для шаблона «Пиво А5»
+   ========================================================================== */
+
+/* Карточка активного товара в сайдбаре */
+.beer-sidebar-active-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  margin-bottom: 12px;
+}
+
+.bsac-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+}
+
+.bsac-stepper-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.bsac-stepper-label b {
+  color: #38bdf8;
+  font-size: 14px;
+}
+
+.bsac-open-drawer-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-weight: 600;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  color: #ffffff;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.3);
+  transition: all 0.2s ease;
+}
+
+.bsac-open-drawer-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.bsac-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bsac-photo-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-sm);
+}
+
+.bsac-photo-thumb-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid #eab308;
+  background: #0f172a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(234, 179, 8, 0.3);
+  transition: transform 0.15s ease;
+}
+
+.bsac-photo-thumb-wrap:hover {
+  transform: scale(1.06);
+}
+
+.bsac-photo-thumb-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.bsac-photo-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+  flex: 1;
+}
+
+.bsac-photo-name {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bsac-photo-btns {
+  display: flex;
+  gap: 6px;
+}
+
+.bsac-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bsac-field label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.bsac-input,
+.bsac-textarea {
+  width: 100%;
+  background: var(--bg-input, #0f172a);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+  font-size: 13px;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease;
+}
+
+.bsac-input:focus,
+.bsac-textarea:focus {
+  border-color: #38bdf8;
+  outline: none;
+}
+
+.bsac-input-price {
+  font-weight: 700;
+  color: #fbbf24;
+}
+
+.bsac-type-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+  margin-bottom: 2px;
+  padding: 5px 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+}
+
+.bsac-type-toggle-hint {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.bsac-type-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(15, 23, 42, 0.7);
+  color: #e2e8f0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.bsac-type-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+
+.bsac-type-toggle-btn.is-only-style {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: #f59e0b;
+  color: #fbbf24;
+}
+
+.bsac-type-toggle-btn.is-only-style:hover {
+  background: rgba(245, 158, 11, 0.3);
+}
+
+.bsac-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.bsac-row-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+}
+
+.bsac-row-3 .bsac-input {
+  text-align: center;
+  padding: 6px 4px;
+}
+
+.bsac-comp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.bsac-quick-chips {
+  display: flex;
+  gap: 4px;
+}
+
+.bsac-chip {
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.bsac-chip:hover {
+  background: #38bdf8;
+  color: #0f172a;
+}
+
+.bsac-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.bsac-actions button {
+  flex: 1;
+}
+
+/* --------------------------------------------------------------------------
+   Полноэкранная шторка и Карточки пива в шторке (idr-beer-cards-section)
+   -------------------------------------------------------------------------- */
+.items-drawer.is-fullscreen {
+  width: 95vw !important;
+  max-width: 1440px !important;
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.6) !important;
+}
+
+.idr-beer-cards-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 14px;
+  overflow-y: auto;
+  max-height: calc(100vh - 240px);
+}
+
+.beer-cards-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+.beer-cards-count-badge {
+  font-size: 13px;
+  font-weight: 700;
+  color: #38bdf8;
+}
+
+.beer-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 14px;
+}
+
+.beer-item-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 200px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.beer-item-card:hover {
+  border-color: rgba(56, 189, 248, 0.5);
+}
+
+.beer-item-card.is-active {
+  border-color: #38bdf8;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.25);
+}
+
+.beer-item-card.is-skipped {
+  opacity: 0.55;
+}
+
+.bic-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 8px;
+}
+
+.bic-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bic-drag-handle {
+  cursor: grab;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.bic-num-badge {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.bic-header-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bic-type-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(15, 23, 42, 0.7);
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.bic-type-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+
+.bic-type-toggle-btn.is-only-style {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: #f59e0b;
+  color: #fbbf24;
+}
+
+.bic-type-toggle-btn.is-only-style:hover {
+  background: rgba(245, 158, 11, 0.3);
+}
+
+.bic-row-main {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.bic-photo-box {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  border: 2px solid #eab308;
+  background: #0f172a;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(234, 179, 8, 0.2);
+  transition: transform 0.15s ease;
+}
+
+.bic-photo-box:hover {
+  transform: scale(1.06);
+}
+
+.bic-photo-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bic-title-price-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bic-title-input {
+  width: 100%;
+  background: var(--bg-input, #0f172a);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+  font-size: 14px;
+  font-weight: 700;
+  box-sizing: border-box;
+}
+
+.bic-price-qty-row {
+  display: flex;
+  gap: 8px;
+}
+
+.bic-price-wrap {
+  flex: 2;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.bic-price-input {
+  width: 100%;
+  background: var(--bg-input, #0f172a);
+  border: 1px solid var(--border-color);
+  color: #fbbf24;
+  border-radius: var(--radius-sm);
+  padding: 5px 8px;
+  font-size: 15px;
+  font-weight: 800;
+  box-sizing: border-box;
+}
+
+.bic-qty-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.bic-qty-input {
+  width: 100%;
+  background: var(--bg-input, #0f172a);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  border-radius: var(--radius-sm);
+  padding: 5px 6px;
+  font-size: 13px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.bic-row-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1.5fr 1.2fr;
+  gap: 6px;
+}
+
+.bic-metric-col {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.bic-metric-col label {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.bic-metric-input {
+  width: 100%;
+  background: var(--bg-input, #0f172a);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  border-radius: var(--radius-sm);
+  padding: 5px 4px;
+  font-size: 12px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.bic-row-comp {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bic-comp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.bic-comp-header label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.bic-comp-input {
+  width: 100%;
+  background: var(--bg-input, #0f172a);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  border-radius: var(--radius-sm);
+  padding: 5px 8px;
+  font-size: 12px;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+/* --------------------------------------------------------------------------
+   Масштабирование предпросмотра (Preview Zoom Control & Fit Mode)
+   -------------------------------------------------------------------------- */
+.preview-zoom-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.6);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  height: 28px;
+  box-sizing: border-box;
+}
+
+.preview-zoom-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.pzc-btn {
+  background: transparent;
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pzc-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: #38bdf8;
+}
+
+.pzc-btn.active {
+  background: #38bdf8;
+  color: #0f172a;
+  border-color: #38bdf8;
+}
+
+#previewZoomRange {
+  width: 65px;
+  cursor: pointer;
+}
+
+.pzc-val {
+  font-size: 11px;
+  font-weight: 700;
+  color: #38bdf8;
+  min-width: 32px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Плавный зум для stage предпросмотра */
+.preview-stage {
+  transform: scale(var(--preview-scale, 1));
+  transform-origin: top center;
+  transition: transform 0.12s ease;
+}
+
+/* Прямой ввод на макете в предпросмотре для шаблона «Пиво А5» */
+.wobbler-element.is-beer-a5 .beer-composition,
+.wobbler-element.is-beer-a5 .metric-val,
+.wobbler-element.is-beer-a5 #previewBeerStrength,
+.wobbler-element.is-beer-a5 #previewBeerBitterness,
+.wobbler-element.is-beer-a5 #previewBeerDensity,
+.wobbler-element.is-beer-a5 #previewBeerType,
+.wobbler-element.is-beer-a5 #previewBeerStyle,
+.wobbler-element.is-beer-a5 .beer-type-val,
+.wobbler-element.is-beer-a5 .beer-style-val {
+  cursor: text !important;
+  pointer-events: auto !important;
+  transition: outline 0.15s ease, background 0.15s ease;
+  border-radius: 4px;
+  padding: 1px 3px;
+  box-sizing: border-box;
+}
+
+.wobbler-element.is-beer-a5 .beer-composition:hover,
+.wobbler-element.is-beer-a5-aktsiya .beer-composition:hover,
+.wobbler-element.is-beer-a5 .metric-val:hover,
+.wobbler-element.is-beer-a5-aktsiya .metric-val:hover,
+.wobbler-element.is-beer-a5 #previewBeerStrength:hover,
+.wobbler-element.is-beer-a5 #previewBeerBitterness:hover,
+.wobbler-element.is-beer-a5 #previewBeerDensity:hover,
+.wobbler-element.is-beer-a5-aktsiya #previewBeerPromoStrength:hover,
+.wobbler-element.is-beer-a5-aktsiya #previewBeerPromoDensity:hover,
+.wobbler-element.is-beer-a5-aktsiya #previewBeerPromoLabelTop:hover,
+.wobbler-element.is-beer-a5-aktsiya #previewBeerPromoLabelBottom:hover,
+.wobbler-element.is-beer-a5 #previewBeerType:hover,
+.wobbler-element.is-beer-a5 #previewBeerStyle:hover,
+.wobbler-element.is-beer-a5-aktsiya #previewBeerType:hover,
+.wobbler-element.is-beer-a5-aktsiya #previewBeerStyle:hover,
+.wobbler-element.is-beer-a5 .beer-type-val:hover,
+.wobbler-element.is-beer-a5 .beer-style-val:hover,
+.wobbler-element.is-beer-a5-aktsiya .beer-type-val:hover,
+.wobbler-element.is-beer-a5-aktsiya .beer-style-val:hover {
+  outline: 2px dashed #38bdf8 !important;
+  background: rgba(56, 189, 248, 0.22) !important;
+}
+
+.wobbler-element.is-beer-a5 .beer-composition:focus,
+.wobbler-element.is-beer-a5-aktsiya .beer-composition:focus,
+.wobbler-element.is-beer-a5 .metric-val:focus,
+.wobbler-element.is-beer-a5-aktsiya .metric-val:focus,
+.wobbler-element.is-beer-a5 #previewBeerStrength:focus,
+.wobbler-element.is-beer-a5 #previewBeerBitterness:focus,
+.wobbler-element.is-beer-a5 #previewBeerDensity:focus,
+.wobbler-element.is-beer-a5-aktsiya #previewBeerPromoStrength:focus,
+.wobbler-element.is-beer-a5-aktsiya #previewBeerPromoDensity:focus,
+.wobbler-element.is-beer-a5-aktsiya #previewBeerPromoLabelTop:focus,
+.wobbler-element.is-beer-a5-aktsiya #previewBeerPromoLabelBottom:focus,
+.wobbler-element.is-beer-a5 #previewBeerType:focus,
+.wobbler-element.is-beer-a5 #previewBeerStyle:focus,
+.wobbler-element.is-beer-a5-aktsiya #previewBeerType:focus,
+.wobbler-element.is-beer-a5-aktsiya #previewBeerStyle:focus,
+.wobbler-element.is-beer-a5 .beer-type-val:focus,
+.wobbler-element.is-beer-a5 .beer-style-val:focus,
+.wobbler-element.is-beer-a5-aktsiya .beer-type-val:focus,
+.wobbler-element.is-beer-a5-aktsiya .beer-style-val:focus {
+  outline: 2.5px solid #38bdf8 !important;
+  background: rgba(15, 23, 42, 0.9) !important;
+  color: #ffffff !important;
+}
+
+/* Дополнительные стили элементов ввода промо-цен в сайдбаре и шторке */
+.bsac-promo-prices {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bsac-promo-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.bic-promo-prices-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.bic-promo-label-input {
+  background: var(--bg-input, #1e293b);
+  border: 1px solid var(--border-color, #334155);
+  border-radius: var(--radius-sm, 4px);
+  color: var(--text-color, #f8fafc);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  padding: 4px 6px;
+  height: 32px;
+  box-sizing: border-box;
+}
+
+.bic-price2-input {
+  background: var(--bg-input, #1e293b);
+  border: 1px solid var(--border-color, #334155);
+  border-radius: var(--radius-sm, 4px);
+  color: #38bdf8;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 4px 8px;
+  height: 32px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+#idrBeerToggleCardsBtn.active,
+#idrBeerToggleTableBtn.active {
+  background: var(--accent-color, #3b82f6) !important;
+  color: #ffffff !important;
+  border-color: var(--accent-color, #3b82f6) !important;
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   Умный выпадающий список сортов пива с категориями (Smart Beer Dropdown)
+   ========================================================================== */
+.beer-catalog-dropdown {
+  position: fixed !important;
+  z-index: 999999 !important;
+  width: 420px;
+  max-width: calc(100vw - 24px);
+  background: rgba(15, 23, 42, 0.97) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(56, 189, 248, 0.45) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75), 0 0 20px rgba(56, 189, 248, 0.2) !important;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: bcdFadeIn 0.12s ease-out;
+  outline: none;
+  box-sizing: border-box;
+}
+
+@keyframes bcdFadeIn {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.bcd-header {
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.35);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.bcd-chips-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 6px;
+  align-items: center;
+}
+
+.bcd-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(30, 41, 59, 0.75);
+  color: #cbd5e1;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  transition: all 0.15s ease;
+}
+
+.bcd-chip:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+}
+
+.bcd-chip.active {
+  background: #0284c7 !important;
+  border-color: #38bdf8 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+}
+
+.bcd-chip-count {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  padding: 0 4px;
+  font-size: 10px;
+  font-weight: 700;
+  opacity: 0.9;
+}
+
+.bcd-list {
+  max-height: 270px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px 0;
+}
+
+.bcd-list::-webkit-scrollbar {
+  width: 5px;
+}
+.bcd-list::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+.bcd-list::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+
+.bcd-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  transition: background 0.1s ease;
+}
+
+.bcd-item:last-child {
+  border-bottom: none;
+}
+
+.bcd-item:hover,
+.bcd-item.is-selected {
+  background: rgba(56, 189, 248, 0.18) !important;
+}
+
+.bcd-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid #eab308;
+  background: #0b0f19;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 13px;
+  box-shadow: 0 0 6px rgba(234, 179, 8, 0.25);
+}
+
+.bcd-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bcd-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bcd-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f8fafc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bcd-name mark {
+  background: rgba(234, 179, 8, 0.35);
+  color: #fef08a;
+  border-radius: 2px;
+  padding: 0 1px;
+  font-weight: 800;
+}
+
+.bcd-style-tag {
+  font-size: 10px;
+  font-weight: 600;
+  color: #94a3b8;
+  white-space: nowrap;
+  opacity: 0.8;
+}
+
+.bcd-price {
+  font-size: 13px;
+  font-weight: 800;
+  color: #fbbf24;
+  white-space: nowrap;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.bcd-empty {
+  padding: 16px 12px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 12px;
+  font-style: italic;
+}
+
+/* 7. Печать */
+@media print {
+  .beer-cap-photo-wrap {
+    border-radius: 50% !important;
+    overflow: hidden !important;
+    clip-path: circle(50% at 50% 50%) !important;
+    -webkit-clip-path: circle(50% at 50% 50%) !important;
+    box-shadow: none !important;
+    border: none !important;
+    outline: none !important;
+    background: transparent !important;
+  }
+
+  .beer-cap-photo-wrap img.beer-cap-img {
+    border-radius: 50% !important;
+    overflow: hidden !important;
+    clip-path: circle(50% at 50% 50%) !important;
+    -webkit-clip-path: circle(50% at 50% 50%) !important;
+    object-fit: cover !important;
+    width: 100% !important;
+    height: 100% !important;
+    display: block !important;
+  }
+
+  .beer-cap-drop-hint {
     display: none !important;
   }
 }
