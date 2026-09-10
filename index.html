@@ -272,7 +272,7 @@
   <header class="app-header no-print">
     <!-- Зона 1 (Слева): Бренд, габариты и статус автосохранения -->
     <div class="header-left">
-      <div class="logo" id="appLogo" title="Конструктор Воблеров">
+      <div class="logo" id="appLogo" title="Конструктор ценников и воблеров">
         <span class="logo-icon">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2"
             stroke-linecap="round" stroke-linejoin="round">
@@ -281,7 +281,7 @@
           </svg>
         </span>
         <div>
-          <h1 class="brand-title">Конструктор Воблеров</h1>
+          <h1 class="brand-title">Конструктор Ценников</h1>
           <p class="subtitle"><span class="brand-subline">печатный цех «Местопиво»</span> <span class="dimensions-pill"
               id="topSubtitle">6,5 × 3,5 см</span></p>
         </div>
@@ -369,7 +369,7 @@
               <polyline points="7 3 7 8 15 8"></polyline>
             </svg>
           </span>
-          <span class="btn-text">Шаблон</span>
+          <span class="btn-text">Сохранить шаблон</span>
         </button>
         <button type="button" id="themeToggleBtn" class="btn btn-ghost btn-theme-toggle"
           title="Переключить тему оформления (День / Ночь)">
@@ -404,7 +404,7 @@
       </button>
 
       <div class="header-export-cluster">
-        <button id="downloadPdfBtn" class="btn btn-outline-export btn-icon-only-mobile"
+        <button id="downloadPdfBtn" class="btn btn-outline-export btn-icon-only"
           title="Скачать готовый печатный лист А4 в файл PDF (со всеми фонами и шрифтами)">
           <span class="icon">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
@@ -413,7 +413,7 @@
               <line x1="12" y1="15" x2="12" y2="3"></line>
             </svg>
           </span>
-          <span class="btn-text">Скачать PDF</span>
+          <span class="btn-text" style="display:none;">Скачать PDF</span>
         </button>
         <button id="printBtn" class="btn btn-primary btn-print-cta btn-glow btn-icon-only-mobile"
           title="Запустить печать ценников на принтере (Ctrl+P)">
@@ -539,7 +539,7 @@
           placeholder="Вставьте строки с кассы (рыба весовая, снеки, пиво), Excel или 1С, либо нажмите Ctrl+V в любом месте страницы..."></textarea>
         <div class="idr-paste-actions">
           <button type="button" id="idrApplyPasteBtn" class="btn btn-primary btn-sm"
-            title="Распознать текст и добавить товары в таблицу ценников">Вставить список</button>
+            title="Распознать текст и добавить товары в таблицу ценников">Вставить товары</button>
           <button type="button" id="idrCancelPasteBtn" class="btn btn-secondary btn-sm"
             title="Отменить вставку и скрыть поле ввода">Отмена</button>
         </div>
@@ -576,7 +576,7 @@
             title="Поместить заполненные ценники в начало списка">Сначала заполненные</button>
           <div class="sort-menu-divider"></div>
           <button type="button" data-sort="restore-original" class="sort-menu-item sort-menu-restore"
-            title="Вернуть порядок товаров, который был до сортировки">Вернуть как было</button>
+            title="Вернуть исходный порядок товаров в списке">Сбросить сортировку</button>
         </div>
       </div>
     </div>
@@ -596,9 +596,19 @@
         <span class="col-hdr col-tools" title="Опции оформления (индивидуальный стиль ценника)">Опции</span>
       </div>
       <div class="idr-table-wrapper">
-        <div class="items-empty-hint" id="itemsEmptyHint" style="display:none;">Товаров пока нет. Вставьте список
-          из кассы или Excel — <b>Ctrl+V</b> в любом месте окна, или начните вводить название в первой строке
-          ниже.</div>
+        <div class="items-empty-hint" id="itemsEmptyHint" style="display:none;">
+          <div class="empty-hint-icon">📋</div>
+          <div class="empty-hint-title">Список товаров пуст</div>
+          <div class="empty-hint-text">Вставьте строки из кассы GainUp, 1С или Excel через <b>Ctrl+V</b> в любом месте экрана либо начните ввод в первой строке таблицы.</div>
+          <div class="empty-hint-actions">
+            <button type="button" id="idrEmptyPasteBtn" class="btn btn-primary btn-sm">
+              <svg class="ico"><use href="#i-clipboard" /></svg> Вставить из буфера
+            </button>
+            <button type="button" id="idrEmptySampleBtn" class="btn btn-secondary btn-sm">
+              <svg class="ico"><use href="#i-sparkles" /></svg> Загрузить пример
+            </button>
+          </div>
+        </div>
         <div id="idrItemsList" class="items-list">
           <!-- Генерируется динамически через JS -->
         </div>
@@ -676,10 +686,10 @@
       <span class="debug-pill">Название: <span id="dbgTitleText">—</span></span>
       <span class="debug-pill">Шрифт: <b id="dbgFontName">—</b></span>
       <span class="debug-pill">Зона budget: <b id="dbgBudget">—</b></span>
-      <span class="debug-pill">Кегль в макете: <b id="dbgCurSize" style="color:#38bdf8;">—</b></span>
+      <span class="debug-pill">Размер шрифта: <b id="dbgCurSize" style="color:#38bdf8;">—</b></span>
       <span class="debug-pill">Расчет fitTitle: <b id="dbgFitSize" style="color:#38bdf8;">—</b></span>
       <span class="debug-pill">Замер Probe: <b id="dbgProbe">—</b></span>
-      <span class="debug-pill">Ручной кегль (manual): <b id="dbgManual">—</b></span>
+      <span class="debug-pill">Фиксированный размер: <b id="dbgManual">—</b></span>
     </div>
   </div>
 
@@ -831,11 +841,11 @@
               </div>
             </div>
 
-            <!-- Подгруппа: Воблеры -->
+            <!-- Подгруппа: Воблеры и плакаты -->
             <div class="preset-subgroup">
               <button type="button" class="preset-sub-toggle" data-subgroup="wobblers"
-                title="Свернуть / развернуть категорию воблеров">
-                <span class="preset-sub-title">Воблеры</span>
+                title="Свернуть / развернуть категорию воблеров и плакатов">
+                <span class="preset-sub-title">Воблеры и плакаты</span>
                 <span class="preset-sub-arrow">▾</span>
               </button>
               <div class="preset-sub-body preset-grid-2col">
@@ -900,7 +910,7 @@
           <!-- User saved templates -->
           <div id="userTemplates" class="presets-grid tab-content">
             <div class="empty-state" id="emptyUserTemplates">
-              Здесь появятся ваши шаблоны.<br>Настройте макет и нажмите «Шаблон» в шапке, затем «Сохранить новый».
+              Здесь появятся ваши шаблоны.<br>Настройте макет и нажмите «Сохранить шаблон» в шапке, затем «Сохранить как новый».
             </div>
           </div>
 
@@ -941,10 +951,10 @@
             <div class="excel-quick-bar">
               <div class="quick-bar-left">
                 <button type="button" id="toggleExcelPasteBtn" class="btn btn-secondary btn-xs excel-toggle-btn"
-                  title="Развернуть/свернуть поле для вставки из Excel">
+                  title="Развернуть/свернуть поле для вставки из Excel или кассы">
                   <span><svg class="ico">
                       <use href="#i-clipboard" />
-                    </svg> Excel</span> <span class="excel-chevron" id="excelChevron">▾</span>
+                    </svg> Из Excel</span> <span class="excel-chevron" id="excelChevron">▾</span>
                 </button>
                 <button type="button" id="sidebarSearchToggleBtn" class="btn btn-secondary btn-icon-xs"
                   title="Поиск товаров в таблице (Ctrl+F)"><svg class="ico">
@@ -963,12 +973,13 @@
                     <button type="button" data-sort="filled-first" class="sort-menu-item">Сначала заполненные</button>
                     <div class="sort-menu-divider"></div>
                     <button type="button" data-sort="restore-original" class="sort-menu-item sort-menu-restore"
-                      title="Вернуть порядок товаров, который был до сортировки">Вернуть как было</button>
+                      title="Вернуть исходный порядок товаров в списке">Сбросить сортировку</button>
                   </div>
                 </div>
-                <span id="itemsStatsBadge" class="items-stats-badge" title="Количество заполненных товаров и страниц">0
+                <span id="itemsStatsBadge" class="items-stats-badge" style="display:none;" title="Количество заполненных товаров и страниц">0
                   тов.</span>
               </div>
+              <div class="quick-bar-divider" aria-hidden="true"></div>
               <div class="paste-actions">
                 <button type="button" id="bulkSetBgBtn" class="btn btn-secondary btn-icon-xs"
                   title="Применить фон ко всем товарам списка"><svg class="ico">
@@ -984,13 +995,15 @@
                     <use href="#i-fit" />
                   </svg></button>
                 <button type="button" id="copyItemsBtn" class="btn btn-secondary btn-icon-xs"
-                  title="Перенести товары на другой шаблон">⧉</button>
+                  title="Скопировать товары этого списка в другие шаблоны"><svg class="ico">
+                    <use href="#i-copy" />
+                  </svg></button>
                 <button type="button" class="autolink-toggle btn-icon-xs"
-                  title="Автоприменение оформления при выборе фона"><svg class="ico">
+                  title="Автопривязка стиля к фону (добавлять промо-плашку под тему фона)"><svg class="ico">
                     <use href="#i-link" />
                   </svg></button>
                 <button type="button" class="btn btn-secondary decor-pos-toggle btn-icon-xs"
-                  title="Положение блока оформления (сверху/снизу) для двухблочных пресетов"><svg class="ico">
+                  title="Положение промо-плашек («Живое», «Новинка»): сверху / снизу"><svg class="ico">
                     <use href="#i-arrow-up" />
                   </svg></button>
                 <button type="button" id="clearAllItemsBtn" class="btn btn-secondary btn-icon-xs btn-danger-hover"
@@ -1009,7 +1022,7 @@
                   title="Распознать скопированные строки и внести товары в таблицу">
                   <svg class="ico">
                     <use href="#i-clipboard" />
-                  </svg> Применить к таблице
+                  </svg> Вставить в таблицу
                 </button>
               </div>
             </div>
@@ -1107,7 +1120,7 @@
                 title="Изменения шрифтов коснутся ТОЛЬКО выбранного ценника (сохранится индивидуальный стиль)"><svg
                   class="ico">
                   <use href="#i-tag" />
-                </svg> Этот ценник</button>
+                </svg> <span class="mode-item-text">Этот ценник</span></button>
               <button type="button" class="seg-btn" data-font-mode="template"
                 title="Изменения шрифтов применятся ко ВСЕМ ценникам этого шаблона как базовый стиль"><svg class="ico">
                   <use href="#i-layers" />
@@ -1116,7 +1129,7 @@
             <button type="button" id="resetItemFontsBtn" class="btn btn-secondary btn-sm"
               title="Сбросить индивидуальные шрифты этого ценника и вернуть исходный стиль шаблона"><svg class="ico">
                 <use href="#i-reset" />
-              </svg> К шаблону</button>
+              </svg> Сбросить к базовому</button>
           </div>
 
           <!-- Sub-Tabs Navigation for Font Properties -->
@@ -1458,7 +1471,7 @@
               <button type="button" class="seg-btn active" data-bg-mode="item"
                 title="Фон изменится ТОЛЬКО у выбранного ценника (сохранится индивидуальный стиль)"><svg class="ico">
                   <use href="#i-tag" />
-                </svg> Этот ценник</button>
+                </svg> <span class="mode-item-text">Этот ценник</span></button>
               <button type="button" class="seg-btn" data-bg-mode="template"
                 title="Фон изменится у ВСЕХ ценников этого шаблона как базовый"><svg class="ico">
                   <use href="#i-layers" />
@@ -1467,7 +1480,7 @@
             <button type="button" id="resetItemBgBtn" class="btn btn-secondary btn-sm"
               title="Сбросить индивидуальный фон этого ценника и вернуть исходный фон шаблона"><svg class="ico">
                 <use href="#i-reset" />
-              </svg> К шаблону</button>
+              </svg> Сбросить к базовому</button>
           </div>
 
           <!-- Visual Background Gallery Component (Этап 4) -->
@@ -1594,7 +1607,7 @@
                 title="Плашки оформления изменятся ТОЛЬКО у выбранного ценника (сохранится индивидуальный стиль)"><svg
                   class="ico">
                   <use href="#i-tag" />
-                </svg> Этот ценник</button>
+                </svg> <span class="mode-item-text">Этот ценник</span></button>
               <button type="button" class="seg-btn" data-decor-mode="template"
                 title="Плашки оформления применятся ко ВСЕМ ценникам этого шаблона как базовый стиль"><svg class="ico">
                   <use href="#i-layers" />
@@ -1603,7 +1616,7 @@
             <button type="button" id="resetItemDecorBtn" class="btn btn-secondary btn-sm"
               title="Сбросить индивидуальные плашки этого ценника и вернуть базовый стиль шаблона"><svg class="ico">
                 <use href="#i-reset" />
-              </svg> К шаблону</button>
+              </svg> Сбросить к базовому</button>
           </div>
 
           <!-- Sub-Tabs Navigation for Decor Blocks -->
@@ -2370,7 +2383,7 @@
             </button>
             <div class="sheet-title-wrap">
               <h3>Раскладка на листе А4</h3>
-              <span id="sheetCalcText" class="sheet-calc-badge">24 воблера на листе</span>
+              <span id="sheetCalcText" class="sheet-calc-badge">24 шт. на листе А4</span>
             </div>
             <div class="sheet-header-actions">
               <!-- Быстрое переключение ориентации в Print Hub -->
@@ -2437,22 +2450,25 @@
 
   <!-- Modal for Saving New Template -->
   <div id="saveModal" class="modal-backdrop no-print">
-    <div class="modal-box">
-      <h3>Сохранить шаблон</h3>
+    <div class="modal-box modal-box-save">
+      <div class="modal-header-simple">
+        <h3>Сохранить шаблон</h3>
+        <button type="button" class="modal-close-icon-btn" id="closeSaveModalBtn" title="Закрыть (Esc)">✕</button>
+      </div>
       <p>Введите название для нового шаблона:</p>
       <input type="text" id="newTemplateNameInput" placeholder="Например: Новый вкус 6.5x3.5, Акция 5x5...">
       <div id="saveModalHint" class="save-modal-hint" style="display:none;"></div>
-      <div class="modal-actions">
-        <button id="cancelSaveModal" class="btn btn-secondary"
+      <div class="modal-actions modal-actions-save">
+        <button id="cancelSaveModal" class="btn btn-secondary btn-cancel-left"
           title="Отменить сохранение и закрыть окно (Esc)">Отмена</button>
         <button id="updateTemplateBtn" class="btn btn-secondary" disabled
           title="Перезаписать изменения в текущий активный шаблон"><svg class="ico">
             <use href="#i-refresh" />
-          </svg> Обновить</button>
+          </svg> Обновить текущий</button>
         <button id="confirmSaveModal" class="btn btn-primary"
           title="Сохранить текущие настройки как отдельный новый шаблон с указанным именем"><svg class="ico">
             <use href="#i-save" />
-          </svg> Сохранить новый</button>
+          </svg> Сохранить как новый</button>
       </div>
     </div>
   </div>
@@ -2576,7 +2592,7 @@
         <button type="button" id="preflightForcePrintBtn" class="btn btn-primary btn-glow"
           title="Пропустить замечания и перейти к печати ценников (Ctrl+P)"><svg class="ico">
             <use href="#i-printer" />
-          </svg> Всё равно печатать</button>
+          </svg> Печатать без исправлений</button>
         <button type="button" id="preflightCloseBtn" class="btn btn-secondary"
           title="Закрыть окно аудита (Esc)">Закрыть</button>
       </div>
@@ -2643,7 +2659,7 @@
       </div>
       <div class="modal-actions shortcuts-actions">
         <button type="button" id="shortcutsCloseBtn" class="btn btn-secondary"
-          title="Закрыть шпаргалку горячих клавиш (Esc)">Понятно</button>
+          title="Закрыть шпаргалку горячих клавиш (Esc)">Закрыть (Esc)</button>
       </div>
     </div>
   </div>
