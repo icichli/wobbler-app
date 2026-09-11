@@ -9605,10 +9605,11 @@ label:has(input:focus-visible) {
 /* 2. Блок цены в 4 белых плашках */
 .wobbler-element.is-beer-a5 .wobbler-price-box {
   position: absolute !important;
-  top: 133.1mm !important;
-  left: 47.8mm !important;
-  width: 64.0mm !important;
-  height: 30.8mm !important;
+  top: 131.0mm !important;
+  left: 47.0mm !important;
+  right: auto !important;
+  width: 65.6mm !important;
+  height: 36.0mm !important;
   margin: 0 !important;
   padding: 0 !important;
   display: flex !important;
@@ -9624,28 +9625,30 @@ label:has(input:focus-visible) {
   height: 100% !important;
   display: flex !important;
   align-items: center !important;
-  justify-content: space-between !important;
+  justify-content: flex-start !important;
   margin: 0 !important;
   padding: 0 !important;
+  transform: scaleY(1.35) !important;
+  transform-origin: center center !important;
 }
 
 .wobbler-element.is-beer-a5 .price-val {
-  width: 48.0mm !important;
+  width: 49.1mm !important;
   height: 100% !important;
   display: flex !important;
   align-items: center !important;
   justify-content: flex-end !important;
-  gap: 0 !important;
+  gap: 0.40mm !important;
 }
 
 .wobbler-element.is-beer-a5 .price-digit {
-  width: 16.0mm !important;
+  width: 16.1mm !important;
   height: 100% !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   font-family: 'Montserrat', Arial, sans-serif !important;
-  font-size: 64pt !important;
+  font-size: 52pt !important;
   font-weight: 900 !important;
   color: #000000 !important;
   line-height: 1 !important;
@@ -9653,17 +9656,17 @@ label:has(input:focus-visible) {
 }
 
 .wobbler-element.is-beer-a5 .price-curr {
-  width: 16.0mm !important;
+  width: 16.1mm !important;
   height: 100% !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   font-family: 'Montserrat', Arial, sans-serif !important;
-  font-size: 64pt !important;
+  font-size: 52pt !important;
   font-weight: 900 !important;
   color: #000000 !important;
   line-height: 1 !important;
-  margin-left: 0 !important;
+  margin-left: 0.40mm !important;
   box-sizing: border-box !important;
 }
 

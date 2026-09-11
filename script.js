@@ -2530,12 +2530,12 @@ document.addEventListener('DOMContentLoaded', () => {
       subtitleAlign: 'center',
       showPrice: true,
       priceFont: "'Montserrat', Arial, sans-serif",
-      priceSize: 64,
+      priceSize: 52,
       priceWeight: '900',
       priceColor: '#000000',
       priceAlign: 'center',
       priceOffsetY: 0,
-      priceSlotTop: 133.0,
+      priceSlotTop: 131.0,
       price: '',
       currency: '₽',
       headerBg: '#ffffff',
@@ -2932,7 +2932,9 @@ document.addEventListener('DOMContentLoaded', () => {
           s.state.widthCm = 15.9;
           s.state.heightCm = 22.22;
           s.state.borderMm = 2;
-          s.state.priceSlotTop = 133.0;
+          s.state.priceSlotTop = 131.0;
+          if (s.state.priceSize === 64 || s.state.priceSize === 56) s.state.priceSize = 52;
+          if (s.state.priceOffsetY === 1 || s.state.priceOffsetY === 2) s.state.priceOffsetY = 0;
         } else {
           s.state.widthCm = 15.82;
           s.state.heightCm = 21.99;
@@ -2953,6 +2955,14 @@ document.addEventListener('DOMContentLoaded', () => {
           if (!s.state.templateFonts.priceColor || s.state.templateFonts.priceColor === '#ffffff') {
             s.state.templateFonts.priceColor = '#000000';
           }
+          if (at.key === 'beer_a5') {
+            if (s.state.templateFonts.priceSize === 64 || s.state.templateFonts.priceSize === 56) {
+              s.state.templateFonts.priceSize = 52;
+            }
+            if (s.state.templateFonts.priceOffsetY === 1 || s.state.templateFonts.priceOffsetY === 2) {
+              s.state.templateFonts.priceOffsetY = 0;
+            }
+          }
         }
       }
       const rawBeerArr = (Array.isArray(templateItems.beer_a5) && templateItems.beer_a5.some(it => it && (it.title || '').trim()))
@@ -2970,6 +2980,13 @@ document.addEventListener('DOMContentLoaded', () => {
           if (it.price2Label == null) it.price2Label = '1.5л -';
           if (it.fonts && (it.fonts.priceColor === '#ffffff' || !it.fonts.priceColor)) {
             it.fonts.priceColor = '#000000';
+          }
+          if (it.fonts) {
+            if (it.fonts.priceSize === 64 || it.fonts.priceSize === 56) it.fonts.priceSize = 52;
+            if (it.fonts.priceOffsetY === 1 || it.fonts.priceOffsetY === 2) it.fonts.priceOffsetY = 0;
+          }
+          if (it.labelPos && it.labelPos.price) {
+            if (it.labelPos.price.y === 1 || it.labelPos.price.y === 2) it.labelPos.price.y = 0;
           }
         }
       });
