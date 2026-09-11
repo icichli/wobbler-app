@@ -1545,9 +1545,18 @@ document.addEventListener('DOMContentLoaded', () => {
     bottom: 0.452
   };
 
+  // Safe-зона названия для «Желтого ценника»:
+  // left: 0%, right: 0%, top: 31.8%, bottom: 47.1% (slotTop: 8.14 мм, titleZoneH: 7.37 мм)
+  const YELLOW_TAG_TITLE_SAFE = {
+    left: 0,
+    right: 0,
+    top: 0.3182627501706814,
+    bottom: 0.47114838375413803
+  };
+
   // Возвращает снимок фона ценника (хедер) для ценника i.
   // headerBg/bgImage/customBgData — per-item из itemsData[i].bg иначе templateBg.
-  // titleSafe — для «Рыба Выгодно» подставляет спецграницы RYBA_VYGODNO_TITLE_SAFE, иначе глобальную safe-зону.
+  // titleSafe — для «Рыба Выгодно» и «Желтый ценник» подставляет их эталонные границы, иначе глобальную safe-зону.
   function resolveItemBg(i) {
     const it = itemsData[i];
     const tb = templateBg || {};
@@ -1564,11 +1573,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     const isVygodno = currentBgImg === 'bgother:ryba_vygodno.png' || (typeof currentBgImg === 'string' && currentBgImg.includes('ryba_vygodno'));
+    const isYellowTag = currentBgImg === 'yellow_bg.jpg' || (typeof currentBgImg === 'string' && currentBgImg.includes('yellow_bg'));
+    const resolvedTitleSafe = isYellowTag ? YELLOW_TAG_TITLE_SAFE : (isVygodno ? RYBA_VYGODNO_TITLE_SAFE : readGlobalTitleSafe());
     return {
       headerBg: currentHeaderBg,
       bgImage: currentBgImg,
       customBg: bgOf(it, 'customBgData', tb.customBgData != null ? tb.customBgData : null),
-      titleSafe: normTitleSafe(isVygodno ? RYBA_VYGODNO_TITLE_SAFE : readGlobalTitleSafe())
+      titleSafe: normTitleSafe(resolvedTitleSafe)
     };
   }
 
@@ -1638,11 +1649,13 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!currentHeaderBg || currentHeaderBg === '#18181b') currentHeaderBg = '#ffffff';
     }
     const isVygodno = currentBgImg === 'bgother:ryba_vygodno.png' || (typeof currentBgImg === 'string' && currentBgImg.includes('ryba_vygodno'));
+    const isYellowTag = currentBgImg === 'yellow_bg.jpg' || (typeof currentBgImg === 'string' && currentBgImg.includes('yellow_bg'));
+    const resolvedTitleSafe = isYellowTag ? YELLOW_TAG_TITLE_SAFE : (isVygodno ? RYBA_VYGODNO_TITLE_SAFE : (titleSafe || readGlobalTitleSafe()));
     return {
       headerBg: currentHeaderBg,
       bgImage: currentBgImg,
       customBg: bgOf(item, 'customBgData', tb.customBgData != null ? tb.customBgData : null),
-      titleSafe: normTitleSafe(isVygodno ? RYBA_VYGODNO_TITLE_SAFE : (titleSafe || readGlobalTitleSafe()))
+      titleSafe: normTitleSafe(resolvedTitleSafe)
     };
   }
   function bgFromItem(item) {
@@ -1803,7 +1816,7 @@ document.addEventListener('DOMContentLoaded', () => {
       priceCross: false,
       priceCrossColor: '#e63946',
       priceCrossWidth: 7,
-      priceSlotTop: 12.92,
+      priceSlotTop: 14.92,
       price: '350',
       currency: '₽',
       digit: '',
@@ -2851,12 +2864,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     activePreviewIndex = 0;
 
-    // Миграция сохранённой сессии для шаблона «Желтый ценник»: перенос на новую базу без сдвига
+    // Миграция сохранённой сессии для шаблона «Желтый ценник»: перенос на новую базу без сдвига (+2мм в базу слота)
     if (at && at.kind === 'builtin' && at.key === 'yellow_tag' && s.state) {
       s.state.titleSafe = JSON.parse(JSON.stringify(builtInPresets.yellow_tag.titleSafe));
       s.state.titleSlotTop = builtInPresets.yellow_tag.titleSlotTop;
       s.state.titleZoneH = builtInPresets.yellow_tag.titleZoneH;
       s.state.titleOffsetY = 0;
+      s.state.priceSlotTop = builtInPresets.yellow_tag.priceSlotTop;
+      if (s.state.priceOffsetY === 2 || s.state.priceOffsetY === 0) {
+        s.state.priceOffsetY = 0;
+      }
       if (s.state.labelPos && s.state.labelPos.title) {
         s.state.labelPos.title = { x: 0, y: 0 };
       }
@@ -2872,6 +2889,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (it) {
           if (it.fonts && it.fonts.titleOffsetY != null) {
             it.fonts.titleOffsetY = 0;
+          }
+          if (it.fonts && (it.fonts.priceOffsetY === 2 || it.fonts.priceOffsetY === 0)) {
+            it.fonts.priceOffsetY = 0;
           }
           if (it.labelPos && it.labelPos.title) {
             it.labelPos.title = { x: 0, y: 0 };
@@ -3228,8 +3248,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ===== Светлые фоны (Б/А, Живое, Рыба Выгодно, Сорт недели Желтый, А5): выбор → чёрный текст наименования/веса/цены =====
-  const BG_BLACK_TEXT = ['bgother:ba.jpg', 'bgother:zhivoe.jpg', 'bgother:ryba_vygodno.png', 'bgother:sort_nedeli_yellow.jpg', 'sort_nedeli_yellow.jpg', 'bgother:a5.jpg', 'a5.jpg', 'bgother:a5_orange.jpg', 'a5_orange.jpg', 'bgother:a5_blue.jpg', 'a5_blue.jpg', 'bgother:a5_green.jpg', 'a5_green.jpg'];
+  // ===== Светлые фоны (Желтый ценник, Б/А, Живое, Рыба Выгодно, Сорт недели Желтый, А5): выбор → чёрный текст наименования/веса/цены =====
+  const BG_BLACK_TEXT = ['yellow_bg.jpg', 'bgother:yellow_bg.jpg', 'bgother:ba.jpg', 'bgother:zhivoe.jpg', 'bgother:ryba_vygodno.png', 'bgother:sort_nedeli_yellow.jpg', 'sort_nedeli_yellow.jpg', 'bgother:a5.jpg', 'a5.jpg', 'bgother:a5_orange.jpg', 'a5_orange.jpg', 'bgother:a5_blue.jpg', 'a5_blue.jpg', 'bgother:a5_green.jpg', 'a5_green.jpg'];
   const BA_AUTO_COLORS = { titleColor: '#000000', subtitleColor: '#000000', priceColor: '#000000' };
 
   // Ставит чёрные цвета Б/А поверх существующих per-item шрифтов
@@ -3239,10 +3259,12 @@ document.addEventListener('DOMContentLoaded', () => {
     it.fonts.titleColor = '#000000';
     it.fonts.subtitleColor = '#000000';
     it.fonts.priceColor = '#000000';
+    it.fonts.titleShadow = '';
+    it.fonts.priceShadow = '';
     it.fontsCustomized = true;
   }
 
-  // Снимает 3 цветовых поля → цвета возвращаются к шаблонным (fontOf уйдёт
+  // Снимает цветовые поля → цвета возвращаются к шаблонным (fontOf уйдёт
   // в fallback к templateFonts). Если после удаления per-item шрифтов не
   // осталось совсем — снимает и override целиком.
   function resetItemFontColors(it) {
@@ -3250,6 +3272,8 @@ document.addEventListener('DOMContentLoaded', () => {
       delete it.fonts.titleColor;
       delete it.fonts.subtitleColor;
       delete it.fonts.priceColor;
+      delete it.fonts.titleShadow;
+      delete it.fonts.priceShadow;
       if (Object.keys(it.fonts).length === 0) {
         delete it.fonts;
         delete it.fontsCustomized;
@@ -3608,6 +3632,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const defaultHeaderBg = (preset && preset.headerBg) ? preset.headerBg : ((headerBgColor && headerBgColor.value) || '#18181b');
     const defaultTitleColor = (preset && preset.titleColor) ? preset.titleColor : '#ffffff';
     const defaultSubtitleColor = (preset && preset.subtitleColor) ? preset.subtitleColor : '#ffffff';
+    const defaultPriceColor = (preset && preset.priceColor) ? preset.priceColor : '#ffffff';
 
     if (!val || val === 'none' || val === defaultBgImg) {
       // Сброс к дефолту / «Как в шаблоне» (Основной базовый фон пресета)
@@ -3630,10 +3655,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         templateFonts = Object.assign({}, templateFonts, {
           titleColor: defaultTitleColor,
-          subtitleColor: defaultSubtitleColor
+          subtitleColor: defaultSubtitleColor,
+          priceColor: defaultPriceColor
         });
         if (titleColor) titleColor.value = defaultTitleColor;
         if (subtitleColor) subtitleColor.value = defaultSubtitleColor;
+        if (priceColor) priceColor.value = defaultPriceColor;
 
         // Сбрасываем кастомные фоны всех товаров, возвращая их к базовому фону шаблона
         if (Array.isArray(itemsData)) {
@@ -3683,17 +3710,23 @@ document.addEventListener('DOMContentLoaded', () => {
       if (BG_BLACK_TEXT.indexOf(val) !== -1) {
         templateFonts = Object.assign({}, templateFonts, {
           titleColor: '#000000',
-          subtitleColor: '#000000'
+          subtitleColor: '#000000',
+          priceColor: '#000000',
+          titleShadow: '',
+          priceShadow: ''
         });
         if (titleColor) titleColor.value = '#000000';
         if (subtitleColor) subtitleColor.value = '#000000';
+        if (priceColor) priceColor.value = '#000000';
       } else {
         templateFonts = Object.assign({}, templateFonts, {
           titleColor: defaultTitleColor,
-          subtitleColor: defaultSubtitleColor
+          subtitleColor: defaultSubtitleColor,
+          priceColor: defaultPriceColor
         });
         if (titleColor) titleColor.value = defaultTitleColor;
         if (subtitleColor) subtitleColor.value = defaultSubtitleColor;
+        if (priceColor) priceColor.value = defaultPriceColor;
       }
 
       // Сбрасываем кастомные фоны товаров, чтобы весь список переключился на выбранный шаблонный фон
@@ -3715,6 +3748,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
     }
+    scheduleSessionSave();
   }
 
   // ===== Автоподстановка фона по названию товара =====
@@ -5918,6 +5952,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const SWATCH_COLORS = {
     '': '#ffffff',
+    'yellow_bg.jpg': '#facc15',
+    'bgother:yellow_bg.jpg': '#facc15',
     'bgother:sort_nedeli_yellow.jpg': '#facc15',
     'bgother:korona_a5_orange.jpg': '#ea580c',
     'bgother:korona_a5_blue.jpg': '#0284c7',
@@ -6222,6 +6258,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (key === 'alaska_dots') {
       return [
         { value: '', label: 'Как в шаблоне (Бутылки)' },
+        { value: 'yellow_bg.jpg', label: 'Желтый ценник' },
         { value: 'bgother:tomatnyj.png', label: 'Томатный' },
         { value: 'bgother:vishnevyj.png', label: 'Вишневый' },
         { value: 'bgother:medovyj.png', label: 'Медовый' },
@@ -8983,12 +9020,23 @@ document.addEventListener('DOMContentLoaded', () => {
   // Применяет тексты товара и его ручные позиции (labelPos) к клону вобблера
   // (используется в превью листа и печати, чтобы каждый ценник нёс свои позиции).
   function applyItemToClone(clone, item, titleOffsetYVal, priceOffsetYVal) {
+    const bgSnap = bgFromItem(item);
+    const isYellowCard = bgSnap.bgImage === 'yellow_bg.jpg' || (typeof bgSnap.bgImage === 'string' && bgSnap.bgImage.includes('yellow_bg'));
+
     // Позиции надписей товара. Если у товара нет своего labelPos (старые данные /
     // edge-кейсы), берём эталон с ценника №1 (база активного шаблона), а не дефолт,
     // — иначе такой ценник отрисуется со смещениями 0,0 вместо настроек шаблона.
     const lp = cloneLabelPos((item && item.labelPos)
       ? item.labelPos
       : (itemsData[0] && itemsData[0].labelPos) ? itemsData[0].labelPos : defaultLabelPos());
+
+    // Для желтого ценника центрируем заголовок (в yellow_tag смещение 0, 0), если не было ручной правки
+    if (isYellowCard) {
+      if (!item || !item.labelPos || (item.labelPos.title && item.labelPos.title.x === -0.4 && item.labelPos.title.y === 1.0)) {
+        lp.title.x = 0;
+        lp.title.y = 0;
+      }
+    }
     const digits = String((item && item.price) || '').split('');
 
     const tElem = clone.querySelector('.wobbler-title');
@@ -9007,13 +9055,13 @@ document.addEventListener('DOMContentLoaded', () => {
       // поэтому здесь перезаписываем ВСЕ шрифтовые поля под этот товар.
       const tf = templateFonts || {};
       tElem.style.fontFamily = fontOf(item, 'titleFont', tf.titleFont);
-      tElem.style.color = fontOf(item, 'titleColor', tf.titleColor);
+      tElem.style.color = fontOf(item, 'titleColor', isYellowCard ? '#000000' : tf.titleColor);
       tElem.style.fontSize = `${activeItemTitleSize(item)}pt`;
       tElem.style.fontWeight = fontOf(item, 'titleWeight', tf.titleWeight);
       const isTitleItalic = fontOf(item, 'titleItalic', tf.titleItalic);
       tElem.style.fontStyle = isTitleItalic ? 'italic' : 'normal';
       tElem.classList.toggle('is-italic', !!isTitleItalic);
-      tElem.style.textShadow = fontOf(item, 'titleShadow', tf.titleShadow || '');
+      tElem.style.textShadow = isYellowCard ? '' : fontOf(item, 'titleShadow', tf.titleShadow || '');
       const tAlign = fontOf(item, 'titleAlign', tf.titleAlign);
       tElem.style.textAlign = tAlign;
       tElem.style.justifyContent = tAlign === 'left' ? 'flex-start' : (tAlign === 'right' ? 'flex-end' : 'center');
@@ -9027,7 +9075,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const tf2 = templateFonts || {};
       sElem.textContent = (item && item.subtitle != null) ? item.subtitle : '';
       sElem.style.fontFamily = fontOf(item, 'titleFont', tf2.titleFont);
-      sElem.style.color = fontOf(item, 'subtitleColor', tf2.subtitleColor);
+      sElem.style.color = fontOf(item, 'subtitleColor', isYellowCard ? '#000000' : tf2.subtitleColor);
       sElem.style.fontSize = `${fontOf(item, 'subtitleSize', tf2.subtitleSize != null ? tf2.subtitleSize : 11)}pt`;
       sElem.style.fontWeight = fontOf(item, 'subtitleWeight', tf2.subtitleWeight);
       sElem.style.textAlign = fontOf(item, 'subtitleAlign', tf2.subtitleAlign);
@@ -9073,8 +9121,8 @@ document.addEventListener('DOMContentLoaded', () => {
       curr.style.fontFamily = fontOf(item, 'priceFont', tf3.priceFont);
       curr.style.fontSize = `${fontOf(item, 'priceSize', tf3.priceSize != null ? tf3.priceSize : 40)}pt`;
       curr.style.fontWeight = fontOf(item, 'priceWeight', tf3.priceWeight);
-      curr.style.color = fontOf(item, 'priceColor', tf3.priceColor);
-      curr.style.textShadow = fontOf(item, 'priceShadow', tf3.priceShadow);
+      curr.style.color = fontOf(item, 'priceColor', isYellowCard ? '#000000' : tf3.priceColor);
+      curr.style.textShadow = isYellowCard ? '' : fontOf(item, 'priceShadow', tf3.priceShadow);
       curr.style.transform = `translate(${lp.currency.x}mm, ${lp.currency.y}mm)`;
     }
     if (pElem) {
@@ -9082,8 +9130,8 @@ document.addEventListener('DOMContentLoaded', () => {
       pElem.style.fontFamily = fontOf(item, 'priceFont', tf4.priceFont);
       pElem.style.fontSize = `${fontOf(item, 'priceSize', tf4.priceSize != null ? tf4.priceSize : 40)}pt`;
       pElem.style.fontWeight = fontOf(item, 'priceWeight', tf4.priceWeight);
-      pElem.style.color = fontOf(item, 'priceColor', tf4.priceColor);
-      pElem.style.textShadow = fontOf(item, 'priceShadow', tf4.priceShadow);
+      pElem.style.color = fontOf(item, 'priceColor', isYellowCard ? '#000000' : tf4.priceColor);
+      pElem.style.textShadow = isYellowCard ? '' : fontOf(item, 'priceShadow', tf4.priceShadow);
       // Все цифры цены одинаковой ширины — как самая широкая (свой размер на каждый item).
       {
         const __pw4 = maxPriceDigitWidth(pElem);
@@ -9115,7 +9163,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const outSnap = decorBlockFromItem(item, 'outside');
     const inSnap = decorBlockFromItem(item, 'inside');
     const botSnap = decorBlockFromItem(item, 'bottom');
-    const bgSnap = bgFromItem(item);
 
     // Фон ценника (хедер).
     const cloneHeader = clone.querySelector('.wobbler-header');
@@ -9210,6 +9257,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       _slotTop = Math.max(0, _hh * ts.top - _pad);
     }
+    if (isYellowCard) {
+      _slotTop = 8.14;
+      _tz = 7.37;
+    }
     _tz = Math.min(_tz, Math.max(2, _contentHm - _slotTop));
     clone.style.setProperty('--title-zone-h', `${_tz.toFixed(2)}mm`);
     clone.style.setProperty('--title-slot-top', `${_slotTop.toFixed(2)}mm`);
@@ -9220,19 +9271,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let _priceTop = 0;
     if (_hasPriceSlot) {
-      const activePreset = getActivePreset();
-      if (activePreset && activePreset.priceSlotTop != null) {
-        _priceTop = parseFloat(activePreset.priceSlotTop);
+      if (isYellowCard) {
+        _priceTop = 14.92;
       } else {
-        const _basePresetTs = normTitleSafe(activePreset && (activePreset.titleSafe || activePreset.ts));
-        const _baseTz = (_basePresetTs && (_basePresetTs.top > 0 || _basePresetTs.bottom > 0))
-          ? Math.min(_hh * 0.45, _hh * Math.max(0, 1 - _basePresetTs.top - _basePresetTs.bottom))
-          : (_hh * 0.45);
-        const _pSizePt = parseFloat(fontOf(item, 'priceSize', (templateFonts && templateFonts.priceSize) || (priceSize ? priceSize.value : 40))) || 40;
-        const _basePriceH = _pSizePt * 0.3528 * 1.12;
-        const _baseComb = _baseTz + 2.0 + _basePriceH;
-        const _baselineSlotTop = Math.max(0, (_contentHm - _baseComb) / 2);
-        _priceTop = _baselineSlotTop + _baseTz + 4.0;
+        const activePreset = getActivePreset();
+        if (activePreset && activePreset.priceSlotTop != null) {
+          _priceTop = parseFloat(activePreset.priceSlotTop);
+        } else {
+          const _basePresetTs = normTitleSafe(activePreset && (activePreset.titleSafe || activePreset.ts));
+          const _baseTz = (_basePresetTs && (_basePresetTs.top > 0 || _basePresetTs.bottom > 0))
+            ? Math.min(_hh * 0.45, _hh * Math.max(0, 1 - _basePresetTs.top - _basePresetTs.bottom))
+            : (_hh * 0.45);
+          const _pSizePt = parseFloat(fontOf(item, 'priceSize', (templateFonts && templateFonts.priceSize) || (priceSize ? priceSize.value : 40))) || 40;
+          const _basePriceH = _pSizePt * 0.3528 * 1.12;
+          const _baseComb = _baseTz + 2.0 + _basePriceH;
+          const _baselineSlotTop = Math.max(0, (_contentHm - _baseComb) / 2);
+          _priceTop = _baselineSlotTop + _baseTz + 4.0;
+        }
       }
     }
     clone.style.setProperty('--price-slot-top', `${_priceTop.toFixed(2)}mm`);
@@ -10112,6 +10167,12 @@ document.addEventListener('DOMContentLoaded', () => {
       ? (itemsData[activePreviewIndex] || itemsData[0] || { title: '', price: '' })
       : (itemsData[0] || (itemsData[0] = freshItem()));
     const lp = activeLabelPos();   // позиции текущего режима/товара (для перетаскивания)
+    const activeBgSnap = resolveItemBg(activePreviewIndex);
+    const isYellowActive = activeBgSnap.bgImage === 'yellow_bg.jpg' || (typeof activeBgSnap.bgImage === 'string' && activeBgSnap.bgImage.includes('yellow_bg'));
+    const titlePos = {
+      x: (isYellowActive && (!activeItem.labelPos || (activeItem.labelPos.title && activeItem.labelPos.title.x === -0.4 && activeItem.labelPos.title.y === 1.0))) ? 0 : lp.title.x,
+      y: (isYellowActive && (!activeItem.labelPos || (activeItem.labelPos.title && activeItem.labelPos.title.x === -0.4 && activeItem.labelPos.title.y === 1.0))) ? 0 : lp.title.y
+    };
     const isBeerTplNow = isBeerA5Active();
     const activeTitleText = isBeerTplNow
       ? (activeItem.title != null && activeItem.title !== '' ? activeItem.title : '')
@@ -10127,13 +10188,13 @@ document.addEventListener('DOMContentLoaded', () => {
       previewTitle.textContent = formatSmartTitle(activeTitleText);
     }
     previewTitle.style.fontFamily = fontOf(activeItem, 'titleFont', tf.titleFont || titleFont.value);
-    previewTitle.style.color = fontOf(activeItem, 'titleColor', tf.titleColor || titleColor.value);
+    previewTitle.style.color = isYellowActive ? '#000000' : fontOf(activeItem, 'titleColor', tf.titleColor || titleColor.value);
     previewTitle.style.fontSize = `${effTitleSize}pt`;
     previewTitle.style.fontWeight = fontOf(activeItem, 'titleWeight', tf.titleWeight || titleWeight.value);
     const isTitleItalic = fontOf(activeItem, 'titleItalic', tf.titleItalic != null ? tf.titleItalic : !!(titleItalic && titleItalic.checked));
     previewTitle.style.fontStyle = isTitleItalic ? 'italic' : 'normal';
     previewTitle.classList.toggle('is-italic', !!isTitleItalic);
-    previewTitle.style.textShadow = fontOf(activeItem, 'titleShadow', tf.titleShadow != null ? tf.titleShadow : buildShadow(titleShadow ? titleShadow.value : 0, titleShadowColor ? titleShadowColor.value : '#000000'));
+    previewTitle.style.textShadow = isYellowActive ? '' : fontOf(activeItem, 'titleShadow', tf.titleShadow != null ? tf.titleShadow : buildShadow(titleShadow ? titleShadow.value : 0, titleShadowColor ? titleShadowColor.value : '#000000'));
     const tAlign = fontOf(activeItem, 'titleAlign', tf.titleAlign || alignState.title);
     previewTitle.style.textAlign = tAlign;
     previewTitle.style.justifyContent = tAlign === 'left' ? 'flex-start' : (tAlign === 'right' ? 'flex-end' : 'center');
@@ -10141,7 +10202,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const tSkew = isTitleItalic ? ' skewX(-11deg)' : '';
     const tScaleX = (activeItem && activeItem.titleScaleX != null) ? activeItem.titleScaleX : 1;
     const tScaleStr = tScaleX !== 1 ? ` scaleX(${tScaleX})` : '';
-    previewTitle.style.transform = `translate(${lp.title.x}mm, ${tOffsetY + lp.title.y}mm) rotate(${layerRotate}deg)${tSkew}${tScaleStr}`;
+    previewTitle.style.transform = `translate(${titlePos.x}mm, ${tOffsetY + titlePos.y}mm) rotate(${layerRotate}deg)${tSkew}${tScaleStr}`;
     // Держим слайдер и индикатор в синхроне с активным товаром.
     if (titleSize.value != effTitleSize) titleSize.value = String(effTitleSize);
     titleSizeVal.textContent = titleSize.value;
@@ -10162,7 +10223,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const subPt = fontOf(activeItem, 'subtitleSize', tf.subtitleSize != null ? tf.subtitleSize : (subtitleSize ? subtitleSize.value : 11));
       // Шрифт подзаголовка наследуется от шрифта наименования (исторически).
       previewSubtitle.style.fontFamily = fontOf(activeItem, 'titleFont', tf.titleFont || titleFont.value);
-      previewSubtitle.style.color = fontOf(activeItem, 'subtitleColor', tf.subtitleColor || (subtitleColor ? subtitleColor.value : '#ffffff'));
+      previewSubtitle.style.color = isYellowActive ? '#000000' : fontOf(activeItem, 'subtitleColor', tf.subtitleColor || (subtitleColor ? subtitleColor.value : '#ffffff'));
       previewSubtitle.style.fontSize = `${subPt}pt`;
       previewSubtitle.style.fontWeight = fontOf(activeItem, 'subtitleWeight', tf.subtitleWeight || (subtitleWeight ? subtitleWeight.value : '700'));
       previewSubtitle.style.textAlign = fontOf(activeItem, 'subtitleAlign', tf.subtitleAlign || alignState.subtitle || 'left');
@@ -10357,8 +10418,8 @@ document.addEventListener('DOMContentLoaded', () => {
       previewPrice.style.fontFamily = fontOf(activeItem, 'priceFont', tf.priceFont || priceFont.value);
       previewPrice.style.fontSize = `${fontOf(activeItem, 'priceSize', tf.priceSize != null ? tf.priceSize : priceSize.value)}pt`;
       previewPrice.style.fontWeight = fontOf(activeItem, 'priceWeight', tf.priceWeight || priceWeight.value);
-      previewPrice.style.color = isBeer ? '#000000' : fontOf(activeItem, 'priceColor', tf.priceColor || priceColor.value);
-      previewPrice.style.textShadow = fontOf(activeItem, 'priceShadow', tf.priceShadow != null ? tf.priceShadow : buildShadow(priceShadow ? priceShadow.value : 0, priceShadowColor ? priceShadowColor.value : '#000000'));
+      previewPrice.style.color = (isBeer || isYellowActive) ? '#000000' : fontOf(activeItem, 'priceColor', tf.priceColor || priceColor.value);
+      previewPrice.style.textShadow = isYellowActive ? '' : fontOf(activeItem, 'priceShadow', tf.priceShadow != null ? tf.priceShadow : buildShadow(priceShadow ? priceShadow.value : 0, priceShadowColor ? priceShadowColor.value : '#000000'));
       // Все цифры цены одинаковой ширины — как самая широкая. Замеряем max по 0–9
       // и кладём в CSS-переменную, которую использует .price-digit { width }.
       {
@@ -10374,8 +10435,8 @@ document.addEventListener('DOMContentLoaded', () => {
       previewCurrency.style.fontFamily = fontOf(activeItem, 'priceFont', tf.priceFont || priceFont.value);
       previewCurrency.style.fontSize = `${fontOf(activeItem, 'priceSize', tf.priceSize != null ? tf.priceSize : priceSize.value)}pt`;
       previewCurrency.style.fontWeight = fontOf(activeItem, 'priceWeight', tf.priceWeight || priceWeight.value);
-      previewCurrency.style.color = isBeer ? '#000000' : fontOf(activeItem, 'priceColor', tf.priceColor || priceColor.value);
-      previewCurrency.style.textShadow = fontOf(activeItem, 'priceShadow', tf.priceShadow != null ? tf.priceShadow : buildShadow(priceShadow ? priceShadow.value : 0, priceShadowColor ? priceShadowColor.value : '#000000'));
+      previewCurrency.style.color = (isBeer || isYellowActive) ? '#000000' : fontOf(activeItem, 'priceColor', tf.priceColor || priceColor.value);
+      previewCurrency.style.textShadow = isYellowActive ? '' : fontOf(activeItem, 'priceShadow', tf.priceShadow != null ? tf.priceShadow : buildShadow(priceShadow ? priceShadow.value : 0, priceShadowColor ? priceShadowColor.value : '#000000'));
       previewCurrency.style.transform = `translate(${lp.currency.x}mm, ${lp.currency.y}mm)`;
 
       const priceAlign = fontOf(activeItem, 'priceAlign', tf.priceAlign || alignState.price || 'center');
@@ -10405,8 +10466,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Background Image & Overlay — per-item фон активного ценника, если задан
-    // (в single-режиме хелпер возвращает глобальные значения как раньше).
-    const activeBgSnap = resolveItemBg(activePreviewIndex);
+    // (в single-режиме хелпер возвращает глобальные значения как раньше, activeBgSnap разрешен выше).
     applyBackgroundTo(wobblerHeader, activeBgSnap.bgImage, activeBgSnap.customBg, activeBgSnap.headerBg);
     // Белая рамка вокруг графики (borderMm мм): графика режется по content-box,
     // а внешняя полоса padding остаётся цветом заливки шапки = поля под обрез.
@@ -10548,7 +10608,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const priceInBottomNow = rybaPriceInBottom && selectedLayout === 'split';
     const isSplitLayout = selectedLayout === 'split';
     const hasPriceSlot = isTemplatePriceSlotAvailable(activeTemplateRef, selectedLayout, priceInBottomNow);
-    const ts = resolveItemBg(activePreviewIndex).titleSafe;
+    const activeBgSnapForSlot = resolveItemBg(activePreviewIndex);
+    const ts = activeBgSnapForSlot.titleSafe;
+    const isYellowActivePreview = activeBgSnapForSlot.bgImage === 'yellow_bg.jpg' || (typeof activeBgSnapForSlot.bgImage === 'string' && activeBgSnapForSlot.bgImage.includes('yellow_bg'));
     const padMm = (borderMm > 0) ? borderMm : (isSplitLayout ? 0 : 3);
     const contentW_mm = Math.max(1, widthMm - padMm * 2);
     const contentHm = isSplitLayout ? headerHm : Math.max(1, headerHm - padMm * 2);
@@ -10584,6 +10646,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       slotTop = Math.max(0, headerHm * ts.top - padMm);
     }
+    if (isYellowActivePreview) {
+      slotTop = 8.14;
+      titleZone = 7.37;
+    }
     titleZone = Math.min(titleZone, Math.max(2, contentHm - slotTop));
     document.documentElement.style.setProperty('--title-zone-h', `${titleZone.toFixed(2)}mm`);
     document.documentElement.style.setProperty('--title-slot-top', `${slotTop.toFixed(2)}mm`);
@@ -10596,19 +10662,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // 3. Позиция слоя цены: полностью изолирована от safe-зоны наименования (0.00мм сдвига при drag)
     let priceTop = 0;
     if (hasPriceSlot) {
-      const activePreset = getActivePreset();
-      if (activePreset && activePreset.priceSlotTop != null) {
-        priceTop = parseFloat(activePreset.priceSlotTop);
+      if (isYellowActivePreview) {
+        priceTop = 14.92;
       } else {
-        const basePresetTs = normTitleSafe(activePreset && (activePreset.titleSafe || activePreset.ts));
-        const baseTz = (basePresetTs && (basePresetTs.top > 0 || basePresetTs.bottom > 0))
-          ? Math.min(headerHm * 0.45, headerHm * Math.max(0, 1 - basePresetTs.top - basePresetTs.bottom))
-          : (headerHm * 0.45);
-        const pSizePt = parseFloat(fontOf(activeItem, 'priceSize', tf.priceSize != null ? tf.priceSize : priceSize.value)) || 40;
-        const basePriceH = pSizePt * 0.3528 * 1.12;
-        const baseComb = baseTz + 2.0 + basePriceH;
-        const baselineSlotTop = Math.max(0, (contentHm - baseComb) / 2);
-        priceTop = baselineSlotTop + baseTz + 4.0;
+        const activePreset = getActivePreset();
+        if (activePreset && activePreset.priceSlotTop != null) {
+          priceTop = parseFloat(activePreset.priceSlotTop);
+        } else {
+          const basePresetTs = normTitleSafe(activePreset && (activePreset.titleSafe || activePreset.ts));
+          const baseTz = (basePresetTs && (basePresetTs.top > 0 || basePresetTs.bottom > 0))
+            ? Math.min(headerHm * 0.45, headerHm * Math.max(0, 1 - basePresetTs.top - basePresetTs.bottom))
+            : (headerHm * 0.45);
+          const pSizePt = parseFloat(fontOf(activeItem, 'priceSize', tf.priceSize != null ? tf.priceSize : priceSize.value)) || 40;
+          const basePriceH = pSizePt * 0.3528 * 1.12;
+          const baseComb = baseTz + 2.0 + basePriceH;
+          const baselineSlotTop = Math.max(0, (contentHm - baseComb) / 2);
+          priceTop = baselineSlotTop + baseTz + 4.0;
+        }
       }
     } else {
       priceTop = 0;
@@ -13563,6 +13633,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const key = card.getAttribute('data-preset');
       const p = builtInPresets[key];
       if (p) {
+        // Сохраняем текущую сессию перед переключением пресета, чтобы все кастомные фоны товаров были записаны
+        try { saveSessionNow(); } catch (e) { }
+
         // Запоминаем выбранный встроенный пресет — «Обновить» создаст пользовательскую копию.
         activeTemplateRef = { kind: 'builtin', key };
         // Смена шаблона всегда возвращает превью к ценнику №1: активный индекс
@@ -13576,20 +13649,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (templateItems[key]) {
           itemsData = templateItems[key];
-          itemsData.forEach(item => {
-            if (item) {
-              delete item.bgCustomized;
-              delete item.bg;
-              delete item.fontsCustomized;
-              delete item.fonts;
-              delete item.titleSize;
-              if (key === 'yellow_tag' || key === 'korona_a5' || key === 'aktsiya_a5' || key === 'sort_nedeli') {
-                if (item.labelPos && item.labelPos.title && (key === 'yellow_tag' || item.labelPos.title.y === 12 || item.labelPos.title.y === 22 || item.labelPos.title.x === -1.2)) {
-                  item.labelPos.title = { x: 0, y: 0 };
-                }
+          if (key === 'yellow_tag' || key === 'korona_a5' || key === 'aktsiya_a5' || key === 'sort_nedeli') {
+            itemsData.forEach(item => {
+              if (item && item.labelPos && item.labelPos.title && (key === 'yellow_tag' || item.labelPos.title.y === 12 || item.labelPos.title.y === 22 || item.labelPos.title.x === -1.2)) {
+                item.labelPos.title = { x: 0, y: 0 };
               }
-            }
-          });
+            });
+          }
           renderItemsListInputs();
         }
         applyState(p);
@@ -13597,7 +13663,13 @@ document.addEventListener('DOMContentLoaded', () => {
           if (titleOffsetY && (key === 'yellow_tag' || titleOffsetY.value === '1')) titleOffsetY.value = '0';
           if (titleOffsetYVal && (key === 'yellow_tag' || titleOffsetYVal.textContent === '1')) titleOffsetYVal.textContent = '0';
           if (templateFonts && (key === 'yellow_tag' || templateFonts.titleOffsetY === 1)) templateFonts.titleOffsetY = 0;
+          if (key === 'yellow_tag') {
+            if (priceOffsetY) priceOffsetY.value = '0';
+            if (priceOffsetYVal) priceOffsetYVal.textContent = '0';
+            if (templateFonts) templateFonts.priceOffsetY = 0;
+          }
         }
+        scheduleSessionSave();
         if (key === 'sneki') {
           applyAutoBgToAllItems();
         }
@@ -14083,6 +14155,7 @@ document.addEventListener('DOMContentLoaded', () => {
       templateDecor = snap;
     }
     updatePreview();
+    scheduleSessionSave();
   }
   // Контролы декор-блоков → onDecorInputChange. insideWidth — только шаблонный,
   // но тоже проходит через обработчик (пишется в templateDecor через snapshot).
@@ -14118,6 +14191,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try { syncBgControlsToContext(); } catch (e) { }
     try { syncFontControlsToContext(); } catch (e) { }
     try { syncDecorControlsToContext(); } catch (e) { }
+    scheduleSessionSave();
   }
   const bgInputs = [headerBgColor, bgImageSelect];
   bgInputs.forEach(el => {
