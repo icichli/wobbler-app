@@ -4227,9 +4227,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     rawDigits.slice(-3).forEach(d => {
       const span = document.createElement('span');
-      const isSpace = d === ' ';
+      const isSpace = d === ' ' || d === '\u00A0' || d === '\u2007';
       span.className = 'price-digit' + (isSpace ? ' price-space' : '');
-      span.textContent = isSpace ? '\u00A0' : d;
+      if (isSpace) {
+        span.innerHTML = '<span class="price-space-ghost" aria-hidden="true">8</span>';
+      } else {
+        span.textContent = d;
+      }
       pValEl.appendChild(span);
     });
     if (pCurrEl) {
@@ -8391,14 +8395,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // Поддерживает суффиксы и префиксы: "150 ₽", "150.00 ₽", "150р", "150 руб", "15$", "$15", "20 €", "500 ₸", "350".
   function splitPriceAndCurrency(rawPrice) {
     if (rawPrice == null) return { price: '', currency: '' };
-    let s = String(rawPrice).trim();
-    if (!s) return { price: '', currency: '' };
+    let s = String(rawPrice);
+    if (!s.trim()) return { price: '', currency: '' };
 
     // 1. Валюта в конце строки (суффикс): "150 ₽", "150 руб.", "150р", "150$", "150 €", "150 ₸"
     const suffixRegex = /^(.*?)\s*([₽$€£¥₸]|(?:руб(?:л[ея]й)?|р(?:\.|\b)|грн|тг|Br))\s*$/i;
     const suffixMatch = s.match(suffixRegex);
-    if (suffixMatch && suffixMatch[1].trim()) {
-      let p = suffixMatch[1].trim();
+    if (suffixMatch && suffixMatch[1]) {
+      let p = suffixMatch[1].replace(/\s+$/, '');
       let c = suffixMatch[2].trim();
       if (/^(?:руб(?:л[ея]й)?|р(?:\.|\b))$/i.test(c)) c = '₽';
       else if (/^тг$/i.test(c)) c = '₸';
@@ -8408,21 +8412,21 @@ document.addEventListener('DOMContentLoaded', () => {
     // 2. Валюта в начале строки (префикс): "$ 15", "$15", "€ 20", "₽ 150"
     const prefixRegex = /^\s*([₽$€£¥₸]|(?:руб(?:л[ея]й)?|р(?:\.|\b)|грн|тг|Br))\s*(.*?)$/i;
     const prefixMatch = s.match(prefixRegex);
-    if (prefixMatch && prefixMatch[2].trim()) {
+    if (prefixMatch && prefixMatch[2]) {
       let c = prefixMatch[1].trim();
-      let p = prefixMatch[2].trim();
+      let p = prefixMatch[2].replace(/\s+$/, '');
       if (/^(?:руб(?:л[ея]й)?|р(?:\.|\b))$/i.test(c)) c = '₽';
       else if (/^тг$/i.test(c)) c = '₸';
       return { price: p, currency: c };
     }
 
-    return { price: s, currency: '' };
+    return { price: s.replace(/\s+$/, ''), currency: '' };
   }
 
   // Очистка ввода цены от текстового мусора и незначащих нулей. Сохраняет введённый значок валюты!
   function cleanPriceInput(val) {
     if (!val) return '';
-    let s = String(val).trim();
+    let s = String(val);
     s = s.replace(/,/g, '.');
     s = s.replace(/([0-9])o([0-9])/gi, '$10$2');
     s = s.replace(/\.00(?!\d)/, '');
@@ -8431,7 +8435,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Если знак валюты введен слитно с цифрами (напр. "150₽" или "15$"), добавляем аккуратный пробел
     s = s.replace(/(\d)\s*([₽$€£¥₸])\s*$/g, '$1 $2');
     s = s.replace(/^\s*([₽$€£¥₸])\s*(\d)/g, '$1 $2');
-    s = s.replace(/\s+/g, ' ').trim();
+    s = s.replace(/\s+$/, '');
     return s;
   }
 
@@ -8441,7 +8445,7 @@ document.addEventListener('DOMContentLoaded', () => {
     targetEl.innerHTML = '';
     const lp = Array.isArray(priceDigitsLp) ? priceDigitsLp : [];
     const parsed = splitPriceAndCurrency(priceText);
-    const str = String(parsed.price || '').trim();
+    const str = String(parsed.price || '').replace(/\s+$/, '');
     const match = enableSupCents ? str.match(/^([0-9\s]+)[.,]([0-9]{1,2})$/) : null;
     if (match) {
       const rubPart = match[1];
@@ -8450,9 +8454,13 @@ document.addEventListener('DOMContentLoaded', () => {
       while (lp.length < rubDigits.length) lp.push({ x: 0, y: 0 });
       rubDigits.forEach((d, idx) => {
         const span = document.createElement('span');
-        const isSpace = d === ' ';
+        const isSpace = d === ' ' || d === '\u00A0' || d === '\u2007';
         span.className = 'price-digit' + (isSpace ? ' price-space' : '');
-        span.textContent = isSpace ? '\u00A0' : d;
+        if (isSpace) {
+          span.innerHTML = '<span class="price-space-ghost" aria-hidden="true">8</span>';
+        } else {
+          span.textContent = d;
+        }
         span.dataset.pos = idx;
         const dp = lp[idx] || { x: 0, y: 0 };
         span.style.transform = `translate(${dp.x}mm, ${dp.y}mm)`;
@@ -8467,9 +8475,13 @@ document.addEventListener('DOMContentLoaded', () => {
       while (lp.length < digits.length) lp.push({ x: 0, y: 0 });
       digits.forEach((d, idx) => {
         const span = document.createElement('span');
-        const isSpace = d === ' ';
+        const isSpace = d === ' ' || d === '\u00A0' || d === '\u2007';
         span.className = 'price-digit' + (isSpace ? ' price-space' : '');
-        span.textContent = isSpace ? '\u00A0' : d;
+        if (isSpace) {
+          span.innerHTML = '<span class="price-space-ghost" aria-hidden="true">8</span>';
+        } else {
+          span.textContent = d;
+        }
         span.dataset.pos = idx;
         const dp = lp[idx] || { x: 0, y: 0 };
         span.style.transform = `translate(${dp.x}mm, ${dp.y}mm)`;
@@ -9713,9 +9725,13 @@ document.addEventListener('DOMContentLoaded', () => {
       pElem.innerHTML = '';
       digits.forEach((d, idx) => {
         const span = document.createElement('span');
-        const isSpace = d === ' ';
+        const isSpace = d === ' ' || d === '\u00A0' || d === '\u2007';
         span.className = 'price-digit' + (isSpace ? ' price-space' : '');
-        span.textContent = isSpace ? '\u00A0' : d;
+        if (isSpace) {
+          span.innerHTML = '<span class="price-space-ghost" aria-hidden="true">8</span>';
+        } else {
+          span.textContent = d;
+        }
         const dp = lp.priceDigits[idx];
         span.style.transform = `translate(${dp.x}mm, ${dp.y}mm)`;
         pElem.appendChild(span);
@@ -10408,7 +10424,7 @@ document.addEventListener('DOMContentLoaded', () => {
       priceFieldsBlock.classList.remove('price-off');
       const isPromoNow = isBeerA5PromoActive();
       previewPriceBox.style.display = isPromoNow ? 'none' : 'flex';
-      const rawPriceText = isMultiMode ? (activeItem?.price || '') : inputPrice.value.trim();
+      const rawPriceText = isMultiMode ? (activeItem?.price || '') : inputPrice.value.replace(/\s+$/, '');
       const parsedPrice = splitPriceAndCurrency(rawPriceText);
       const activePriceText = parsedPrice.price;
       const priceCentsSup = !!(document.getElementById('priceCentsSupToggle') && document.getElementById('priceCentsSupToggle').checked);
@@ -12140,7 +12156,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const hasTitle = !!(inputTitle && inputTitle.value.trim());
       if (hasTitle) filledUniqueCount = 1;
       itemsToShow = [{
-        it: { title: inputTitle.value.trim(), price: inputPrice.value.trim(), subtitle: (inputSubtitle ? inputSubtitle.value.trim() : ''), labelPos: singleLabelPos },
+        it: { title: inputTitle.value.trim(), price: inputPrice.value.replace(/\s+$/, ''), subtitle: (inputSubtitle ? inputSubtitle.value.trim() : ''), labelPos: singleLabelPos },
         origIndex: 0
       }];
     }
@@ -12395,7 +12411,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
     } else {
-      const baseItem = { title: inputTitle.value.trim(), price: inputPrice.value.trim(), subtitle: (inputSubtitle ? inputSubtitle.value.trim() : ''), labelPos: singleLabelPos };
+      const baseItem = { title: inputTitle.value.trim(), price: inputPrice.value.replace(/\s+$/, ''), subtitle: (inputSubtitle ? inputSubtitle.value.trim() : ''), labelPos: singleLabelPos };
       let times = 1;
       if (singleRepeatCount) {
         if (singleRepeatCount.value === 'auto') {
@@ -14987,7 +15003,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       previewPrice.addEventListener('focus', () => {
         const isMultiMode = document.querySelector('input[name="printMode"]:checked').value === 'multi';
-        const activePriceText = isMultiMode ? (itemsData[activePreviewIndex]?.price || '') : inputPrice.value.trim();
+        const activePriceText = isMultiMode ? (itemsData[activePreviewIndex]?.price || '') : inputPrice.value.replace(/\s+$/, '');
         previewPrice.textContent = activePriceText;
         try {
           const range = document.createRange();
@@ -14999,7 +15015,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       makeEditable(previewPrice, 'price', (rawText) => {
-        const val = rawText.replace(/[\r\n]+/g, '').trim();
+        const val = rawText.replace(/[\r\n]+/g, '').replace(/\s+$/, '');
         const isMultiMode = document.querySelector('input[name="printMode"]:checked').value === 'multi';
         if (inputPrice) inputPrice.value = val;
         if (isMultiMode) {

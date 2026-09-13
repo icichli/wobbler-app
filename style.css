@@ -3414,9 +3414,22 @@ input[type="range"]::-webkit-slider-thumb:hover {
   text-shadow: inherit;
 }
 
-/* Пробел в цене — полноценный символ шириной с цифру (nbsp не схлопывается
-   в inline-flex). min-width/text-align наследуются от .price-digit. */
-.price-digit.price-space {}
+/* Пробел в цене — полноценное знакоместо шириной ровно с цифру «8» текущего шрифта.
+   Внутри находится невидимый призрак-символ «8» (.price-space-ghost),
+   гарантирующий 100% совпадение ширины, высоты и кернинга без артефактов тени. */
+.price-digit.price-space {
+  user-select: none;
+  text-shadow: none !important;
+}
+
+.price-digit.price-space .price-space-ghost {
+  display: inline-block;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  user-select: none !important;
+  pointer-events: none !important;
+  text-shadow: none !important;
+}
 
 /* WYSIWYG Прямое редактирование текста на ценнике */
 .wobbler-title[contenteditable],
