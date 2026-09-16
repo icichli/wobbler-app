@@ -1002,32 +1002,40 @@ body.theme-light .btn-theme-toggle:hover {
   margin-bottom: 2px;
 }
 
+.btn.sidebar-reset-btn,
 .sidebar-reset-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  outline: none;
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  background: rgba(30, 41, 59, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--text-muted);
-  font-size: 0.72rem;
+  background: rgba(30, 41, 59, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: var(--text-muted) !important;
+  font-family: var(--font-ui);
+  font-size: 0.72rem !important;
   font-weight: 600;
-  padding: 3px 8px;
+  padding: 3px 8px !important;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
   line-height: 1.2;
+  white-space: nowrap;
 }
 
+.btn.sidebar-reset-btn .ico,
 .sidebar-reset-btn .ico {
   width: 12px;
   height: 12px;
   flex-shrink: 0;
 }
 
+.btn.sidebar-reset-btn:hover,
 .sidebar-reset-btn:hover {
-  background: rgba(239, 68, 68, 0.18);
-  color: #fca5a5;
-  border-color: rgba(239, 68, 68, 0.45);
+  background: rgba(239, 68, 68, 0.18) !important;
+  color: #fca5a5 !important;
+  border-color: rgba(239, 68, 68, 0.45) !important;
 }
 
 .sidebar-mode-actions {
