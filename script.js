@@ -247,8 +247,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const activeTab = document.querySelector('.sidebar-tab-btn.active');
     const target = activeTab ? activeTab.getAttribute('data-target') : '';
-    const modeMap = { section3: fontApplyMode, section4: bgApplyMode, section5: decorApplyMode };
-    const activeScopeMode = modeMap[target]; // 'item' | 'template' | undefined
+    let activeScopeMode;
+    if (target === 'sectionSettings') {
+      const activeSettingsSubTab = localStorage.getItem('wobbler_active_settings_subtab') || 'bg';
+      const subModeMap = { fonts: fontApplyMode, bg: bgApplyMode, decor: decorApplyMode };
+      activeScopeMode = subModeMap[activeSettingsSubTab];
+    } else {
+      const modeMap = { section3: fontApplyMode, section4: bgApplyMode, section5: decorApplyMode };
+      activeScopeMode = modeMap[target];
+    }
 
     const isMulti = (typeof isMultiModeNow === 'function')
       ? isMultiModeNow()
@@ -16214,8 +16221,19 @@ document.addEventListener('DOMContentLoaded', () => {
   const sidebarViewModeIcon = document.getElementById('sidebarViewModeIcon');
   const sidebarViewModeText = document.getElementById('sidebarViewModeText');
 
+  const LEGACY_SECTION_MAP = {
+    section3: 'fonts',
+    section4: 'bg',
+    section5: 'decor',
+    section6: 'print'
+  };
+
   function setSidebarTab(targetSectionId) {
     if (!targetSectionId) return;
+    if (LEGACY_SECTION_MAP[targetSectionId]) {
+      setSettingsSubTab(LEGACY_SECTION_MAP[targetSectionId]);
+      targetSectionId = 'sectionSettings';
+    }
     sidebarTabBtns.forEach(btn => {
       btn.classList.toggle('active', btn.dataset.target === targetSectionId);
     });
@@ -16244,6 +16262,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     updateScopeBadges();
+    renderPreviewItemBadge();
     localStorage.setItem('wobbler_active_sidebar_tab', targetSectionId);
   }
 
@@ -16253,6 +16272,38 @@ document.addEventListener('DOMContentLoaded', () => {
       if (target) setSidebarTab(target);
     });
   });
+
+  // --- Sub-Tabs for Section Settings (Фоны / Декор / Шрифты / Печать) ---
+  const settingsSubTabBtns = document.querySelectorAll('[data-settings-tab]');
+  function setSettingsSubTab(tabName) {
+    if (!tabName) return;
+    settingsSubTabBtns.forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.settingsTab === tabName);
+    });
+    const paneMap = {
+      bg: 'settingsPaneBg',
+      decor: 'settingsPaneDecor',
+      fonts: 'settingsPaneFonts',
+      print: 'settingsPanePrint'
+    };
+    Object.keys(paneMap).forEach(key => {
+      const pane = document.getElementById(paneMap[key]);
+      if (pane) pane.classList.toggle('active', key === tabName);
+    });
+    localStorage.setItem('wobbler_active_settings_subtab', tabName);
+    updateScopeBadges();
+    renderPreviewItemBadge();
+  }
+
+  settingsSubTabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const t = btn.dataset.settingsTab;
+      if (t) setSettingsSubTab(t);
+    });
+  });
+
+  const savedSettingsSubTab = localStorage.getItem('wobbler_active_settings_subtab') || 'bg';
+  setSettingsSubTab(savedSettingsSubTab);
 
   function setSidebarViewMode(mode) {
     if (!controlsSidebarEl) return;
@@ -17138,23 +17189,32 @@ document.addEventListener('DOMContentLoaded', () => {
     const tabBadgeFonts = document.getElementById('tabBadgeFonts');
     const tabBadgeBg = document.getElementById('tabBadgeBg');
     const tabBadgeDecor = document.getElementById('tabBadgeDecor');
+    const tabBadgeSettings = document.getElementById('tabBadgeSettings');
 
     if (!isMultiModeNow() || !itemsData || !itemsData[activePreviewIndex]) {
       if (tabBadgeFonts) tabBadgeFonts.style.display = 'none';
       if (tabBadgeBg) tabBadgeBg.style.display = 'none';
       if (tabBadgeDecor) tabBadgeDecor.style.display = 'none';
+      if (tabBadgeSettings) tabBadgeSettings.style.display = 'none';
       return;
     }
 
     const it = itemsData[activePreviewIndex];
+    const hasFonts = !!it.fontsCustomized;
+    const hasBg = !!it.bgCustomized;
+    const hasDecor = !!it.decorCustomized;
+
     if (tabBadgeFonts) {
-      tabBadgeFonts.style.display = it.fontsCustomized ? 'block' : 'none';
+      tabBadgeFonts.style.display = hasFonts ? 'block' : 'none';
     }
     if (tabBadgeBg) {
-      tabBadgeBg.style.display = it.bgCustomized ? 'block' : 'none';
+      tabBadgeBg.style.display = hasBg ? 'block' : 'none';
     }
     if (tabBadgeDecor) {
-      tabBadgeDecor.style.display = it.decorCustomized ? 'block' : 'none';
+      tabBadgeDecor.style.display = hasDecor ? 'block' : 'none';
+    }
+    if (tabBadgeSettings) {
+      tabBadgeSettings.style.display = (hasFonts || hasBg || hasDecor) ? 'block' : 'none';
     }
   }
 

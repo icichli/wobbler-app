@@ -773,54 +773,41 @@
 
       <!-- Quick Category Navigation Bar -->
       <div class="sidebar-top-nav no-print" id="sidebarTopNav">
+        <div class="sidebar-top-row">
+          <button type="button" id="resetAllBtn" class="sidebar-reset-btn"
+            title="Сбросить текущую сессию и таблицу товаров к исходному состоянию (Мои шаблоны сохраняются)">
+            <svg class="ico">
+              <use href="#i-reset" />
+            </svg>
+            <span>Сброс макета</span>
+          </button>
+          <div class="sidebar-mode-actions">
+            <button type="button" id="sidebarViewModeBtn" class="sidebar-mode-pill"
+              title="Переключить: Табы (по одному блоку) / Все блоки списком">
+              <span id="sidebarViewModeText">Табы</span>
+            </button>
+          </div>
+        </div>
         <div class="sidebar-tabs-bar" role="tablist" aria-label="Разделы настроек">
-          <button type="button" class="sidebar-tab-btn active" data-target="section1" title="1. Шаблоны">
+          <button type="button" class="sidebar-tab-btn active" data-target="section1" title="1. Шаблоны ценников и воблеров">
             <span class="tab-icon"><svg class="ico">
                 <use href="#i-tag" />
               </svg></span>
             <span class="tab-name">Шаблоны</span>
           </button>
-          <button type="button" class="sidebar-tab-btn" data-target="section2" title="2. Товары и список">
+          <button type="button" class="sidebar-tab-btn" data-target="section2" title="2. Товары, цены и список">
             <span class="tab-icon"><svg class="ico">
                 <use href="#i-list" />
               </svg></span>
             <span class="tab-name">Товары</span>
           </button>
-          <button type="button" class="sidebar-tab-btn" data-target="section3" title="3. Шрифты и текст">
+          <button type="button" class="sidebar-tab-btn" data-target="sectionSettings" title="3. Расширенные настройки (Фоны, Декор, Шрифты, Печать)">
             <span class="tab-icon"><svg class="ico">
-                <use href="#i-type" />
+                <use href="#i-sliders" />
               </svg></span>
-            <span class="tab-name">Шрифты</span>
-            <span class="tab-custom-badge" id="tabBadgeFonts" title="У активного товара индивидуальные шрифты"
+            <span class="tab-name">Настройки</span>
+            <span class="tab-custom-badge" id="tabBadgeSettings" title="У активного товара индивидуальные настройки оформления"
               style="display:none;"></span>
-          </button>
-          <button type="button" class="sidebar-tab-btn" data-target="section4" title="4. Фоны и заливка">
-            <span class="tab-icon"><svg class="ico">
-                <use href="#i-image" />
-              </svg></span>
-            <span class="tab-name">Фоны</span>
-            <span class="tab-custom-badge" id="tabBadgeBg" title="У активного товара индивидуальный фон"
-              style="display:none;"></span>
-          </button>
-          <button type="button" class="sidebar-tab-btn" data-target="section5" title="5. Оформление ценника">
-            <span class="tab-icon"><svg class="ico">
-                <use href="#i-sparkles" />
-              </svg></span>
-            <span class="tab-name">Декор</span>
-            <span class="tab-custom-badge" id="tabBadgeDecor" title="У активного товара индивидуальный декор"
-              style="display:none;"></span>
-          </button>
-          <button type="button" class="sidebar-tab-btn" data-target="section6" title="6. Печать на А4">
-            <span class="tab-icon"><svg class="ico">
-                <use href="#i-printer" />
-              </svg></span>
-            <span class="tab-name">Печать</span>
-          </button>
-        </div>
-        <div class="sidebar-mode-actions">
-          <button type="button" id="sidebarViewModeBtn" class="sidebar-mode-pill"
-            title="Переключить: Табы (по одному блоку) / Все блоки списком">
-            <span id="sidebarViewModeText">Табы</span>
           </button>
         </div>
       </div>
@@ -835,24 +822,6 @@
               title="Готовые заводские шаблоны ценников и воблеров">Встроенные</button>
             <button class="tab-btn" data-tab="userSaved" title="Сохраненные пользовательские шаблоны">Мои шаблоны (<span
                 id="userCount">0</span>)</button>
-          </div>
-
-          <!-- Экспорт / Импорт шаблонов -->
-          <div class="template-toolbar">
-            <button id="exportAllBtn" class="btn btn-secondary btn-sm"
-              title="Сохранить все пользовательские шаблоны в JSON-файл"><svg class="ico">
-                <use href="#i-download" />
-              </svg> Экспорт</button>
-            <button id="importBtn" class="btn btn-secondary btn-sm"
-              title="Загрузить шаблоны из сохраненного ранее JSON-файла"><svg class="ico">
-                <use href="#i-upload" />
-              </svg> Импорт</button>
-            <button id="resetAllBtn" class="btn btn-secondary btn-sm"
-              title="Сбросить текущую сессию и таблицу товаров к исходному состоянию (Мои шаблоны сохраняются)"><svg
-                class="ico">
-                <use href="#i-reset" />
-              </svg> Сброс</button>
-            <input type="file" id="importFileInput" accept="application/json,.json" hidden>
           </div>
 
           <!-- Built-in presets -->
@@ -1410,12 +1379,41 @@
         </div><!-- /.card-body section2 -->
       </section>
 
-      <!-- Font Style & Appearance Customization -->
-      <section class="control-card" id="section3">
-        <h3 class="card-toggle" data-section="section3"><span class="card-num">3</span> Настройки шрифтов и текста <span
-            class="scope-badge" id="fontScopeBadge" title="Область применения правок: переключается внутри секции">этот
-            ценник</span><span class="toggle-arrow">▲</span></h3>
+      <!-- 3. Unified Settings Card (Фоны, Декор, Шрифты, Печать) -->
+      <section class="control-card" id="sectionSettings">
+        <h3 class="card-toggle" data-section="sectionSettings"><span class="card-num">3</span> Оформление и печать <span
+            class="toggle-arrow">▲</span></h3>
         <div class="card-body">
+
+          <!-- Sub-Tabs Navigation for Settings -->
+          <div class="settings-sub-tabs-bar" role="tablist" id="settingsSubTabsNav">
+            <button type="button" class="settings-sub-tab-btn active" data-settings-tab="bg" title="Фоны, цвета заливки и галерея текстур">
+              <span class="settings-tab-icon"><svg class="ico"><use href="#i-image" /></svg></span>
+              <span class="settings-tab-text">Фоны</span>
+              <span class="tab-custom-badge" id="tabBadgeBg" title="У активного товара индивидуальный фон" style="display:none;"></span>
+            </button>
+            <button type="button" class="settings-sub-tab-btn" data-settings-tab="decor" title="Промо-плашки (сверху, внутри, снизу)">
+              <span class="settings-tab-icon"><svg class="ico"><use href="#i-sparkles" /></svg></span>
+              <span class="settings-tab-text">Декор</span>
+              <span class="tab-custom-badge" id="tabBadgeDecor" title="У активного товара индивидуальный декор" style="display:none;"></span>
+            </button>
+            <button type="button" class="settings-sub-tab-btn" data-settings-tab="fonts" title="Шрифты, размеры, тени, перечеркивание">
+              <span class="settings-tab-icon"><svg class="ico"><use href="#i-type" /></svg></span>
+              <span class="settings-tab-text">Шрифты</span>
+              <span class="tab-custom-badge" id="tabBadgeFonts" title="У активного товара индивидуальные шрифты" style="display:none;"></span>
+            </button>
+            <button type="button" class="settings-sub-tab-btn" data-settings-tab="print" title="Параметры печатного листа А4, зазоры и раскрой">
+              <span class="settings-tab-icon"><svg class="ico"><use href="#i-printer" /></svg></span>
+              <span class="settings-tab-text">Печать</span>
+            </button>
+          </div>
+
+          <!-- Settings Pane: Шрифты и текст -->
+          <div class="settings-sub-pane" id="settingsPaneFonts">
+            <div class="settings-pane-header">
+              <h4>Шрифты и текст</h4>
+              <span class="scope-badge" id="fontScopeBadge" title="Область применения правок: переключается внутри секции">этот ценник</span>
+            </div>
 
           <!-- Переключатель области применения: только для режима «Разные товары» -->
           <div class="font-apply-mode" id="fontApplyModeWrap" style="display:none;">
@@ -1759,15 +1757,14 @@
             </div>
           </div>
 
-        </div><!-- /.card-body section3 -->
-      </section>
+          </div><!-- /#settingsPaneFonts -->
 
-      <!-- Design Customization & Custom Image Upload -->
-      <section class="control-card" id="section4">
-        <h3 class="card-toggle" data-section="section4"><span class="card-num">4</span> Фоны и заливка <span
-            class="scope-badge" id="bgScopeBadge" title="Область применения правок: переключается внутри секции">этот
-            ценник</span><span class="toggle-arrow">▲</span></h3>
-        <div class="card-body">
+          <!-- Settings Pane: Фоны и заливка -->
+          <div class="settings-sub-pane active" id="settingsPaneBg">
+            <div class="settings-pane-header">
+              <h4>Фоны и заливка</h4>
+              <span class="scope-badge" id="bgScopeBadge" title="Область применения правок: переключается внутри секции">этот ценник</span>
+            </div>
 
           <!-- Переключатель области применения фона -->
           <div class="font-apply-mode" id="bgApplyModeWrap" style="display:none;">
@@ -1896,15 +1893,14 @@
             <input type="range" id="headerHeightRange" min="20" max="90" value="50"
               title="Высота цветного блока в процентах">
           </div>
-        </div><!-- /.card-body section4 -->
-      </section>
+          </div><!-- /#settingsPaneBg -->
 
-      <!-- Decoration: decorative blocks -->
-      <section class="control-card" id="section5">
-        <h3 class="card-toggle" data-section="section5"><span class="card-num">5</span> Оформление <span
-            class="scope-badge" id="decorScopeBadge" title="Область применения правок: переключается внутри секции">этот
-            ценник</span><span class="toggle-arrow">▲</span></h3>
-        <div class="card-body">
+          <!-- Settings Pane: Оформление -->
+          <div class="settings-sub-pane" id="settingsPaneDecor">
+            <div class="settings-pane-header">
+              <h4>Оформление</h4>
+              <span class="scope-badge" id="decorScopeBadge" title="Область применения правок: переключается внутри секции">этот ценник</span>
+            </div>
 
           <!-- Переключатель области применения оформления -->
           <div class="font-apply-mode" id="decorApplyModeWrap" style="display:none;">
@@ -2248,14 +2244,13 @@
             </div>
           </div>
 
-        </div><!-- /.card-body section5 Оформление -->
-      </section>
+          </div><!-- /#settingsPaneDecor -->
 
-      <!-- Print Config -->
-      <section class="control-card" id="section6">
-        <h3 class="card-toggle" data-section="section6"><span class="card-num">6</span> Печать на А4 <span
-            class="toggle-arrow">▲</span></h3>
-        <div class="card-body">
+          <!-- Settings Pane: Печать на А4 -->
+          <div class="settings-sub-pane" id="settingsPanePrint">
+            <div class="settings-pane-header">
+              <h4>Параметры печати на А4</h4>
+            </div>
 
           <!-- Режим печати: один шаблон или мульти -->
           <div class="radio-group print-job-mirror compact-radio-group" style="margin-bottom: 10px;">
@@ -2363,7 +2358,26 @@
               </button>
             </div>
           </div>
-        </div><!-- /.card-body section6 -->
+          </div><!-- /#settingsPanePrint -->
+
+          <!-- Резервная копия шаблонов (Экспорт / Импорт) -->
+          <div class="settings-backup-footer">
+            <div class="settings-backup-header">
+              <span class="settings-backup-title"><svg class="ico"><use href="#i-folder" /></svg> Резервная копия шаблонов (JSON):</span>
+            </div>
+            <div class="settings-backup-actions">
+              <button id="exportAllBtn" class="btn btn-secondary btn-sm"
+                title="Сохранить все пользовательские шаблоны в JSON-файл"><svg class="ico">
+                  <use href="#i-download" />
+                </svg> Экспорт шаблонов</button>
+              <button id="importBtn" class="btn btn-secondary btn-sm"
+                title="Загрузить шаблоны из сохраненного ранее JSON-файла"><svg class="ico">
+                  <use href="#i-upload" />
+                </svg> Импорт шаблонов</button>
+              <input type="file" id="importFileInput" accept="application/json,.json" hidden>
+            </div>
+          </div>
+        </div><!-- /.card-body sectionSettings -->
       </section>
 
     </aside>

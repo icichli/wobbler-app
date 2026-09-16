@@ -800,8 +800,8 @@ body.theme-light .btn-theme-toggle:hover {
 
 .sidebar-tabs-bar {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 4px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
 }
 
 .sidebar-tab-btn {
@@ -809,26 +809,30 @@ body.theme-light .btn-theme-toggle:hover {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  padding: 6px 2px;
+  gap: 4px;
+  padding: 8px 4px;
   background: rgba(30, 41, 59, 0.7);
-  border: 1px solid transparent;
-  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 9px;
   color: var(--text-muted);
   cursor: pointer;
   transition: all 0.2s ease;
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   font-weight: 700;
   min-width: 0;
+  position: relative;
 }
 
 .sidebar-tab-btn .tab-icon {
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .sidebar-tab-btn .tab-name {
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -845,16 +849,191 @@ body.theme-light .btn-theme-toggle:hover {
   background: var(--accent-blue);
   color: #0f172a;
   border-color: var(--accent-blue);
-  box-shadow: 0 2px 10px rgba(127, 184, 176, 0.4);
+  box-shadow: 0 2px 12px rgba(127, 184, 176, 0.45);
+}
+
+/* Settings Sub-Tabs Bar & Panes */
+.settings-sub-tabs-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  background: rgba(15, 23, 42, 0.65);
+  padding: 4px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 14px;
+}
+
+.settings-sub-tab-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 7px 4px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  position: relative;
+  min-width: 0;
+}
+
+.settings-sub-tab-btn .settings-tab-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.settings-sub-tab-btn .settings-tab-icon svg {
+  width: 13px;
+  height: 13px;
+}
+
+.settings-sub-tab-btn .settings-tab-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.settings-sub-tab-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.settings-sub-tab-btn.active {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.35);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+
+.settings-sub-tab-btn .tab-custom-badge {
+  top: 3px;
+  right: 4px;
+}
+
+.settings-sub-pane {
+  display: none;
+  animation: fadeInTab 0.18s ease-out;
+}
+
+.settings-sub-pane.active {
+  display: block;
+}
+
+.settings-pane-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.settings-pane-header h4 {
+  margin: 0;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+@media (max-width: 440px) {
+  .settings-sub-tabs-bar {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 5px;
+  }
+}
+
+/* Settings Backup Footer (Экспорт / Импорт шаблонов) */
+.settings-backup-footer {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-backup-header {
+  display: flex;
+  align-items: center;
+}
+
+.settings-backup-title {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.settings-backup-title svg {
+  width: 13px;
+  height: 13px;
+}
+
+.settings-backup-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.settings-backup-actions .btn {
+  flex: 1;
+  justify-content: center;
+  font-size: 0.75rem;
+  padding: 6px 8px;
+}
+
+.sidebar-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 2px;
+}
+
+.sidebar-reset-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(30, 41, 59, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  line-height: 1.2;
+}
+
+.sidebar-reset-btn .ico {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+.sidebar-reset-btn:hover {
+  background: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.45);
 }
 
 .sidebar-mode-actions {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding-top: 5px;
-  margin-top: 2px;
 }
 
 .sidebar-mode-pill {
@@ -8116,6 +8295,59 @@ body.theme-light .sidebar-tab-btn.active {
   color: #ffffff !important;
   border-color: var(--accent-blue-primary) !important;
   box-shadow: 0 2px 8px rgba(46, 107, 99, 0.25) !important;
+}
+
+body.theme-light .settings-sub-tabs-bar {
+  background: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+}
+
+body.theme-light .settings-sub-tab-btn {
+  color: #64748b !important;
+}
+
+body.theme-light .settings-sub-tab-btn:hover {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+body.theme-light .settings-sub-tab-btn.active {
+  background: #ffffff !important;
+  color: #0284c7 !important;
+  border-color: #bae6fd !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+}
+
+body.theme-light .settings-pane-header {
+  border-bottom-color: #e2e8f0 !important;
+}
+
+body.theme-light .settings-pane-header h4 {
+  color: #64748b !important;
+}
+
+body.theme-light .settings-backup-footer {
+  border-top-color: #e2e8f0 !important;
+}
+
+body.theme-light .settings-backup-title {
+  color: #64748b !important;
+}
+
+body.theme-light .sidebar-top-row {
+  border-bottom-color: #e2e8f0 !important;
+}
+
+body.theme-light .sidebar-reset-btn {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  color: #64748b !important;
+}
+
+body.theme-light .sidebar-reset-btn:hover {
+  background: #fef2f2 !important;
+  border-color: #fca5a5 !important;
+  color: #dc2626 !important;
 }
 
 body.theme-light .sidebar-mode-toggle-btn {
