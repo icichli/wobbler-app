@@ -4270,6 +4270,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (t.includes('вишня') || t.includes('миндаль')) return 'images/beer/sidr_vishnya_mindal.jpg';
       if (t.includes('груша')) return 'images/beer/sidr_grusha.jpg';
       if (t.includes('дыня') || t.includes('маракуй')) return 'images/beer/sidr_dynya_marakuya.jpg';
+      if (t.includes('фрей')) return 'images/beer/freya.jpg';
+      if (t.includes('валькир')) return 'images/beer/krov_valkirii.jpg';
+      if (t.includes('мимир')) return 'images/beer/plata_mimira.jpg';
       return '';
     }
   }
@@ -4323,7 +4326,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ==========================================================================
   // --- Постоянный Справочник сортов разливного пива (Beer Catalog Database) ---
   // ==========================================================================
-  const BEER_CATALOG_KEY = 'wobbler_beer_catalog_v6';
+  const BEER_CATALOG_KEY = 'wobbler_beer_catalog_v8';
 
     const DEFAULT_BEER_CATALOG = [
     {
@@ -5118,6 +5121,45 @@ document.addEventListener('DOMContentLoaded', () => {
       beerStyle: 'Сидр',
       composition: 'СОСТАВ: вода, яблочный сок, ежевичный сок',
       beerPhoto: 'sidr_lesnye_yagody.jpg'
+    },
+    {
+      title: 'Поцелуй Фрейи',
+      category: 'Сидр/Медовуха',
+      categories: ["Сидр/Медовуха"],
+      price: '',
+      beerStrength: '4,7%',
+      beerBitterness: '-',
+      beerDensity: '-',
+      beerType: '-',
+      beerStyle: 'Медовуха',
+      composition: 'СОСТАВ: вода, цветочный мед, сахар, дрожжи',
+      beerPhoto: 'freya.jpg'
+    },
+    {
+      title: 'Кровь Валькирии',
+      category: 'Сидр/Медовуха',
+      categories: ["Сидр/Медовуха"],
+      price: '',
+      beerStrength: '4,7%',
+      beerBitterness: '-',
+      beerDensity: '-',
+      beerType: '-',
+      beerStyle: 'Медовуха',
+      composition: 'СОСТАВ: вода, цветочный мед, вишневый сок, дрожжи',
+      beerPhoto: 'krov_valkirii.jpg'
+    },
+    {
+      title: 'Плата Мимира',
+      category: 'Сидр/Медовуха',
+      categories: ["Сидр/Медовуха"],
+      price: '',
+      beerStrength: '4,7%',
+      beerBitterness: '-',
+      beerDensity: '-',
+      beerType: '-',
+      beerStyle: 'Медовуха',
+      composition: 'СОСТАВ: вода, цвет. мед, сок голубики, экст. ореха, дрожжи',
+      beerPhoto: 'plata_mimira.jpg'
     }
   ];
   let beerCatalog = loadBeerCatalog();
@@ -5182,7 +5224,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function loadBeerCatalog() {
     try {
-      const raw = localStorage.getItem(BEER_CATALOG_KEY);
+      let raw = localStorage.getItem(BEER_CATALOG_KEY);
+      if (!raw) {
+        // Миграция пользовательских сортов из v7 при обновлении встроенной базы
+        const oldRaw = localStorage.getItem('wobbler_beer_catalog_v7');
+        if (oldRaw) {
+          try {
+            const oldParsed = JSON.parse(oldRaw);
+            if (Array.isArray(oldParsed) && oldParsed.length > 0) {
+              const defaultTitles = new Set(DEFAULT_BEER_CATALOG.map(b => (b.title || '').trim().toLowerCase()));
+              const customUserItems = oldParsed.filter(b => b && b.title && !defaultTitles.has(b.title.trim().toLowerCase()));
+              const migrated = DEFAULT_BEER_CATALOG.map(b => Object.assign({}, b, { category: classifyBeer(b) })).concat(customUserItems);
+              localStorage.setItem(BEER_CATALOG_KEY, JSON.stringify(migrated));
+              return migrated;
+            }
+          } catch (_) { }
+        }
+      }
       if (raw) {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed) && parsed.length > 0) {
