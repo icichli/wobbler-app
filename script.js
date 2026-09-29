@@ -4267,12 +4267,34 @@ document.addEventListener('DOMContentLoaded', () => {
       if (beerPhotosMap.has(t)) return beerPhotosMap.get(t);
       if (beerPhotosMap.has(`${t}.jpg`)) return beerPhotosMap.get(`${t}.jpg`);
       if (t === 'банька') return 'images/beer/banka.jpg';
+      if (t.includes('чешское н/ф') || t.includes('чешское нф')) return 'images/beer/Cheshskoe_NF.jpg';
+      if (t.includes('макарий') && t.includes('марочн')) return 'images/beer/Makarij_Marochnoe.jpg';
+      if (t.includes('волжск') || t.includes('волжаск')) return 'images/beer/Volzhskaya_Kommuna.jpg';
+      if (t.includes('барбарис')) return 'images/beer/Barbaris.jpg';
+      if (t.includes('bowler')) return 'images/beer/Bowler_IPA.jpg';
+      if (t.includes('понедельник')) return 'images/beer/Ponedelnik.jpg';
+      if (t.includes('соня') || t.includes('ginger ipa')) return 'images/beer/Ryzhaya_Sonya.jpg';
+      if (t.includes('бычье') || t.includes('бычье сердце')) return 'images/beer/Byche_Serdtse.jpg';
+      if (t.includes('снежный')) return 'images/beer/Snezhnyj_El.jpg';
+      if (t.includes('самосвал')) return 'images/beer/Samosval.jpg';
+      if (t.includes('немецкий')) return 'images/beer/Nemetskij_Vkus.jpg';
+      if (t.includes('домашний свар')) return 'images/beer/Domashnij_Svar.jpg';
+      if (t.includes('апшеронск')) return 'images/beer/Apsheronskoe.jpg';
+      if (t.includes('домодедовск') && (t.includes('н/ф') || t.includes('нф') || t.includes('нефильтр'))) return 'images/beer/Domodedovskoe_NF.jpg';
+      if (t.includes('домодедовск')) return 'images/beer/Domodedovskoe.jpg';
       if (t.includes('вишня') || t.includes('миндаль')) return 'images/beer/sidr_vishnya_mindal.jpg';
       if (t.includes('груша')) return 'images/beer/sidr_grusha.jpg';
       if (t.includes('дыня') || t.includes('маракуй')) return 'images/beer/sidr_dynya_marakuya.jpg';
       if (t.includes('фрей')) return 'images/beer/freya.jpg';
       if (t.includes('валькир')) return 'images/beer/krov_valkirii.jpg';
       if (t.includes('мимир')) return 'images/beer/plata_mimira.jpg';
+      if (t.includes('гранат') || (t.includes('phoenix') && t.includes('малин'))) return 'images/beer/White_Phoenix_Granat_Malina.jpg';
+      if (t.includes('асти') || t.includes('розе') || t.includes('шампань')) return 'images/beer/Shampan_Asti_Roze.jpg';
+      if (t.includes('paulaner') || t.includes('пауланер')) return 'images/beer/Paulaner_Munchner_Hell.jpg';
+      if (t.includes('radeberger') || t.includes('радебергер')) return 'images/beer/Radeberger_Pilsner.jpg';
+      if (t.includes('schöfferhofer') || t.includes('schofferhofer') || t.includes('шефферхофер') || t.includes('шофферхофер')) return 'images/beer/Schofferhofer_Hefeweizen.jpg';
+      if (t.includes('ayinger') || t.includes('айингер')) return 'images/beer/Ayinger_Lager_Hell.jpg';
+      if (t.includes('zubr') || t.includes('зубр')) return 'images/beer/Zubr_Gold.jpg';
       return '';
     }
   }
@@ -4395,6 +4417,19 @@ document.addEventListener('DOMContentLoaded', () => {
       beerPhoto: 'Zhigulevskoe_Samarskoe.jpg'
     },
     {
+      title: 'Волжская Коммуна',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,0%',
+      beerBitterness: '-',
+      beerDensity: '11,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Volzhskaya_Kommuna.jpg'
+    },
+    {
       title: 'Венское Экспорт',
       category: 'Отечка',
       categories: ["Отечка"],
@@ -4471,6 +4506,19 @@ document.addEventListener('DOMContentLoaded', () => {
       beerStyle: 'Лагер',
       composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
       beerPhoto: 'Makarij_Zhivoe_NF.jpg'
+    },
+    {
+      title: 'Макарий Марочное',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,5%',
+      beerBitterness: '-',
+      beerDensity: '12,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Makarij_Marochnoe.jpg'
     },
     {
       title: 'МАКАРЫЧ Ремесленное',
@@ -4642,6 +4690,19 @@ document.addEventListener('DOMContentLoaded', () => {
       beerPhoto: 'Cheshskoe_Elitnoe.jpg'
     },
     {
+      title: 'Чешское Н/Ф',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,7%',
+      beerBitterness: '-',
+      beerDensity: '12,0%',
+      beerType: 'светлое нефильтрованное',
+      beerStyle: 'Лагер НФ',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Cheshskoe_NF.jpg'
+    },
+    {
       title: 'Алтайский ГОСТ',
       category: 'Отечка',
       categories: ["Отечка"],
@@ -4746,6 +4807,97 @@ document.addEventListener('DOMContentLoaded', () => {
       beerPhoto: 'Klosterbrau.jpg'
     },
     {
+      title: 'Снежный Эль',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,5%',
+      beerBitterness: '-',
+      beerDensity: '12,0%',
+      beerType: 'светлое нефильтрованное',
+      beerStyle: 'Лагер НФ',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Snezhnyj_El.jpg'
+    },
+    {
+      title: 'Самосвал',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '7,0%',
+      beerBitterness: '-',
+      beerDensity: '16,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Samosval.jpg'
+    },
+    {
+      title: 'Немецкий Вкус',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '5,0%',
+      beerBitterness: '-',
+      beerDensity: '12,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Nemetskij_Vkus.jpg'
+    },
+    {
+      title: 'Домашний Свар',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,0%',
+      beerBitterness: '-',
+      beerDensity: '11,0%',
+      beerType: 'светлое нефильтрованное',
+      beerStyle: 'Лагер НФ',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Domashnij_Svar.jpg'
+    },
+    {
+      title: 'Апшеронское',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,0%',
+      beerBitterness: '-',
+      beerDensity: '11,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Apsheronskoe.jpg'
+    },
+    {
+      title: 'Домодедовское',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,5%',
+      beerBitterness: '-',
+      beerDensity: '12,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Domodedovskoe.jpg'
+    },
+    {
+      title: 'Домодедовское Н/Ф',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,0%',
+      beerBitterness: '-',
+      beerDensity: '11,0%',
+      beerType: 'светлое нефильтрованное',
+      beerStyle: 'Лагер НФ',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Domodedovskoe_NF.jpg'
+    },
+    {
       title: 'Schneider Weisse TAP 1 Hefeweissbier Naturtrub',
       category: 'Импорт',
       categories: ["Импорт"],
@@ -4770,6 +4922,71 @@ document.addEventListener('DOMContentLoaded', () => {
       beerStyle: 'Лагер Хель',
       composition: 'СОСТАВ: вода, солод пивовар. яч., хмель, дрожжи',
       beerPhoto: 'Kurpfalz_Brau.jpg'
+    },
+    {
+      title: 'Paulaner Munchner Hell',
+      category: 'Импорт',
+      categories: ["Импорт"],
+      price: '',
+      beerStrength: '4,9%',
+      beerBitterness: '20',
+      beerDensity: '11,5%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер хель',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Paulaner_Munchner_Hell.jpg'
+    },
+    {
+      title: 'Radeberger Pilsner',
+      category: 'Импорт',
+      categories: ["Импорт"],
+      price: '',
+      beerStrength: '4,8%',
+      beerBitterness: '-',
+      beerDensity: '14,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Пилс',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Radeberger_Pilsner.jpg'
+    },
+    {
+      title: 'Schöfferhofer Hefeweizen',
+      category: 'Импорт',
+      categories: ["Импорт"],
+      price: '',
+      beerStrength: '5,0%',
+      beerBitterness: '-',
+      beerDensity: '11,4%',
+      beerType: 'светлое нефильтрованное',
+      beerStyle: 'Hefeweizen',
+      composition: 'СОСТАВ: вода, солод пив. пшен., хмель, дрожжи',
+      beerPhoto: 'Schofferhofer_Hefeweizen.jpg'
+    },
+    {
+      title: 'Ayinger Lager Hell',
+      category: 'Импорт',
+      categories: ["Импорт"],
+      price: '',
+      beerStrength: '4,9%',
+      beerBitterness: '15',
+      beerDensity: '11,8%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер хель',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Ayinger_Lager_Hell.jpg'
+    },
+    {
+      title: 'Zubr Gold',
+      category: 'Импорт',
+      categories: ["Импорт"],
+      price: '',
+      beerStrength: '4,6%',
+      beerBitterness: '-',
+      beerDensity: '11,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Zubr_Gold.jpg'
     },
     {
       title: 'Iron Woods Stout',
@@ -4980,6 +5197,71 @@ document.addEventListener('DOMContentLoaded', () => {
       beerPhoto: 'Friday_Avenue.jpg'
     },
     {
+      title: 'Bowler IPA',
+      category: 'Крафт, Глетчер',
+      categories: ["Крафт", "Глетчер"],
+      price: '',
+      beerStrength: '6,1%',
+      beerBitterness: '70',
+      beerDensity: '14,5%',
+      beerType: 'светлое нефильтрованное',
+      beerStyle: 'ИПА',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, солод. пив. яч. карам., дрожжи',
+      beerPhoto: 'Bowler_IPA.jpg'
+    },
+    {
+      title: 'Понедельник',
+      category: 'Крафт',
+      categories: ["Крафт"],
+      price: '',
+      beerStrength: '5,0%',
+      beerBitterness: '-',
+      beerDensity: '13,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Ponedelnik.jpg'
+    },
+    {
+      title: 'Рыжая Соня',
+      category: 'Крафт',
+      categories: ["Крафт"],
+      price: '',
+      beerStrength: '6,2%',
+      beerBitterness: '54',
+      beerDensity: '16,0%',
+      beerType: 'светлое нефильтрованное',
+      beerStyle: 'ИПА',
+      composition: 'СОСТАВ: вода, солод пив. яч. солод яч. кар., пненич., хмель, дрожжи',
+      beerPhoto: 'Ryzhaya_Sonya.jpg'
+    },
+    {
+      title: 'Бычье Сердце',
+      category: 'Крафт',
+      categories: ["Крафт"],
+      price: '',
+      beerStrength: '6,5%',
+      beerBitterness: '-',
+      beerDensity: '15,0%',
+      beerType: 'неосветленное нефильтрованное',
+      beerStyle: 'Гозе',
+      composition: 'СОСТАВ: вода, солод пив. яч., томатная паста, специи, хмель, дрожжи',
+      beerPhoto: 'Byche_Serdtse.jpg'
+    },
+    {
+      title: 'Барбарис',
+      category: 'БА',
+      categories: ["БА"],
+      price: '',
+      beerStrength: '-',
+      beerBitterness: '-',
+      beerDensity: '-',
+      beerType: '-',
+      beerStyle: 'Лимонад',
+      composition: 'СОСТАВ: вода, барбарис, сахар',
+      beerPhoto: 'Barbaris.jpg'
+    },
+    {
       title: 'Дюшес',
       category: 'БА',
       categories: ["БА"],
@@ -5123,6 +5405,19 @@ document.addEventListener('DOMContentLoaded', () => {
       beerPhoto: 'sidr_lesnye_yagody.jpg'
     },
     {
+      title: 'Шампань Асти Розе',
+      category: 'Сидр/Медовуха',
+      categories: ["Сидр/Медовуха"],
+      price: '',
+      beerStrength: '5,5%',
+      beerBitterness: '-',
+      beerDensity: '-',
+      beerType: '-',
+      beerStyle: 'Сидр',
+      composition: 'СОСТАВ: яблочный сок, ароматизаторы, сахарный сироп',
+      beerPhoto: 'Shampan_Asti_Roze.jpg'
+    },
+    {
       title: 'Поцелуй Фрейи',
       category: 'Сидр/Медовуха',
       categories: ["Сидр/Медовуха"],
@@ -5160,6 +5455,19 @@ document.addEventListener('DOMContentLoaded', () => {
       beerStyle: 'Медовуха',
       composition: 'СОСТАВ: вода, цвет. мед, сок голубики, экст. ореха, дрожжи',
       beerPhoto: 'plata_mimira.jpg'
+    },
+    {
+      title: 'White Phoenix Гранат-Малина',
+      category: 'Сидр/Медовуха',
+      categories: ["Сидр/Медовуха"],
+      price: '',
+      beerStrength: '5,6%',
+      beerBitterness: '-',
+      beerDensity: '-',
+      beerType: '-',
+      beerStyle: 'Медовуха',
+      composition: 'СОСТАВ: вода, медовосахорная основа, сок граната, сок малины, корня черной моркови',
+      beerPhoto: 'White_Phoenix_Granat_Malina.jpg'
     }
   ];
   let beerCatalog = loadBeerCatalog();
@@ -5203,9 +5511,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (s.includes('ипа') || s.includes('ipa') || s.includes('апа') || s.includes('apa') ||
         s.includes('стаут') || s.includes('stout') || s.includes('портер') || s.includes('porter') ||
         s.includes('эль') || s.includes('ale') || s.includes('бланш') || s.includes('blanche') ||
-        s.includes('витбир') || s.includes('ламбик') || s.includes('вайс') || s.includes('weiss') ||
+        s.includes('витбир') || s.includes('ламбик') || s.includes('вайс') || s.includes('weiss') || s.includes('гозе') || s.includes('gose') ||
         t.includes('крафтов') || t.includes('amnesia') || t.includes('iron woods') || t.includes('blue monkey') ||
-        t.includes('ruby road') || t.includes('nut butter') || t.includes('friday avenue') || t.includes('карамбуляж') ||
+        t.includes('ruby road') || t.includes('nut butter') || t.includes('friday avenue') || t.includes('bowler') || t.includes('понедельник') || t.includes('соня') || t.includes('бычье') || t.includes('карамбуляж') ||
         t.includes('ausweis') || s.includes('кёльш') || s.includes('kölsch')) {
       return 'Крафт';
     }
@@ -5554,6 +5862,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!query) return true;
       const t = (b.title || '').toLowerCase();
       const s = (b.beerStyle || '').toLowerCase();
+      if ((query.includes('волжаск') || query.includes('волжск')) && t.includes('волжская коммуна')) return true;
       return t.includes(query) || s.includes(query);
     });
 
@@ -5789,6 +6098,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const bt = norm(b.title);
         return bt && bt.startsWith(targetNorm);
       });
+    }
+
+    if (!match && (targetNorm.includes('волжаск') || targetNorm.includes('волжск')) && targetNorm.includes('коммун')) {
+      match = beerCatalog.find(b => (b.title || '').toLowerCase().includes('волжская коммуна'));
     }
 
     if (match) {
