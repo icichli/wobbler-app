@@ -4295,6 +4295,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (t.includes('schöfferhofer') || t.includes('schofferhofer') || t.includes('шефферхофер') || t.includes('шофферхофер')) return 'images/beer/Schofferhofer_Hefeweizen.jpg';
       if (t.includes('ayinger') || t.includes('айингер')) return 'images/beer/Ayinger_Lager_Hell.jpg';
       if (t.includes('zubr') || t.includes('зубр')) return 'images/beer/Zubr_Gold.jpg';
+      if (t.includes('cola') || t.includes('кола') || t.includes('точь в точь')) return 'images/beer/Cola_Toch_v_toch.jpg';
+      if ((t.includes('alaska') || t.includes('аляска')) && (t.includes('cherry') || t.includes('черри') || t.includes('вишн'))) return 'images/beer/Alaska_Cherry_Ale.jpg';
       return '';
     }
   }
@@ -5249,6 +5251,19 @@ document.addEventListener('DOMContentLoaded', () => {
       beerPhoto: 'Byche_Serdtse.jpg'
     },
     {
+      title: 'Alaska Cherry Ale',
+      category: 'Крафт',
+      categories: ["Крафт"],
+      price: '',
+      beerStrength: '6,0%',
+      beerBitterness: '-',
+      beerDensity: '17,0%',
+      beerType: 'неосветленное нефильтрованное',
+      beerStyle: 'Фрут Бир',
+      composition: 'СОСТАВ: вода, солод пив. яч., сок вишневый, хмель, дрожжи',
+      beerPhoto: 'Alaska_Cherry_Ale.jpg'
+    },
+    {
       title: 'Барбарис',
       category: 'БА',
       categories: ["БА"],
@@ -5286,6 +5301,19 @@ document.addEventListener('DOMContentLoaded', () => {
       beerStyle: 'Лимонад',
       composition: 'СОСТАВ: вода, сок лимона, сахар',
       beerPhoto: 'Limonad.jpg'
+    },
+    {
+      title: 'Cola Точь в точь',
+      category: 'БА',
+      categories: ["БА"],
+      price: '',
+      beerStrength: '-',
+      beerBitterness: '-',
+      beerDensity: '-',
+      beerType: '-',
+      beerStyle: 'Лимонад',
+      composition: 'СОСТАВ: вода, сахар, ароматизатор',
+      beerPhoto: 'Cola_Toch_v_toch.jpg'
     },
     {
       title: 'Квас Деревенский',
