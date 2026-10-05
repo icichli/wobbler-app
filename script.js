@@ -4297,6 +4297,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (t.includes('zubr') || t.includes('зубр')) return 'images/beer/Zubr_Gold.jpg';
       if (t.includes('cola') || t.includes('кола') || t.includes('точь в точь')) return 'images/beer/Cola_Toch_v_toch.jpg';
       if ((t.includes('alaska') || t.includes('аляска')) && (t.includes('cherry') || t.includes('черри') || t.includes('вишн'))) return 'images/beer/Alaska_Cherry_Ale.jpg';
+      if ((t.includes('трое') && t.includes('лодк')) || t.includes('трое в лодк')) return 'images/beer/Troe_v_Lodke.jpg';
+      if (t.includes('немецкое') || (t.includes('томск') && t.includes('немецк'))) return 'images/beer/Nemetskoe.jpg';
+      if (t.includes('томск')) return 'images/beer/Tomskoe_Firmennoe.jpg';
+      if (t.includes('kruger') || t.includes('krüger') || t.includes('крюгер')) return 'images/beer/Kryuger_Klassicheskij.jpg';
       return '';
     }
   }
@@ -4898,6 +4902,58 @@ document.addEventListener('DOMContentLoaded', () => {
       beerStyle: 'Лагер НФ',
       composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
       beerPhoto: 'Domodedovskoe_NF.jpg'
+    },
+    {
+      title: 'Трое в Лодке',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,9%',
+      beerBitterness: '-',
+      beerDensity: '12,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Troe_v_Lodke.jpg'
+    },
+    {
+      title: 'Томское Фирменное',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,0%',
+      beerBitterness: '-',
+      beerDensity: '11,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Tomskoe_Firmennoe.jpg'
+    },
+    {
+      title: 'Немецкое',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '4,0%',
+      beerBitterness: '10',
+      beerDensity: '11,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Nemetskoe.jpg'
+    },
+    {
+      title: 'Крюгер Классический',
+      category: 'Отечка',
+      categories: ["Отечка"],
+      price: '',
+      beerStrength: '5,0%',
+      beerBitterness: '16',
+      beerDensity: '12,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Kryuger_Klassicheskij.jpg'
     },
     {
       title: 'Schneider Weisse TAP 1 Hefeweissbier Naturtrub',
