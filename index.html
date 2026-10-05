@@ -2749,8 +2749,14 @@
           <!-- Плавающий контекстный микро-тулбар холста -->
           <div id="canvasQuickBar" class="canvas-quick-bar" style="display:none;">
             <div class="cqb-header">
-              <span class="cqb-target-label" id="cqbTargetLabel">Название</span>
-              <button type="button" class="cqb-close-btn" id="cqbCloseBtn" title="Закрыть (Esc)">✕</button>
+              <div class="cqb-header-left">
+                <span class="cqb-target-label" id="cqbTargetLabel">Название</span>
+                <button type="button" class="cqb-scope-btn" id="cqbScopeBtn" title="Область применения: нажмите, чтобы переключить (этот ценник / весь шаблон)" style="display:none;">этот ценник</button>
+              </div>
+              <div class="cqb-header-actions">
+                <button type="button" class="cqb-delete-btn" id="cqbDeleteDecorBtn" title="Скрыть/удалить эту плашку" style="display:none;">✕ Скрыть</button>
+                <button type="button" class="cqb-close-btn" id="cqbCloseBtn" title="Закрыть (Esc)">✕</button>
+              </div>
             </div>
             <div class="cqb-body">
               <div class="cqb-group" title="Размер шрифта">
@@ -2759,16 +2765,34 @@
                   title="Текущий размер шрифта (можно ввести число)">
                 <button type="button" class="cqb-btn" id="cqbFontPlus" title="Больше шрифт (+1pt)">+</button>
               </div>
-              <div class="cqb-group" title="Начертание">
+              <div class="cqb-group" id="cqbStyleGroup" title="Начертание">
                 <button type="button" class="cqb-btn" id="cqbBold" title="Жирный (Bold)"><b>B</b></button>
                 <button type="button" class="cqb-btn" id="cqbItalic" title="Курсив (Italic)"><i>I</i></button>
               </div>
-              <div class="cqb-group" title="Цвет текста">
+              <div class="cqb-group" id="cqbTextColorGroup" title="Цвет текста">
+                <span class="cqb-group-label" id="cqbColorLabel" style="display:none;">Текст</span>
                 <label class="cqb-color-wrap" title="Выбрать цвет текста">
                   <input type="color" id="cqbColorInput" class="cqb-color-input">
                   <span class="cqb-color-swatch" id="cqbColorSwatch"></span>
                 </label>
               </div>
+              <div class="cqb-group" id="cqbBgColorGroup" title="Цвет фона плашки" style="display:none;">
+                <span class="cqb-group-label">Фон</span>
+                <label class="cqb-color-wrap" title="Выбрать цвет фона плашки">
+                  <input type="color" id="cqbBgColorInput" class="cqb-color-input" value="#e63946">
+                  <span class="cqb-color-swatch" id="cqbBgColorSwatch" style="background-color: #e63946;"></span>
+                </label>
+              </div>
+            </div>
+            <div class="cqb-chips-row" id="cqbChipsRow" style="display:none;">
+              <button type="button" class="cqb-chip" data-chip="АКЦИЯ">АКЦИЯ</button>
+              <button type="button" class="cqb-chip" data-chip="НОВИНКА">НОВИНКА</button>
+              <button type="button" class="cqb-chip" data-chip="ХИТ">ХИТ</button>
+              <button type="button" class="cqb-chip" data-chip="СКИДКА">СКИДКА</button>
+              <button type="button" class="cqb-chip" data-chip="СУПЕРЦЕНА">СУПЕРЦЕНА</button>
+              <button type="button" class="cqb-chip" data-chip="ВЫГОДНО">ВЫГОДНО</button>
+              <button type="button" class="cqb-chip" data-chip="ЖИВОЕ">ЖИВОЕ</button>
+              <button type="button" class="cqb-chip" data-chip="ОСТРО!">ОСТРО!</button>
             </div>
           </div>
         </div>

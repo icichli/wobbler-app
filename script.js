@@ -877,13 +877,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const DECOR_FIELDS = [
     // СВЕРХУ
     'outsideShow', 'outsideText', 'outsideBg', 'outsideBgImg', 'outsideCustomBg', 'outsideColor', 'outsideFontSize', 'outsideHeight',
-    'outsideFont', 'outsideItalic', 'outsideShadow',
+    'outsideFont', 'outsideItalic', 'outsideWeight', 'outsideShadow',
     // ВНУТРИ (insideWidth тоже per-item — переопределяет шаблонную ширину блока)
     'insideShow', 'insideText', 'insideBg', 'insideBgImg', 'insideCustomBg', 'insideColor', 'insideFontSize', 'insideHeight', 'insideWidth',
-    'insideFont', 'insideItalic', 'insideShadow',
+    'insideFont', 'insideItalic', 'insideWeight', 'insideShadow',
     // СНИЗУ
     'bottomShow', 'bottomText', 'bottomBg', 'bottomBgImg', 'bottomCustomBg', 'bottomColor', 'bottomFontSize', 'bottomHeight',
-    'bottomFont', 'bottomItalic', 'bottomShadow'
+    'bottomFont', 'bottomItalic', 'bottomWeight', 'bottomShadow'
   ];
 
   // Возвращает per-item значение поля оформления, иначе fallback (обычно templateDecor[field]).
@@ -1370,6 +1370,7 @@ document.addEventListener('DOMContentLoaded', () => {
         color: decorOf(it, 'outsideColor', td.outsideColor || '#ffffff'),
         font: decorOf(it, 'outsideFont', td.outsideFont || ''),
         italic: decorOf(it, 'outsideItalic', td.outsideItalic === true),
+        weight: decorOf(it, 'outsideWeight', td.outsideWeight || '900'),
         shadow: decorOf(it, 'outsideShadow', td.outsideShadow || ''),
         fontSize: decorOf(it, 'outsideFontSize', td.outsideFontSize != null ? td.outsideFontSize : 14),
         height: decorOf(it, 'outsideHeight', td.outsideHeight != null ? td.outsideHeight : defaultH)
@@ -1385,6 +1386,7 @@ document.addEventListener('DOMContentLoaded', () => {
         color: decorOf(it, 'bottomColor', td.bottomColor || '#ffffff'),
         font: decorOf(it, 'bottomFont', td.bottomFont || ''),
         italic: decorOf(it, 'bottomItalic', td.bottomItalic === true),
+        weight: decorOf(it, 'bottomWeight', td.bottomWeight || '900'),
         shadow: decorOf(it, 'bottomShadow', td.bottomShadow || ''),
         fontSize: decorOf(it, 'bottomFontSize', td.bottomFontSize != null ? td.bottomFontSize : 14),
         height: decorOf(it, 'bottomHeight', td.bottomHeight != null ? td.bottomHeight : defaultH)
@@ -1400,6 +1402,7 @@ document.addEventListener('DOMContentLoaded', () => {
       color: decorOf(it, 'insideColor', td.insideColor || '#ffffff'),
       font: decorOf(it, 'insideFont', td.insideFont || ''),
       italic: decorOf(it, 'insideItalic', td.insideItalic === true),
+      weight: decorOf(it, 'insideWeight', td.insideWeight || '900'),
       shadow: decorOf(it, 'insideShadow', td.insideShadow || ''),
       fontSize: decorOf(it, 'insideFontSize', td.insideFontSize != null ? td.insideFontSize : 11),
       height: decorOf(it, 'insideHeight', td.insideHeight != null ? td.insideHeight : 8),
@@ -1606,6 +1609,7 @@ document.addEventListener('DOMContentLoaded', () => {
         color: decorOf(item, 'outsideColor', td.outsideColor || '#ffffff'),
         font: decorOf(item, 'outsideFont', td.outsideFont || ''),
         italic: decorOf(item, 'outsideItalic', td.outsideItalic === true),
+        weight: decorOf(item, 'outsideWeight', td.outsideWeight || '900'),
         shadow: decorOf(item, 'outsideShadow', td.outsideShadow || ''),
         fontSize: decorOf(item, 'outsideFontSize', td.outsideFontSize != null ? td.outsideFontSize : 14),
         height: decorOf(item, 'outsideHeight', td.outsideHeight != null ? td.outsideHeight : defaultH)
@@ -1621,6 +1625,7 @@ document.addEventListener('DOMContentLoaded', () => {
         color: decorOf(item, 'bottomColor', td.bottomColor || '#ffffff'),
         font: decorOf(item, 'bottomFont', td.bottomFont || ''),
         italic: decorOf(item, 'bottomItalic', td.bottomItalic === true),
+        weight: decorOf(item, 'bottomWeight', td.bottomWeight || '900'),
         shadow: decorOf(item, 'bottomShadow', td.bottomShadow || ''),
         fontSize: decorOf(item, 'bottomFontSize', td.bottomFontSize != null ? td.bottomFontSize : 14),
         height: decorOf(item, 'bottomHeight', td.bottomHeight != null ? td.bottomHeight : defaultH)
@@ -1635,6 +1640,7 @@ document.addEventListener('DOMContentLoaded', () => {
       color: decorOf(item, 'insideColor', td.insideColor || '#ffffff'),
       font: decorOf(item, 'insideFont', td.insideFont || ''),
       italic: decorOf(item, 'insideItalic', td.insideItalic === true),
+      weight: decorOf(item, 'insideWeight', td.insideWeight || '900'),
       shadow: decorOf(item, 'insideShadow', td.insideShadow || ''),
       fontSize: decorOf(item, 'insideFontSize', td.insideFontSize != null ? td.insideFontSize : 11),
       height: decorOf(item, 'insideHeight', td.insideHeight != null ? td.insideHeight : 8),
@@ -3574,6 +3580,27 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (existingCustomText && existingCustomText !== 'Указать цену' && existingCustomText !== 'ЖИВОЕ' && existingCustomText !== 'НОВИНКА') {
           effective.outsideText = existingCustomText;
           effective.bottomText = existingCustomText;
+        }
+        if (it.decor && it.decor.novayaTsenaFontSize != null) {
+          effective.outsideFontSize = it.decor.novayaTsenaFontSize;
+          effective.bottomFontSize = it.decor.novayaTsenaFontSize;
+          effective.novayaTsenaFontSize = it.decor.novayaTsenaFontSize;
+        }
+        if (it.decor && it.decor.novayaTsenaBold != null) {
+          const w = it.decor.novayaTsenaBold ? '900' : 'normal';
+          effective.outsideWeight = w;
+          effective.bottomWeight = w;
+          effective.novayaTsenaBold = it.decor.novayaTsenaBold;
+        }
+        if (it.decor && it.decor.novayaTsenaItalic != null) {
+          effective.outsideItalic = !!it.decor.novayaTsenaItalic;
+          effective.bottomItalic = !!it.decor.novayaTsenaItalic;
+          effective.novayaTsenaItalic = it.decor.novayaTsenaItalic;
+        }
+        if (it.decor && it.decor.novayaTsenaShadow != null) {
+          effective.outsideShadow = it.decor.novayaTsenaShadow;
+          effective.bottomShadow = it.decor.novayaTsenaShadow;
+          effective.novayaTsenaShadow = it.decor.novayaTsenaShadow;
         }
       }
     });
@@ -6869,25 +6896,29 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         menu.appendChild(b);
 
-        // Поле ввода цены и значка валюты при выборе пресета «Новая цена»
+        // Поле ввода цены, значка валюты и размера шрифта при выборе пресета «Новая цена»
         if (p.id === 'novaya_tsena' && checked) {
           const inputWrap = document.createElement('div');
           inputWrap.className = 'decor-text-input-wrap';
-          inputWrap.style.cssText = 'padding: 6px 8px; background: rgba(255,255,0,0.12); border: 1px solid rgba(255,255,0,0.35); border-radius: 6px; margin: 4px 6px 8px; display: flex; flex-direction: column; gap: 6px;';
 
           const label = document.createElement('span');
-          label.style.cssText = 'font-size: 0.75rem; color: #fef08a; font-weight: 700; display: flex; justify-content: space-between; align-items: center;';
-          label.innerHTML = '<span>Новая цена и валюта:</span>';
+          label.className = 'decor-input-label';
+          label.textContent = 'Новая цена и валюта:';
           inputWrap.appendChild(label);
 
           const rowInputs = document.createElement('div');
-          rowInputs.style.cssText = 'display: flex; gap: 6px; align-items: center;';
+          rowInputs.className = 'decor-price-row';
 
           const it = itemsData[idx];
           const rawVal = (it && it.decor && (it.decor.outsideText || it.decor.bottomText)) || 'Указать цену';
 
           let initVal = (it && it.decor && it.decor.novayaTsenaVal) != null ? it.decor.novayaTsenaVal : '';
           let initCurr = (it && it.decor && it.decor.novayaTsenaCurr) != null ? it.decor.novayaTsenaCurr : '₽';
+          let initSize = (it && it.decor && it.decor.novayaTsenaFontSize != null)
+            ? it.decor.novayaTsenaFontSize
+            : ((it && it.decor && (it.decor.outsideFontSize || it.decor.bottomFontSize)) != null
+              ? (it.decor.outsideFontSize || it.decor.bottomFontSize)
+              : 34);
 
           if (!initVal) {
             if (rawVal === 'Указать цену') {
@@ -6907,7 +6938,6 @@ document.addEventListener('DOMContentLoaded', () => {
           txtInput.className = 'decor-text-input-field';
           txtInput.placeholder = 'напр. 250';
           txtInput.value = initVal;
-          txtInput.style.cssText = 'flex: 1; min-width: 0; box-sizing: border-box; background: #0f172a; border: 1px solid #eab308; color: #ffffff; border-radius: 4px; padding: 5px 8px; font-size: 0.88rem; font-weight: 700; outline: none;';
 
           const currInput = document.createElement('input');
           currInput.type = 'text';
@@ -6915,20 +6945,371 @@ document.addEventListener('DOMContentLoaded', () => {
           currInput.placeholder = '₽';
           currInput.value = initCurr;
           currInput.title = 'Значок валюты';
-          currInput.style.cssText = 'width: 44px; box-sizing: border-box; background: #0f172a; border: 1px solid #eab308; color: #ffffff; border-radius: 4px; padding: 5px 6px; font-size: 0.88rem; font-weight: 700; text-align: center; outline: none;';
+
+          rowInputs.appendChild(txtInput);
+          rowInputs.appendChild(currInput);
+          inputWrap.appendChild(rowInputs);
+
+          // Вторая строка: регулировка размера шрифта
+          const rowSize = document.createElement('div');
+          rowSize.className = 'decor-size-row';
+
+          const sizeLabel = document.createElement('span');
+          sizeLabel.className = 'decor-input-label';
+          sizeLabel.textContent = 'Размер шрифта:';
+          rowSize.appendChild(sizeLabel);
+
+          const stepper = document.createElement('div');
+          stepper.className = 'decor-size-stepper';
+
+          const minusBtn = document.createElement('button');
+          minusBtn.type = 'button';
+          minusBtn.className = 'decor-size-btn minus';
+          minusBtn.textContent = '−';
+          minusBtn.title = 'Уменьшить шрифт (-1pt)';
+
+          const valWrap = document.createElement('div');
+          valWrap.className = 'decor-size-val-wrap';
+          valWrap.title = 'Нажмите, чтобы ввести размер шрифта (pt)';
+
+          const sizeInput = document.createElement('input');
+          sizeInput.type = 'number';
+          sizeInput.className = 'decor-size-input-field';
+          sizeInput.min = '8';
+          sizeInput.max = '72';
+          sizeInput.step = '1';
+          sizeInput.value = String(initSize);
+          sizeInput.title = 'Размер шрифта (pt)';
+
+          const ptText = document.createElement('span');
+          ptText.className = 'decor-size-unit';
+          ptText.textContent = 'pt';
+
+          valWrap.appendChild(sizeInput);
+          valWrap.appendChild(ptText);
+
+          valWrap.addEventListener('click', () => {
+            sizeInput.focus();
+            sizeInput.select();
+          });
+
+          const plusBtn = document.createElement('button');
+          plusBtn.type = 'button';
+          plusBtn.className = 'decor-size-btn plus';
+          plusBtn.textContent = '+';
+          plusBtn.title = 'Увеличить шрифт (+1pt)';
+
+          stepper.appendChild(minusBtn);
+          stepper.appendChild(valWrap);
+          stepper.appendChild(plusBtn);
+          rowSize.appendChild(stepper);
+          inputWrap.appendChild(rowSize);
+
+          let curBold = (it && it.decor && it.decor.novayaTsenaBold != null)
+            ? !!it.decor.novayaTsenaBold
+            : ((it && it.decor && it.decor.outsideWeight) ? it.decor.outsideWeight !== 'normal' && it.decor.outsideWeight !== '400' : true);
+
+          let curItalic = (it && it.decor && it.decor.novayaTsenaItalic != null)
+            ? !!it.decor.novayaTsenaItalic
+            : !!(it && it.decor && (it.decor.outsideItalic || it.decor.bottomItalic));
+
+          let curShadow = (it && it.decor && it.decor.novayaTsenaShadow != null)
+            ? !!it.decor.novayaTsenaShadow
+            : !!(it && it.decor && (it.decor.outsideShadow || it.decor.bottomShadow));
+
+          // Третья строка: переключение жирный / курсив / тень
+          const rowFormat = document.createElement('div');
+          rowFormat.className = 'decor-format-row';
+
+          const formatLabel = document.createElement('span');
+          formatLabel.className = 'decor-input-label';
+          formatLabel.textContent = 'Начертание:';
+          rowFormat.appendChild(formatLabel);
+
+          const formatGroup = document.createElement('div');
+          formatGroup.className = 'decor-format-group';
+
+          const btnBold = document.createElement('button');
+          btnBold.type = 'button';
+          btnBold.className = 'decor-format-btn decor-btn-bold' + (curBold ? ' active' : '');
+          btnBold.title = 'Полужирный шрифт (Bold)';
+          btnBold.innerHTML = '<b>Ж</b>';
+
+          const btnItalic = document.createElement('button');
+          btnItalic.type = 'button';
+          btnItalic.className = 'decor-format-btn decor-btn-italic' + (curItalic ? ' active' : '');
+          btnItalic.title = 'Курсив (Italic)';
+          btnItalic.innerHTML = '<i>К</i>';
+
+          const btnShadow = document.createElement('button');
+          btnShadow.type = 'button';
+          btnShadow.className = 'decor-format-btn decor-btn-shadow' + (curShadow ? ' active' : '');
+          btnShadow.title = 'Тень текста (Shadow)';
+          btnShadow.textContent = 'Тень';
+
+          btnBold.addEventListener('click', (e) => {
+            e.stopPropagation();
+            curBold = !curBold;
+            btnBold.classList.toggle('active', curBold);
+            syncDecorPriceText();
+          });
+
+          btnItalic.addEventListener('click', (e) => {
+            e.stopPropagation();
+            curItalic = !curItalic;
+            btnItalic.classList.toggle('active', curItalic);
+            syncDecorPriceText();
+          });
+
+          btnShadow.addEventListener('click', (e) => {
+            e.stopPropagation();
+            curShadow = !curShadow;
+            btnShadow.classList.toggle('active', curShadow);
+            syncDecorPriceText();
+          });
+
+          formatGroup.appendChild(btnBold);
+          formatGroup.appendChild(btnItalic);
+          formatGroup.appendChild(btnShadow);
+          rowFormat.appendChild(formatGroup);
+          inputWrap.appendChild(rowFormat);
+
+          // Четвертая строка: применить ко всем товарам в таблице / сохранить в шаблон
+          const rowActions = document.createElement('div');
+          rowActions.className = 'decor-actions-row';
+
+          const btnApplyAll = document.createElement('button');
+          btnApplyAll.type = 'button';
+          btnApplyAll.className = 'decor-action-btn decor-apply-all-btn';
+          btnApplyAll.title = 'Применить оформление (размер шрифта, жирный, курсив, тень) ко всем товарам в таблице, сохраняя их цены';
+          btnApplyAll.textContent = '⚡ Ко всем в таблице';
+
+          const btnSaveTemplate = document.createElement('button');
+          btnSaveTemplate.type = 'button';
+          btnSaveTemplate.className = 'decor-action-btn decor-save-template-btn';
+          btnSaveTemplate.title = 'Сохранить настройки оформления в шаблон по умолчанию (без привязки к конкретной цене)';
+          btnSaveTemplate.textContent = '★ В шаблон';
+
+          btnApplyAll.addEventListener('click', (e) => {
+            e.stopPropagation();
+            syncDecorPriceText();
+            const curr = currInput.value.trim();
+            const sz = Math.max(8, Math.min(72, parseInt(sizeInput.value, 10) || 34));
+            const shadowVal = curShadow ? buildShadow(2, '#000000') : '';
+            const weightVal = curBold ? '900' : 'normal';
+            const isTop = (decorBlockPos !== 'bottom');
+
+            itemsData.forEach((item, itemIdx) => {
+              item.priceCross = true;
+              item.decorCustomized = true;
+              item.decorPresets = ['novaya_tsena'];
+
+              let itemPriceVal = '';
+              let itemFullText = '';
+
+              if (itemIdx === idx) {
+                // Текущий редактируемый товар: берём введённую цену из поля
+                itemPriceVal = txtInput.value.trim();
+                itemFullText = (itemPriceVal && curr) ? `${itemPriceVal}${curr}` : (itemPriceVal || curr || 'Указать цену');
+              } else {
+                // Другие товары: НЕ перезаписываем цену, применяем только настройки оформления!
+                if (item.decor && item.decor.novayaTsenaVal != null && String(item.decor.novayaTsenaVal).trim()) {
+                  // Если у товара уже была своя указана новая цена — сохраняем её
+                  itemPriceVal = String(item.decor.novayaTsenaVal).trim();
+                  itemFullText = curr ? `${itemPriceVal}${curr}` : itemPriceVal;
+                } else if (item.decor && (item.decor.outsideText || item.decor.bottomText)) {
+                  // Если у товара уже был свой текст в плашке — сохраняем его
+                  const ex = (item.decor.outsideText || item.decor.bottomText).trim();
+                  itemPriceVal = ex;
+                  itemFullText = ex;
+                } else if (item.price && String(item.price).trim()) {
+                  // Иначе берём собственную цену товара из таблицы
+                  itemPriceVal = String(item.price).trim();
+                  itemFullText = curr ? `${itemPriceVal}${curr}` : itemPriceVal;
+                } else {
+                  itemPriceVal = 'Указать цену';
+                  itemFullText = 'Указать цену';
+                }
+              }
+
+              item.decor = Object.assign({}, item.decor || {}, {
+                outsideShow: isTop,
+                outsideText: itemFullText,
+                outsideBg: '#FFFF00',
+                outsideBgImg: 'none',
+                outsideCustomBg: null,
+                outsideColor: '#FF0000',
+                outsideFontSize: sz,
+                outsideHeight: (activeTemplateRef && activeTemplateRef.key === 'ryba') ? 13 : 9,
+                outsideFont: '',
+                outsideItalic: curItalic,
+                outsideWeight: weightVal,
+                outsideShadow: shadowVal,
+
+                bottomShow: !isTop,
+                bottomText: itemFullText,
+                bottomBg: '#FFFF00',
+                bottomBgImg: 'none',
+                bottomCustomBg: null,
+                bottomColor: '#FF0000',
+                bottomFontSize: sz,
+                bottomHeight: (activeTemplateRef && activeTemplateRef.key === 'ryba') ? 13 : 9,
+                bottomFont: '',
+                bottomItalic: curItalic,
+                bottomWeight: weightVal,
+                bottomShadow: shadowVal,
+
+                novayaTsenaVal: itemPriceVal,
+                novayaTsenaCurr: curr,
+                novayaTsenaFontSize: sz,
+                novayaTsenaBold: curBold,
+                novayaTsenaItalic: curItalic,
+                novayaTsenaShadow: shadowVal
+              });
+            });
+
+            refreshAllCrossBtnStates();
+            itemsData.forEach((_, i) => {
+              if (typeof refreshItemBadges === 'function') refreshItemBadges(i);
+            });
+            refreshDecorBtnState(idx, anchor);
+            updatePreview();
+            scheduleSessionSave();
+
+            btnApplyAll.textContent = `✓ Настройки применены (${itemsData.length})`;
+            btnApplyAll.classList.add('success');
+            setTimeout(() => {
+              btnApplyAll.textContent = '⚡ Ко всем в таблице';
+              btnApplyAll.classList.remove('success');
+            }, 1500);
+          });
+
+          btnSaveTemplate.addEventListener('click', (e) => {
+            e.stopPropagation();
+            syncDecorPriceText();
+            const curr = currInput.value.trim();
+            const sz = Math.max(8, Math.min(72, parseInt(sizeInput.value, 10) || 34));
+            const shadowVal = curShadow ? buildShadow(2, '#000000') : '';
+            const weightVal = curBold ? '900' : 'normal';
+            const isTop = (decorBlockPos !== 'bottom');
+
+            // Не зашиваем в шаблон конкретную цену ценника, сохраняем только настройки оформления!
+            const defaultTemplateText = (templateDecor && templateDecor.outsideText && templateDecor.outsideText !== 'Указать цену' && !templateDecor.outsideText.match(/^\d+(\s*₽)?$/))
+              ? templateDecor.outsideText
+              : 'Указать цену';
+
+            templateDecor = Object.assign({}, templateDecor || {}, {
+              outsideShow: isTop,
+              outsideText: defaultTemplateText,
+              outsideBg: '#FFFF00',
+              outsideBgImg: 'none',
+              outsideCustomBg: null,
+              outsideColor: '#FF0000',
+              outsideFontSize: sz,
+              outsideHeight: (activeTemplateRef && activeTemplateRef.key === 'ryba') ? 13 : 9,
+              outsideFont: '',
+              outsideItalic: curItalic,
+              outsideWeight: weightVal,
+              outsideShadow: shadowVal,
+
+              bottomShow: !isTop,
+              bottomText: defaultTemplateText,
+              bottomBg: '#FFFF00',
+              bottomBgImg: 'none',
+              bottomCustomBg: null,
+              bottomColor: '#FF0000',
+              bottomFontSize: sz,
+              bottomHeight: (activeTemplateRef && activeTemplateRef.key === 'ryba') ? 13 : 9,
+              bottomFont: '',
+              bottomItalic: curItalic,
+              bottomWeight: weightVal,
+              bottomShadow: shadowVal,
+
+              novayaTsenaCurr: curr,
+              novayaTsenaFontSize: sz,
+              novayaTsenaBold: curBold,
+              novayaTsenaItalic: curItalic,
+              novayaTsenaShadow: shadowVal
+            });
+
+            if (templateFonts) templateFonts.priceCross = true;
+            if (priceCrossToggle) priceCrossToggle.checked = true;
+
+            writeDecorSnapshotToInputs(templateDecor);
+            try { syncDecorControlsToContext(); } catch (err) { }
+            try { syncFontControlsToContext(); } catch (err) { }
+            updatePreview();
+            scheduleSessionSave();
+
+            btnSaveTemplate.textContent = '✓ Настройки в шаблоне!';
+            btnSaveTemplate.classList.add('success');
+            setTimeout(() => {
+              btnSaveTemplate.textContent = '★ В шаблон';
+              btnSaveTemplate.classList.remove('success');
+            }, 1500);
+          });
+
+          rowActions.appendChild(btnApplyAll);
+          rowActions.appendChild(btnSaveTemplate);
+          inputWrap.appendChild(rowActions);
 
           const syncDecorPriceText = () => {
             const val = txtInput.value.trim();
             const curr = currInput.value.trim();
+            const sz = Math.max(8, Math.min(72, parseInt(sizeInput.value, 10) || 34));
+            const shadowVal = curShadow ? buildShadow(2, '#000000') : '';
+            const weightVal = curBold ? '900' : 'normal';
+
             if (it && it.decor) {
               it.decor.novayaTsenaVal = txtInput.value;
               it.decor.novayaTsenaCurr = currInput.value;
               const fullText = (val && curr) ? `${val}${curr}` : (val || curr || 'Указать цену');
               it.decor.outsideText = fullText;
               it.decor.bottomText = fullText;
+              it.decor.novayaTsenaFontSize = sz;
+              it.decor.outsideFontSize = sz;
+              it.decor.bottomFontSize = sz;
+
+              it.decor.novayaTsenaBold = curBold;
+              it.decor.outsideWeight = weightVal;
+              it.decor.bottomWeight = weightVal;
+
+              it.decor.novayaTsenaItalic = curItalic;
+              it.decor.outsideItalic = curItalic;
+              it.decor.bottomItalic = curItalic;
+
+              it.decor.novayaTsenaShadow = shadowVal;
+              it.decor.outsideShadow = shadowVal;
+              it.decor.bottomShadow = shadowVal;
             }
             afterChange();
           };
+
+          const updateDecorFontSize = (newSz) => {
+            const sz = Math.max(8, Math.min(72, parseInt(newSz, 10) || 34));
+            sizeInput.value = String(sz);
+            syncDecorPriceText();
+          };
+
+          minusBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const cur = parseInt(sizeInput.value, 10) || 34;
+            updateDecorFontSize(cur - 1);
+          });
+
+          plusBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const cur = parseInt(sizeInput.value, 10) || 34;
+            updateDecorFontSize(cur + 1);
+          });
+
+          sizeInput.addEventListener('click', (e) => e.stopPropagation());
+          sizeInput.addEventListener('input', () => {
+            syncDecorPriceText();
+          });
+          sizeInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') closeItemQuickMenu();
+          });
 
           txtInput.addEventListener('click', (e) => e.stopPropagation());
           txtInput.addEventListener('input', syncDecorPriceText);
@@ -6942,9 +7323,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.key === 'Enter') closeItemQuickMenu();
           });
 
-          rowInputs.appendChild(txtInput);
-          rowInputs.appendChild(currInput);
-          inputWrap.appendChild(rowInputs);
           menu.appendChild(inputWrap);
           setTimeout(() => {
             txtInput.focus();
@@ -10277,9 +10655,15 @@ document.addEventListener('DOMContentLoaded', () => {
           txt.style.color = snap.color || '#ffffff';
           txt.style.fontFamily = snap.font || '';   // '' = наследуется
           txt.style.fontStyle = snap.italic ? 'italic' : 'normal';
+          txt.style.fontWeight = snap.weight || '900';
           txt.style.textShadow = snap.shadow || '';
-          const autoSize = fitDecorTextSize(snap.text, blockWidthMm, blockHeightMm, snap.font, '900', snap.italic);
-          txt.style.fontSize = `${autoSize || snap.fontSize || 14}pt`;
+          const explicitSize = parseFloat(snap.fontSize);
+          if (explicitSize && !isNaN(explicitSize) && explicitSize > 0) {
+            txt.style.fontSize = `${explicitSize}pt`;
+          } else {
+            const autoSize = fitDecorTextSize(snap.text, blockWidthMm, blockHeightMm, snap.font, snap.weight || '900', snap.italic);
+            txt.style.fontSize = `${autoSize || 14}pt`;
+          }
         }
       } else {
         blockEl.style.display = 'none';
@@ -11011,18 +11395,26 @@ document.addEventListener('DOMContentLoaded', () => {
     wobblerPreview.classList.toggle('has-outside-bottom', showBottom);
 
     const cardWMm = (parseFloat(wobblerWidthInput ? wobblerWidthInput.value : 6.5) * 10) || 65;
-    function applyDecorBlock(el, textEl, text, bgVal, customData, color, fontColor, fontSize, font, italic, shadow, blockWidthMm, blockHeightMm) {
+    function applyDecorBlock(el, textEl, text, bgVal, customData, color, fontColor, fontSize, font, italic, shadow, blockWidthMm, blockHeightMm, weight) {
       if (!el) return;
       el.style.display = 'flex';
       applyBackgroundTo(el, bgVal, customData, color);
       if (textEl) {
-        textEl.textContent = text || '';
+        if (document.activeElement !== textEl) {
+          textEl.textContent = text || '';
+        }
         textEl.style.color = fontColor || '#ffffff';
         textEl.style.fontFamily = font || '';   // '' = наследуется (как до появления настройки)
         textEl.style.fontStyle = italic ? 'italic' : 'normal';
+        textEl.style.fontWeight = weight || '900';
         textEl.style.textShadow = shadow || '';
-        const autoSize = fitDecorTextSize(text, blockWidthMm || cardWMm, blockHeightMm || 12, font, '900', italic);
-        textEl.style.fontSize = `${autoSize || fontSize || 14}pt`;
+        const explicitSize = parseFloat(fontSize);
+        if (explicitSize && !isNaN(explicitSize) && explicitSize > 0) {
+          textEl.style.fontSize = `${explicitSize}pt`;
+        } else {
+          const autoSize = fitDecorTextSize(text, blockWidthMm || cardWMm, blockHeightMm || 12, font, weight || '900', italic);
+          textEl.style.fontSize = `${autoSize || 14}pt`;
+        }
       }
     }
 
@@ -11032,7 +11424,7 @@ document.addEventListener('DOMContentLoaded', () => {
           activeOutsideSnap.text, activeOutsideSnap.bgImg, activeOutsideSnap.customBg,
           activeOutsideSnap.bg, activeOutsideSnap.color, activeOutsideSnap.fontSize,
           activeOutsideSnap.font, activeOutsideSnap.italic, activeOutsideSnap.shadow,
-          cardWMm, outsideH);
+          cardWMm, outsideH, activeOutsideSnap.weight);
       } else {
         wobblerOutsideTop.style.display = 'none';
       }
@@ -11048,7 +11440,7 @@ document.addEventListener('DOMContentLoaded', () => {
           activeInsideSnap.text, activeInsideSnap.bgImg, activeInsideSnap.customBg,
           activeInsideSnap.bg, activeInsideSnap.color, activeInsideSnap.fontSize,
           activeInsideSnap.font, activeInsideSnap.italic, activeInsideSnap.shadow,
-          insideWidthMm, insideH);
+          insideWidthMm, insideH, activeInsideSnap.weight);
       } else {
         wobblerInsideTop.style.display = 'none';
       }
@@ -11064,7 +11456,7 @@ document.addEventListener('DOMContentLoaded', () => {
           activeBottomSnap.text, activeBottomSnap.bgImg, activeBottomSnap.customBg,
           activeBottomSnap.bg, activeBottomSnap.color, activeBottomSnap.fontSize,
           activeBottomSnap.font, activeBottomSnap.italic, activeBottomSnap.shadow,
-          cardWMm, bottomH);
+          cardWMm, bottomH, activeBottomSnap.weight);
       } else {
         wobblerOutsideBottom.style.display = 'none';
       }
@@ -15729,6 +16121,40 @@ document.addEventListener('DOMContentLoaded', () => {
         previewBeerStyle.blur();
       });
     }
+
+    // 6. Декоративные промо-плашки оформления (СВЕРХУ, ВНУТРИ, СНИЗУ)
+    if (outsideTopText) {
+      makeEditable(outsideTopText, 'decorOutsideText', (rawText) => {
+        const val = rawText.replace(/[\r\n]+/g, ' ');
+        syncDecorControlsToContext();
+        if (decorOutsideText && decorOutsideText.value !== val) {
+          decorOutsideText.value = val;
+          onDecorInputChange();
+        }
+      });
+    }
+
+    if (insideTopText) {
+      makeEditable(insideTopText, 'decorInsideText', (rawText) => {
+        const val = rawText.replace(/[\r\n]+/g, ' ');
+        syncDecorControlsToContext();
+        if (decorInsideText && decorInsideText.value !== val) {
+          decorInsideText.value = val;
+          onDecorInputChange();
+        }
+      });
+    }
+
+    if (outsideBottomText) {
+      makeEditable(outsideBottomText, 'decorBottomText', (rawText) => {
+        const val = rawText.replace(/[\r\n]+/g, ' ');
+        syncDecorControlsToContext();
+        if (decorBottomText && decorBottomText.value !== val) {
+          decorBottomText.value = val;
+          onDecorInputChange();
+        }
+      });
+    }
   }
 
   // ===== 1. Плавающий контекстный микро-тулбар холста (Canvas Quick-Bar) =====
@@ -15737,6 +16163,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!quickBar) return;
 
     const targetLabel = document.getElementById('cqbTargetLabel');
+    const scopeBtn = document.getElementById('cqbScopeBtn');
+    const deleteDecorBtn = document.getElementById('cqbDeleteDecorBtn');
     const closeBtn = document.getElementById('cqbCloseBtn');
     const fontMinus = document.getElementById('cqbFontMinus');
     const fontSizeVal = document.getElementById('cqbFontSizeVal');
@@ -15745,8 +16173,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const italicBtn = document.getElementById('cqbItalic');
     const colorInput = document.getElementById('cqbColorInput');
     const colorSwatch = document.getElementById('cqbColorSwatch');
+    const colorLabel = document.getElementById('cqbColorLabel');
+    const bgColorGroup = document.getElementById('cqbBgColorGroup');
+    const bgColorInput = document.getElementById('cqbBgColorInput');
+    const bgColorSwatch = document.getElementById('cqbBgColorSwatch');
+    const chipsRow = document.getElementById('cqbChipsRow');
 
-    let currentTargetKind = null; // 'title' | 'price' | 'subtitle' | 'bigdigit'
+    let currentTargetKind = null; // 'title' | 'price' | 'subtitle' | 'bigdigit' | 'decor-outside' | 'decor-inside' | 'decor-bottom'
     let currentTargetEl = null;
 
     quickBar.addEventListener('pointerdown', (e) => e.stopPropagation());
@@ -15770,8 +16203,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const wrapRect = stageWrapper.getBoundingClientRect();
       const elRect = el.getBoundingClientRect();
-      const qbW = quickBar.offsetWidth || 230;
-      const qbH = quickBar.offsetHeight || 60;
+      const qbW = quickBar.offsetWidth || 260;
+      const qbH = quickBar.offsetHeight || 70;
 
       let left = (elRect.left + elRect.width / 2) - wrapRect.left - (qbW / 2);
       left = Math.max(8, Math.min(wrapRect.width - qbW - 8, left));
@@ -15803,6 +16236,12 @@ document.addEventListener('DOMContentLoaded', () => {
       } else if (currentTargetKind === 'bigdigit') {
         const dSize = document.getElementById('digitSize');
         return parseFloat(dSize ? dSize.value : 40) || 40;
+      } else if (currentTargetKind === 'decor-outside') {
+        return parseFloat(decorOutsideFontSize ? decorOutsideFontSize.value : 14) || 14;
+      } else if (currentTargetKind === 'decor-inside') {
+        return parseFloat(decorInsideFontSize ? decorInsideFontSize.value : 11) || 11;
+      } else if (currentTargetKind === 'decor-bottom') {
+        return parseFloat(decorBottomFontSize ? decorBottomFontSize.value : 14) || 14;
       }
       return 13;
     }
@@ -15847,6 +16286,21 @@ document.addEventListener('DOMContentLoaded', () => {
           dSize.dispatchEvent(new Event('input'));
           updatePreview();
         }
+      } else if (currentTargetKind === 'decor-outside') {
+        const val = Math.max(6, Math.min(80, Math.round(num)));
+        if (decorOutsideFontSize) decorOutsideFontSize.value = String(val);
+        if (decorOutsideFontSizeVal) decorOutsideFontSizeVal.textContent = String(val);
+        onDecorInputChange();
+      } else if (currentTargetKind === 'decor-inside') {
+        const val = Math.max(6, Math.min(60, Math.round(num)));
+        if (decorInsideFontSize) decorInsideFontSize.value = String(val);
+        if (decorInsideFontSizeVal) decorInsideFontSizeVal.textContent = String(val);
+        onDecorInputChange();
+      } else if (currentTargetKind === 'decor-bottom') {
+        const val = Math.max(6, Math.min(80, Math.round(num)));
+        if (decorBottomFontSize) decorBottomFontSize.value = String(val);
+        if (decorBottomFontSizeVal) decorBottomFontSizeVal.textContent = String(val);
+        onDecorInputChange();
       }
 
       syncQuickBarValues();
@@ -15856,10 +16310,36 @@ document.addEventListener('DOMContentLoaded', () => {
     function syncQuickBarValues() {
       if (!currentTargetKind) return;
 
+      const isDecor = currentTargetKind.startsWith('decor-');
+      const isMulti = (typeof isMultiModeNow === 'function') ? isMultiModeNow() : false;
+
+      if (scopeBtn) {
+        scopeBtn.style.display = (isDecor && isMulti) ? 'inline-block' : 'none';
+        if (isDecor) {
+          scopeBtn.textContent = (decorApplyMode === 'item') ? 'этот ценник' : 'весь шаблон';
+          scopeBtn.title = (decorApplyMode === 'item')
+            ? 'Правки применяются только к этому ценнику. Нажмите, чтобы переключить на весь шаблон'
+            : 'Правки базовые для всех ценников. Нажмите, чтобы настраивать только этот ценник';
+        }
+      }
+      if (deleteDecorBtn) {
+        deleteDecorBtn.style.display = isDecor ? 'inline-block' : 'none';
+      }
+      if (bgColorGroup) {
+        bgColorGroup.style.display = isDecor ? 'inline-flex' : 'none';
+      }
+      if (colorLabel) {
+        colorLabel.style.display = isDecor ? 'inline' : 'none';
+      }
+      if (chipsRow) {
+        chipsRow.style.display = isDecor ? 'flex' : 'none';
+      }
+
       const curSize = getCurrentQuickBarFontSize();
       let curWeight = '800';
       let curItalic = false;
       let curColor = '#ffffff';
+      let curBgColor = '#e63946';
 
       if (currentTargetKind === 'title') {
         if (targetLabel) targetLabel.textContent = 'Название';
@@ -15883,6 +16363,24 @@ document.addEventListener('DOMContentLoaded', () => {
         curWeight = dWeight ? dWeight.value : '900';
         curItalic = false;
         curColor = dColor ? dColor.value : '#ffffff';
+      } else if (currentTargetKind === 'decor-outside') {
+        if (targetLabel) targetLabel.textContent = 'Плашка сверху';
+        curWeight = '900';
+        curItalic = !!(decorOutsideItalic && decorOutsideItalic.checked);
+        curColor = decorOutsideColor ? decorOutsideColor.value : '#ffffff';
+        curBgColor = decorOutsideBg ? decorOutsideBg.value : '#e63946';
+      } else if (currentTargetKind === 'decor-inside') {
+        if (targetLabel) targetLabel.textContent = 'Плашка внутри';
+        curWeight = '900';
+        curItalic = !!(decorInsideItalic && decorInsideItalic.checked);
+        curColor = decorInsideColor ? decorInsideColor.value : '#ffffff';
+        curBgColor = decorInsideBg ? decorInsideBg.value : '#e63946';
+      } else if (currentTargetKind === 'decor-bottom') {
+        if (targetLabel) targetLabel.textContent = 'Плашка снизу';
+        curWeight = '900';
+        curItalic = !!(decorBottomItalic && decorBottomItalic.checked);
+        curColor = decorBottomColor ? decorBottomColor.value : '#ffffff';
+        curBgColor = decorBottomBg ? decorBottomBg.value : '#e63946';
       }
 
       if (fontSizeVal) {
@@ -15892,14 +16390,19 @@ document.addEventListener('DOMContentLoaded', () => {
       if (boldBtn) {
         const isBold = curWeight === 'bold' || parseInt(curWeight, 10) >= 700;
         boldBtn.classList.toggle('active', isBold);
+        boldBtn.style.opacity = isDecor ? '0.5' : '1';
+        boldBtn.style.pointerEvents = isDecor ? 'none' : 'auto';
       }
       if (italicBtn) {
         italicBtn.classList.toggle('active', !!curItalic);
-        italicBtn.style.opacity = (currentTargetKind === 'title') ? '1' : '0.4';
-        italicBtn.style.pointerEvents = (currentTargetKind === 'title') ? 'auto' : 'none';
+        const canItalic = (currentTargetKind === 'title' || isDecor);
+        italicBtn.style.opacity = canItalic ? '1' : '0.4';
+        italicBtn.style.pointerEvents = canItalic ? 'auto' : 'none';
       }
       if (colorInput) colorInput.value = curColor;
       if (colorSwatch) colorSwatch.style.backgroundColor = curColor;
+      if (bgColorInput) bgColorInput.value = curBgColor;
+      if (bgColorSwatch) bgColorSwatch.style.backgroundColor = curBgColor;
     }
 
     function openQuickBar(kind, el) {
@@ -15912,6 +16415,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       currentTargetKind = kind;
       currentTargetEl = el;
+      if (kind && kind.startsWith('decor-')) {
+        syncDecorControlsToContext();
+      }
       syncQuickBarValues();
       positionQuickBar(el);
     }
@@ -15939,6 +16445,40 @@ document.addEventListener('DOMContentLoaded', () => {
     if (previewBigDigit) {
       previewBigDigit.addEventListener('click', () => openQuickBar('bigdigit', previewBigDigit));
       previewBigDigit.addEventListener('focus', () => openQuickBar('bigdigit', previewBigDigit));
+    }
+
+    // Слушатели декор-плашек для открытия QuickBar
+    if (wobblerOutsideTop) {
+      wobblerOutsideTop.addEventListener('click', (e) => {
+        openQuickBar('decor-outside', wobblerOutsideTop);
+      });
+    }
+    if (outsideTopText) {
+      outsideTopText.addEventListener('focus', () => {
+        openQuickBar('decor-outside', wobblerOutsideTop || outsideTopText);
+      });
+    }
+
+    if (wobblerInsideTop) {
+      wobblerInsideTop.addEventListener('click', (e) => {
+        openQuickBar('decor-inside', wobblerInsideTop);
+      });
+    }
+    if (insideTopText) {
+      insideTopText.addEventListener('focus', () => {
+        openQuickBar('decor-inside', wobblerInsideTop || insideTopText);
+      });
+    }
+
+    if (wobblerOutsideBottom) {
+      wobblerOutsideBottom.addEventListener('click', (e) => {
+        openQuickBar('decor-bottom', wobblerOutsideBottom);
+      });
+    }
+    if (outsideBottomText) {
+      outsideBottomText.addEventListener('focus', () => {
+        openQuickBar('decor-bottom', wobblerOutsideBottom || outsideBottomText);
+      });
     }
 
     // Кнопка уменьшения кегля (-1pt)
@@ -16009,13 +16549,35 @@ document.addEventListener('DOMContentLoaded', () => {
     // Кнопка переключения курсива (Italic)
     if (italicBtn) {
       italicBtn.addEventListener('click', () => {
-        if (currentTargetKind !== 'title') return;
-        if (typeof pushHistoryState === 'function') pushHistoryState('Курсив QuickBar');
-        if (titleItalic) {
-          titleItalic.checked = !titleItalic.checked;
-          onFontInputChange();
+        if (currentTargetKind === 'title') {
+          if (typeof pushHistoryState === 'function') pushHistoryState('Курсив QuickBar');
+          if (titleItalic) {
+            titleItalic.checked = !titleItalic.checked;
+            onFontInputChange();
+          }
+          syncQuickBarValues();
+        } else if (currentTargetKind === 'decor-outside') {
+          if (typeof pushHistoryState === 'function') pushHistoryState('Курсив плашки');
+          if (decorOutsideItalic) {
+            decorOutsideItalic.checked = !decorOutsideItalic.checked;
+            onDecorInputChange();
+          }
+          syncQuickBarValues();
+        } else if (currentTargetKind === 'decor-inside') {
+          if (typeof pushHistoryState === 'function') pushHistoryState('Курсив плашки');
+          if (decorInsideItalic) {
+            decorInsideItalic.checked = !decorInsideItalic.checked;
+            onDecorInputChange();
+          }
+          syncQuickBarValues();
+        } else if (currentTargetKind === 'decor-bottom') {
+          if (typeof pushHistoryState === 'function') pushHistoryState('Курсив плашки');
+          if (decorBottomItalic) {
+            decorBottomItalic.checked = !decorBottomItalic.checked;
+            onDecorInputChange();
+          }
+          syncQuickBarValues();
         }
-        syncQuickBarValues();
       });
     }
 
@@ -16040,6 +16602,97 @@ document.addEventListener('DOMContentLoaded', () => {
             dColor.dispatchEvent(new Event('input'));
             updatePreview();
           }
+        } else if (currentTargetKind === 'decor-outside' && decorOutsideColor) {
+          decorOutsideColor.value = val;
+          onDecorInputChange();
+        } else if (currentTargetKind === 'decor-inside' && decorInsideColor) {
+          decorInsideColor.value = val;
+          onDecorInputChange();
+        } else if (currentTargetKind === 'decor-bottom' && decorBottomColor) {
+          decorBottomColor.value = val;
+          onDecorInputChange();
+        }
+      });
+    }
+
+    // Выбор цвета фона плашки
+    if (bgColorInput) {
+      bgColorInput.addEventListener('input', (e) => {
+        const val = e.target.value;
+        if (bgColorSwatch) bgColorSwatch.style.backgroundColor = val;
+        if (currentTargetKind === 'decor-outside' && decorOutsideBg) {
+          decorOutsideBg.value = val;
+          onDecorInputChange();
+        } else if (currentTargetKind === 'decor-inside' && decorInsideBg) {
+          decorInsideBg.value = val;
+          onDecorInputChange();
+        } else if (currentTargetKind === 'decor-bottom' && decorBottomBg) {
+          decorBottomBg.value = val;
+          onDecorInputChange();
+        }
+      });
+    }
+
+    // Кнопка удаления/скрытия плашки
+    if (deleteDecorBtn) {
+      deleteDecorBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!currentTargetKind) return;
+        if (typeof pushHistoryState === 'function') pushHistoryState('Скрытие декор-плашки');
+        if (currentTargetKind === 'decor-outside') {
+          if (decorOutsideShow) decorOutsideShow.checked = false;
+          onDecorInputChange();
+          if (typeof showToast === 'function') showToast('Плашка сверху скрыта', 'info', 1400);
+        } else if (currentTargetKind === 'decor-inside') {
+          if (decorInsideShow) decorInsideShow.checked = false;
+          onDecorInputChange();
+          if (typeof showToast === 'function') showToast('Плашка внутри скрыта', 'info', 1400);
+        } else if (currentTargetKind === 'decor-bottom') {
+          if (decorBottomShow) decorBottomShow.checked = false;
+          onDecorInputChange();
+          if (typeof showToast === 'function') showToast('Плашка снизу скрыта', 'info', 1400);
+        }
+        hideQuickBar();
+      });
+    }
+
+    // Кнопка переключения области применения (этот ценник / весь шаблон)
+    if (scopeBtn) {
+      scopeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        decorApplyMode = (decorApplyMode === 'item') ? 'template' : 'item';
+        document.querySelectorAll('[data-decor-mode]').forEach(b => {
+          b.classList.toggle('active', b.getAttribute('data-decor-mode') === decorApplyMode);
+        });
+        syncDecorControlsToContext();
+        updateScopeBadges();
+        syncQuickBarValues();
+        if (typeof showToast === 'function') {
+          showToast(decorApplyMode === 'item' ? 'Правки только для этого ценника' : 'Правки для всех ценников шаблона', 'info', 1400);
+        }
+      });
+    }
+
+    // Быстрые теги / чипсы плашки
+    if (chipsRow) {
+      chipsRow.addEventListener('click', (e) => {
+        const chip = e.target.closest('.cqb-chip');
+        if (!chip || !currentTargetKind) return;
+        e.stopPropagation();
+        const text = chip.getAttribute('data-chip') || chip.textContent.trim();
+        if (typeof pushHistoryState === 'function') pushHistoryState(`Пресет плашки: ${text}`);
+        if (currentTargetKind === 'decor-outside') {
+          if (decorOutsideText) decorOutsideText.value = text;
+          if (outsideTopText) outsideTopText.textContent = text;
+          onDecorInputChange();
+        } else if (currentTargetKind === 'decor-inside') {
+          if (decorInsideText) decorInsideText.value = text;
+          if (insideTopText) insideTopText.textContent = text;
+          onDecorInputChange();
+        } else if (currentTargetKind === 'decor-bottom') {
+          if (decorBottomText) decorBottomText.value = text;
+          if (outsideBottomText) outsideBottomText.textContent = text;
+          onDecorInputChange();
         }
       });
     }
