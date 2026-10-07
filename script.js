@@ -4328,6 +4328,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (t.includes('немецкое') || (t.includes('томск') && t.includes('немецк'))) return 'images/beer/Nemetskoe.jpg';
       if (t.includes('томск')) return 'images/beer/Tomskoe_Firmennoe.jpg';
       if (t.includes('kruger') || t.includes('krüger') || t.includes('крюгер')) return 'images/beer/Kryuger_Klassicheskij.jpg';
+      if (t.includes('iron woods')) return 'images/beer/Iron_Woods_Stout.jpg';
+      if (t === 'stout' || t === 'стаут' || (t.includes('самовар') && (t.includes('stout') || t.includes('стаут')))) return 'images/beer/Samovar.jpg';
       return '';
     }
   }
@@ -5266,6 +5268,19 @@ document.addEventListener('DOMContentLoaded', () => {
       beerType: 'светлое фильтрованное',
       beerStyle: 'Кёльш',
       composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Samovar.jpg'
+    },
+    {
+      title: 'Stout',
+      category: 'Крафт, Самовар/МП',
+      categories: ["Крафт", "Самовар/МП"],
+      price: '',
+      beerStrength: '5,5%',
+      beerBitterness: '-',
+      beerDensity: '15,0%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Лагер',
+      composition: 'СОСТАВ: вода, солод пив. яч., жженый солод, лактоза, хмель, дрожжи',
       beerPhoto: 'Samovar.jpg'
     },
     {
