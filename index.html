@@ -1243,7 +1243,17 @@
                 <!-- Состав -->
                 <div class="bsac-field">
                   <div class="bsac-comp-header">
-                    <label for="beerSidebarComp">Состав:</label>
+                    <div class="bsac-comp-title-row">
+                      <label for="beerSidebarComp">Состав:</label>
+                      <div class="bsac-font-stepper" title="Размер шрифта состава (pt)">
+                        <span class="bsac-stepper-lbl">Шрифт:</span>
+                        <button type="button" id="beerSidebarCompSizeDecBtn" class="bsac-step-btn" title="Уменьшить шрифт на 0.5 pt">−</button>
+                        <input type="number" id="beerSidebarCompSize" class="bsac-size-input" min="6" max="16" step="0.5" value="11" title="Размер шрифта состава в pt">
+                        <span class="bsac-stepper-unit">pt</span>
+                        <button type="button" id="beerSidebarCompSizeIncBtn" class="bsac-step-btn" title="Увеличить шрифт на 0.5 pt">+</button>
+                        <button type="button" id="beerSidebarCompSizeApplyAllBtn" class="bsac-step-all-btn" title="Применить этот размер ко всем сортам списка">Ко всем</button>
+                      </div>
+                    </div>
                     <div class="bsac-quick-chips">
                       <button type="button" class="bsac-chip" data-comp="СОСТАВ: вода, солод пив. яч., хмель, дрожжи">Стандарт</button>
                       <button type="button" class="bsac-chip" data-comp="СОСТАВ: вода, солод пив. яч.,сахар, хмель, дрожжи">С сахаром</button>
@@ -1342,7 +1352,16 @@
                 </div>
               </div>
               <div class="form-group">
-                <label for="beerCompositionInput" title="Состав пива, печатаемый под ценой">Состав пива:</label>
+                <div class="bsac-comp-title-row" style="margin-bottom:4px;">
+                  <label for="beerCompositionInput" title="Состав пива, печатаемый под ценой">Состав пива:</label>
+                  <div class="bsac-font-stepper" title="Размер шрифта состава (pt)">
+                    <span class="bsac-stepper-lbl">Шрифт:</span>
+                    <button type="button" id="beerSingleCompSizeDecBtn" class="bsac-step-btn" title="Уменьшить шрифт на 0.5 pt">−</button>
+                    <input type="number" id="beerSingleCompSize" class="bsac-size-input" min="6" max="16" step="0.5" value="11" title="Размер шрифта состава в pt">
+                    <span class="bsac-stepper-unit">pt</span>
+                    <button type="button" id="beerSingleCompSizeIncBtn" class="bsac-step-btn" title="Увеличить шрифт на 0.5 pt">+</button>
+                  </div>
+                </div>
                 <textarea id="beerCompositionInput" rows="2" placeholder="СОСТАВ: вода, солод пив. яч.,сахар, хмель, дрожжи"></textarea>
                 <div class="quick-comp-pills" style="display:flex; gap:4px; flex-wrap:wrap; margin-top:4px;">
                   <button type="button" class="btn btn-secondary btn-xs quick-comp-btn" data-comp="СОСТАВ: вода, солод пив. яч.,сахар, хмель, дрожжи">Классический</button>

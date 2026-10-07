@@ -165,7 +165,8 @@ document.addEventListener('DOMContentLoaded', () => {
       title: '', price: '', subtitle: '', subtitleManual: false, titleSizeManual: false, digit: '', count: 1,
       titleScaleX: 1, priceScaleX: 1,
       price2: '', priceLabel: '1л -', price2Label: '1.5л -', promoMode: 'volumes',
-      beerPhoto: '', beerStrength: '', beerBitterness: '', beerDensity: '', beerType: '', beerStyle: '', composition: ''
+      beerPhoto: '', beerStrength: '', beerBitterness: '', beerDensity: '', beerType: '', beerStyle: '', composition: '',
+      beerCompSize: ''
     };
   }
   // Пуста ли строка: все поля (наименование/вес/цена/состав) не заполнены.
@@ -4380,12 +4381,41 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function getBeerCompSize(item) {
+    const isPromo = (typeof isBeerA5PromoActive === 'function') && isBeerA5PromoActive();
+    const def = isPromo ? 9.5 : 11;
+    if (!item) return def;
+    const s = parseFloat(item.beerCompSize);
+    return (Number.isFinite(s) && s >= 6 && s <= 20) ? s : def;
+  }
+
+  function setBeerCompSize(index, newSize, applyToAll = false) {
+    let sz = parseFloat(newSize);
+    if (!Number.isFinite(sz)) sz = 11;
+    sz = Math.round(Math.min(18, Math.max(6, sz)) * 2) / 2;
+    if (applyToAll) {
+      itemsData.forEach(it => {
+        if (it) it.beerCompSize = sz;
+      });
+      if (typeof showToast === 'function') {
+        showToast(`Размер шрифта ${sz} pt применен ко всем сортам (${itemsData.length})`, 'success', 2500);
+      }
+    } else {
+      const it = itemsData[index] || (itemsData[index] = freshItem());
+      it.beerCompSize = sz;
+    }
+    if (typeof renderBeerSidebarActiveCard === 'function') renderBeerSidebarActiveCard();
+    if (typeof syncBeerDrawerCardField === 'function') syncBeerDrawerCardField(index, 'beerCompSize', sz);
+    updatePreview();
+    scheduleSessionSave();
+  }
+
   // ==========================================================================
   // --- Постоянный Справочник сортов разливного пива (Beer Catalog Database) ---
   // ==========================================================================
   const BEER_CATALOG_KEY = 'wobbler_beer_catalog_v8';
 
-    const DEFAULT_BEER_CATALOG = [
+  const DEFAULT_BEER_CATALOG = [
     {
       title: 'Банька',
       category: 'Отечка',
@@ -4478,7 +4508,7 @@ document.addEventListener('DOMContentLoaded', () => {
       beerPhoto: 'Venskoe_Eksport.jpg'
     },
     {
-      title: 'Майкопское Светлое',
+      title: 'Майкопское',
       category: 'Отечка',
       categories: ["Отечка"],
       price: '',
@@ -4488,7 +4518,7 @@ document.addEventListener('DOMContentLoaded', () => {
       beerType: 'светлое фильтрованное',
       beerStyle: 'Лагер',
       composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
-      beerPhoto: 'Majkopskoe_Svetloe.jpg'
+      beerPhoto: 'Majkopskoe.jpg'
     },
     {
       title: 'Особое Поручение',
@@ -5177,7 +5207,7 @@ document.addEventListener('DOMContentLoaded', () => {
       beerType: 'светлое нефильтрованное',
       beerStyle: 'Витбир/Бланш',
       composition: 'СОСТАВ: вода, солод пив. пшен., яч., овсян., ., хмель, цедра, кориандр, дрожжи',
-      beerPhoto: 'Blue_Monkey.jpg'
+      beerPhoto: 'Blyu_Manki.jpg'
     },
     {
       title: 'Kriek De Lutin',
@@ -5190,7 +5220,7 @@ document.addEventListener('DOMContentLoaded', () => {
       beerType: 'темное нефильтрованное',
       beerStyle: 'Ламбик',
       composition: 'СОСТАВ: вода, солод пив. яч., вишневый сок, хмель, дрожжи',
-      beerPhoto: 'Kriek_De_Lutin.jpg'
+      beerPhoto: 'Kriek_De_Lyutin.jpg'
     },
     {
       title: 'Карамбуляж',
@@ -5278,8 +5308,8 @@ document.addEventListener('DOMContentLoaded', () => {
       beerStrength: '5,5%',
       beerBitterness: '-',
       beerDensity: '15,0%',
-      beerType: 'светлое фильтрованное',
-      beerStyle: 'Лагер',
+      beerType: 'темное нефильтрованное',
+      beerStyle: 'Стаут',
       composition: 'СОСТАВ: вода, солод пив. яч., жженый солод, лактоза, хмель, дрожжи',
       beerPhoto: 'Samovar.jpg'
     },
@@ -5599,7 +5629,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let beerCatalog = loadBeerCatalog();
   autoLoadBeerCatalogFromCsv();
 
-    function getBeerCategories(b) {
+  function getBeerCategories(b) {
     if (!b) return ['Отечка'];
     if (Array.isArray(b.categories) && b.categories.length > 0) {
       return b.categories;
@@ -5628,27 +5658,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 2. БА (безалкогольное, лимонад, квас)
     if (t.includes('лимонад') || s.includes('лимонад') || t.includes('квас') || s.includes('квас') ||
-        t.includes('дюшес') || t.includes('тархун') || t.includes('б/а') || t.includes('безалк') ||
-        type.includes('безалк') || s.includes('безалк') || str === '0%' || str === '0,0%' || str === '0,5%' || str === '0,00%') {
+      t.includes('дюшес') || t.includes('тархун') || t.includes('б/а') || t.includes('безалк') ||
+      type.includes('безалк') || s.includes('безалк') || str === '0%' || str === '0,0%' || str === '0,5%' || str === '0,00%') {
       return 'БА';
     }
 
     // 3. Крафт (IPA, APA, Stout, Porter, Sour, Blanche, Weisse, Lambic, etc.)
     if (s.includes('ипа') || s.includes('ipa') || s.includes('апа') || s.includes('apa') ||
-        s.includes('стаут') || s.includes('stout') || s.includes('портер') || s.includes('porter') ||
-        s.includes('эль') || s.includes('ale') || s.includes('бланш') || s.includes('blanche') ||
-        s.includes('витбир') || s.includes('ламбик') || s.includes('вайс') || s.includes('weiss') || s.includes('гозе') || s.includes('gose') ||
-        t.includes('крафтов') || t.includes('amnesia') || t.includes('iron woods') || t.includes('blue monkey') ||
-        t.includes('ruby road') || t.includes('nut butter') || t.includes('friday avenue') || t.includes('bowler') || t.includes('понедельник') || t.includes('соня') || t.includes('бычье') || t.includes('карамбуляж') ||
-        t.includes('ausweis') || s.includes('кёльш') || s.includes('kölsch')) {
+      s.includes('стаут') || s.includes('stout') || s.includes('портер') || s.includes('porter') ||
+      s.includes('эль') || s.includes('ale') || s.includes('бланш') || s.includes('blanche') ||
+      s.includes('витбир') || s.includes('ламбик') || s.includes('вайс') || s.includes('weiss') || s.includes('гозе') || s.includes('gose') ||
+      t.includes('крафтов') || t.includes('amnesia') || t.includes('iron woods') || t.includes('blue monkey') ||
+      t.includes('ruby road') || t.includes('nut butter') || t.includes('friday avenue') || t.includes('bowler') || t.includes('понедельник') || t.includes('соня') || t.includes('бычье') || t.includes('карамбуляж') ||
+      t.includes('ausweis') || s.includes('кёльш') || s.includes('kölsch')) {
       return 'Крафт';
     }
 
     // 4. Импорт (латиница в названии или зарубежные сорта)
     if (/[a-zA-Z]{3,}/.test(b.title || '') || s.includes('хель') || s.includes('hell') ||
-        t.includes('клостербрау') || t.includes('koruna') || t.includes('kurpfalz') || t.includes('heidegger') ||
-        t.includes('schneider') || t.includes('kriek') || t.includes('pilsner') || t.includes('lager') ||
-        s.includes('пилс') || s.includes('pils')) {
+      t.includes('клостербрау') || t.includes('koruna') || t.includes('kurpfalz') || t.includes('heidegger') ||
+      t.includes('schneider') || t.includes('kriek') || t.includes('pilsner') || t.includes('lager') ||
+      s.includes('пилс') || s.includes('pils')) {
       return 'Импорт';
     }
 
@@ -5741,7 +5771,7 @@ document.addEventListener('DOMContentLoaded', () => {
     saveBeerCatalog(beerCatalog);
   }
 
-  
+
   // Автоматическая подгрузка актуального Шаблон_Пиво_А5.csv при работе через веб-сервер
   function autoLoadBeerCatalogFromCsv() {
     if (typeof window !== 'undefined' && window.location && window.location.protocol.startsWith('http')) {
@@ -10208,6 +10238,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (cloneBeerBot) cloneBeerBot.style.display = 'flex';
       if (cloneBeerComp) {
         cloneBeerComp.textContent = (item && (item.composition || item.subtitle)) || '';
+        const compSize = getBeerCompSize(item);
+        cloneBeerComp.style.setProperty('font-size', `${compSize}pt`, 'important');
       }
       if (cloneBeerStr) cloneBeerStr.textContent = stripBeerMetric((item && item.beerStrength) || '');
       if (cloneBeerBit) cloneBeerBit.textContent = (item && item.beerBitterness) || '';
@@ -10804,6 +10836,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (cloneBeerComp) {
         cloneBeerComp.style.display = 'block';
         cloneBeerComp.textContent = (item && (item.composition || item.subtitle)) || '';
+        const compSize = getBeerCompSize(item);
+        cloneBeerComp.style.setProperty('font-size', `${compSize}pt`, 'important');
       }
       if (cloneBeerBot) {
         cloneBeerBot.style.display = 'flex';
@@ -11180,6 +11214,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const compText = (activeItem && (activeItem.composition || activeItem.subtitle)) || (document.getElementById('beerCompositionInput') ? document.getElementById('beerCompositionInput').value : '') || '';
       if (previewBeerComp && document.activeElement !== previewBeerComp) previewBeerComp.textContent = compText;
+      if (previewBeerComp) {
+        const compSize = getBeerCompSize(activeItem);
+        previewBeerComp.style.setProperty('font-size', `${compSize}pt`, 'important');
+      }
 
       const strText = stripBeerMetric((activeItem && activeItem.beerStrength) || (document.getElementById('beerStrengthInput') ? document.getElementById('beerStrengthInput').value : '') || '');
       const bitText = (activeItem && activeItem.beerBitterness) || (document.getElementById('beerBitternessInput') ? document.getElementById('beerBitternessInput').value : '') || '';
@@ -19924,7 +19962,9 @@ document.addEventListener('DOMContentLoaded', () => {
       { id: 'beerSidebarDensity', val: it.beerDensity || '' },
       { id: 'beerSidebarType', val: it.beerType || '' },
       { id: 'beerSidebarStyle', val: it.beerStyle || '' },
-      { id: 'beerSidebarComp', val: it.composition || it.subtitle || '' }
+      { id: 'beerSidebarComp', val: it.composition || it.subtitle || '' },
+      { id: 'beerSidebarCompSize', val: getBeerCompSize(it) },
+      { id: 'beerSingleCompSize', val: getBeerCompSize(it) }
     ];
 
     fieldMap.forEach(f => {
@@ -20154,6 +20194,70 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
+    // Управление размером шрифта состава (UI-степпер)
+    const sCompSizeDecBtn = document.getElementById('beerSidebarCompSizeDecBtn');
+    const sCompSizeIncBtn = document.getElementById('beerSidebarCompSizeIncBtn');
+    const sCompSizeInp = document.getElementById('beerSidebarCompSize');
+    const sCompSizeApplyAllBtn = document.getElementById('beerSidebarCompSizeApplyAllBtn');
+
+    if (sCompSizeDecBtn) {
+      sCompSizeDecBtn.addEventListener('click', () => {
+        const cur = getBeerCompSize(itemsData[activePreviewIndex]);
+        setBeerCompSize(activePreviewIndex, cur - 0.5);
+      });
+    }
+    if (sCompSizeIncBtn) {
+      sCompSizeIncBtn.addEventListener('click', () => {
+        const cur = getBeerCompSize(itemsData[activePreviewIndex]);
+        setBeerCompSize(activePreviewIndex, cur + 0.5);
+      });
+    }
+    if (sCompSizeInp) {
+      sCompSizeInp.addEventListener('change', (e) => {
+        setBeerCompSize(activePreviewIndex, e.target.value);
+      });
+      sCompSizeInp.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        if (Number.isFinite(val) && val >= 6 && val <= 20) {
+          setBeerCompSize(activePreviewIndex, val);
+        }
+      });
+    }
+    if (sCompSizeApplyAllBtn) {
+      sCompSizeApplyAllBtn.addEventListener('click', () => {
+        const cur = getBeerCompSize(itemsData[activePreviewIndex]);
+        setBeerCompSize(activePreviewIndex, cur, true);
+      });
+    }
+
+    // Степпер в одиночном режиме
+    const sSingleDecBtn = document.getElementById('beerSingleCompSizeDecBtn');
+    const sSingleIncBtn = document.getElementById('beerSingleCompSizeIncBtn');
+    const sSingleInp = document.getElementById('beerSingleCompSize');
+    if (sSingleDecBtn) {
+      sSingleDecBtn.addEventListener('click', () => {
+        const cur = getBeerCompSize(itemsData[activePreviewIndex]);
+        setBeerCompSize(activePreviewIndex, cur - 0.5);
+      });
+    }
+    if (sSingleIncBtn) {
+      sSingleIncBtn.addEventListener('click', () => {
+        const cur = getBeerCompSize(itemsData[activePreviewIndex]);
+        setBeerCompSize(activePreviewIndex, cur + 0.5);
+      });
+    }
+    if (sSingleInp) {
+      sSingleInp.addEventListener('change', (e) => {
+        setBeerCompSize(activePreviewIndex, e.target.value);
+      });
+      sSingleInp.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        if (Number.isFinite(val) && val >= 6 && val <= 20) {
+          setBeerCompSize(activePreviewIndex, val);
+        }
+      });
+    }
+
     // Добавление нового сорта
     if (addBtn) {
       addBtn.addEventListener('click', () => {
@@ -20355,7 +20459,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
           <div class="bic-row-comp">
             <div class="bic-comp-header">
-              <label>Состав:</label>
+              <div class="bic-comp-title-row">
+                <label>Состав:</label>
+                <div class="bsac-font-stepper" title="Размер шрифта состава (pt)">
+                  <span class="bsac-stepper-lbl">Шрифт:</span>
+                  <button type="button" class="bsac-step-btn bic-comp-size-dec" data-index="${i}" title="Уменьшить шрифт на 0.5 pt">−</button>
+                  <input type="number" class="bsac-size-input bic-comp-size-input" data-index="${i}" min="6" max="16" step="0.5" value="${getBeerCompSize(it)}" title="Размер шрифта состава в pt">
+                  <span class="bsac-stepper-unit">pt</span>
+                  <button type="button" class="bsac-step-btn bic-comp-size-inc" data-index="${i}" title="Увеличить шрифт на 0.5 pt">+</button>
+                </div>
+              </div>
               <div class="bsac-quick-chips">
                 <button type="button" class="bsac-chip bic-chip-btn" data-index="${i}" data-comp="СОСТАВ: вода, солод пив. яч., хмель, дрожжи">Стандарт</button>
                 <button type="button" class="bsac-chip bic-chip-btn" data-index="${i}" data-comp="СОСТАВ: вода, солод пив. яч.,сахар, хмель, дрожжи">С сахаром</button>
@@ -20397,7 +20510,8 @@ document.addEventListener('DOMContentLoaded', () => {
       beerDensity: '.bic-den-input',
       beerType: '.bic-type-input',
       beerStyle: '.bic-style-input',
-      composition: '.bic-comp-input'
+      composition: '.bic-comp-input',
+      beerCompSize: '.bic-comp-size-input'
     };
 
     const sel = classSelectorMap[prop];
@@ -20548,6 +20662,26 @@ document.addEventListener('DOMContentLoaded', () => {
               updatePreview();
             }
             scheduleSessionSave();
+          }
+          return;
+        }
+
+        const decBtn = e.target.closest('.bic-comp-size-dec');
+        if (decBtn) {
+          const idx = parseInt(decBtn.getAttribute('data-index'), 10);
+          if (!isNaN(idx) && itemsData[idx]) {
+            const cur = getBeerCompSize(itemsData[idx]);
+            setBeerCompSize(idx, cur - 0.5);
+          }
+          return;
+        }
+
+        const incBtn = e.target.closest('.bic-comp-size-inc');
+        if (incBtn) {
+          const idx = parseInt(incBtn.getAttribute('data-index'), 10);
+          if (!isNaN(idx) && itemsData[idx]) {
+            const cur = getBeerCompSize(itemsData[idx]);
+            setBeerCompSize(idx, cur + 0.5);
           }
           return;
         }
@@ -20743,6 +20877,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (s && s !== document.activeElement) s.value = val;
             schedulePreviewUpdate();
           }
+        } else if (inp.classList.contains('bic-comp-size-input')) {
+          const valNum = parseFloat(val);
+          if (Number.isFinite(valNum) && valNum >= 6 && valNum <= 20) {
+            setBeerCompSize(idx, valNum);
+          }
         }
 
         scheduleSessionSave();
@@ -20758,6 +20897,8 @@ document.addEventListener('DOMContentLoaded', () => {
           if (it && it.title) {
             checkAutoBeerByTitle(idx, it.title, true, true);
           }
+        } else if (inp.classList.contains('bic-comp-size-input')) {
+          setBeerCompSize(idx, inp.value);
         } else {
           if (it && it.title && (it.beerStrength || it.beerType || it.beerStyle || it.composition)) {
             addOrUpdateBeerToCatalog(it);
