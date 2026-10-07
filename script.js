@@ -20459,20 +20459,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
           <div class="bic-row-comp">
             <div class="bic-comp-header">
-              <div class="bic-comp-title-row">
+              <div class="bic-comp-top-row">
                 <label>Состав:</label>
+                <div class="bsac-quick-chips">
+                  <button type="button" class="bsac-chip bic-chip-btn" data-index="${i}" data-comp="СОСТАВ: вода, солод пив. яч., хмель, дрожжи">Стандарт</button>
+                  <button type="button" class="bsac-chip bic-chip-btn" data-index="${i}" data-comp="СОСТАВ: вода, солод пив. яч.,сахар, хмель, дрожжи">С сахаром</button>
+                  <button type="button" class="bsac-chip bic-chip-btn" data-index="${i}" data-comp="СОСТАВ: вода, солод пшеничный, солод ячменный, хмель, дрожжи">Пшеничное</button>
+                </div>
+              </div>
+              <div class="bic-comp-font-row">
+                <span class="bsac-font-row-label">Размер шрифта:</span>
                 <div class="bsac-font-stepper" title="Размер шрифта состава (pt)">
-                  <span class="bsac-stepper-lbl">Шрифт:</span>
                   <button type="button" class="bsac-step-btn bic-comp-size-dec" data-index="${i}" title="Уменьшить шрифт на 0.5 pt">−</button>
                   <input type="number" class="bsac-size-input bic-comp-size-input" data-index="${i}" min="6" max="16" step="0.5" value="${getBeerCompSize(it)}" title="Размер шрифта состава в pt">
                   <span class="bsac-stepper-unit">pt</span>
                   <button type="button" class="bsac-step-btn bic-comp-size-inc" data-index="${i}" title="Увеличить шрифт на 0.5 pt">+</button>
                 </div>
-              </div>
-              <div class="bsac-quick-chips">
-                <button type="button" class="bsac-chip bic-chip-btn" data-index="${i}" data-comp="СОСТАВ: вода, солод пив. яч., хмель, дрожжи">Стандарт</button>
-                <button type="button" class="bsac-chip bic-chip-btn" data-index="${i}" data-comp="СОСТАВ: вода, солод пив. яч.,сахар, хмель, дрожжи">С сахаром</button>
-                <button type="button" class="bsac-chip bic-chip-btn" data-index="${i}" data-comp="СОСТАВ: вода, солод пшеничный, солод ячменный, хмель, дрожжи">Пшеничное</button>
               </div>
             </div>
             <textarea class="bic-comp-input" data-index="${i}" rows="2" placeholder="СОСТАВ: вода, солод, хмель, дрожжи">${compSafe}</textarea>

@@ -11285,14 +11285,44 @@ label:has(input:focus-visible) {
 
 .bsac-comp-header {
   display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 4px;
+  width: 100%;
+}
+
+.bsac-comp-top-row,
+.bic-comp-top-row {
+  display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2px;
+  width: 100%;
+}
+
+.bsac-comp-font-row,
+.bic-comp-font-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 5px;
+  padding: 3px 6px;
+  box-sizing: border-box;
+}
+
+.bsac-font-row-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted, #94a3b8);
+  user-select: none;
 }
 
 .bsac-quick-chips {
   display: flex;
   gap: 4px;
+  flex-shrink: 0;
 }
 
 .bsac-chip {
@@ -11300,10 +11330,11 @@ label:has(input:focus-visible) {
   color: #38bdf8;
   border: 1px solid rgba(56, 189, 248, 0.3);
   border-radius: 4px;
-  padding: 1px 6px;
+  padding: 2px 7px;
   font-size: 10px;
   font-weight: 600;
   cursor: pointer;
+  white-space: nowrap;
   transition: all 0.15s ease;
 }
 
@@ -11323,30 +11354,10 @@ label:has(input:focus-visible) {
 }
 
 /* Степпер размера шрифта состава (UI-контроллер) */
-.bsac-comp-title-row,
-.bic-comp-title-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  margin-bottom: 3px;
-}
-
 .bsac-font-stepper {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 5px;
-  padding: 1px 4px;
-}
-
-.bsac-stepper-lbl {
-  font-size: 10px;
-  color: var(--text-muted, #94a3b8);
-  margin-right: 1px;
-  user-select: none;
 }
 
 .bsac-step-btn {
@@ -11354,12 +11365,12 @@ label:has(input:focus-visible) {
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: #ffffff;
   border-radius: 3px;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
   padding: 0;
@@ -11375,16 +11386,18 @@ label:has(input:focus-visible) {
 }
 
 .bsac-size-input {
-  width: 34px;
-  height: 18px;
-  background: transparent;
-  border: none;
+  width: 44px;
+  height: 20px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
   color: #ffffff;
   font-size: 11px;
   font-weight: 700;
   text-align: center;
-  padding: 0;
+  padding: 0 2px;
   margin: 0;
+  box-sizing: border-box;
   -moz-appearance: textfield;
 }
 
@@ -11396,14 +11409,14 @@ label:has(input:focus-visible) {
 
 .bsac-size-input:focus {
   outline: 1px solid var(--accent-yellow, #f59e0b);
-  border-radius: 2px;
+  border-color: var(--accent-yellow, #f59e0b);
 }
 
 .bsac-stepper-unit {
   font-size: 10px;
   color: var(--text-muted, #94a3b8);
-  margin-right: 2px;
   user-select: none;
+  margin-right: 3px;
 }
 
 .bsac-step-all-btn {
@@ -11411,10 +11424,14 @@ label:has(input:focus-visible) {
   border: 1px solid rgba(56, 189, 248, 0.35);
   color: #38bdf8;
   border-radius: 3px;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
-  padding: 1px 5px;
-  height: 18px;
+  padding: 0 7px;
+  height: 20px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   line-height: 1;
   transition: all 0.12s ease;
@@ -11691,8 +11708,8 @@ label:has(input:focus-visible) {
 
 .bic-comp-header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .bic-comp-header label {
