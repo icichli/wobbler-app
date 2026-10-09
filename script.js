@@ -158,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Массив растёт прогрессивно: стартует с 1 пустой строки; при вводе в последнее
   // поле появляется следующая пустая (см. syncRowExtent / normalizeItemsArray).
   const MAX_ITEMS = 100; // мягкий защитный потолок (только для вставки больших таблиц)
-  const TEMPLATE_KEYS = ['alaska_dots', 'yellow_tag', 'ryba', 'sneki', 'sneki_5', 'sneki_digit', 'novy_vkus', 'novinka', 'tomat', 'sladko', 'sort_nedeli', 'korona_a5', 'a5', 'beer_a5', 'beer_a5_aktsiya'];
+  const TEMPLATE_KEYS = ['alaska_dots', 'yellow_tag', 'ryba', 'sneki', 'sneki_5', 'sneki_digit', 'novy_vkus', 'novinka', 'tomat', 'sladko', 'sort_nedeli', 'korona_a5', 'a5', 'beer_a5', 'beer_a5_aktsiya', 'digits'];
   const templateItems = {};
   function freshItem() {
     return {
@@ -1276,6 +1276,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const isNoExtra = (activeTemplateRef && (
       activeTemplateRef.key === 'beer_a5' ||
       activeTemplateRef.key === 'beer_a5_aktsiya' ||
+      activeTemplateRef.key === 'digits' ||
       activeTemplateRef.key === 'yellow_tag' ||
       activeTemplateRef.key === 'sneki_digit' ||
       activeTemplateRef.key === 'novy_vkus' ||
@@ -2705,6 +2706,86 @@ document.addEventListener('DOMContentLoaded', () => {
           { x: 0, y: 0 },
           { x: 0, y: 0 }
         ],
+        currency: { x: 0, y: 0 }
+      }
+    },
+    // «Цифры» — плашки цифр 0–9 под размер ценника Пиво А5 на листе А4 (21,0 × 29,7 см)
+    digits: {
+      name: 'Цифры',
+      widthCm: 21.0,
+      heightCm: 29.7,
+      borderMm: 0,
+      title: 'Цифры 0–9',
+      subtitle: '',
+      composition: '',
+      beerPhoto: '',
+      beerStrength: '',
+      beerBitterness: '',
+      beerDensity: '',
+      beerType: '',
+      beerStyle: '',
+      titleFont: "'Montserrat', Arial, sans-serif",
+      titleColor: '#000000',
+      titleSize: 14,
+      titleWeight: '700',
+      titleItalic: false,
+      titleAlign: 'center',
+      titleOffsetY: 0,
+      titleShadow: '',
+      subtitleColor: '#666666',
+      subtitleSize: 10,
+      subtitleWeight: '400',
+      subtitleAlign: 'center',
+      showPrice: true,
+      priceFont: "'Montserrat', Arial, sans-serif",
+      priceSize: 52,
+      priceWeight: '900',
+      priceColor: '#000000',
+      priceAlign: 'center',
+      priceOffsetY: 0,
+      price: '',
+      currency: '',
+      headerBg: '#ffffff',
+      bgImage: 'none',
+      customBgData: null,
+      headerHeight: 100,
+      layout: 'full',
+      priceInBottom: false,
+      subtitleCorner: false,
+      pricePlate: false,
+      decorOutsideShow: false,
+      decorOutsideText: '',
+      decorOutsideBg: '#ffffff',
+      decorOutsideBgImg: 'none',
+      decorOutsideCustomBg: null,
+      decorOutsideColor: '#000000',
+      decorOutsideFontSize: 14,
+      decorOutsideHeight: 12,
+      decorInsideShow: false,
+      decorInsideText: '',
+      decorInsideBg: '#ffffff',
+      decorInsideBgImg: 'none',
+      decorInsideCustomBg: null,
+      decorInsideColor: '#000000',
+      decorInsideFontSize: 11,
+      decorInsideHeight: 8,
+      decorInsideWidth: 50,
+      decorBottomShow: false,
+      decorBottomText: '',
+      decorBottomBg: '#ffffff',
+      decorBottomBgImg: 'none',
+      decorBottomCustomBg: null,
+      decorBottomColor: '#000000',
+      decorBottomFontSize: 14,
+      decorBottomHeight: 12,
+      gapMm: 0,
+      titleFitFloor: 12,
+      autofitTitleOnly: true,
+      labelPos: {
+        title: { x: 0, y: 0 },
+        subtitle: { x: 0, y: 0 },
+        price: { x: 0, y: 0 },
+        priceDigits: [{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }],
         currency: { x: 0, y: 0 }
       }
     }
@@ -4244,6 +4325,151 @@ document.addEventListener('DOMContentLoaded', () => {
     const key = (activeTemplateRef && activeTemplateRef.key) || null;
     const bgVal = (bgImageSelect && bgImageSelect.value) || '';
     return key === 'beer_a5_aktsiya' || bgVal === 'pivo_a5_aktsiya_bg.jpg';
+  }
+
+  // Проверяет, активен ли шаблон «Цифры»
+  function isDigitsActive() {
+    const key = (activeTemplateRef && activeTemplateRef.key) || null;
+    return key === 'digits';
+  }
+
+  // Синхронизирует видимость контролов для шаблона «Цифры»
+  function syncDigitsControlsVisibility() {
+    const isDigits = isDigitsActive();
+    const digitsSection = document.getElementById('digitsSection');
+    const radioGroup = document.querySelector('#section2 .radio-group');
+    const multiItemSec = document.getElementById('multiItemSection');
+    const singleItemSec = document.getElementById('singleItemSection');
+    const floatingBtn = document.getElementById('floatingItemsDrawerBtn');
+    const beerSingleGroup = document.getElementById('beerSingleParamsGroup');
+
+    if (digitsSection) digitsSection.style.display = isDigits ? 'block' : 'none';
+    if (radioGroup) radioGroup.style.display = isDigits ? 'none' : '';
+    if (floatingBtn) floatingBtn.style.display = isDigits ? 'none' : '';
+
+    if (isDigits) {
+      if (multiItemSec) multiItemSec.style.display = 'none';
+      if (singleItemSec) singleItemSec.style.display = 'none';
+      if (beerSingleGroup) beerSingleGroup.style.display = 'none';
+      if (typeof closeItemsDrawer === 'function') closeItemsDrawer();
+
+      const singleRadio = document.querySelector('input[name="printMode"][value="single"]');
+      if (singleRadio) singleRadio.checked = true;
+      if (inputTitle && !inputTitle.value.trim()) inputTitle.value = 'Цифры 0–9';
+    }
+  }
+
+  // Создает DOM-структуру листа с 10 строками цифр от 0 до 9
+  function createDigitsSheetElement(colsCount = 11, showCutLines = true, colorHex = '#000000', fontSizePt = 52) {
+    const container = document.createElement('div');
+    container.className = 'digits-sheet-container' + (showCutLines ? '' : ' no-cut-lines');
+
+    let gapMm = 1.5;
+    if (colsCount === 10) gapMm = 2.0;
+    else if (colsCount === 12) gapMm = 0.8;
+    container.style.setProperty('--digits-col-gap', `${gapMm}mm`);
+
+    for (let digit = 0; digit <= 9; digit++) {
+      const row = document.createElement('div');
+      row.className = 'digits-row';
+      row.dataset.digit = digit;
+      for (let col = 0; col < colsCount; col++) {
+        const plate = document.createElement('div');
+        plate.className = 'digit-plate';
+        const char = document.createElement('span');
+        char.className = 'digit-char';
+        char.textContent = String(digit);
+        char.style.color = colorHex;
+        char.style.fontSize = `${fontSizePt}pt`;
+        plate.appendChild(char);
+        row.appendChild(plate);
+      }
+      container.appendChild(row);
+    }
+    return container;
+  }
+
+  // Отрисовывает сетку цифр в предпросмотре
+  function renderDigitsSheetPreview() {
+    const container = document.getElementById('digitsSheetContainer');
+    if (!container) return;
+    const cutChk = document.getElementById('digitsCutLinesChk');
+    const colsSel = document.getElementById('digitsColsSelect');
+    const colorInp = document.getElementById('digitsColorInput');
+    const sizeInp = document.getElementById('digitsFontSize');
+
+    const showCut = cutChk ? cutChk.checked : true;
+    const cols = colsSel ? parseInt(colsSel.value, 10) || 11 : 11;
+    const color = colorInp ? colorInp.value : '#000000';
+    const size = sizeInp ? parseFloat(sizeInp.value) || 52 : 52;
+
+    container.innerHTML = '';
+    const sheetEl = createDigitsSheetElement(cols, showCut, color, size);
+    while (sheetEl.firstChild) {
+      container.appendChild(sheetEl.firstChild);
+    }
+    container.className = 'digits-sheet-container' + (showCut ? '' : ' no-cut-lines');
+    container.style.display = 'flex';
+  }
+
+  // Инициализация событий контролов шаблона «Цифры»
+  function setupDigitsControls() {
+    const cutChk = document.getElementById('digitsCutLinesChk');
+    const colsSel = document.getElementById('digitsColsSelect');
+    const colorInp = document.getElementById('digitsColorInput');
+    const colorHex = document.getElementById('digitsColorHex');
+    const sizeInp = document.getElementById('digitsFontSize');
+    const printBtn = document.getElementById('digitsPrintQuickBtn');
+    const pdfBtn = document.getElementById('digitsPdfQuickBtn');
+
+    if (cutChk) {
+      cutChk.addEventListener('change', () => {
+        if (isDigitsActive()) {
+          renderDigitsSheetPreview();
+          scheduleSessionSave();
+        }
+      });
+    }
+
+    if (colsSel) {
+      colsSel.addEventListener('change', () => {
+        if (isDigitsActive()) {
+          renderDigitsSheetPreview();
+          scheduleSessionSave();
+        }
+      });
+    }
+
+    if (colorInp) {
+      colorInp.addEventListener('input', (e) => {
+        if (colorHex) colorHex.textContent = e.target.value;
+        if (isDigitsActive()) {
+          renderDigitsSheetPreview();
+          scheduleSessionSave();
+        }
+      });
+    }
+
+    if (sizeInp) {
+      sizeInp.addEventListener('input', () => {
+        if (isDigitsActive()) {
+          renderDigitsSheetPreview();
+          scheduleSessionSave();
+        }
+      });
+    }
+
+    if (printBtn) {
+      printBtn.addEventListener('click', () => {
+        triggerPrint();
+      });
+    }
+
+    if (pdfBtn) {
+      pdfBtn.addEventListener('click', () => {
+        downloadPrintAreaPdf(false);
+      });
+    }
   }
 
   // Рендерит цену в 4 белые плашки ячеек промо-сетки (3 цифры + 1 символ валюты/4-я цифра)
@@ -6679,6 +6905,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const idrBeerTools = document.getElementById('idrBeerTools');
     if (idrBeerTools) idrBeerTools.style.display = isBeer ? 'flex' : 'none';
+
+    syncDigitsControlsVisibility();
 
     // Сайдбар: карточка активного пива вверху, таблица товаров доступна ниже
     const beerSidebarCard = document.getElementById('beerSidebarActiveCard');
@@ -11314,6 +11542,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     syncDigitControlsVisibility();
 
+    // === Отрисовка шаблона «Цифры» ===
+    const isDigits = isDigitsActive();
+    wobblerPreview.classList.toggle('is-digits-template', isDigits);
+    const digitsContainer = document.getElementById('digitsSheetContainer');
+    if (isDigits) {
+      renderDigitsSheetPreview();
+      if (typeof autoFitBeerPreviewIfActive === 'function') autoFitBeerPreviewIfActive();
+    } else {
+      if (digitsContainer) digitsContainer.style.display = 'none';
+    }
+
     // Update preview item badge
     renderPreviewItemBadge();
     if (typeof updatePreviewItemNav === 'function') updatePreviewItemNav();
@@ -13285,6 +13524,39 @@ document.addEventListener('DOMContentLoaded', () => {
   // Render Clean Print Area for Window.print()
   function preparePrintArea() {
     printArea.innerHTML = '';
+
+    if (isDigitsActive()) {
+      document.body.classList.remove('print-landscape');
+      let dynPrintStyle = document.getElementById('dynamicPrintPageOrientation');
+      if (!dynPrintStyle) {
+        dynPrintStyle = document.createElement('style');
+        dynPrintStyle.id = 'dynamicPrintPageOrientation';
+        document.head.appendChild(dynPrintStyle);
+      }
+      dynPrintStyle.textContent = `@page { size: A4 portrait; margin: 0; }`;
+
+      const cutChk = document.getElementById('digitsCutLinesChk');
+      const colsSel = document.getElementById('digitsColsSelect');
+      const colorInp = document.getElementById('digitsColorInput');
+      const sizeInp = document.getElementById('digitsFontSize');
+      const copiesInp = document.getElementById('digitsSheetCopies');
+
+      const showCut = cutChk ? cutChk.checked : true;
+      const cols = colsSel ? parseInt(colsSel.value, 10) || 11 : 11;
+      const color = colorInp ? colorInp.value : '#000000';
+      const size = sizeInp ? parseFloat(sizeInp.value) || 52 : 52;
+      const copies = copiesInp ? Math.max(1, parseInt(copiesInp.value, 10) || 1) : 1;
+
+      for (let p = 0; p < copies; p++) {
+        const page = document.createElement('div');
+        page.className = 'print-page is-digits-page';
+        const sheetEl = createDigitsSheetElement(cols, showCut, color, size);
+        page.appendChild(sheetEl);
+        printArea.appendChild(page);
+      }
+      return;
+    }
+
     const wCm = parseFloat(wobblerWidthInput.value) || 6.5;
     const hCm = parseFloat(wobblerHeightInput.value) || 4.5;
     const wMm = wCm * 10;
@@ -13411,17 +13683,19 @@ document.addEventListener('DOMContentLoaded', () => {
   // Print Trigger
   function triggerPrint() {
     try {
-      const isMultiMode = document.querySelector('input[name="printMode"]:checked').value === 'multi';
-      if (isMultiMode) {
-        const filled = itemsData.filter(it => it && it.title && it.title.trim() && !it.skipPrint);
-        if (!filled.length) {
-          alert('Нет активных ценников для печати. Включите хотя бы один товар в печать.');
-          return;
-        }
-      } else {
-        if (!inputTitle.value.trim()) {
-          alert('Введите наименование товара для печати.');
-          return;
+      if (!isDigitsActive()) {
+        const isMultiMode = document.querySelector('input[name="printMode"]:checked').value === 'multi';
+        if (isMultiMode) {
+          const filled = itemsData.filter(it => it && it.title && it.title.trim() && !it.skipPrint);
+          if (!filled.length) {
+            alert('Нет активных ценников для печати. Включите хотя бы один товар в печать.');
+            return;
+          }
+        } else {
+          if (!inputTitle.value.trim()) {
+            alert('Введите наименование товара для печати.');
+            return;
+          }
         }
       }
       preparePrintArea();
@@ -13840,17 +14114,19 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
     } else {
-      const isMultiMode = document.querySelector('input[name="printMode"]:checked')?.value === 'multi';
-      if (isMultiMode) {
-        const filled = itemsData.filter(it => it && it.title && it.title.trim());
-        if (!filled.length) {
-          alert('Нет заполненных ценников для PDF. Введите наименование товара.');
-          return;
-        }
-      } else {
-        if (!inputTitle.value.trim()) {
-          alert('Введите наименование товара для PDF.');
-          return;
+      if (!isDigitsActive()) {
+        const isMultiMode = document.querySelector('input[name="printMode"]:checked')?.value === 'multi';
+        if (isMultiMode) {
+          const filled = itemsData.filter(it => it && it.title && it.title.trim());
+          if (!filled.length) {
+            alert('Нет заполненных ценников для PDF. Введите наименование товара.');
+            return;
+          }
+        } else {
+          if (!inputTitle.value.trim()) {
+            alert('Введите наименование товара для PDF.');
+            return;
+          }
         }
       }
       preparePrintArea();
@@ -14597,13 +14873,14 @@ document.addEventListener('DOMContentLoaded', () => {
           applyAutoBgToAllItems();
         }
         syncBeerControlsVisibility();
+        syncDigitsControlsVisibility();
         if (typeof syncWorkspaceViewModeForCurrentTemplate === 'function') {
           syncWorkspaceViewModeForCurrentTemplate();
         }
         // Авто-подгон кегля названий под геометрию нового шаблона:
         // выполняется синхронно, т.к. CSS-анимации отключены и размеры применены сразу.
         autoFitFontSize(true);
-        if (autoOpenDrawerChk && autoOpenDrawerChk.checked) {
+        if (key !== 'digits' && autoOpenDrawerChk && autoOpenDrawerChk.checked) {
           openItemsDrawer();
         }
       }
@@ -20995,7 +21272,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function autoFitBeerPreviewIfActive(force = false) {
-    if (typeof isBeerA5Active === 'function' && !isBeerA5Active()) return;
+    if ((typeof isBeerA5Active !== 'function' || !isBeerA5Active()) && (typeof isDigitsActive !== 'function' || !isDigitsActive())) return;
     if (typeof beerPreviewFitMode !== 'undefined' && !beerPreviewFitMode) return;
     const scale = calcFitScale(force);
     applyPreviewScale(scale);
@@ -21038,7 +21315,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     window.addEventListener('resize', () => {
-      if (isBeerA5Active() && beerPreviewFitMode) {
+      if ((isBeerA5Active() || isDigitsActive()) && beerPreviewFitMode) {
         autoFitBeerPreviewIfActive(true);
       }
     });
@@ -21048,8 +21325,10 @@ document.addEventListener('DOMContentLoaded', () => {
     window.resetBeerPreviewZoom = resetBeerPreviewZoom;
   }
 
-  // Финальная синхронизация видимости контролов Пиво А5
+  // Финальная синхронизация видимости контролов Пиво А5 и Цифры
+  setupDigitsControls();
   syncBeerControlsVisibility();
+  syncDigitsControlsVisibility();
   if (typeof syncWorkspaceViewModeForCurrentTemplate === 'function') {
     syncWorkspaceViewModeForCurrentTemplate();
   }

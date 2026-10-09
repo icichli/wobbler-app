@@ -897,6 +897,14 @@
                     <span class="preset-title">Пиво А5 АКЦИЯ</span>
                   </div>
                 </button>
+
+                <button class="preset-card" data-preset="digits"
+                  title="Цифры — плашки с цифрами 0–9 под размер ценника Пиво А5 (110 шт. на листе А4)">
+                  <div class="preset-color digits-preset-thumb"></div>
+                  <div class="preset-info">
+                    <span class="preset-title">Цифры</span>
+                  </div>
+                </button>
               </div>
             </div>
 
@@ -1333,6 +1341,65 @@
                 <option value="24" selected>24 шт (макс. для 6,5×3,5 см)</option>
                 <option value="auto">Авто (заполнить весь лист)</option>
               </select>
+            </div>
+
+            <!-- Секция настроек шаблона «Цифры» (видна только когда активен шаблон «Цифры») -->
+            <div id="digitsSection" class="field-settings-group compact-group" style="display: none; border-top: 1px solid var(--border-color, #27272a); padding-top: 10px; margin-top: 10px;">
+              <div class="group-header">
+                <h4>🔢 Параметры листа «Цифры»</h4>
+              </div>
+              <div class="digits-info-banner" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 6px; padding: 8px 10px; margin-bottom: 10px; font-size: 12px; line-height: 1.4; color: var(--text-color, #e4e4e7);">
+                Лист А4 (10 строк от 0 до 9). Размер каждой плашки: <strong>16,1 × 28,4 мм</strong> (в точности под ценник «Пиво А5»).
+              </div>
+
+              <div class="form-group">
+                <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                  <input type="checkbox" id="digitsCutLinesChk" checked>
+                  <span><strong>Показывать пунктирные линии реза</strong></span>
+                </label>
+                <small class="field-hint-text" style="display: block; margin-top: 2px; color: var(--text-muted, #a1a1aa);">Тонкие светло-серые границы вокруг каждой ячейки для удобного вырезания</small>
+              </div>
+
+              <div class="form-row" style="display: flex; gap: 8px; margin-top: 8px;">
+                <div class="form-group flex-1">
+                  <label for="digitsColsSelect" title="Количество повторений цифры в каждой строке">Колонок в строке:</label>
+                  <select id="digitsColsSelect" title="Выберите количество колонок">
+                    <option value="10">10 шт (100 на листе)</option>
+                    <option value="11" selected>11 шт (110 на листе)</option>
+                    <option value="12">12 шт (120 на листе)</option>
+                  </select>
+                </div>
+                <div class="form-group flex-1">
+                  <label for="digitsSheetCopies" title="Сколько одинаковых листов А4 отправить на печать">Копий листа (тираж):</label>
+                  <input type="number" id="digitsSheetCopies" min="1" max="50" value="1" style="max-width: 100px;">
+                </div>
+              </div>
+
+              <div class="form-row" style="display: flex; gap: 8px; margin-top: 8px; align-items: center;">
+                <div class="form-group flex-1">
+                  <label for="digitsColorInput" title="Цвет печати цифр">Цвет цифр:</label>
+                  <div style="display: flex; gap: 6px; align-items: center;">
+                    <input type="color" id="digitsColorInput" value="#000000" style="width: 36px; height: 32px; padding: 0; cursor: pointer; border-radius: 4px; border: 1px solid var(--border-color, #3f3f46);">
+                    <span id="digitsColorHex" style="font-size: 12px; font-family: monospace;">#000000</span>
+                  </div>
+                </div>
+                <div class="form-group flex-1">
+                  <label for="digitsFontSize" title="Размер шрифта (по умолчанию 52 pt из Пиво А5)">Размер шрифта:</label>
+                  <div style="display: flex; gap: 4px; align-items: center;">
+                    <input type="number" id="digitsFontSize" min="30" max="72" value="52" style="max-width: 80px;">
+                    <span style="font-size: 12px;">pt</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="digits-quick-actions" style="display: flex; gap: 8px; margin-top: 12px;">
+                <button type="button" id="digitsPrintQuickBtn" class="btn btn-primary btn-sm flex-1" title="Печать листа А4 на принтере">
+                  <svg class="ico"><use href="#i-printer"/></svg> Печать листа А4
+                </button>
+                <button type="button" id="digitsPdfQuickBtn" class="btn btn-secondary btn-sm flex-1" title="Скачать готовый PDF файл">
+                  <svg class="ico"><use href="#i-download"/></svg> Скачать PDF
+                </button>
+              </div>
             </div>
 
             <!-- Пивные параметры (отображаются при выборе «Пиво А5») -->
@@ -2764,6 +2831,9 @@
               <!-- Декоративный блок СНИЗУ (под ценником, добавляет высоту) -->
               <div class="wobbler-outside-bottom" id="wobblerOutsideBottom"><span class="block-text"
                   id="outsideBottomText"></span></div>
+
+              <!-- Контейнер для листа шаблона «Цифры» (10 строк от 0 до 9) -->
+              <div class="digits-sheet-container" id="digitsSheetContainer" style="display: none;"></div>
             </div>
           </div>
 

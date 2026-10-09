@@ -6605,6 +6605,27 @@ body.is-pdf-exporting #printArea {
   margin: auto !important;
 }
 
+/* Layout for Digits template on full A4 sheet */
+.print-page.is-digits-page,
+#printArea .print-page.is-digits-page,
+#pdfExportWrapper .print-page.is-digits-page,
+.pdf-export-flow .print-page.is-digits-page {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 6.5mm 0 !important;
+  box-sizing: border-box !important;
+  width: 210mm !important;
+  height: 297mm !important;
+  min-height: 297mm !important;
+  max-height: 297mm !important;
+  overflow: hidden !important;
+  background: #ffffff !important;
+  grid-template-columns: none !important;
+  grid-template-rows: none !important;
+}
+
 .a4-sheet-preview.is-beer-page .sheet-mini-item,
 .a4-sheet-preview.is-beer-page .sheet-mini-item:hover {
   transform: none !important;
@@ -10323,6 +10344,24 @@ label:has(input:focus-visible) {
   font-size: 13px;
 }
 
+.preset-color.digits-preset-thumb {
+  background: #ffffff;
+  border: 1px solid #10b981;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.preset-color.digits-preset-thumb::after {
+  content: '0-9';
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 900;
+  color: #111827;
+  letter-spacing: -0.5px;
+}
+
 /* 1. Крышка с фотографией пива */
 .beer-cap-photo-wrap {
   position: absolute;
@@ -12136,5 +12175,114 @@ label:has(input:focus-visible) {
 
   .beer-cap-drop-hint {
     display: none !important;
+  }
+}
+
+/* ==========================================================================
+   --- Стили шаблона «Цифры» (плашки цифр 0–9 на листе А4) ---
+   ========================================================================== */
+
+/* 1. Поведение элементов в превью */
+.wobbler-element.is-digits-template {
+  background: #ffffff !important;
+  background-image: none !important;
+  border: 1px solid #e4e4e7;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.wobbler-element.is-digits-template > :not(.digits-sheet-container):not(.canvas-grid-overlay):not(.canvas-guide-line) {
+  display: none !important;
+}
+
+/* 2. Контейнер листа А4 с 10 строками цифр */
+.digits-sheet-container {
+  width: 210mm;
+  height: 284mm;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  box-sizing: border-box;
+  margin: auto;
+  background: #ffffff;
+  padding: 0;
+  --digits-col-gap: 1.5mm;
+}
+
+.digits-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 28.4mm;
+  box-sizing: border-box;
+  gap: var(--digits-col-gap, 1.5mm);
+}
+
+/* 3. Плашка под одну цифру (16,1 × 28,4 мм — размер ячейки в «Пиво А5») */
+.digit-plate {
+  width: 16.1mm;
+  height: 28.4mm;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border: 0.5px dashed #b0b0b0;
+  margin: 0;
+  position: relative;
+}
+
+.digits-sheet-container.no-cut-lines .digit-plate {
+  border-color: transparent !important;
+}
+
+/* 4. Символ цифры (Montserrat 900, scaleY 1.35) */
+.digit-char {
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-size: 52pt;
+  font-weight: 900;
+  line-height: 1;
+  color: #000000;
+  transform: scaleY(1.35);
+  transform-origin: center center;
+  user-select: none;
+  display: inline-block;
+  text-align: center;
+  pointer-events: none;
+}
+
+/* 5. Печать и экспорт в PDF для шаблона «Цифры» */
+@media print {
+  .print-page.is-digits-page {
+    width: 210mm !important;
+    height: 297mm !important;
+    min-height: 297mm !important;
+    max-height: 297mm !important;
+    padding: 6.5mm 0 !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    background: #ffffff !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .print-page.is-digits-page .digits-sheet-container {
+    width: 210mm !important;
+    height: 284mm !important;
+    margin: auto !important;
+  }
+
+  .print-page.is-digits-page .digit-plate {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }
