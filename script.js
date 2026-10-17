@@ -158,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Массив растёт прогрессивно: стартует с 1 пустой строки; при вводе в последнее
   // поле появляется следующая пустая (см. syncRowExtent / normalizeItemsArray).
   const MAX_ITEMS = 100; // мягкий защитный потолок (только для вставки больших таблиц)
-  const TEMPLATE_KEYS = ['alaska_dots', 'yellow_tag', 'ryba', 'sneki', 'sneki_5', 'sneki_digit', 'novy_vkus', 'novinka', 'tomat', 'sladko', 'sort_nedeli', 'korona_a5', 'a5', 'beer_a5', 'beer_a5_aktsiya', 'digits'];
+  const TEMPLATE_KEYS = ['alaska_dots', 'yellow_tag', 'ryba', 'sneki', 'sneki_5', 'sneki_digit', 'novy_vkus', 'novinka', 'tomat', 'sladko', 'sort_nedeli', 'korona_a5', 'a5', 'beer_a5', 'beer_a5_aktsiya', 'digits', 'stop'];
   const templateItems = {};
   function freshItem() {
     return {
@@ -185,6 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   TEMPLATE_KEYS.forEach(k => { templateItems[k] = freshItems(); });
   templateItems.beer_a5_aktsiya = templateItems.beer_a5; // Единая общая база сортов между А5 и АКЦИЕЙ
+  templateItems.stop = [{ ...freshItem(), title: 'СТОП' }];
   let itemsData = templateItems.alaska_dots;   // активный массив (старт — Бутылки)
 
   // Index of the item currently shown in the single preview (multi mode)
@@ -1277,6 +1278,7 @@ document.addEventListener('DOMContentLoaded', () => {
       activeTemplateRef.key === 'beer_a5' ||
       activeTemplateRef.key === 'beer_a5_aktsiya' ||
       activeTemplateRef.key === 'digits' ||
+      activeTemplateRef.key === 'stop' ||
       activeTemplateRef.key === 'yellow_tag' ||
       activeTemplateRef.key === 'sneki_digit' ||
       activeTemplateRef.key === 'novy_vkus' ||
@@ -2788,6 +2790,88 @@ document.addEventListener('DOMContentLoaded', () => {
         priceDigits: [{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }],
         currency: { x: 0, y: 0 }
       }
+    },
+    // «СТОП» — стоп-плашка для розлива (7,0 × 7,0 см, печать на А4)
+    stop: {
+      name: 'СТОП',
+      widthCm: 7.0,
+      heightCm: 7.0,
+      borderMm: 0,
+      title: 'СТОП',
+      subtitle: '',
+      composition: '',
+      beerPhoto: '',
+      beerStrength: '',
+      beerBitterness: '',
+      beerDensity: '',
+      beerType: '',
+      beerStyle: '',
+      titleFont: "'Montserrat', Arial, sans-serif",
+      titleColor: '#ffffff',
+      titleSize: 26,
+      titleWeight: '900',
+      titleItalic: false,
+      titleAlign: 'center',
+      titleOffsetY: 0,
+      titleShadow: '',
+      subtitleColor: '#ffffff',
+      subtitleSize: 10,
+      subtitleWeight: '700',
+      subtitleAlign: 'center',
+      showPrice: false,
+      priceFont: "'Montserrat', Arial, sans-serif",
+      priceSize: 28,
+      priceWeight: '900',
+      priceColor: '#ffffff',
+      priceAlign: 'center',
+      priceOffsetY: 0,
+      price: '',
+      currency: '',
+      headerBg: 'transparent',
+      bgImage: 'stop_text.png',
+      customBgData: null,
+      headerHeight: 100,
+      layout: 'full',
+      priceInBottom: false,
+      subtitleCorner: false,
+      pricePlate: false,
+      decorOutsideShow: false,
+      decorOutsideText: '',
+      decorOutsideBg: '#ffffff',
+      decorOutsideBgImg: 'none',
+      decorOutsideCustomBg: null,
+      decorOutsideColor: '#000000',
+      decorOutsideFontSize: 14,
+      decorOutsideHeight: 12,
+      decorInsideShow: false,
+      decorInsideText: '',
+      decorInsideBg: '#ffffff',
+      decorInsideBgImg: 'none',
+      decorInsideCustomBg: null,
+      decorInsideColor: '#000000',
+      decorInsideFontSize: 11,
+      decorInsideHeight: 8,
+      decorInsideWidth: 50,
+      decorBottomShow: false,
+      decorBottomText: '',
+      decorBottomBg: '#ffffff',
+      decorBottomBgImg: 'none',
+      decorBottomCustomBg: null,
+      decorBottomColor: '#000000',
+      decorBottomFontSize: 14,
+      decorBottomHeight: 12,
+      decorBlockPos: 'outside',
+      printGapMm: 2,
+      titleFitFloor: 10,
+      autofitTitleOnly: true,
+      stopMode: 'graphic',
+      labelPos: {
+        title: { x: 0, y: 0 },
+        subtitle: { x: 0, y: 0 },
+        price: { x: 0, y: 0 },
+        priceDigits: [{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }],
+        currency: { x: 0, y: 0 }
+      }
     }
   };
   builtInPresets.aktsiya_a5 = builtInPresets.korona_a5;
@@ -3141,6 +3225,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (card && card.classList.contains('preset-card')) card.classList.add('active');
     }
     syncBeerControlsVisibility();
+    syncDigitsControlsVisibility();
+    syncStopControlsVisibility();
     if (typeof syncWorkspaceViewModeForCurrentTemplate === 'function') {
       syncWorkspaceViewModeForCurrentTemplate();
     }
@@ -4468,6 +4554,331 @@ document.addEventListener('DOMContentLoaded', () => {
     if (pdfBtn) {
       pdfBtn.addEventListener('click', () => {
         downloadPrintAreaPdf(false);
+      });
+    }
+  }
+
+  // ==========================================================================
+  // --- Шаблон «СТОП» (Стоп-плашки для розлива) ---
+  // ==========================================================================
+
+  // Проверяет, активен ли шаблон «СТОП»
+  function isStopActive() {
+    const key = (activeTemplateRef && activeTemplateRef.key) || null;
+    return key === 'stop';
+  }
+
+  // Расчет оптимального кегля надписи стоп-плашки
+  function calcStopFontSize(txt) {
+    if (!txt) return 24;
+    const len = txt.trim().length;
+    if (len <= 4) return 24; // СТОП
+    if (len <= 6) return 19; // 5-6 букв
+    if (len <= 8) return 15; // ПРОМЫВКА (8 букв)
+    if (len <= 11) return 13; // СМЕНА КЕГИ (10 букв)
+    return 11; // ТЕХ. ПЕРЕРЫВ (12 букв)
+  }
+
+  // Синхронизирует видимость контролов для шаблона «СТОП»
+  function syncStopControlsVisibility() {
+    const isStop = isStopActive();
+    const stopSection = document.getElementById('stopSection');
+    const beerSingleGroup = document.getElementById('beerSingleParamsGroup');
+    const digitsSection = document.getElementById('digitsSection');
+
+    if (stopSection) stopSection.style.display = isStop ? 'block' : 'none';
+
+    if (isStop) {
+      if (beerSingleGroup) beerSingleGroup.style.display = 'none';
+      if (digitsSection) digitsSection.style.display = 'none';
+      if (inputTitle && !inputTitle.value.trim()) inputTitle.value = 'СТОП';
+      const sec2Btn = document.querySelector('.sidebar-tab-btn[data-target="section2"]');
+      if (sec2Btn && !sec2Btn.classList.contains('active')) {
+        sec2Btn.click();
+      }
+    }
+  }
+
+  // Создает DOM-структуру листа А4 со знаками «СТОП»
+  function createStopSheetElement(sizeCm = 7.0, showCutLines = true) {
+    const container = document.createElement('div');
+    container.className = 'stop-sheet-container';
+
+    const grid = document.createElement('div');
+    grid.className = 'stop-sheet-grid';
+
+    let cols = 2, rows = 4;
+    let sizeMm = 70;
+    let gapX = 10, gapY = 4;
+
+    if (Math.abs(sizeCm - 6.5) < 0.1) {
+      sizeMm = 65;
+      cols = 3;
+      rows = 4;
+      gapX = 2.5;
+      gapY = 5;
+    } else if (Math.abs(sizeCm - 8.5) < 0.1) {
+      sizeMm = 85;
+      cols = 2;
+      rows = 3;
+      gapX = 8;
+      gapY = 6;
+    } else {
+      sizeMm = 70;
+      cols = 2;
+      rows = 4;
+      gapX = 10;
+      gapY = 4;
+    }
+
+    grid.style.gridTemplateColumns = `repeat(${cols}, ${sizeMm}mm)`;
+    grid.style.setProperty('--stop-grid-gap-x', `${gapX}mm`);
+    grid.style.setProperty('--stop-grid-gap-y', `${gapY}mm`);
+
+    const modeCustomRadio = document.getElementById('stopModeCustom');
+    const customTextInp = document.getElementById('stopCustomTextInput');
+    const textColorInp = document.getElementById('stopTextColorInput');
+    const fontSizeInp = document.getElementById('stopFontSizeInput');
+
+    const isCustomMode = modeCustomRadio ? modeCustomRadio.checked : false;
+    const customText = (customTextInp ? customTextInp.value.trim() : '') || 'СТОП';
+    const textColor = (textColorInp ? textColorInp.value : '') || '#ffffff';
+    const fontSizePt = (fontSizeInp ? parseFloat(fontSizeInp.value) : 0) || calcStopFontSize(customText);
+
+    const totalPlates = cols * rows;
+    for (let i = 0; i < totalPlates; i++) {
+      const plate = document.createElement('div');
+      plate.className = 'stop-plate' + (showCutLines ? ' with-cut-lines' : '');
+      plate.style.width = `${sizeMm}mm`;
+      plate.style.height = `${sizeMm}mm`;
+
+      const bg = document.createElement('div');
+      bg.className = 'stop-plate-bg';
+      bg.style.backgroundImage = isCustomMode ? `url('images/stop_empty.png')` : `url('images/stop_text.png')`;
+
+      if (isCustomMode) {
+        const txtEl = document.createElement('div');
+        txtEl.className = 'stop-plate-text';
+        txtEl.textContent = customText;
+        txtEl.style.color = textColor;
+        txtEl.style.fontSize = `${fontSizePt}pt`;
+        bg.appendChild(txtEl);
+      }
+
+      plate.appendChild(bg);
+      grid.appendChild(plate);
+    }
+
+    container.appendChild(grid);
+    return container;
+  }
+
+  // Подготовка печатной области листа «СТОП»
+  function prepareStopPrintArea() {
+    printArea.innerHTML = '';
+    document.body.classList.remove('print-landscape');
+    let dynPrintStyle = document.getElementById('dynamicPrintPageOrientation');
+    if (!dynPrintStyle) {
+      dynPrintStyle = document.createElement('style');
+      dynPrintStyle.id = 'dynamicPrintPageOrientation';
+      document.head.appendChild(dynPrintStyle);
+    }
+    dynPrintStyle.textContent = `@page { size: A4 portrait; margin: 0; }`;
+
+    const sizeSelect = document.getElementById('stopSizeSelect');
+    const cutChk = document.getElementById('stopCutLinesChk');
+    const copiesInp = document.getElementById('stopSheetCopies');
+
+    const sizeVal = sizeSelect ? parseFloat(sizeSelect.value) || 7.0 : 7.0;
+    const showCut = cutChk ? cutChk.checked : true;
+    const copies = copiesInp ? Math.max(1, parseInt(copiesInp.value, 10) || 1) : 1;
+
+    for (let p = 0; p < copies; p++) {
+      const page = document.createElement('div');
+      page.className = 'print-page is-stop-page';
+      const sheetEl = createStopSheetElement(sizeVal, showCut);
+      page.appendChild(sheetEl);
+      printArea.appendChild(page);
+    }
+  }
+
+  // Быстрая печать листа А4
+  function printStopSheetFromUI() {
+    prepareStopPrintArea();
+    triggerPrint();
+  }
+
+  // Скачивание готового листа в PDF
+  async function pdfStopSheetFromUI() {
+    prepareStopPrintArea();
+    await downloadPrintAreaPdf(false);
+  }
+
+  // Инициализация событий контролов шаблона «СТОП»
+  function setupStopControls() {
+    const modeGraphicRadio = document.getElementById('stopModeGraphic');
+    const modeCustomRadio = document.getElementById('stopModeCustom');
+    const customGroup = document.getElementById('stopCustomTextGroup');
+    const customTextInp = document.getElementById('stopCustomTextInput');
+    const textColorInp = document.getElementById('stopTextColorInput');
+    const textColorHex = document.getElementById('stopTextColorHex');
+    const fontSizeInp = document.getElementById('stopFontSizeInput');
+    const sizeSelect = document.getElementById('stopSizeSelect');
+    const printBtn = document.getElementById('stopPrintQuickBtn');
+    const pdfBtn = document.getElementById('stopPdfQuickBtn');
+    const barKitBtn = document.getElementById('stopPopulateBarKitBtn');
+
+    function syncStopModeUI() {
+      const isCustom = modeCustomRadio ? modeCustomRadio.checked : false;
+      if (customGroup) customGroup.style.display = isCustom ? 'block' : 'none';
+
+      if (isStopActive()) {
+        const preset = builtInPresets.stop;
+        if (preset) {
+          preset.stopMode = isCustom ? 'custom' : 'graphic';
+          preset.bgImage = isCustom ? 'stop_empty.png' : 'stop_text.png';
+        }
+        const activeItem = itemsData && itemsData[activePreviewIndex || 0];
+        if (activeItem) {
+          if (isCustom) {
+            activeItem.title = (customTextInp && customTextInp.value.trim()) || 'СТОП';
+          } else {
+            activeItem.title = 'СТОП';
+          }
+        }
+        if (inputTitle) inputTitle.value = activeItem ? activeItem.title : (isCustom ? 'СТОП' : 'СТОП');
+        updatePreview();
+        scheduleSessionSave();
+      }
+    }
+
+    if (modeGraphicRadio) modeGraphicRadio.addEventListener('change', syncStopModeUI);
+    if (modeCustomRadio) modeCustomRadio.addEventListener('change', syncStopModeUI);
+
+    if (customTextInp) {
+      customTextInp.addEventListener('input', (e) => {
+        if (isStopActive()) {
+          const val = e.target.value.trim() || 'СТОП';
+          const activeItem = itemsData && itemsData[activePreviewIndex || 0];
+          if (activeItem) activeItem.title = val;
+          if (inputTitle) inputTitle.value = val;
+          updatePreview();
+          scheduleSessionSave();
+        }
+      });
+    }
+
+    if (textColorInp) {
+      textColorInp.addEventListener('input', (e) => {
+        if (textColorHex) textColorHex.textContent = e.target.value;
+        if (isStopActive()) {
+          const preset = builtInPresets.stop;
+          if (preset) preset.titleColor = e.target.value;
+          const activeItem = itemsData && itemsData[activePreviewIndex || 0];
+          if (activeItem) {
+            if (!activeItem.fonts) activeItem.fonts = {};
+            activeItem.fonts.titleColor = e.target.value;
+            activeItem.fontsCustomized = true;
+          }
+          updatePreview();
+          scheduleSessionSave();
+        }
+      });
+    }
+
+    if (fontSizeInp) {
+      fontSizeInp.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value) || 26;
+        if (isStopActive()) {
+          const preset = builtInPresets.stop;
+          if (preset) preset.titleSize = val;
+          const activeItem = itemsData && itemsData[activePreviewIndex || 0];
+          if (activeItem) {
+            if (!activeItem.fonts) activeItem.fonts = {};
+            activeItem.fonts.titleSize = val;
+            activeItem.fontsCustomized = true;
+          }
+          updatePreview();
+          scheduleSessionSave();
+        }
+      });
+    }
+
+    // Быстрые надписи на знаке
+    document.querySelectorAll('.stop-quick-text-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const txt = btn.getAttribute('data-text') || 'СТОП';
+        if (modeCustomRadio) modeCustomRadio.checked = true;
+        if (customTextInp) customTextInp.value = txt;
+        const autoSize = calcStopFontSize(txt);
+        if (fontSizeInp) fontSizeInp.value = autoSize;
+        if (isStopActive()) {
+          const preset = builtInPresets.stop;
+          if (preset) preset.titleSize = autoSize;
+          const activeItem = itemsData && itemsData[activePreviewIndex || 0];
+          if (activeItem) {
+            if (!activeItem.fonts) activeItem.fonts = {};
+            activeItem.fonts.titleSize = autoSize;
+            activeItem.fontsCustomized = true;
+          }
+        }
+        syncStopModeUI();
+      });
+    });
+
+    // Изменение размера знака на листе (6.5 / 7.0 / 8.5)
+    if (sizeSelect) {
+      sizeSelect.addEventListener('change', () => {
+        const val = parseFloat(sizeSelect.value) || 7.0;
+        if (isStopActive()) {
+          wobblerWidthInput.value = val;
+          wobblerHeightInput.value = val;
+          const preset = builtInPresets.stop;
+          if (preset) {
+            preset.widthCm = val;
+            preset.heightCm = val;
+          }
+          updatePreview();
+          scheduleSessionSave();
+        }
+      });
+    }
+
+    // Заполнение готовым набором для бара
+    if (barKitBtn) {
+      barKitBtn.addEventListener('click', () => {
+        if (isStopActive()) {
+          templateItems.stop = [
+            { ...freshItem(), title: 'СТОП', count: 4 },
+            { ...freshItem(), title: 'ПРОМЫВКА', count: 2 },
+            { ...freshItem(), title: 'СМЕНА КЕГИ', count: 2 },
+            { ...freshItem(), title: 'ОЖИДАЕМ', count: 2 },
+            { ...freshItem(), title: 'ТЕХ. ПЕРЕРЫВ', count: 2 }
+          ];
+          itemsData = templateItems.stop;
+          const multiRadio = document.querySelector('input[name="printMode"][value="multi"]');
+          if (multiRadio) {
+            multiRadio.checked = true;
+            multiRadio.dispatchEvent(new Event('change'));
+          }
+          renderItemsListInputs();
+          updatePreview();
+          if (typeof showToast === 'function') {
+            showToast('Готовый набор плашек для бара добавлен в таблицу товаров!', 'success');
+          }
+        }
+      });
+    }
+
+    if (printBtn) {
+      printBtn.addEventListener('click', () => {
+        printStopSheetFromUI();
+      });
+    }
+
+    if (pdfBtn) {
+      pdfBtn.addEventListener('click', () => {
+        pdfStopSheetFromUI();
       });
     }
   }
@@ -10484,6 +10895,52 @@ document.addEventListener('DOMContentLoaded', () => {
       if (cloneBeerMetrics) cloneBeerMetrics.style.display = 'none';
       if (cloneBeerBot) cloneBeerBot.style.display = 'none';
     }
+
+    // Шаблон «СТОП» (стоп-плашки для розлива)
+    if (isStopActive()) {
+      const itemTitle = (item && item.title) ? item.title.trim() : '';
+      const modeCustomRadio = document.getElementById('stopModeCustom');
+      const isCustomMode = modeCustomRadio ? modeCustomRadio.checked : false;
+      const isGraphic = !isCustomMode && (!itemTitle || itemTitle === 'СТОП');
+
+      clone.classList.toggle('is-stop-graphic', isGraphic);
+      clone.classList.toggle('is-stop-custom', !isGraphic);
+
+      if (cloneHeader) {
+        cloneHeader.style.setProperty('background-image', isGraphic ? "url('images/stop_text.png')" : "url('images/stop_empty.png')", 'important');
+        cloneHeader.style.setProperty('background-size', 'contain', 'important');
+        cloneHeader.style.setProperty('background-position', 'center', 'important');
+        cloneHeader.style.setProperty('background-repeat', 'no-repeat', 'important');
+        cloneHeader.style.setProperty('background-color', 'transparent', 'important');
+      }
+      if (tElem) {
+        if (isGraphic) {
+          tElem.textContent = '';
+          tElem.style.display = 'none';
+        } else {
+          tElem.style.display = 'flex';
+          tElem.textContent = itemTitle || 'СТОП';
+          tElem.style.color = fontOf(item, 'titleColor', (templateFonts && templateFonts.titleColor) || '#ffffff');
+          tElem.style.fontFamily = "'Montserrat', Arial, sans-serif";
+          tElem.style.fontWeight = '900';
+          const autoSize = calcStopFontSize(itemTitle);
+          const customSize = (item && item.fonts && item.fonts.titleSize) || (templateFonts && templateFonts.titleSize) || autoSize;
+          tElem.style.fontSize = `${customSize}pt`;
+          tElem.style.transform = 'none';
+          tElem.style.textTransform = 'uppercase';
+          tElem.style.textAlign = 'center';
+          tElem.style.justifyContent = 'center';
+          tElem.style.alignItems = 'center';
+          tElem.style.width = '100%';
+          tElem.style.height = '100%';
+          tElem.style.margin = 'auto';
+          tElem.style.lineHeight = '1.05';
+          tElem.style.wordBreak = 'normal';
+        }
+      }
+      if (sElem) sElem.style.display = 'none';
+      if (box) box.style.display = 'none';
+    }
   }
 
   // ===== Мульти-печать: рендер ценника под ПРОИЗВОЛЬНЫЙ preset =====
@@ -11128,6 +11585,53 @@ document.addEventListener('DOMContentLoaded', () => {
       if (cloneBeerBot) cloneBeerBot.style.display = 'none';
       if (clonePromoTop) clonePromoTop.style.display = 'none';
       if (clonePromoBottom) clonePromoBottom.style.display = 'none';
+    }
+
+    // Шаблон «СТОП» (стоп-плашка для розлива)
+    const isStopPreset = (ctx.key === 'stop' || (activeTemplateRef && activeTemplateRef.key === 'stop') || ctx.tb?.bgImage === 'stop_text.png' || ctx.tb?.bgImage === 'stop_empty.png' || clone.classList.contains('is-stop-template'));
+    clone.classList.toggle('is-stop-template', isStopPreset);
+    if (isStopPreset) {
+      const p = preset || (activeTemplateRef && builtInPresets[activeTemplateRef.key]) || {};
+      const isGraphic = (p.stopMode === 'graphic' && (!itemTitle || itemTitle === 'СТОП'));
+
+      clone.classList.toggle('is-stop-graphic', isGraphic);
+      clone.classList.toggle('is-stop-custom', !isGraphic);
+
+      const cHeader = clone.querySelector('.wobbler-header');
+      if (cHeader) {
+        cHeader.style.backgroundImage = isGraphic ? `url('images/stop_text.png')` : `url('images/stop_empty.png')`;
+        cHeader.style.backgroundSize = 'contain';
+        cHeader.style.backgroundPosition = 'center';
+        cHeader.style.backgroundRepeat = 'no-repeat';
+        cHeader.style.backgroundColor = 'transparent';
+      }
+      if (tElem) {
+        if (isGraphic) {
+          tElem.textContent = '';
+          tElem.style.display = 'none';
+        } else {
+          tElem.style.display = 'flex';
+          tElem.textContent = itemTitle || 'СТОП';
+          tElem.style.color = fontOf(item, 'titleColor', tf.titleColor || '#ffffff');
+          tElem.style.fontFamily = fontOf(item, 'titleFont', tf.titleFont || "'Montserrat', Arial, sans-serif");
+          tElem.style.fontWeight = '900';
+          const autoSize = calcStopFontSize(itemTitle);
+          const customSize = (item && item.fonts && item.fonts.titleSize) || (tf && tf.titleSize) || autoSize;
+          tElem.style.fontSize = `${customSize}pt`;
+          tElem.style.transform = 'none';
+          tElem.style.textTransform = 'uppercase';
+          tElem.style.textAlign = 'center';
+          tElem.style.justifyContent = 'center';
+          tElem.style.alignItems = 'center';
+          tElem.style.width = '100%';
+          tElem.style.height = '100%';
+          tElem.style.margin = 'auto';
+          tElem.style.lineHeight = '1.05';
+          tElem.style.wordBreak = 'normal';
+        }
+      }
+      if (sElem) sElem.style.display = 'none';
+      if (box) box.style.display = 'none';
     }
   }
 
@@ -11901,6 +12405,61 @@ document.addEventListener('DOMContentLoaded', () => {
         if (oldBox) oldBox.remove();
         wobblerPreview._transformBoxController = null;
       }
+    }
+
+    // === Отрисовка шаблона «СТОП» (Гарантированный оверрайд фона и надписи в конце рендера) ===
+    const isStop = isStopActive();
+    wobblerPreview.classList.toggle('is-stop-template', isStop);
+    const stopContainer = document.getElementById('stopSheetContainer');
+    if (isStop) {
+      const modeCustomRadio = document.getElementById('stopModeCustom');
+      const customTextInp = document.getElementById('stopCustomTextInput');
+      const isCustomMode = modeCustomRadio ? modeCustomRadio.checked : false;
+      const rawTitle = (isMultiMode ? activeItem?.title : inputTitle.value) || '';
+      const isGraphic = !isCustomMode && (!rawTitle || rawTitle.trim() === 'СТОП');
+
+      wobblerPreview.classList.toggle('is-stop-graphic', isGraphic);
+      wobblerPreview.classList.toggle('is-stop-custom', !isGraphic);
+
+      if (wobblerHeader) {
+        const bgUrl = isGraphic ? "url('images/stop_text.png')" : "url('images/stop_empty.png')";
+        wobblerHeader.style.setProperty('background-image', bgUrl, 'important');
+        wobblerHeader.style.setProperty('background-size', 'contain', 'important');
+        wobblerHeader.style.setProperty('background-position', 'center', 'important');
+        wobblerHeader.style.setProperty('background-repeat', 'no-repeat', 'important');
+        wobblerHeader.style.setProperty('background-color', 'transparent', 'important');
+      }
+      if (previewTitle) {
+        if (isGraphic) {
+          previewTitle.textContent = '';
+          previewTitle.style.display = 'none';
+        } else {
+          previewTitle.style.display = 'flex';
+          const txt = rawTitle || (customTextInp ? customTextInp.value : 'СТОП') || 'СТОП';
+          previewTitle.textContent = txt;
+          previewTitle.style.color = (activeItem && activeItem.fonts && activeItem.fonts.titleColor) || (builtInPresets.stop && builtInPresets.stop.titleColor) || '#ffffff';
+          previewTitle.style.fontFamily = "'Montserrat', Arial, sans-serif";
+          previewTitle.style.fontWeight = '900';
+          const autoSize = calcStopFontSize(txt);
+          const customSize = (activeItem && activeItem.fonts && activeItem.fonts.titleSize) || (builtInPresets.stop && builtInPresets.stop.titleSize) || autoSize;
+          previewTitle.style.fontSize = `${customSize}pt`;
+          previewTitle.style.transform = 'none';
+          previewTitle.style.textTransform = 'uppercase';
+          previewTitle.style.textAlign = 'center';
+          previewTitle.style.justifyContent = 'center';
+          previewTitle.style.alignItems = 'center';
+          previewTitle.style.width = '100%';
+          previewTitle.style.height = '100%';
+          previewTitle.style.margin = 'auto';
+          previewTitle.style.lineHeight = '1.05';
+          previewTitle.style.wordBreak = 'normal';
+        }
+      }
+      if (previewSubtitle) previewSubtitle.style.display = 'none';
+      if (previewPriceBox) previewPriceBox.style.display = 'none';
+      if (stopContainer) stopContainer.style.display = 'none';
+    } else {
+      if (stopContainer) stopContainer.style.display = 'none';
     }
 
     // Любое значимое изменение завершается этим рендером — планируем
@@ -13557,6 +14116,37 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    if (isStopActive()) {
+      const isMultiMode = document.querySelector('input[name="printMode"]:checked')?.value === 'multi';
+      if (!isMultiMode) {
+        document.body.classList.remove('print-landscape');
+        let dynPrintStyle = document.getElementById('dynamicPrintPageOrientation');
+        if (!dynPrintStyle) {
+          dynPrintStyle = document.createElement('style');
+          dynPrintStyle.id = 'dynamicPrintPageOrientation';
+          document.head.appendChild(dynPrintStyle);
+        }
+        dynPrintStyle.textContent = `@page { size: A4 portrait; margin: 0; }`;
+
+        const sizeSelect = document.getElementById('stopSizeSelect');
+        const cutChk = document.getElementById('stopCutLinesChk');
+        const copiesInp = document.getElementById('stopSheetCopies');
+
+        const sizeVal = sizeSelect ? parseFloat(sizeSelect.value) || 7.0 : 7.0;
+        const showCut = cutChk ? cutChk.checked : true;
+        const copies = copiesInp ? Math.max(1, parseInt(copiesInp.value, 10) || 1) : 1;
+
+        for (let p = 0; p < copies; p++) {
+          const page = document.createElement('div');
+          page.className = 'print-page is-stop-page';
+          const sheetEl = createStopSheetElement(sizeVal, showCut);
+          page.appendChild(sheetEl);
+          printArea.appendChild(page);
+        }
+        return;
+      }
+    }
+
     const wCm = parseFloat(wobblerWidthInput.value) || 6.5;
     const hCm = parseFloat(wobblerHeightInput.value) || 4.5;
     const wMm = wCm * 10;
@@ -14874,13 +15464,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         syncBeerControlsVisibility();
         syncDigitsControlsVisibility();
+        syncStopControlsVisibility();
         if (typeof syncWorkspaceViewModeForCurrentTemplate === 'function') {
           syncWorkspaceViewModeForCurrentTemplate();
         }
         // Авто-подгон кегля названий под геометрию нового шаблона:
         // выполняется синхронно, т.к. CSS-анимации отключены и размеры применены сразу.
         autoFitFontSize(true);
-        if (key !== 'digits' && autoOpenDrawerChk && autoOpenDrawerChk.checked) {
+        if (key !== 'digits' && key !== 'stop' && autoOpenDrawerChk && autoOpenDrawerChk.checked) {
           openItemsDrawer();
         }
       }
@@ -21325,10 +21916,12 @@ document.addEventListener('DOMContentLoaded', () => {
     window.resetBeerPreviewZoom = resetBeerPreviewZoom;
   }
 
-  // Финальная синхронизация видимости контролов Пиво А5 и Цифры
+  // Финальная синхронизация видимости контролов Пиво А5, Цифры и СТОП
   setupDigitsControls();
+  setupStopControls();
   syncBeerControlsVisibility();
   syncDigitsControlsVisibility();
+  syncStopControlsVisibility();
   if (typeof syncWorkspaceViewModeForCurrentTemplate === 'function') {
     syncWorkspaceViewModeForCurrentTemplate();
   }

@@ -10362,6 +10362,15 @@ label:has(input:focus-visible) {
   letter-spacing: -0.5px;
 }
 
+.preset-color.stop-sign {
+  background: #ffffff;
+  border: 1px solid #ef4444;
+  background-image: url('images/stop_text.png');
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
 /* 1. Крышка с фотографией пива */
 .beer-cap-photo-wrap {
   position: absolute;
@@ -12282,6 +12291,159 @@ label:has(input:focus-visible) {
   }
 
   .print-page.is-digits-page .digit-plate {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+/* ==========================================================================
+   Шаблон «СТОП» — Стоп-плашки для розлива
+   ========================================================================== */
+.wobbler-element.is-stop-template {
+  background: transparent !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.wobbler-element.is-stop-template .wobbler-header {
+  height: 100% !important;
+  background-size: contain !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-color: transparent !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.wobbler-element.is-stop-template .header-content {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  padding: 12% !important;
+  box-sizing: border-box !important;
+}
+
+/* В графическом режиме (готовый знак stop_text.png) надпись СТРОГО скрыта */
+.wobbler-element.is-stop-template.is-stop-graphic .wobbler-title,
+.wobbler-element.is-stop-template:not(.is-stop-custom) .wobbler-title {
+  display: none !important;
+}
+
+/* В режиме своей надписи на чистом знаке stop_empty.png надпись отображается по центру */
+.wobbler-element.is-stop-template.is-stop-custom .wobbler-title {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  margin: auto !important;
+  text-transform: uppercase !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.02em !important;
+  line-height: 1.05 !important;
+  word-break: normal !important;
+}
+
+.wobbler-element.is-stop-template .wobbler-subtitle,
+.wobbler-element.is-stop-template .wobbler-price-box {
+  display: none !important;
+}
+
+/* Контейнер и сетка листа «СТОП» */
+.stop-sheet-container {
+  width: 210mm;
+  min-height: 297mm;
+  box-sizing: border-box;
+  margin: auto;
+  background: #ffffff;
+  padding: 8mm 5mm 6mm;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.stop-sheet-grid {
+  display: grid;
+  justify-content: center;
+  align-content: start;
+  gap: var(--stop-grid-gap-y, 4mm) var(--stop-grid-gap-x, 4mm);
+  box-sizing: border-box;
+}
+
+.stop-plate {
+  position: relative;
+  box-sizing: border-box;
+  background-color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.stop-plate.with-cut-lines {
+  border: 0.5pt dashed #9ca3af;
+}
+
+.stop-plate-bg {
+  width: 100%;
+  height: 100%;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stop-plate-text {
+  position: absolute;
+  inset: 12%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-weight: 900;
+  text-transform: uppercase;
+  line-height: 1.05;
+  letter-spacing: 0.02em;
+  word-break: break-word;
+  pointer-events: none;
+}
+
+/* Печать и экспорт в PDF для листа «СТОП» */
+@media print {
+  .print-page.is-stop-page {
+    width: 210mm !important;
+    height: 297mm !important;
+    min-height: 297mm !important;
+    max-height: 297mm !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    background: #ffffff !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    page-break-after: always;
+  }
+
+  .print-page.is-stop-page .stop-sheet-container {
+    width: 210mm !important;
+    height: 297mm !important;
+    margin: 0 !important;
+    padding: 8mm 5mm 6mm !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .print-page.is-stop-page .stop-plate {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }

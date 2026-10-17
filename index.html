@@ -970,6 +970,14 @@
                     <span class="preset-title">А5</span>
                   </div>
                 </button>
+
+                <button class="preset-card" data-preset="stop"
+                  title="СТОП — 7.0 × 7.0 см, стоп-плашка для розлива (8–12 шт. на листе А4)">
+                  <div class="preset-color stop-sign"></div>
+                  <div class="preset-info">
+                    <span class="preset-title">СТОП</span>
+                  </div>
+                </button>
               </div>
             </div>
           </div>
@@ -1399,6 +1407,107 @@
                 <button type="button" id="digitsPdfQuickBtn" class="btn btn-secondary btn-sm flex-1" title="Скачать готовый PDF файл">
                   <svg class="ico"><use href="#i-download"/></svg> Скачать PDF
                 </button>
+              </div>
+            </div>
+
+            <!-- Секция настроек шаблона «СТОП» (видна только когда активен шаблон «СТОП») -->
+            <div id="stopSection" class="field-settings-group compact-group" style="display: none; border-top: 1px solid var(--border-color, #27272a); padding-top: 10px; margin-top: 10px;">
+              <div class="group-header">
+                <h4>🛑 Параметры стоп-знака для розлива</h4>
+              </div>
+              <div class="stop-info-banner" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; padding: 8px 10px; margin-bottom: 10px; font-size: 12px; line-height: 1.4; color: var(--text-color, #e4e4e7);">
+                Стоп-плашки для разливного пива: вставляются в ценник «Пиво А5» или держатель крана при остановке сорта.
+              </div>
+
+              <!-- Переключатель режима: готовый знак / свой текст -->
+              <div class="form-group">
+                <label style="font-weight: 600; display: block; margin-bottom: 6px;">Оформление знака:</label>
+                <div class="radio-group" style="display: flex; gap: 12px; margin-bottom: 8px;">
+                  <label class="radio-label" style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px;">
+                    <input type="radio" name="stopSignMode" id="stopModeGraphic" value="graphic" checked>
+                    <span>Знак «СТОП» (оригинал)</span>
+                  </label>
+                  <label class="radio-label" style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px;">
+                    <input type="radio" name="stopSignMode" id="stopModeCustom" value="custom">
+                    <span>Своя надпись на знаке</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Блок настроек своего текста -->
+              <div id="stopCustomTextGroup" style="display: none; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color, #3f3f46); border-radius: 6px; padding: 10px; margin-bottom: 10px;">
+                <div class="form-group">
+                  <label for="stopCustomTextInput">Текст на знаке:</label>
+                  <input type="text" id="stopCustomTextInput" placeholder="СТОП / ПРОМЫВКА / СМЕНА КЕГИ" value="СТОП" style="width: 100%;">
+                </div>
+                <div class="form-row" style="display: flex; gap: 8px; margin-top: 8px; align-items: center;">
+                  <div class="form-group flex-1">
+                    <label for="stopTextColorInput">Цвет текста:</label>
+                    <div style="display: flex; gap: 6px; align-items: center;">
+                      <input type="color" id="stopTextColorInput" value="#ffffff" style="width: 36px; height: 32px; padding: 0; cursor: pointer; border-radius: 4px; border: 1px solid var(--border-color, #3f3f46);">
+                      <span id="stopTextColorHex" style="font-size: 12px; font-family: monospace;">#ffffff</span>
+                    </div>
+                  </div>
+                  <div class="form-group flex-1">
+                    <label for="stopFontSizeInput">Кегль (размер):</label>
+                    <div style="display: flex; gap: 4px; align-items: center;">
+                      <input type="number" id="stopFontSizeInput" min="12" max="60" value="26" style="max-width: 80px;">
+                      <span style="font-size: 12px;">pt</span>
+                    </div>
+                  </div>
+                </div>
+                <!-- Быстрые надписи -->
+                <div style="margin-top: 8px;">
+                  <span style="font-size: 11px; color: var(--text-muted, #a1a1aa);">Быстрые варианты надписи:</span>
+                  <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">
+                    <button type="button" class="btn btn-secondary btn-xs stop-quick-text-btn" data-text="СТОП">СТОП</button>
+                    <button type="button" class="btn btn-secondary btn-xs stop-quick-text-btn" data-text="ПРОМЫВКА">ПРОМЫВКА</button>
+                    <button type="button" class="btn btn-secondary btn-xs stop-quick-text-btn" data-text="СМЕНА КЕГИ">СМЕНА КЕГИ</button>
+                    <button type="button" class="btn btn-secondary btn-xs stop-quick-text-btn" data-text="ОЖИДАЕМ">ОЖИДАЕМ</button>
+                    <button type="button" class="btn btn-secondary btn-xs stop-quick-text-btn" data-text="ТЕХ. ПЕРЕРЫВ">ТЕХ. ПЕРЕРЫВ</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Блок быстрой печати листа А4 -->
+              <div style="border-top: 1px solid var(--border-color, #27272a); padding-top: 10px; margin-top: 10px;">
+                <div class="form-group">
+                  <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" id="stopCutLinesChk" checked>
+                    <span><strong>Пунктирные линии реза</strong></span>
+                  </label>
+                  <small class="field-hint-text" style="display: block; margin-top: 2px; color: var(--text-muted, #a1a1aa);">Границы вокруг каждого знака для удобной нарезки ножницами</small>
+                </div>
+
+                <div class="form-row" style="display: flex; gap: 8px; margin-top: 8px;">
+                  <div class="form-group flex-1">
+                    <label for="stopSizeSelect" title="Размер знаков на листе А4">Размер на листе:</label>
+                    <select id="stopSizeSelect">
+                      <option value="6.5">6,5 × 6,5 см (12 шт. на А4)</option>
+                      <option value="7.0" selected>7,0 × 7,0 см (8 шт. на А4)</option>
+                      <option value="8.5">8,5 × 8,5 см (6 шт. на А4)</option>
+                    </select>
+                  </div>
+                  <div class="form-group flex-1">
+                    <label for="stopSheetCopies" title="Сколько листов отправить на печать">Копий листа (тираж):</label>
+                    <input type="number" id="stopSheetCopies" min="1" max="50" value="1" style="max-width: 100px;">
+                  </div>
+                </div>
+
+                <div class="stop-quick-actions" style="display: flex; gap: 8px; margin-top: 12px;">
+                  <button type="button" id="stopPrintQuickBtn" class="btn btn-primary btn-sm flex-1" title="Напечатать лист со знаками на принтере">
+                    <svg class="ico"><use href="#i-printer"/></svg> Печать листа А4
+                  </button>
+                  <button type="button" id="stopPdfQuickBtn" class="btn btn-secondary btn-sm flex-1" title="Скачать готовый PDF файл листа">
+                    <svg class="ico"><use href="#i-download"/></svg> Скачать PDF
+                  </button>
+                </div>
+
+                <div style="margin-top: 8px;">
+                  <button type="button" id="stopPopulateBarKitBtn" class="btn btn-secondary btn-xs" style="width: 100%; justify-content: center;" title="Заполнить таблицу товаров готовым комплектом для бара: СТОП, ПРОМЫВКА, СМЕНА КЕГИ, ОЖИДАЕМ">
+                    📋 Заполнить таблицу набором для бара
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -2834,6 +2943,9 @@
 
               <!-- Контейнер для листа шаблона «Цифры» (10 строк от 0 до 9) -->
               <div class="digits-sheet-container" id="digitsSheetContainer" style="display: none;"></div>
+
+              <!-- Контейнер для листа шаблона «СТОП» -->
+              <div class="stop-sheet-container" id="stopSheetContainer" style="display: none;"></div>
             </div>
           </div>
 
