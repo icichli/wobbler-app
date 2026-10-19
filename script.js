@@ -10908,17 +10908,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (cloneHeader) {
         cloneHeader.style.setProperty('background-image', isGraphic ? "url('images/stop_text.png')" : "url('images/stop_empty.png')", 'important');
-        cloneHeader.style.setProperty('background-size', 'contain', 'important');
-        cloneHeader.style.setProperty('background-position', 'center', 'important');
-        cloneHeader.style.setProperty('background-repeat', 'no-repeat', 'important');
-        cloneHeader.style.setProperty('background-color', 'transparent', 'important');
       }
       if (tElem) {
         if (isGraphic) {
           tElem.textContent = '';
-          tElem.style.display = 'none';
         } else {
-          tElem.style.display = 'flex';
           tElem.textContent = itemTitle || 'СТОП';
           tElem.style.color = fontOf(item, 'titleColor', (templateFonts && templateFonts.titleColor) || '#ffffff');
           tElem.style.fontFamily = "'Montserrat', Arial, sans-serif";
@@ -10926,16 +10920,6 @@ document.addEventListener('DOMContentLoaded', () => {
           const autoSize = calcStopFontSize(itemTitle);
           const customSize = (item && item.fonts && item.fonts.titleSize) || (templateFonts && templateFonts.titleSize) || autoSize;
           tElem.style.fontSize = `${customSize}pt`;
-          tElem.style.transform = 'none';
-          tElem.style.textTransform = 'uppercase';
-          tElem.style.textAlign = 'center';
-          tElem.style.justifyContent = 'center';
-          tElem.style.alignItems = 'center';
-          tElem.style.width = '100%';
-          tElem.style.height = '100%';
-          tElem.style.margin = 'auto';
-          tElem.style.lineHeight = '1.05';
-          tElem.style.wordBreak = 'normal';
         }
       }
       if (sElem) sElem.style.display = 'none';
@@ -11588,7 +11572,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Шаблон «СТОП» (стоп-плашка для розлива)
-    const isStopPreset = (ctx.key === 'stop' || (activeTemplateRef && activeTemplateRef.key === 'stop') || ctx.tb?.bgImage === 'stop_text.png' || ctx.tb?.bgImage === 'stop_empty.png' || clone.classList.contains('is-stop-template'));
+    const isStopPreset = (ctx.key === 'stop' || ctx.tb?.bgImage === 'stop_text.png' || ctx.tb?.bgImage === 'stop_empty.png' || clone.classList.contains('is-stop-template'));
     clone.classList.toggle('is-stop-template', isStopPreset);
     if (isStopPreset) {
       const p = preset || (activeTemplateRef && builtInPresets[activeTemplateRef.key]) || {};
@@ -11600,17 +11584,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const cHeader = clone.querySelector('.wobbler-header');
       if (cHeader) {
         cHeader.style.backgroundImage = isGraphic ? `url('images/stop_text.png')` : `url('images/stop_empty.png')`;
-        cHeader.style.backgroundSize = 'contain';
-        cHeader.style.backgroundPosition = 'center';
-        cHeader.style.backgroundRepeat = 'no-repeat';
-        cHeader.style.backgroundColor = 'transparent';
       }
       if (tElem) {
         if (isGraphic) {
           tElem.textContent = '';
-          tElem.style.display = 'none';
         } else {
-          tElem.style.display = 'flex';
           tElem.textContent = itemTitle || 'СТОП';
           tElem.style.color = fontOf(item, 'titleColor', tf.titleColor || '#ffffff');
           tElem.style.fontFamily = fontOf(item, 'titleFont', tf.titleFont || "'Montserrat', Arial, sans-serif");
@@ -11618,16 +11596,6 @@ document.addEventListener('DOMContentLoaded', () => {
           const autoSize = calcStopFontSize(itemTitle);
           const customSize = (item && item.fonts && item.fonts.titleSize) || (tf && tf.titleSize) || autoSize;
           tElem.style.fontSize = `${customSize}pt`;
-          tElem.style.transform = 'none';
-          tElem.style.textTransform = 'uppercase';
-          tElem.style.textAlign = 'center';
-          tElem.style.justifyContent = 'center';
-          tElem.style.alignItems = 'center';
-          tElem.style.width = '100%';
-          tElem.style.height = '100%';
-          tElem.style.margin = 'auto';
-          tElem.style.lineHeight = '1.05';
-          tElem.style.wordBreak = 'normal';
         }
       }
       if (sElem) sElem.style.display = 'none';
@@ -12424,17 +12392,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (wobblerHeader) {
         const bgUrl = isGraphic ? "url('images/stop_text.png')" : "url('images/stop_empty.png')";
         wobblerHeader.style.setProperty('background-image', bgUrl, 'important');
-        wobblerHeader.style.setProperty('background-size', 'contain', 'important');
-        wobblerHeader.style.setProperty('background-position', 'center', 'important');
-        wobblerHeader.style.setProperty('background-repeat', 'no-repeat', 'important');
-        wobblerHeader.style.setProperty('background-color', 'transparent', 'important');
       }
       if (previewTitle) {
         if (isGraphic) {
           previewTitle.textContent = '';
-          previewTitle.style.display = 'none';
         } else {
-          previewTitle.style.display = 'flex';
           const txt = rawTitle || (customTextInp ? customTextInp.value : 'СТОП') || 'СТОП';
           previewTitle.textContent = txt;
           previewTitle.style.color = (activeItem && activeItem.fonts && activeItem.fonts.titleColor) || (builtInPresets.stop && builtInPresets.stop.titleColor) || '#ffffff';
@@ -12443,22 +12405,25 @@ document.addEventListener('DOMContentLoaded', () => {
           const autoSize = calcStopFontSize(txt);
           const customSize = (activeItem && activeItem.fonts && activeItem.fonts.titleSize) || (builtInPresets.stop && builtInPresets.stop.titleSize) || autoSize;
           previewTitle.style.fontSize = `${customSize}pt`;
-          previewTitle.style.transform = 'none';
-          previewTitle.style.textTransform = 'uppercase';
-          previewTitle.style.textAlign = 'center';
-          previewTitle.style.justifyContent = 'center';
-          previewTitle.style.alignItems = 'center';
-          previewTitle.style.width = '100%';
-          previewTitle.style.height = '100%';
-          previewTitle.style.margin = 'auto';
-          previewTitle.style.lineHeight = '1.05';
-          previewTitle.style.wordBreak = 'normal';
         }
       }
-      if (previewSubtitle) previewSubtitle.style.display = 'none';
-      if (previewPriceBox) previewPriceBox.style.display = 'none';
       if (stopContainer) stopContainer.style.display = 'none';
     } else {
+      if (previewTitle) {
+        previewTitle.style.height = '';
+        previewTitle.style.width = '';
+        previewTitle.style.margin = '';
+        previewTitle.style.alignItems = '';
+        previewTitle.style.textTransform = '';
+        previewTitle.style.wordBreak = '';
+        previewTitle.style.lineHeight = '';
+      }
+      if (wobblerHeader) {
+        wobblerHeader.style.removeProperty('background-size');
+        wobblerHeader.style.removeProperty('background-position');
+        wobblerHeader.style.removeProperty('background-repeat');
+        wobblerHeader.style.removeProperty('background-color');
+      }
       if (stopContainer) stopContainer.style.display = 'none';
     }
 
