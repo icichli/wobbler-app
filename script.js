@@ -330,6 +330,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const sheetCalcText = document.getElementById('sheetCalcText');
 
   // DOM Mode Switchers
+  const AUTO_SWITCH_GOODS_KEY = 'wobbler_auto_switch_goods';
+  const autoSwitchGoodsChk = document.getElementById('autoSwitchGoodsChk');
+  const autoSwitchGoodsLabel = document.getElementById('autoSwitchGoodsLabel');
   const printModeRadios = document.querySelectorAll('input[name="printMode"]');
   const multiItemSection = document.getElementById('multiItemSection');
   const singleItemSection = document.getElementById('singleItemSection');
@@ -3264,11 +3267,15 @@ document.addEventListener('DOMContentLoaded', () => {
       // 1) Хранилища: все ключи приложения в localStorage (кроме «Моих шаблонов» и настройки автооткрытия шторки) + кэш фонов в IndexedDB.
       try {
         const preserveAutoOpen = localStorage.getItem(AUTO_OPEN_DRAWER_KEY);
+        const preserveAutoSwitchGoods = localStorage.getItem(AUTO_SWITCH_GOODS_KEY);
         Object.keys(localStorage)
-          .filter(k => k.indexOf('wobbler_') === 0 && k !== 'wobbler_custom_templates_gas' && k !== AUTO_OPEN_DRAWER_KEY)
+          .filter(k => k.indexOf('wobbler_') === 0 && k !== 'wobbler_custom_templates_gas' && k !== AUTO_OPEN_DRAWER_KEY && k !== AUTO_SWITCH_GOODS_KEY)
           .forEach(k => localStorage.removeItem(k));
         if (preserveAutoOpen !== null) {
           localStorage.setItem(AUTO_OPEN_DRAWER_KEY, preserveAutoOpen);
+        }
+        if (preserveAutoSwitchGoods !== null) {
+          localStorage.setItem(AUTO_SWITCH_GOODS_KEY, preserveAutoSwitchGoods);
         }
       } catch (e) {
         console.warn('Не удалось очистить localStorage:', e);
@@ -6875,6 +6882,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 1. Поиск точного совпадения в справочнике
     let match = beerCatalog.find(b => norm(b.title) === targetNorm);
+    const isExactMatch = !!match;
 
     // 2. Префиксное совпадение: название сорта из базы стоит в начале введенного текста
     // (например: ввели "Чешский Лев 1л разливное" -> найдет "Чешский Лев")
@@ -6898,7 +6906,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (match) {
-      it.title = match.title || it.title;
+      // При ручном вводе обновляем it.title ТОЛЬКО если совпадение точное (нормализация регистра/кавычек).
+      // Если пользователь дописал уточнение («-мята», «б/а» и т.п.) или ввёл своё дополнение — сохраняем введённое название!
+      if (!isManualInput || isExactMatch) {
+        it.title = match.title || it.title;
+      }
       it.beerStrength = stripBeerMetric(match.beerStrength || '');
       it.beerBitterness = match.beerBitterness || '-';
       it.beerDensity = stripBeerMetric(match.beerDensity || '');
@@ -6907,10 +6919,10 @@ document.addEventListener('DOMContentLoaded', () => {
       it.composition = match.composition || '';
       it.subtitle = match.composition || '';
       it.beerPhoto = match.beerPhoto || '';
-      if (match.price) {
+      if (match.price && (!it.price || isExactMatch || !isManualInput)) {
         it.price = match.price;
         if (index === activePreviewIndex) {
-          const sPrice = document.getElementById('beerSidebarPrice');
+          const sPrice = document.getElementById(isBeerA5PromoActive() ? 'beerSidebarPrice1' : 'beerSidebarPrice');
           if (sPrice && sPrice !== document.activeElement) sPrice.value = it.price;
           if (inputPrice && inputPrice !== document.activeElement) inputPrice.value = it.price;
         }
@@ -6938,7 +6950,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (isManualInput && lastAutoBeerToastTitle !== targetNorm) {
         lastAutoBeerToastTitle = targetNorm;
-        showToast(`🍺 Сорт «${match.title}» выбран: характеристики подставлены из базы`, 'success', 2500);
+        if (isExactMatch) {
+          showToast(`🍺 Сорт «${match.title}» выбран: характеристики подставлены из базы`, 'success', 2500);
+        } else {
+          showToast(`🍺 Характеристики подставлены из базы «${match.title}»`, 'success', 2500);
+        }
       }
       return;
     }
@@ -15436,6 +15452,32 @@ document.addEventListener('DOMContentLoaded', () => {
         // Авто-подгон кегля названий под геометрию нового шаблона:
         // выполняется синхронно, т.к. CSS-анимации отключены и размеры применены сразу.
         autoFitFontSize(true);
+
+        // При выборе шаблона из категории «Ценники» (кроме шаблона «Цифры»)
+        // автоматически переключаемся на вкладку «Товары» в режим «Разные товары»
+        const isPriceTagSubgroup = !!card.closest('.preset-subgroup')?.querySelector('[data-subgroup="priceTags"]') ||
+          ['alaska_dots', 'ryba', 'sneki', 'sneki_5', 'sneki_digit', 'yellow_tag', 'beer_a5', 'beer_a5_aktsiya'].includes(key);
+
+        const shouldAutoSwitchToGoods = !autoSwitchGoodsChk || autoSwitchGoodsChk.checked;
+
+        if (isPriceTagSubgroup && key !== 'digits' && shouldAutoSwitchToGoods) {
+          const multiRadio = document.querySelector('input[name="printMode"][value="multi"]');
+          if (multiRadio && !multiRadio.checked) {
+            multiRadio.checked = true;
+            multiRadio.dispatchEvent(new Event('change', { bubbles: true }));
+            scheduleSessionSave();
+          }
+          if (typeof setSidebarTab === 'function') {
+            setSidebarTab('section2');
+          } else {
+            const sec2Btn = document.querySelector('.sidebar-tab-btn[data-target="section2"]');
+            if (sec2Btn) sec2Btn.click();
+          }
+          if (controlsSidebarEl && controlsSidebarEl.classList.contains('sidebar-mode-tabs')) {
+            controlsSidebarEl.scrollTop = 0;
+          }
+        }
+
         if (key !== 'digits' && key !== 'stop' && autoOpenDrawerChk && autoOpenDrawerChk.checked) {
           openItemsDrawer();
         }
@@ -18206,6 +18248,41 @@ document.addEventListener('DOMContentLoaded', () => {
       renderMultiPrintTemplates();
       updateMultiPrintSummary();
     }
+  }
+
+  // --- Переключатель режима автоперехода на вкладку «Товары» при выборе шаблона-ценника ---
+  function updateAutoSwitchGoodsUI() {
+    if (!autoSwitchGoodsChk || !autoSwitchGoodsLabel) return;
+    const isChecked = autoSwitchGoodsChk.checked;
+    autoSwitchGoodsLabel.title = isChecked
+      ? 'Автопереход на вкладку «Товары» при выборе ценника: Включен (нажмите, чтобы выключить)'
+      : 'Автопереход на вкладку «Товары» при выборе ценника: Выключен (нажмите, чтобы включить)';
+  }
+
+  if (autoSwitchGoodsChk) {
+    try {
+      const saved = localStorage.getItem(AUTO_SWITCH_GOODS_KEY);
+      if (saved !== null) {
+        autoSwitchGoodsChk.checked = saved === 'true';
+      }
+    } catch (e) { }
+    updateAutoSwitchGoodsUI();
+
+    autoSwitchGoodsChk.addEventListener('change', () => {
+      try {
+        localStorage.setItem(AUTO_SWITCH_GOODS_KEY, autoSwitchGoodsChk.checked ? 'true' : 'false');
+      } catch (e) { }
+      updateAutoSwitchGoodsUI();
+      if (typeof showToast === 'function') {
+        showToast(
+          autoSwitchGoodsChk.checked
+            ? 'Включен автопереход на «Товары» при выборе ценников'
+            : 'Выключен автопереход на «Товары» при выборе ценников',
+          'info',
+          1800
+        );
+      }
+    });
   }
 
   // --- Sidebar Category Tabs & View Mode Switcher (Табы / Все блоки) ---
@@ -21352,7 +21429,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const sel = classSelectorMap[prop];
     if (sel) {
       const inp = card.querySelector(sel);
-      if (inp && inp.value !== String(val)) {
+      if (inp && inp !== document.activeElement && inp.value !== String(val)) {
         inp.value = val;
       }
     }
