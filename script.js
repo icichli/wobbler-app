@@ -1657,6 +1657,131 @@ document.addEventListener('DOMContentLoaded', () => {
   function decorBlockFromItem(item, kind) {
     return decorBlockFromItemCtx(item, kind, templateDecor, decorInsideWidth ? decorInsideWidth.value : 50);
   }
+  function isYellowCardBg(bgImage) {
+    return bgImage === 'yellow_bg.jpg' || (typeof bgImage === 'string' && bgImage.includes('yellow_bg'));
+  }
+
+  // Возвращает клон позиций надписей (labelPos) для карточки с учетом специфики
+  // фона «Желтый ценник» (в шаблоне «Бутылки» у заголовка дефолтный сдвиг -0.4 / 1.0 мм,
+  // а на желтом ценнике заголовок должен стоять по центру слота 0 / 0 мм).
+  function resolveCardLabelPos(item, fallbackLp, isYellowCard) {
+    const lp = cloneLabelPos((item && item.labelPos) ? item.labelPos : (fallbackLp || defaultLabelPos()));
+    if (isYellowCard) {
+      if (!item || !item.labelPos || (lp.title && lp.title.x === -0.4 && lp.title.y === 1.0)) {
+        lp.title.x = 0;
+        lp.title.y = 0;
+      }
+    }
+    return lp;
+  }
+
+  // Единый расчёт геометрии слотов карточки (наименование, safe-зона, цена, бюджет в px).
+  // Используется во всех режимах: живое превью (updatePreview), клон листа/печати
+  // (applyItemToClone), мульти-печать (applyTemplateStyleToClone) и автоподбор кегля
+  // (fitTitleSize / fitTitleSizeForPreset / checkTextOverflow / updateDebugToolbar).
+  function computeCardSlotMetrics(opts) {
+    const wMm = parseFloat(opts.wMm) || 65;
+    const hMm = parseFloat(opts.hMm) || 45;
+    const isSplit = opts.layout === 'split';
+    const headerHPct = parseFloat(opts.headerH) || (isSplit ? 20.45 : 100);
+    const headerHm = isSplit ? (hMm * headerHPct / 100) : hMm;
+    const bMm = Math.max(0, parseFloat(opts.borderMm) || 0);
+    const padMm = (bMm > 0) ? bMm : (isSplit ? 0 : 3);
+    const contentW_mm = Math.max(1, wMm - padMm * 2);
+    const contentHm = isSplit ? headerHm : Math.max(1, headerHm - padMm * 2);
+    const hasPriceSlot = !!opts.hasPriceSlot;
+    const preset = opts.preset || null;
+    const bgSnap = opts.bgSnap || {};
+    const isYellowCard = isYellowCardBg(bgSnap.bgImage);
+    const ts = normTitleSafe(bgSnap.titleSafe || (preset && (preset.titleSafe || preset.ts)));
+
+    let slotTop = 0;
+    let titleZone = 0;
+    if (isSplit) {
+      slotTop = 0;
+      titleZone = contentHm;
+    } else if (isYellowCard) {
+      const ytPreset = (typeof builtInPresets !== 'undefined' && builtInPresets) ? builtInPresets.yellow_tag : null;
+      const baseYellowTs = normTitleSafe((ytPreset && ytPreset.titleSafe) || YELLOW_TAG_TITLE_SAFE);
+      const isCustomYellowTs = Math.abs(ts.top - baseYellowTs.top) > 0.005 || Math.abs(ts.bottom - baseYellowTs.bottom) > 0.005;
+      if (isCustomYellowTs) {
+        slotTop = Math.max(0, headerHm * ts.top - padMm);
+        titleZone = Math.max(2, headerHm * Math.max(0.05, 1 - ts.top - ts.bottom));
+      } else {
+        slotTop = (ytPreset && ytPreset.titleSlotTop != null) ? parseFloat(ytPreset.titleSlotTop) : 8.14;
+        titleZone = (ytPreset && ytPreset.titleZoneH != null) ? parseFloat(ytPreset.titleZoneH) : 7.37;
+      }
+    } else if (preset && preset.titleSlotTop != null) {
+      const basePresetTs = normTitleSafe(preset.titleSafe || preset.ts);
+      const isCustomizedTs = basePresetTs && (
+        Math.abs(ts.top - basePresetTs.top) > 0.005 ||
+        Math.abs(ts.bottom - basePresetTs.bottom) > 0.005
+      );
+      if (isCustomizedTs) {
+        slotTop = Math.max(0, headerHm * ts.top - padMm);
+        titleZone = Math.max(2, headerHm * Math.max(0.05, 1 - ts.top - ts.bottom));
+      } else {
+        slotTop = parseFloat(preset.titleSlotTop);
+        titleZone = (preset.titleZoneH != null)
+          ? parseFloat(preset.titleZoneH)
+          : Math.max(2, headerHm * Math.max(0.05, 1 - ts.top - ts.bottom));
+      }
+    } else {
+      const isTsDefault = (ts.top === 0 && ts.bottom === 0);
+      if (isTsDefault) {
+        titleZone = hasPriceSlot ? (headerHm * 0.45) : contentHm;
+      } else {
+        titleZone = Math.max(2, headerHm * Math.max(0.05, 1 - ts.top - ts.bottom));
+      }
+      slotTop = Math.max(0, headerHm * ts.top - padMm);
+    }
+    titleZone = Math.min(titleZone, Math.max(2, contentHm - slotTop));
+
+    const safeW_mm = wMm * (1 - ts.left - ts.right);
+    const safeWFrac = Math.max(0, Math.min(1, safeW_mm / contentW_mm));
+    const titleW_mm = Math.min(Math.max(10, wMm - padMm * 2), safeW_mm);
+
+    let priceTop = 0;
+    if (hasPriceSlot) {
+      if (isYellowCard) {
+        const ytPreset = (typeof builtInPresets !== 'undefined' && builtInPresets) ? builtInPresets.yellow_tag : null;
+        priceTop = (ytPreset && ytPreset.priceSlotTop != null) ? parseFloat(ytPreset.priceSlotTop) : 14.92;
+      } else if (preset && preset.priceSlotTop != null) {
+        priceTop = parseFloat(preset.priceSlotTop);
+      } else {
+        const basePresetTs = normTitleSafe(preset && (preset.titleSafe || preset.ts));
+        const baseTz = (basePresetTs && (basePresetTs.top > 0 || basePresetTs.bottom > 0))
+          ? Math.min(headerHm * 0.45, headerHm * Math.max(0, 1 - basePresetTs.top - basePresetTs.bottom))
+          : (headerHm * 0.45);
+        const pSizePt = parseFloat(opts.priceSizePt) || 40;
+        const basePriceH = pSizePt * 0.3528 * 1.12;
+        const baseComb = baseTz + 2.0 + basePriceH;
+        const baselineSlotTop = Math.max(0, (contentHm - baseComb) / 2);
+        priceTop = baselineSlotTop + baseTz + 4.0;
+      }
+    }
+
+    const pxPerMm = 96 / 25.4;
+    const budgetW = Math.max(10, (titleW_mm - 1.5) * pxPerMm);
+    const budgetH = titleZone * pxPerMm;
+
+    return {
+      isYellowCard,
+      ts,
+      headerHm,
+      padMm,
+      contentW_mm,
+      contentHm,
+      slotTop,
+      titleZone,
+      safeWFrac,
+      priceTop,
+      titleW_mm,
+      budgetW,
+      budgetH
+    };
+  }
+
   function bgFromItemCtx(item, tb, titleSafe) {
     tb = tb || {};
     let currentBgImg = bgOf(item, 'bgImage', tb.bgImage || 'none');
@@ -1669,7 +1794,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!currentHeaderBg || currentHeaderBg === '#18181b') currentHeaderBg = '#ffffff';
     }
     const isVygodno = currentBgImg === 'bgother:ryba_vygodno.png' || (typeof currentBgImg === 'string' && currentBgImg.includes('ryba_vygodno'));
-    const isYellowTag = currentBgImg === 'yellow_bg.jpg' || (typeof currentBgImg === 'string' && currentBgImg.includes('yellow_bg'));
+    const isYellowTag = isYellowCardBg(currentBgImg);
     const resolvedTitleSafe = isYellowTag ? YELLOW_TAG_TITLE_SAFE : (isVygodno ? RYBA_VYGODNO_TITLE_SAFE : (titleSafe || readGlobalTitleSafe()));
     return {
       headerBg: currentHeaderBg,
@@ -10101,57 +10226,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const wCm = parseFloat(wobblerWidthInput ? wobblerWidthInput.value : 6.5) || 6.5;
     const hCm = parseFloat(wobblerHeightInput ? wobblerHeightInput.value : 4.5) || 4.5;
-    const wMm = wCm * 10;
-    const hMm = hCm * 10;
-    const ts = resolveItemBg(idx).titleSafe;
-    const headerHm = currentLayout === 'full' ? hMm : hMm * (parseFloat(headerHeightRange ? headerHeightRange.value : 20.45) || 20.45) / 100;
-    const isSplit = currentLayout === 'split';
-    const padMm = (borderMm > 0) ? borderMm : (isSplit ? 0 : 3);
-    const contentHm = isSplit ? headerHm : Math.max(1, headerHm - padMm * 2);
-    const activePreset = getActivePreset();
-    let slotTop = 0;
-    let tzMm = 0;
-    if (isSplit) {
-      slotTop = 0;
-      tzMm = contentHm;
-    } else if (activePreset && activePreset.titleSlotTop != null) {
-      const basePresetTs = normTitleSafe(activePreset.titleSafe || activePreset.ts);
-      const isCustomizedTs = basePresetTs && (
-        Math.abs(ts.top - basePresetTs.top) > 0.005 ||
-        Math.abs(ts.bottom - basePresetTs.bottom) > 0.005
-      );
-      if (isCustomizedTs) {
-        slotTop = Math.max(0, headerHm * ts.top - padMm);
-        tzMm = Math.max(2, headerHm * Math.max(0.05, 1 - ts.top - ts.bottom));
-      } else {
-        slotTop = parseFloat(activePreset.titleSlotTop);
-        tzMm = (activePreset.titleZoneH != null)
-          ? parseFloat(activePreset.titleZoneH)
-          : Math.max(2, headerHm * Math.max(0.05, 1 - ts.top - ts.bottom));
-      }
-    } else {
-      const hasPrice = isTemplatePriceSlotAvailable(activeTemplateRef, currentLayout, rybaPriceInBottom && currentLayout === 'split');
-      const isTsDefault = (ts.top === 0 && ts.bottom === 0);
-      if (isTsDefault) {
-        tzMm = hasPrice ? (headerHm * 0.45) : contentHm;
-      } else {
-        tzMm = Math.max(2, headerHm * Math.max(0.05, 1 - ts.top - ts.bottom));
-      }
-      slotTop = Math.max(0, headerHm * ts.top - padMm);
-    }
-    tzMm = Math.min(tzMm, Math.max(2, contentHm - slotTop));
-    const contentW_mm = Math.max(10, wMm - padMm * 2);
-    const safeW_mm = wMm * (1 - ts.left - ts.right);
-    const titleW_mm = Math.min(contentW_mm, safeW_mm);
-    const pxPerMm = 96 / 25.4;
-    const budgetW = Math.max(10, (titleW_mm - 1.5) * pxPerMm);
-    const budgetH = tzMm * pxPerMm;
+    const bgSnap = resolveItemBg(idx);
+    const hasPrice = isTemplatePriceSlotAvailable(activeTemplateRef, currentLayout, rybaPriceInBottom && currentLayout === 'split');
+    const { budgetW, budgetH } = computeCardSlotMetrics({
+      wMm: wCm * 10,
+      hMm: hCm * 10,
+      layout: currentLayout,
+      headerH: parseFloat(headerHeightRange ? headerHeightRange.value : 20.45) || 20.45,
+      borderMm: borderMm,
+      hasPriceSlot: hasPrice,
+      preset: getActivePreset(),
+      bgSnap: bgSnap
+    });
 
     if (!budgetW || !budgetH || isNaN(budgetW) || isNaN(budgetH) || budgetH <= 0 || budgetW <= 0) return null;
 
     // Нижний пол кегля.
     const ABS_MIN = 7;
-    const curBgImg = resolveItemBg(activePreviewIndex).bgImage || '';
+    const curBgImg = bgSnap.bgImage || '';
     const isRybaOrVygodno = (activeTemplateRef && (activeTemplateRef.key === 'ryba' || activeTemplateRef.key === 'vygodno_ryba')) ||
       curBgImg === 'ryba_bg.jpg' || curBgImg.includes('ryba_vygodno');
     const presetFloor = isRybaOrVygodno ? 10 : builtinPresetFlag('titleFitFloor', null);
@@ -10573,22 +10665,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // (используется в превью листа и печати, чтобы каждый ценник нёс свои позиции).
   function applyItemToClone(clone, item, titleOffsetYVal, priceOffsetYVal) {
     const bgSnap = bgFromItem(item);
-    const isYellowCard = bgSnap.bgImage === 'yellow_bg.jpg' || (typeof bgSnap.bgImage === 'string' && bgSnap.bgImage.includes('yellow_bg'));
+    const isYellowCard = isYellowCardBg(bgSnap.bgImage);
 
-    // Позиции надписей товара. Если у товара нет своего labelPos (старые данные /
-    // edge-кейсы), берём эталон с ценника №1 (база активного шаблона), а не дефолт,
-    // — иначе такой ценник отрисуется со смещениями 0,0 вместо настроек шаблона.
-    const lp = cloneLabelPos((item && item.labelPos)
-      ? item.labelPos
-      : (itemsData[0] && itemsData[0].labelPos) ? itemsData[0].labelPos : defaultLabelPos());
-
-    // Для желтого ценника центрируем заголовок (в yellow_tag смещение 0, 0), если не было ручной правки
-    if (isYellowCard) {
-      if (!item || !item.labelPos || (item.labelPos.title && item.labelPos.title.x === -0.4 && item.labelPos.title.y === 1.0)) {
-        lp.title.x = 0;
-        lp.title.y = 0;
-      }
-    }
+    // Позиции надписей товара с учётом специфики фона «Желтый ценник».
+    const lp = resolveCardLabelPos(
+      item,
+      (itemsData[0] && itemsData[0].labelPos) ? itemsData[0].labelPos : defaultLabelPos(),
+      isYellowCard
+    );
     const digits = String((item && item.price) || '').split('');
 
     const tElem = clone.querySelector('.wobbler-title');
@@ -10763,86 +10847,27 @@ document.addEventListener('DOMContentLoaded', () => {
     applyCloneDecorBlock(clone.querySelector('.wobbler-inside-top'), inSnap);
     applyCloneDecorBlock(clone.querySelector('.wobbler-outside-bottom'), botSnap);
 
-    // Safe-зона названия — per-item на клоне (локально переопределяет глобальные
-    // --title-safe-w / --title-zone-h, унаследованные от :root). Так в раскладке
-    // и печати каждый ценник считает кегль по своей safe-зоне.
-    const ts = bgSnap.titleSafe;
-    // headerHm/размеры для клона = как в updatePreview (currentLayout/height глобальны).
+    // Safe-зона и геометрия слотов (наименование/цена) на клоне через единый расчёт.
     const _w = parseFloat(wobblerWidthInput.value) || 6.5;
     const _h = parseFloat(wobblerHeightInput.value) || 4.5;
-    const _hh = currentLayout === 'full' ? _h * 10 : _h * 10 * ((parseInt(headerHeightRange.value, 10) || 50) / 100);
     const _pib = (rybaPriceInBottom && currentLayout === 'split');
-    const _isSplit = currentLayout === 'split';
     const _hasPriceSlot = isTemplatePriceSlotAvailable(activeTemplateRef, currentLayout, _pib);
-    const _pad = (borderMm > 0) ? borderMm : (_isSplit ? 0 : 3);
-    const _hw = _w * 10;                         // ширина шапки, мм
-    const _cw = Math.max(1, _hw - _pad * 2);     // content-ширина, мм
-    const _contentHm = _isSplit ? _hh : Math.max(1, _hh - _pad * 2);
-
-    const activePreset = getActivePreset();
-    let _slotTop = 0;
-    let _tz = 0;
-    if (_isSplit) {
-      _slotTop = 0;
-      _tz = _contentHm;
-    } else if (activePreset && activePreset.titleSlotTop != null) {
-      const basePresetTs = normTitleSafe(activePreset.titleSafe || activePreset.ts);
-      const isCustomizedTs = basePresetTs && (
-        Math.abs(ts.top - basePresetTs.top) > 0.005 ||
-        Math.abs(ts.bottom - basePresetTs.bottom) > 0.005
-      );
-      if (isCustomizedTs) {
-        _slotTop = Math.max(0, _hh * ts.top - _pad);
-        _tz = Math.max(2, _hh * Math.max(0.05, 1 - ts.top - ts.bottom));
-      } else {
-        _slotTop = parseFloat(activePreset.titleSlotTop);
-        _tz = (activePreset.titleZoneH != null)
-          ? parseFloat(activePreset.titleZoneH)
-          : Math.max(2, _hh * Math.max(0.05, 1 - ts.top - ts.bottom));
-      }
-    } else {
-      const _isTsDefault = (ts.top === 0 && ts.bottom === 0);
-      if (_isTsDefault) {
-        _tz = _hasPriceSlot ? (_hh * 0.45) : _contentHm;
-      } else {
-        _tz = Math.max(2, _hh * Math.max(0.05, 1 - ts.top - ts.bottom));
-      }
-      _slotTop = Math.max(0, _hh * ts.top - _pad);
-    }
-    if (isYellowCard) {
-      _slotTop = 8.14;
-      _tz = 7.37;
-    }
-    _tz = Math.min(_tz, Math.max(2, _contentHm - _slotTop));
-    clone.style.setProperty('--title-zone-h', `${_tz.toFixed(2)}mm`);
-    clone.style.setProperty('--title-slot-top', `${_slotTop.toFixed(2)}mm`);
-
-    const _tw = _hw * (1 - ts.left - ts.right);  // ширина названия, мм
-    const _swf = Math.max(0, Math.min(1, _tw / _cw));
-    clone.style.setProperty('--title-safe-w', `${(_swf * 100).toFixed(2)}%`);
-
-    let _priceTop = 0;
-    if (_hasPriceSlot) {
-      if (isYellowCard) {
-        _priceTop = 14.92;
-      } else {
-        const activePreset = getActivePreset();
-        if (activePreset && activePreset.priceSlotTop != null) {
-          _priceTop = parseFloat(activePreset.priceSlotTop);
-        } else {
-          const _basePresetTs = normTitleSafe(activePreset && (activePreset.titleSafe || activePreset.ts));
-          const _baseTz = (_basePresetTs && (_basePresetTs.top > 0 || _basePresetTs.bottom > 0))
-            ? Math.min(_hh * 0.45, _hh * Math.max(0, 1 - _basePresetTs.top - _basePresetTs.bottom))
-            : (_hh * 0.45);
-          const _pSizePt = parseFloat(fontOf(item, 'priceSize', (templateFonts && templateFonts.priceSize) || (priceSize ? priceSize.value : 40))) || 40;
-          const _basePriceH = _pSizePt * 0.3528 * 1.12;
-          const _baseComb = _baseTz + 2.0 + _basePriceH;
-          const _baselineSlotTop = Math.max(0, (_contentHm - _baseComb) / 2);
-          _priceTop = _baselineSlotTop + _baseTz + 4.0;
-        }
-      }
-    }
-    clone.style.setProperty('--price-slot-top', `${_priceTop.toFixed(2)}mm`);
+    const _pSizePt = parseFloat(fontOf(item, 'priceSize', (templateFonts && templateFonts.priceSize) || (priceSize ? priceSize.value : 40))) || 40;
+    const slotMetrics = computeCardSlotMetrics({
+      wMm: _w * 10,
+      hMm: _h * 10,
+      layout: currentLayout,
+      headerH: parseInt(headerHeightRange.value, 10) || 50,
+      borderMm: borderMm,
+      hasPriceSlot: _hasPriceSlot,
+      preset: getActivePreset(),
+      bgSnap: bgSnap,
+      priceSizePt: _pSizePt
+    });
+    clone.style.setProperty('--title-zone-h', `${slotMetrics.titleZone.toFixed(2)}mm`);
+    clone.style.setProperty('--title-slot-top', `${slotMetrics.slotTop.toFixed(2)}mm`);
+    clone.style.setProperty('--title-safe-w', `${(slotMetrics.safeWFrac * 100).toFixed(2)}%`);
+    clone.style.setProperty('--price-slot-top', `${slotMetrics.priceTop.toFixed(2)}mm`);
 
     // Пиво А5: рендер специфичных полей товара на клоне
     const isBeerClone = isBeerA5Active() || clone.classList.contains('is-beer-a5');
@@ -11139,59 +11164,36 @@ document.addEventListener('DOMContentLoaded', () => {
     return el;
   }
 
-  // Подбирает кегль наименования для любого произвольного preset без необходимости
+  // Подбирает кегль наименования для любого произвольного preset и товара item без необходимости
   // переключать активный экран на этот шаблон.
-  function fitTitleSizeForPreset(text, preset) {
+  function fitTitleSizeForPreset(text, preset, item) {
     if (!text || !text.trim()) return null;
     const wMm = preset.wMm || (parseFloat(preset.widthCm) || 6.5) * 10;
     const hMm = preset.hMm || (parseFloat(preset.heightCm) || 4.5) * 10;
-    const ts = normTitleSafe(preset.titleSafe || preset.ts);
+    const baseTs = normTitleSafe(preset.titleSafe || preset.ts);
+    const tb = preset.tb || {
+      headerBg: preset.headerBg || '#18181b',
+      bgImage: preset.bgImage || 'none',
+      customBgData: preset.customBgData || null
+    };
+    const bgSnap = bgFromItemCtx(item, tb, baseTs);
     const layout = preset.layout || 'full';
-    const headerH = preset.headerHeight || 100;
+    const headerH = preset.headerHeight || preset.headerH || 100;
     const rybaPib = !!(preset.priceInBottom || preset.rybaPib);
-    const headerHm = layout === 'full' ? hMm : hMm * (parseFloat(headerH) || 20.45) / 100;
     const isSplit = layout === 'split';
-    const padMm = (preset.borderMm > 0) ? preset.borderMm : (isSplit ? 0 : 3);
-    const contentHm = isSplit ? headerHm : Math.max(1, headerHm - padMm * 2);
     const isNaturallyNoPrice = !!(preset.key === 'korona_a5' || preset.key === 'a5' || preset.key === 'novy_vkus' || preset.key === 'novinka' || preset.key === 'tomat' || preset.key === 'sladko');
-    const hasPrice = !isNaturallyNoPrice && !rybaPib && !isSplit;
+    const hasPrice = !isNaturallyNoPrice && !(rybaPib && isSplit) && !isSplit;
 
-    let slotTop = 0;
-    let tzMm = 0;
-    if (isSplit) {
-      slotTop = 0;
-      tzMm = contentHm;
-    } else if (preset.titleSlotTop != null) {
-      const basePresetTs = normTitleSafe(preset.titleSafe || preset.ts);
-      const isCustomizedTs = basePresetTs && (
-        Math.abs(ts.top - basePresetTs.top) > 0.005 ||
-        Math.abs(ts.bottom - basePresetTs.bottom) > 0.005
-      );
-      if (isCustomizedTs) {
-        slotTop = Math.max(0, headerHm * ts.top - padMm);
-        tzMm = Math.max(2, headerHm * Math.max(0.05, 1 - ts.top - ts.bottom));
-      } else {
-        slotTop = parseFloat(preset.titleSlotTop);
-        tzMm = (preset.titleZoneH != null)
-          ? parseFloat(preset.titleZoneH)
-          : Math.max(2, headerHm * Math.max(0.05, 1 - ts.top - ts.bottom));
-      }
-    } else {
-      const isTsDefault = (ts.top === 0 && ts.bottom === 0);
-      if (isTsDefault) {
-        tzMm = hasPrice ? (headerHm * 0.45) : contentHm;
-      } else {
-        tzMm = Math.max(2, headerHm * Math.max(0.05, 1 - ts.top - ts.bottom));
-      }
-      slotTop = Math.max(0, headerHm * ts.top - padMm);
-    }
-    tzMm = Math.min(tzMm, Math.max(2, contentHm - slotTop));
-    const contentW_mm = Math.max(10, wMm - padMm * 2);
-    const safeW_mm = wMm * (1 - ts.left - ts.right);
-    const titleW_mm = Math.min(contentW_mm, safeW_mm);
-    const pxPerMm = 96 / 25.4;
-    const budgetW = Math.max(10, (titleW_mm - 1.5) * pxPerMm);
-    const budgetH = tzMm * pxPerMm;
+    const { budgetW, budgetH } = computeCardSlotMetrics({
+      wMm,
+      hMm,
+      layout,
+      headerH,
+      borderMm: preset.borderMm,
+      hasPriceSlot: hasPrice,
+      preset,
+      bgSnap
+    });
 
     if (!budgetW || !budgetH || isNaN(budgetW) || isNaN(budgetH) || budgetH <= 0 || budgetW <= 0) return null;
 
@@ -11221,7 +11223,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const { tf, td, tb, ts, layout, headerH, rybaPib, insideWidth, labelPos: presetLp, preset } = ctx;
     const wMm = ctx.wMm || 65;
     const hMm = ctx.hMm || 45;
-    const lp = cloneLabelPos((item && item.labelPos) ? item.labelPos : presetLp);
+    const bgSnap = bgFromItemCtx(item, tb, ts);
+    const isYellowCard = isYellowCardBg(bgSnap.bgImage);
+    const lp = resolveCardLabelPos(item, presetLp, isYellowCard);
     const parsedPrice = splitPriceAndCurrency(item && item.price);
     const digits = String(parsedPrice.price || '').split('');
 
@@ -11238,21 +11242,21 @@ document.addEventListener('DOMContentLoaded', () => {
     if (tElem) {
       tElem.textContent = formatSmartTitle((item && item.title) || '');
       tElem.style.fontFamily = fontOf(item, 'titleFont', tf.titleFont);
-      tElem.style.color = fontOf(item, 'titleColor', tf.titleColor);
+      tElem.style.color = fontOf(item, 'titleColor', isYellowCard ? '#000000' : tf.titleColor);
       let calcTitleSize = null;
       if (item && item.titleSize != null && item.titleSize !== '') {
         calcTitleSize = item.titleSize;
       } else if (item && item.fonts && item.fonts.titleSize != null) {
         calcTitleSize = item.fonts.titleSize;
       } else {
-        calcTitleSize = fitTitleSizeForPreset(item ? item.title : '', ctx) || tf.titleSize || 13;
+        calcTitleSize = fitTitleSizeForPreset(item ? item.title : '', ctx, item) || tf.titleSize || 13;
       }
       tElem.style.fontSize = `${calcTitleSize}pt`;
       tElem.style.fontWeight = fontOf(item, 'titleWeight', tf.titleWeight);
       const isTitleItalic = fontOf(item, 'titleItalic', tf.titleItalic);
       tElem.style.fontStyle = isTitleItalic ? 'italic' : 'normal';
       tElem.classList.toggle('is-italic', !!isTitleItalic);
-      tElem.style.textShadow = fontOf(item, 'titleShadow', tf.titleShadow || '');
+      tElem.style.textShadow = isYellowCard ? '' : fontOf(item, 'titleShadow', tf.titleShadow || '');
       const tAlign = fontOf(item, 'titleAlign', tf.titleAlign);
       tElem.style.textAlign = tAlign;
       tElem.style.justifyContent = tAlign === 'left' ? 'flex-start' : (tAlign === 'right' ? 'flex-end' : 'center');
@@ -11265,7 +11269,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sElem) {
       sElem.textContent = (item && item.subtitle != null) ? item.subtitle : '';
       sElem.style.fontFamily = fontOf(item, 'titleFont', tf.titleFont);
-      sElem.style.color = fontOf(item, 'subtitleColor', tf.subtitleColor);
+      sElem.style.color = fontOf(item, 'subtitleColor', isYellowCard ? '#000000' : tf.subtitleColor);
       sElem.style.fontSize = `${fontOf(item, 'subtitleSize', tf.subtitleSize)}pt`;
       sElem.style.fontWeight = fontOf(item, 'subtitleWeight', tf.subtitleWeight);
       sElem.style.textAlign = fontOf(item, 'subtitleAlign', tf.subtitleAlign);
@@ -11317,16 +11321,16 @@ document.addEventListener('DOMContentLoaded', () => {
       curr.style.fontFamily = fontOf(item, 'priceFont', tf.priceFont);
       curr.style.fontSize = `${fontOf(item, 'priceSize', tf.priceSize)}pt`;
       curr.style.fontWeight = fontOf(item, 'priceWeight', tf.priceWeight);
-      curr.style.color = fontOf(item, 'priceColor', tf.priceColor);
-      curr.style.textShadow = fontOf(item, 'priceShadow', tf.priceShadow);
+      curr.style.color = fontOf(item, 'priceColor', isYellowCard ? '#000000' : tf.priceColor);
+      curr.style.textShadow = isYellowCard ? '' : fontOf(item, 'priceShadow', tf.priceShadow);
       curr.style.transform = `translate(${lp.currency.x}mm, ${lp.currency.y}mm)`;
     }
     if (pElem) {
       pElem.style.fontFamily = fontOf(item, 'priceFont', tf.priceFont);
       pElem.style.fontSize = `${fontOf(item, 'priceSize', tf.priceSize)}pt`;
       pElem.style.fontWeight = fontOf(item, 'priceWeight', tf.priceWeight);
-      pElem.style.color = fontOf(item, 'priceColor', tf.priceColor);
-      pElem.style.textShadow = fontOf(item, 'priceShadow', tf.priceShadow);
+      pElem.style.color = fontOf(item, 'priceColor', isYellowCard ? '#000000' : tf.priceColor);
+      pElem.style.textShadow = isYellowCard ? '' : fontOf(item, 'priceShadow', tf.priceShadow);
       const __pw = maxPriceDigitWidth(pElem);
       if (__pw) pElem.style.setProperty('--price-digit-w', `${__pw}px`);
     }
@@ -11351,7 +11355,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const outSnap = decorBlockFromItemCtx(item, 'outside', td, insideWidth);
     const inSnap = decorBlockFromItemCtx(item, 'inside', td, insideWidth);
     const botSnap = decorBlockFromItemCtx(item, 'bottom', td, insideWidth);
-    const bgSnap = bgFromItemCtx(item, tb, ts);
 
     const cloneHeader = clone.querySelector('.wobbler-header');
     if (cloneHeader) applyBackgroundTo(cloneHeader, bgSnap.bgImage, bgSnap.customBg, bgSnap.headerBg);
@@ -11405,71 +11408,27 @@ document.addEventListener('DOMContentLoaded', () => {
     applyCloneDecorBlock(clone.querySelector('.wobbler-inside-top'), inSnap, wMm * (parseFloat(inSnap.width != null ? inSnap.width : 50) / 100), inH);
     applyCloneDecorBlock(clone.querySelector('.wobbler-outside-bottom'), botSnap, wMm, botH);
 
-    // Safe-зона названия — по геометрии preset (не активного).
-    const _hh = layout === 'full' ? hMm : hMm * (headerH / 100);
+    // Safe-зона и геометрия слотов (наименование/цена) для мульти-печати через единый расчёт.
     const _pib = (rybaPib && layout === 'split');
     const _isSplit = layout === 'split';
     const _isNaturallyNoPrice = !!(ctx.key === 'korona_a5' || ctx.key === 'a5' || ctx.key === 'novy_vkus' || ctx.key === 'novinka' || ctx.key === 'tomat' || ctx.key === 'sladko');
     const _hasPriceSlot = !_isNaturallyNoPrice && !_pib && !_isSplit;
-    const _pad = (ctx.borderMm > 0) ? ctx.borderMm : (_isSplit ? 0 : 3);
-    const _hw = wMm;
-    const _cw = Math.max(1, _hw - _pad * 2);
-    const _contentHm = _isSplit ? _hh : Math.max(1, _hh - _pad * 2);
-
-    let _slotTop = 0;
-    let _tz = 0;
-    if (_isSplit) {
-      _slotTop = 0;
-      _tz = _contentHm;
-    } else if (ctx.titleSlotTop != null) {
-      const basePresetTs = normTitleSafe(ctx.titleSafe || ctx.ts);
-      const isCustomizedTs = basePresetTs && (
-        Math.abs(ts.top - basePresetTs.top) > 0.005 ||
-        Math.abs(ts.bottom - basePresetTs.bottom) > 0.005
-      );
-      if (isCustomizedTs) {
-        _slotTop = Math.max(0, _hh * ts.top - _pad);
-        _tz = Math.max(2, _hh * Math.max(0.05, 1 - ts.top - ts.bottom));
-      } else {
-        _slotTop = parseFloat(ctx.titleSlotTop);
-        _tz = (ctx.titleZoneH != null)
-          ? parseFloat(ctx.titleZoneH)
-          : Math.max(2, _hh * Math.max(0.05, 1 - ts.top - ts.bottom));
-      }
-    } else {
-      const _isTsDefault = (ts.top === 0 && ts.bottom === 0);
-      if (_isTsDefault) {
-        _tz = _hasPriceSlot ? (_hh * 0.45) : _contentHm;
-      } else {
-        _tz = Math.max(2, _hh * Math.max(0.05, 1 - ts.top - ts.bottom));
-      }
-      _slotTop = Math.max(0, _hh * ts.top - _pad);
-    }
-    _tz = Math.min(_tz, Math.max(2, _contentHm - _slotTop));
-    clone.style.setProperty('--title-zone-h', `${_tz.toFixed(2)}mm`);
-    clone.style.setProperty('--title-slot-top', `${_slotTop.toFixed(2)}mm`);
-
-    const _tw = _hw * (1 - ts.left - ts.right);
-    const _swf = Math.max(0, Math.min(1, _tw / _cw));
-    clone.style.setProperty('--title-safe-w', `${(_swf * 100).toFixed(2)}%`);
-
-    let _priceTop = 0;
-    if (_hasPriceSlot) {
-      if (ctx.priceSlotTop != null) {
-        _priceTop = parseFloat(ctx.priceSlotTop);
-      } else {
-        const _basePresetTs = normTitleSafe(ctx.titleSafe || ctx.ts);
-        const _baseTz = (_basePresetTs && (_basePresetTs.top > 0 || _basePresetTs.bottom > 0))
-          ? Math.min(_hh * 0.45, _hh * Math.max(0, 1 - _basePresetTs.top - _basePresetTs.bottom))
-          : (_hh * 0.45);
-        const _pSizePt = parseFloat(fontOf(item, 'priceSize', tf.priceSize)) || 40;
-        const _basePriceH = _pSizePt * 0.3528 * 1.12;
-        const _baseComb = _baseTz + 2.0 + _basePriceH;
-        const _baselineSlotTop = Math.max(0, (_contentHm - _baseComb) / 2);
-        _priceTop = _baselineSlotTop + _baseTz + 4.0;
-      }
-    }
-    clone.style.setProperty('--price-slot-top', `${_priceTop.toFixed(2)}mm`);
+    const _pSizePt = parseFloat(fontOf(item, 'priceSize', tf.priceSize)) || 40;
+    const slotMetrics = computeCardSlotMetrics({
+      wMm,
+      hMm,
+      layout,
+      headerH,
+      borderMm: ctx.borderMm,
+      hasPriceSlot: _hasPriceSlot,
+      preset: ctx,
+      bgSnap,
+      priceSizePt: _pSizePt
+    });
+    clone.style.setProperty('--title-zone-h', `${slotMetrics.titleZone.toFixed(2)}mm`);
+    clone.style.setProperty('--title-slot-top', `${slotMetrics.slotTop.toFixed(2)}mm`);
+    clone.style.setProperty('--title-safe-w', `${(slotMetrics.safeWFrac * 100).toFixed(2)}%`);
+    clone.style.setProperty('--price-slot-top', `${slotMetrics.priceTop.toFixed(2)}mm`);
 
     // Пиво А5 / Пиво А5 АКЦИЯ: рендер специфичных полей товара на клоне
     const isBeerPreset = (ctx.key === 'beer_a5' || ctx.key === 'beer_a5_aktsiya' || ctx.tb?.bgImage === 'pivo_a5_bg.jpg' || ctx.tb?.bgImage === 'pivo_a5_aktsiya_bg.jpg' || clone.classList.contains('is-beer-a5'));
@@ -11795,11 +11754,8 @@ document.addEventListener('DOMContentLoaded', () => {
       : (itemsData[0] || (itemsData[0] = freshItem()));
     const lp = activeLabelPos();   // позиции текущего режима/товара (для перетаскивания)
     const activeBgSnap = resolveItemBg(activePreviewIndex);
-    const isYellowActive = activeBgSnap.bgImage === 'yellow_bg.jpg' || (typeof activeBgSnap.bgImage === 'string' && activeBgSnap.bgImage.includes('yellow_bg'));
-    const titlePos = {
-      x: (isYellowActive && (!activeItem.labelPos || (activeItem.labelPos.title && activeItem.labelPos.title.x === -0.4 && activeItem.labelPos.title.y === 1.0))) ? 0 : lp.title.x,
-      y: (isYellowActive && (!activeItem.labelPos || (activeItem.labelPos.title && activeItem.labelPos.title.x === -0.4 && activeItem.labelPos.title.y === 1.0))) ? 0 : lp.title.y
-    };
+    const isYellowActive = isYellowCardBg(activeBgSnap.bgImage);
+    const titlePos = resolveCardLabelPos(activeItem, lp, isYellowActive).title;
     const isBeerTplNow = isBeerA5Active();
     const activeTitleText = isBeerTplNow
       ? (activeItem.title != null && activeItem.title !== '' ? activeItem.title : '')
@@ -12251,89 +12207,28 @@ document.addEventListener('DOMContentLoaded', () => {
     // сверху и снизу — оба добавляют высоту и не входят в размер ценника).
     window.__cardEffH = heightMm + (showOutside ? outsideH : 0) + (showBottom ? bottomH : 0);
 
-    // Высота шапки в мм: в full — вся высота воблера; в split — headerHeight%.
-    const headerHm = selectedLayout === 'full'
-      ? heightMm
-      : heightMm * (parseFloat(headerHeightRange.value) || 20.45) / 100;
+    // Единый расчёт слотов наименования, safe-зоны и цены для живого превью.
     const priceInBottomNow = rybaPriceInBottom && selectedLayout === 'split';
-    const isSplitLayout = selectedLayout === 'split';
     const hasPriceSlot = isTemplatePriceSlotAvailable(activeTemplateRef, selectedLayout, priceInBottomNow);
     const activeBgSnapForSlot = resolveItemBg(activePreviewIndex);
-    const ts = activeBgSnapForSlot.titleSafe;
-    const isYellowActivePreview = activeBgSnapForSlot.bgImage === 'yellow_bg.jpg' || (typeof activeBgSnapForSlot.bgImage === 'string' && activeBgSnapForSlot.bgImage.includes('yellow_bg'));
-    const padMm = (borderMm > 0) ? borderMm : (isSplitLayout ? 0 : 3);
-    const contentW_mm = Math.max(1, widthMm - padMm * 2);
-    const contentHm = isSplitLayout ? headerHm : Math.max(1, headerHm - padMm * 2);
+    const pSizePt = parseFloat(fontOf(activeItem, 'priceSize', tf.priceSize != null ? tf.priceSize : priceSize.value)) || 40;
+    const slotMetrics = computeCardSlotMetrics({
+      wMm: widthMm,
+      hMm: heightMm,
+      layout: selectedLayout,
+      headerH: parseFloat(headerHeightRange.value) || 20.45,
+      borderMm: borderMm,
+      hasPriceSlot: hasPriceSlot,
+      preset: getActivePreset(),
+      bgSnap: activeBgSnapForSlot,
+      priceSizePt: pSizePt
+    });
+    const ts = slotMetrics.ts;
 
-    // 1. Позиция и высота слоя наименования (строго независимы от цены)
-    const activePreset = getActivePreset();
-    let slotTop = 0;
-    let titleZone = 0;
-    if (isSplitLayout) {
-      slotTop = 0;
-      titleZone = contentHm;
-    } else if (activePreset && activePreset.titleSlotTop != null) {
-      const basePresetTs = normTitleSafe(activePreset.titleSafe || activePreset.ts);
-      const isCustomizedTs = basePresetTs && (
-        Math.abs(ts.top - basePresetTs.top) > 0.005 ||
-        Math.abs(ts.bottom - basePresetTs.bottom) > 0.005
-      );
-      if (isCustomizedTs) {
-        slotTop = Math.max(0, headerHm * ts.top - padMm);
-        titleZone = Math.max(2, headerHm * Math.max(0.05, 1 - ts.top - ts.bottom));
-      } else {
-        slotTop = parseFloat(activePreset.titleSlotTop);
-        titleZone = (activePreset.titleZoneH != null)
-          ? parseFloat(activePreset.titleZoneH)
-          : Math.max(2, headerHm * Math.max(0.05, 1 - ts.top - ts.bottom));
-      }
-    } else {
-      const isTsDefault = (ts.top === 0 && ts.bottom === 0);
-      if (isTsDefault) {
-        titleZone = hasPriceSlot ? (headerHm * 0.45) : contentHm;
-      } else {
-        titleZone = Math.max(2, headerHm * Math.max(0.05, 1 - ts.top - ts.bottom));
-      }
-      slotTop = Math.max(0, headerHm * ts.top - padMm);
-    }
-    if (isYellowActivePreview) {
-      slotTop = 8.14;
-      titleZone = 7.37;
-    }
-    titleZone = Math.min(titleZone, Math.max(2, contentHm - slotTop));
-    document.documentElement.style.setProperty('--title-zone-h', `${titleZone.toFixed(2)}mm`);
-    document.documentElement.style.setProperty('--title-slot-top', `${slotTop.toFixed(2)}mm`);
-
-    // 2. Безопасная ширина названия
-    const titleW_mm = widthMm * (1 - ts.left - ts.right);
-    const safeWFrac = Math.max(0, Math.min(1, titleW_mm / contentW_mm));
-    document.documentElement.style.setProperty('--title-safe-w', `${(safeWFrac * 100).toFixed(2)}%`);
-
-    // 3. Позиция слоя цены: полностью изолирована от safe-зоны наименования (0.00мм сдвига при drag)
-    let priceTop = 0;
-    if (hasPriceSlot) {
-      if (isYellowActivePreview) {
-        priceTop = 14.92;
-      } else {
-        const activePreset = getActivePreset();
-        if (activePreset && activePreset.priceSlotTop != null) {
-          priceTop = parseFloat(activePreset.priceSlotTop);
-        } else {
-          const basePresetTs = normTitleSafe(activePreset && (activePreset.titleSafe || activePreset.ts));
-          const baseTz = (basePresetTs && (basePresetTs.top > 0 || basePresetTs.bottom > 0))
-            ? Math.min(headerHm * 0.45, headerHm * Math.max(0, 1 - basePresetTs.top - basePresetTs.bottom))
-            : (headerHm * 0.45);
-          const pSizePt = parseFloat(fontOf(activeItem, 'priceSize', tf.priceSize != null ? tf.priceSize : priceSize.value)) || 40;
-          const basePriceH = pSizePt * 0.3528 * 1.12;
-          const baseComb = baseTz + 2.0 + basePriceH;
-          const baselineSlotTop = Math.max(0, (contentHm - baseComb) / 2);
-          priceTop = baselineSlotTop + baseTz + 4.0;
-        }
-      }
-    } else {
-      priceTop = 0;
-    }
-    document.documentElement.style.setProperty('--price-slot-top', `${priceTop.toFixed(2)}mm`);
+    document.documentElement.style.setProperty('--title-zone-h', `${slotMetrics.titleZone.toFixed(2)}mm`);
+    document.documentElement.style.setProperty('--title-slot-top', `${slotMetrics.slotTop.toFixed(2)}mm`);
+    document.documentElement.style.setProperty('--title-safe-w', `${(slotMetrics.safeWFrac * 100).toFixed(2)}%`);
+    document.documentElement.style.setProperty('--price-slot-top', `${slotMetrics.priceTop.toFixed(2)}mm`);
     // Прямоугольник редактора следует за состоянием (смена шаблона / ввод в поля).
     positionSafeRect(ts);
 
@@ -13603,9 +13498,9 @@ document.addEventListener('DOMContentLoaded', () => {
     for (const sel of selected) {
       let preset = null;
       if (activeTemplateRef && activeTemplateRef.kind === 'builtin' && activeTemplateRef.key === sel.key) {
-        preset = getCurrentState();
-      } else {
-        preset = builtInPresets[sel.key] || null;
+        preset = Object.assign({}, builtInPresets[sel.key] || {}, getCurrentState(), { key: sel.key });
+      } else if (builtInPresets[sel.key]) {
+        preset = Object.assign({}, builtInPresets[sel.key], { key: sel.key });
       }
       if (!preset) continue;
 
@@ -14411,9 +14306,9 @@ document.addEventListener('DOMContentLoaded', () => {
     for (const sel of selected) {
       let preset = null;
       if (activeTemplateRef && activeTemplateRef.kind === 'builtin' && activeTemplateRef.key === sel.key) {
-        preset = getCurrentState();
-      } else {
-        preset = builtInPresets[sel.key] || null;
+        preset = Object.assign({}, builtInPresets[sel.key] || {}, getCurrentState(), { key: sel.key });
+      } else if (builtInPresets[sel.key]) {
+        preset = Object.assign({}, builtInPresets[sel.key], { key: sel.key });
       }
       if (!preset) continue;
 
@@ -19108,22 +19003,18 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const wCm = parseFloat(wobblerWidthInput ? wobblerWidthInput.value : 6.5) || 6.5;
       const hCm = parseFloat(wobblerHeightInput ? wobblerHeightInput.value : 4.5) || 4.5;
-      const wMm = wCm * 10;
-      const hMm = hCm * 10;
       const bg = resolveItemBg(activePreviewIndex);
-      const ts = (bg && bg.titleSafe) ? bg.titleSafe : { left: 0, right: 0, top: 0, bottom: 0 };
-      const headerHm = currentLayout === 'full' ? hMm : hMm * (parseFloat(headerHeightRange ? headerHeightRange.value : 20.45) || 20.45) / 100;
-      const bySafeH = headerHm * Math.max(0, 1 - ts.top - ts.bottom);
       const hasPrice = isTemplatePriceSlotAvailable(activeTemplateRef, currentLayout, rybaPriceInBottom && currentLayout === 'split');
-      const mult = hasPrice ? 0.45 : 1.0;
-      const tzMm = Math.min(headerHm * mult, bySafeH);
-      const padMm = (borderMm > 0) ? borderMm : 3;
-      const contentW_mm = Math.max(10, wMm - padMm * 2);
-      const safeW_mm = wMm * (1 - ts.left - ts.right);
-      const titleW_mm = Math.min(contentW_mm, safeW_mm);
-      const pxPerMm = 96 / 25.4;
-      const budgetW = Math.max(10, (titleW_mm - 1.5) * pxPerMm);
-      const budgetH = tzMm * pxPerMm;
+      const { budgetW, budgetH } = computeCardSlotMetrics({
+        wMm: wCm * 10,
+        hMm: hCm * 10,
+        layout: currentLayout,
+        headerH: parseFloat(headerHeightRange ? headerHeightRange.value : 20.45) || 20.45,
+        borderMm: borderMm,
+        hasPriceSlot: hasPrice,
+        preset: getActivePreset(),
+        bgSnap: bg
+      });
 
       const isIt = (templateFonts && templateFonts.titleItalic) || (titleItalic && titleItalic.checked);
       const layout = measureTitleLayout(titleText, currentSize, family, weight, isIt, budgetW, budgetH);
@@ -20331,31 +20222,21 @@ document.addEventListener('DOMContentLoaded', () => {
         titleTextEl.textContent = trimmed ? `«${trimmed.length > 25 ? trimmed.slice(0, 25) + '…' : trimmed}» (${trimmed.length} симв.)` : '—';
       }
 
-      // 4. Геометрия зоны названия (budget)
+      // 4. Геометрия зоны названия (budget) через единый расчёт слотов
       const wCm = parseFloat(wobblerWidthInput ? wobblerWidthInput.value : 6.5) || 6.5;
       const hCm = parseFloat(wobblerHeightInput ? wobblerHeightInput.value : 4.5) || 4.5;
-      const wMm = wCm * 10;
-      const hMm = hCm * 10;
-      const ts = resolveItemBg(curIdx).titleSafe;
-      const headerHm = currentLayout === 'full' ? hMm : hMm * (parseFloat(headerHeightRange ? headerHeightRange.value : 20.45) || 20.45) / 100;
-      const isSplit = currentLayout === 'split';
-      const padMm = (borderMm > 0) ? borderMm : (isSplit ? 0 : 3);
-      const contentHm = isSplit ? headerHm : Math.max(1, headerHm - padMm * 2);
-      const activePreset = getActivePreset();
-      let slotTop = 0;
-      let tzMm = 0;
-      if (isSplit) {
-        tzMm = contentHm;
-      } else if (activePreset && activePreset.titleSlotTop != null) {
-        tzMm = (activePreset.titleZoneH != null) ? parseFloat(activePreset.titleZoneH) : Math.max(2, headerHm * Math.max(0.05, 1 - ts.top - ts.bottom));
-      } else {
-        const hasPrice = isTemplatePriceSlotAvailable(activeTemplateRef, currentLayout, rybaPriceInBottom && currentLayout === 'split');
-        tzMm = (ts.top === 0 && ts.bottom === 0) ? (hasPrice ? headerHm * 0.45 : contentHm) : Math.max(2, headerHm * Math.max(0.05, 1 - ts.top - ts.bottom));
-      }
-      const pxPerMm = 96 / 25.4;
-      const titleW_mm = Math.min(Math.max(10, wMm - padMm * 2), wMm * (1 - ts.left - ts.right));
-      const budgetW = Math.max(10, (titleW_mm - 1.5) * pxPerMm);
-      const budgetH = tzMm * pxPerMm;
+      const bg = resolveItemBg(curIdx);
+      const hasPrice = isTemplatePriceSlotAvailable(activeTemplateRef, currentLayout, rybaPriceInBottom && currentLayout === 'split');
+      const { titleZone: tzMm, budgetW, budgetH } = computeCardSlotMetrics({
+        wMm: wCm * 10,
+        hMm: hCm * 10,
+        layout: currentLayout,
+        headerH: parseFloat(headerHeightRange ? headerHeightRange.value : 20.45) || 20.45,
+        borderMm: borderMm,
+        hasPriceSlot: hasPrice,
+        preset: getActivePreset(),
+        bgSnap: bg
+      });
 
       if (budgetEl) budgetEl.textContent = `W:${budgetW.toFixed(1)}px × H:${budgetH.toFixed(1)}px (${tzMm.toFixed(1)}мм)`;
 
