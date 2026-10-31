@@ -5100,6 +5100,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (t.includes('kruger') || t.includes('krüger') || t.includes('крюгер')) return 'images/beer/Kryuger_Klassicheskij.jpg';
       if (t.includes('iron woods')) return 'images/beer/Iron_Woods_Stout.jpg';
       if (t === 'stout' || t === 'стаут' || (t.includes('самовар') && (t.includes('stout') || t.includes('стаут')))) return 'images/beer/Samovar.jpg';
+      if (t.includes('прогрев') || t.includes('progrev')) return 'images/beer/Progrev_IPA.jpg';
+      if (t.includes('ipaterapy') || t.includes('ипатерап') || ((t.includes('alaska') || t.includes('аляска')) && (t.includes('ipa') || t.includes('ипа')))) return 'images/beer/Alaska_Ipaterapy.jpg';
       return '';
     }
   }
@@ -6159,6 +6161,32 @@ document.addEventListener('DOMContentLoaded', () => {
       beerStyle: 'Фрут Бир',
       composition: 'СОСТАВ: вода, солод пив. яч., сок вишневый, хмель, дрожжи',
       beerPhoto: 'Alaska_Cherry_Ale.jpg'
+    },
+    {
+      title: 'Прогрев IPA',
+      category: 'Крафт',
+      categories: ["Крафт"],
+      price: '',
+      beerStrength: '7,5%',
+      beerBitterness: '-',
+      beerDensity: '16,5%',
+      beerType: 'неосветленное нефильтрованное',
+      beerStyle: 'ИПА',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Progrev_IPA.jpg'
+    },
+    {
+      title: 'Alaska Ipaterapy',
+      category: 'Крафт',
+      categories: ["Крафт"],
+      price: '',
+      beerStrength: '8,0%',
+      beerBitterness: '80',
+      beerDensity: '18,0%',
+      beerType: 'неосветленное нефильтрованное',
+      beerStyle: 'ДИПА',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Alaska_Ipaterapy.jpg'
     },
     {
       title: 'Барбарис',
