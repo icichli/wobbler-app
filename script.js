@@ -5102,6 +5102,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (t === 'stout' || t === 'стаут' || (t.includes('самовар') && (t.includes('stout') || t.includes('стаут')))) return 'images/beer/Samovar.jpg';
       if (t.includes('прогрев') || t.includes('progrev')) return 'images/beer/Progrev_IPA.jpg';
       if (t.includes('ipaterapy') || t.includes('ипатерап') || ((t.includes('alaska') || t.includes('аляска')) && (t.includes('ipa') || t.includes('ипа')))) return 'images/beer/Alaska_Ipaterapy.jpg';
+      if (t.includes('maisel') || t.includes('майзел') || t.includes('майзель')) return 'images/beer/Maisels_Weisse_Original.jpg';
+      if (t.includes('bayreuth') || t.includes('байройт') || t.includes('байрейт')) return 'images/beer/Bayreuther_Hell.jpg';
+      if (t.includes('4brewers') || t.includes('4 brewers') || t.includes('хефевайцен')) return 'images/beer/4BREWERS_Hefeweizen.jpg';
       return '';
     }
   }
@@ -5877,6 +5880,32 @@ document.addEventListener('DOMContentLoaded', () => {
       beerPhoto: 'Zubr_Gold.jpg'
     },
     {
+      title: 'Maisels Weisse Original',
+      category: 'Импорт',
+      categories: ["Импорт"],
+      price: '',
+      beerStrength: '5,1%',
+      beerBitterness: '12',
+      beerDensity: '11,8%',
+      beerType: 'светлое нефильтрованное',
+      beerStyle: 'Hefeweizen',
+      composition: 'СОСТАВ: вода, солод пив. яч., солод пив. пш., хмель, дрожжи',
+      beerPhoto: 'Maisels_Weisse_Original.jpg'
+    },
+    {
+      title: 'Bayreuther Hell',
+      category: 'Импорт',
+      categories: ["Импорт"],
+      price: '',
+      beerStrength: '4,9%',
+      beerBitterness: '17',
+      beerDensity: '11,6%',
+      beerType: 'светлое фильтрованное',
+      beerStyle: 'Lager Hell',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Bayreuther_Hell.jpg'
+    },
+    {
       title: 'Iron Woods Stout',
       category: 'Крафт, Глетчер',
       categories: ["Крафт", "Глетчер"],
@@ -6187,6 +6216,19 @@ document.addEventListener('DOMContentLoaded', () => {
       beerStyle: 'ДИПА',
       composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
       beerPhoto: 'Alaska_Ipaterapy.jpg'
+    },
+    {
+      title: '4BREWERS Хефевайцен',
+      category: 'Крафт',
+      categories: ["Крафт"],
+      price: '',
+      beerStrength: '4,5%',
+      beerBitterness: '10',
+      beerDensity: '12,0%',
+      beerType: 'светлое нефильтрованное',
+      beerStyle: 'Пшеничный эль',
+      composition: 'СОСТАВ: вода, солод пив. яч., солод пив. пш., хмель, дрожжи',
+      beerPhoto: '4BREWERS_Hefeweizen.jpg'
     },
     {
       title: 'Барбарис',
