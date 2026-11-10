@@ -986,6 +986,15 @@
                     <span class="preset-title">СТОП</span>
                   </div>
                 </button>
+
+                <button class="preset-card" data-preset="calendar"
+                  title="Календарь — А4 альбомный, сетка на отчетный период (с 10 по 9) для рукописных заметок">
+                  <div class="preset-color calendar-preset-thumb"></div>
+                  <div class="preset-info">
+                    <span class="preset-title">Календарь</span>
+                    <span class="preset-dims">А4 Альбомный</span>
+                  </div>
+                </button>
               </div>
             </div>
           </div>
@@ -1008,6 +1017,131 @@
         <h3 class="card-toggle" data-section="section2"><span class="card-num">2</span> Режим заполнения листов <span
             class="toggle-arrow">▲</span></h3>
         <div class="card-body">
+            <!-- Секция настроек шаблона «Календарь» (видна только когда активен шаблон «Календарь») -->
+            <div id="calendarSection" class="field-settings-group compact-group" style="display: none; margin-bottom: 12px;">
+              <div class="group-header">
+                <h4>📅 Параметры отчетного календаря</h4>
+              </div>
+              <div class="calendar-info-banner" style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 6px; padding: 8px 10px; margin-bottom: 10px; font-size: 12px; line-height: 1.4; color: var(--text-color, #e4e4e7);">
+                Печатный лист <strong>А4 Альбомный</strong> с подстрокой дней недели и крупными ячейками-квадратами для рукописных заметок ручкой.
+              </div>
+
+              <!-- Выбор месяца и года для печати -->
+              <div class="form-group" style="margin-bottom: 10px;">
+                <label style="font-weight: 600; display: block; margin-bottom: 6px;">Месяц и год для печати:</label>
+                <div class="form-row" style="display: flex; gap: 8px; align-items: center;">
+                  <div class="form-group flex-1" style="margin-bottom: 0;">
+                    <select id="calendarMonthSelect" style="width: 100%; font-weight: 600;">
+                      <option value="0">Январь</option>
+                      <option value="1">Февраль</option>
+                      <option value="2">Март</option>
+                      <option value="3">Апрель</option>
+                      <option value="4">Май</option>
+                      <option value="5">Июнь</option>
+                      <option value="6">Июль</option>
+                      <option value="7">Август</option>
+                      <option value="8">Сентябрь</option>
+                      <option value="9">Октябрь</option>
+                      <option value="10" selected>Ноябрь</option>
+                      <option value="11">Декабрь</option>
+                    </select>
+                  </div>
+                  <div class="form-group" style="width: 90px; margin-bottom: 0;">
+                    <input type="number" id="calendarYearSelect" min="2020" max="2050" value="2026" style="width: 100%; font-weight: 600; text-align: center;">
+                  </div>
+                </div>
+
+                <!-- Быстрые кнопки переключения месяца -->
+                <div style="display: flex; gap: 4px; margin-top: 6px;">
+                  <button type="button" class="btn btn-secondary btn-xs flex-1" id="calendarQuickPrevMonthBtn" title="Перейти на предыдущий месяц">◀ Пред. месяц</button>
+                  <button type="button" class="btn btn-secondary btn-xs" id="calendarQuickCurrentMonthBtn" title="Установить текущий месяц">Сегодня</button>
+                  <button type="button" class="btn btn-secondary btn-xs flex-1" id="calendarQuickNextMonthBtn" title="Перейти на следующий месяц">След. месяц ▶</button>
+                </div>
+              </div>
+
+              <!-- Выбор режима расчета периода -->
+              <div class="form-group" style="margin-bottom: 10px;">
+                <label style="font-weight: 600; display: block; margin-bottom: 6px;">Расчет отчетного периода:</label>
+                <div class="radio-group-vertical" style="display: flex; flex-direction: column; gap: 6px; font-size: 12px;">
+                  <label class="radio-label" style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                    <input type="radio" name="calendarPeriodMode" id="calendarPeriodModeReport" value="report" checked>
+                    <span><strong>Отчетный период розницы</strong> (с 10-го по 9-е след. месяца)</span>
+                  </label>
+                  <label class="radio-label" style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                    <input type="radio" name="calendarPeriodMode" id="calendarPeriodModeFull" value="full">
+                    <span><strong>Календарный месяц</strong> (с 1-го по 30/31 число)</span>
+                  </label>
+                  <label class="radio-label" style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                    <input type="radio" name="calendarPeriodMode" id="calendarPeriodModeCustom" value="custom">
+                    <span><strong>Свой диапазон дат</strong></span>
+                  </label>
+                </div>
+
+                <!-- Поля ручного ввода дат (видны только при выборе «Свой диапазон дат») -->
+                <div id="calendarCustomDatesGroup" class="form-row" style="display: none; gap: 8px; margin-top: 8px;">
+                  <div class="form-group flex-1">
+                    <label for="calendarStartDate" style="font-size: 11px; color: var(--text-muted, #a1a1aa);">Дата начала:</label>
+                    <input type="date" id="calendarStartDate" style="width: 100%;">
+                  </div>
+                  <div class="form-group flex-1">
+                    <label for="calendarEndDate" style="font-size: 11px; color: var(--text-muted, #a1a1aa);">Дата окончания:</label>
+                    <input type="date" id="calendarEndDate" style="width: 100%;">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Настройка заголовка календаря -->
+              <div class="form-group" style="margin-bottom: 8px;">
+                <label for="calendarHeaderTextInput" style="font-size: 12px; font-weight: 600;">Заголовок листа (период):</label>
+                <input type="text" id="calendarHeaderTextInput" placeholder="10.11.2026 - 09.12.2026" style="width: 100%;">
+                <small class="field-hint-text" style="display: block; margin-top: 2px; color: var(--text-muted, #a1a1aa);">Автоматически формируется из выбранного месяца и дат</small>
+              </div>
+
+              <!-- Настройка нижней подписи / заметки -->
+              <div class="form-group" style="margin-bottom: 8px;">
+                <label for="calendarFooterTextInput" style="font-size: 12px; font-weight: 600;">Нижняя подстрока (примечание):</label>
+                <input type="text" id="calendarFooterTextInput" value="Календарь для рукописных заметок" style="width: 100%;">
+              </div>
+
+              <!-- Опции оформления ячеек -->
+              <div class="form-group" style="margin-bottom: 8px;">
+                <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-bottom: 6px;">
+                  <input type="checkbox" id="calendarHighlightWeekendsChk" checked>
+                  <span><strong>Выделять выходные дни (СБ, ВС)</strong></span>
+                </label>
+                <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-bottom: 6px;">
+                  <input type="checkbox" id="calendarShowMonthNameChk" checked>
+                  <span><strong>Подписывать название месяца при смене (1 дек.)</strong></span>
+                </label>
+                <label class="checkbox-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                  <input type="checkbox" id="calendarRuledLinesChk">
+                  <span><strong>Пунктирная линейка для записей внутри ячеек</strong></span>
+                </label>
+              </div>
+
+              <!-- Информация о формате и тираж -->
+              <div class="form-row" style="display: flex; gap: 8px; margin-top: 8px; align-items: center;">
+                <div class="calendar-format-badge flex-1" style="display: flex; align-items: center; gap: 6px; padding: 6px 10px; background: rgba(37, 99, 235, 0.08); border: 1px solid rgba(37, 99, 235, 0.25); border-radius: 6px; font-size: 12px; color: var(--text-color, #e4e4e7);">
+                  <span>📄</span>
+                  <span><strong>А4 Альбомный</strong> (297×210 мм, авто)</span>
+                </div>
+                <div class="form-group" style="width: 100px; margin-bottom: 0;">
+                  <label for="calendarCopiesInput" style="font-size: 11px; margin-bottom: 2px; display: block;" title="Сколько копий календаря отправить на печать">Копий (тираж):</label>
+                  <input type="number" id="calendarCopiesInput" min="1" max="50" value="1" style="width: 100%; text-align: center;">
+                </div>
+              </div>
+
+              <!-- Блок быстрой печати и PDF -->
+              <div style="display: flex; gap: 8px; margin-top: 12px;">
+                <button type="button" id="calendarPrintQuickBtn" class="btn btn-primary btn-sm flex-1" style="background: #2563eb;">
+                  <svg class="ico"><use href="#i-printer"/></svg> Печать календаря
+                </button>
+                <button type="button" id="calendarPdfQuickBtn" class="btn btn-secondary btn-sm flex-1">
+                  <svg class="ico"><use href="#i-download"/></svg> Скачать PDF
+                </button>
+              </div>
+            </div>
+
           <div class="radio-group compact-radio-group" style="margin-bottom: 10px;">
             <label class="radio-option">
               <input type="radio" name="printMode" value="multi" checked>
@@ -1519,6 +1653,7 @@
               </div>
             </div>
 
+            
             <!-- Пивные параметры (отображаются при выборе «Пиво А5») -->
             <div id="beerSingleParamsGroup" class="beer-single-params-group" style="display: none; border-top: 1px solid var(--border-color, #27272a); padding-top: 10px; margin-top: 10px;">
               <div class="group-header">
@@ -2954,6 +3089,9 @@
 
               <!-- Контейнер для листа шаблона «СТОП» -->
               <div class="stop-sheet-container" id="stopSheetContainer" style="display: none;"></div>
+
+              <!-- Контейнер для листа шаблона «Календарь» -->
+              <div class="calendar-sheet-container" id="calendarSheetContainer" style="display: none;"></div>
             </div>
           </div>
 

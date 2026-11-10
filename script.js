@@ -158,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Массив растёт прогрессивно: стартует с 1 пустой строки; при вводе в последнее
   // поле появляется следующая пустая (см. syncRowExtent / normalizeItemsArray).
   const MAX_ITEMS = 100; // мягкий защитный потолок (только для вставки больших таблиц)
-  const TEMPLATE_KEYS = ['alaska_dots', 'yellow_tag', 'ryba', 'sneki', 'sneki_5', 'sneki_digit', 'novy_vkus', 'novinka', 'tomat', 'sladko', 'sort_nedeli', 'korona_a5', 'a5', 'beer_a5', 'beer_a5_aktsiya', 'digits', 'stop'];
+  const TEMPLATE_KEYS = ['alaska_dots', 'yellow_tag', 'ryba', 'sneki', 'sneki_5', 'sneki_digit', 'novy_vkus', 'novinka', 'tomat', 'sladko', 'sort_nedeli', 'korona_a5', 'a5', 'beer_a5', 'beer_a5_aktsiya', 'digits', 'stop', 'calendar'];
   const templateItems = {};
   function freshItem() {
     return {
@@ -1159,18 +1159,40 @@ document.addEventListener('DOMContentLoaded', () => {
     populateExtraBgOptions(index.files.map(name => ({ name: name, ref: dir + '/' + name })));
   }
 
+  // Список дополнительных фонов по умолчанию (из папки images)
+  const DEFAULT_EXTRA_BG_FILES = [
+    'grenki.png', 'kalmar.png', 'medovyj.png', 'moreprodukty.png',
+    'myaso.png', 'orehi.png', 'ostryi.png', 'ryb_solomka.png',
+    'ryba_vygodno.png', 'ryba_vygodno1.png', 'syr.png', 'tomatnyj.png',
+    'vishnevyj.png', 'yablochnyj.png', 'zhivoe.jpg', 'ba.jpg',
+    'stop_empty.png', 'stop_text.png'
+  ];
+
+  function loadExtraBackgroundsFallback() {
+    const dir = 'images';
+    populateExtraBgOptions(DEFAULT_EXTRA_BG_FILES.map(name => ({ name: name, ref: dir + '/' + name })));
+  }
+
   // Вызывается при загрузке страницы. Ошибки/пустое хранилище не выбрасывает.
   async function loadExtraBackgrounds() {
-    // Онлайн: фоны из «bg other» грузятся автоматически по bg_index.json.
+    // Онлайн: фоны из «images» грузятся автоматически по bg_index.json.
     if (location.protocol === 'http:' || location.protocol === 'https:') {
       await loadExtraBackgroundsOnline();
       return;
     }
-    // Локально (file://): из кэша IndexedDB (наполняется одним ручным выбором папки).
+    // Локально (file://):
     const group = document.getElementById('extraBgGroup');
     if (!group) return;
-    const db = await openExtraBgDb();
-    if (!db) return;
+    let db = null;
+    try {
+      db = await openExtraBgDb();
+    } catch (_) {}
+
+    if (!db) {
+      loadExtraBackgroundsFallback();
+      return;
+    }
+
     try {
       const tx = db.transaction(EXTRA_BG_STORE, 'readonly');
       const store = tx.objectStore(EXTRA_BG_STORE);
@@ -1178,7 +1200,12 @@ document.addEventListener('DOMContentLoaded', () => {
       allReq.onsuccess = async () => {
         const names = (allReq.result || []).slice().sort((a, b) =>
           String(a).toLowerCase().localeCompare(String(b).toLowerCase()));
-        if (!names.length) { db.close(); return; }
+        if (!names.length) {
+          db.close();
+          // Если пользовательских фонов в IndexedDB нет, используем встроенные дополнительные фоны
+          loadExtraBackgroundsFallback();
+          return;
+        }
         // Дочитаем значения по ключам и наполняем подменю через общий хелпер.
         const tx2 = db.transaction(EXTRA_BG_STORE, 'readonly');
         const store2 = tx2.objectStore(EXTRA_BG_STORE);
@@ -1191,17 +1218,35 @@ document.addEventListener('DOMContentLoaded', () => {
             loaded++;
             if (loaded === names.length) {
               db.close();
+              // Добавляем встроенные фоны, если их еще нет в пользовательском списке
+              const namesSet = new Set(items.map(it => it.name));
+              DEFAULT_EXTRA_BG_FILES.forEach(fn => {
+                if (!namesSet.has(fn)) items.push({ name: fn, ref: 'images/' + fn });
+              });
               populateExtraBgOptions(items);
             }
           };
           getReq.onerror = () => {
             loaded++;
-            if (loaded === names.length) { db.close(); populateExtraBgOptions(items); }
+            if (loaded === names.length) {
+              db.close();
+              const namesSet = new Set(items.map(it => it.name));
+              DEFAULT_EXTRA_BG_FILES.forEach(fn => {
+                if (!namesSet.has(fn)) items.push({ name: fn, ref: 'images/' + fn });
+              });
+              populateExtraBgOptions(items);
+            }
           };
         });
       };
-      allReq.onerror = () => db.close();
-    } catch (e) { try { db.close(); } catch (_) { } }
+      allReq.onerror = () => {
+        db.close();
+        loadExtraBackgroundsFallback();
+      };
+    } catch (e) {
+      try { db.close(); } catch (_) { }
+      loadExtraBackgroundsFallback();
+    }
   }
 
   // Сохраняет массив {name, dataUrl} в IndexedDB (заменяя всё содержимое),
@@ -1282,6 +1327,7 @@ document.addEventListener('DOMContentLoaded', () => {
       activeTemplateRef.key === 'beer_a5_aktsiya' ||
       activeTemplateRef.key === 'digits' ||
       activeTemplateRef.key === 'stop' ||
+      activeTemplateRef.key === 'calendar' ||
       activeTemplateRef.key === 'yellow_tag' ||
       activeTemplateRef.key === 'sneki_digit' ||
       activeTemplateRef.key === 'novy_vkus' ||
@@ -3000,6 +3046,86 @@ document.addEventListener('DOMContentLoaded', () => {
         priceDigits: [{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }],
         currency: { x: 0, y: 0 }
       }
+    },
+    calendar: {
+      name: 'Календарь',
+      widthCm: 29.7,
+      heightCm: 21.0,
+      borderMm: 0,
+      title: '10.11.2026 - 09.12.2026',
+      subtitle: 'Календарь для рукописных заметок',
+      composition: '',
+      beerPhoto: '',
+      beerStrength: '',
+      beerBitterness: '',
+      beerDensity: '',
+      beerType: '',
+      beerStyle: '',
+      titleFont: "'Montserrat', Arial, sans-serif",
+      titleColor: '#000000',
+      titleSize: 14,
+      titleWeight: '700',
+      titleItalic: false,
+      titleAlign: 'center',
+      titleOffsetY: 0,
+      titleShadow: '',
+      subtitleColor: '#4b5563',
+      subtitleSize: 8,
+      subtitleWeight: '400',
+      subtitleAlign: 'center',
+      showPrice: false,
+      priceFont: "'Montserrat', Arial, sans-serif",
+      priceSize: 12,
+      priceWeight: '400',
+      priceColor: '#000000',
+      priceAlign: 'center',
+      priceOffsetY: 0,
+      price: '',
+      currency: '',
+      headerBg: '#ffffff',
+      bgImage: 'none',
+      customBgData: null,
+      headerHeight: 100,
+      layout: 'full',
+      priceInBottom: false,
+      subtitleCorner: false,
+      pricePlate: false,
+      decorOutsideShow: false,
+      decorOutsideText: '',
+      decorOutsideBg: '#ffffff',
+      decorOutsideBgImg: 'none',
+      decorOutsideCustomBg: null,
+      decorOutsideColor: '#ffffff',
+      decorOutsideFontSize: 14,
+      decorOutsideHeight: 12,
+      decorInsideShow: false,
+      decorInsideText: '',
+      decorInsideBg: '#ffffff',
+      decorInsideBgImg: 'none',
+      decorInsideCustomBg: null,
+      decorInsideColor: '#ffffff',
+      decorInsideFontSize: 14,
+      decorInsideHeight: 10,
+      decorInsideWidth: 10,
+      decorBottomShow: false,
+      decorBottomText: '',
+      decorBottomBg: '#ffffff',
+      decorBottomBgImg: 'none',
+      decorBottomCustomBg: null,
+      decorBottomColor: '#ffffff',
+      decorBottomFontSize: 14,
+      decorBottomHeight: 12,
+      decorBlockPos: 'outside',
+      printGapMm: 0,
+      titleFitFloor: 10,
+      autofitTitleOnly: true,
+      labelPos: {
+        title: { x: 0, y: 0 },
+        subtitle: { x: 0, y: 0 },
+        price: { x: 0, y: 0 },
+        priceDigits: [{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }],
+        currency: { x: 0, y: 0 }
+      }
     }
   };
   builtInPresets.aktsiya_a5 = builtInPresets.korona_a5;
@@ -3355,6 +3481,7 @@ document.addEventListener('DOMContentLoaded', () => {
     syncBeerControlsVisibility();
     syncDigitsControlsVisibility();
     syncStopControlsVisibility();
+    syncCalendarControlsVisibility();
     if (typeof syncWorkspaceViewModeForCurrentTemplate === 'function') {
       syncWorkspaceViewModeForCurrentTemplate();
     }
@@ -4555,6 +4682,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function syncDigitsControlsVisibility() {
     const isDigits = isDigitsActive();
     const digitsSection = document.getElementById('digitsSection');
+    const calendarSection = document.getElementById('calendarSection');
     const radioGroup = document.querySelector('#section2 .radio-group');
     const multiItemSec = document.getElementById('multiItemSection');
     const singleItemSec = document.getElementById('singleItemSection');
@@ -4562,6 +4690,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const beerSingleGroup = document.getElementById('beerSingleParamsGroup');
 
     if (digitsSection) digitsSection.style.display = isDigits ? 'block' : 'none';
+    if (calendarSection && isDigits) calendarSection.style.display = 'none';
     if (radioGroup) radioGroup.style.display = isDigits ? 'none' : '';
     if (floatingBtn) floatingBtn.style.display = isDigits ? 'none' : '';
 
@@ -4715,10 +4844,12 @@ document.addEventListener('DOMContentLoaded', () => {
   function syncStopControlsVisibility() {
     const isStop = isStopActive();
     const stopSection = document.getElementById('stopSection');
+    const calendarSection = document.getElementById('calendarSection');
     const beerSingleGroup = document.getElementById('beerSingleParamsGroup');
     const digitsSection = document.getElementById('digitsSection');
 
     if (stopSection) stopSection.style.display = isStop ? 'block' : 'none';
+    if (calendarSection && isStop) calendarSection.style.display = 'none';
 
     if (isStop) {
       if (beerSingleGroup) beerSingleGroup.style.display = 'none';
@@ -5011,6 +5142,683 @@ document.addEventListener('DOMContentLoaded', () => {
     if (pdfBtn) {
       pdfBtn.addEventListener('click', () => {
         pdfStopSheetFromUI();
+      });
+    }
+  }
+
+  // ==========================================================================
+  // --- КОНТРОЛЛЕР ШАБЛОНА «КАЛЕНДАРЬ» (ОТЧЕТНЫЙ ПЕРИОД ДЛЯ ЗАМЕТОК РУЧКОЙ) ---
+  // ==========================================================================
+
+  const CALENDAR_STORAGE_KEY = 'wobbler_calendar_settings';
+
+  // Проверяет, активен ли шаблон «Календарь»
+  function isCalendarActive() {
+    const key = (activeTemplateRef && activeTemplateRef.key) || null;
+    return key === 'calendar';
+  }
+
+  // Календарь всегда альбомный (A4 Landscape, 297x210 мм, как в Excel)
+  function isCalendarLandscape() {
+    return true;
+  }
+
+  // Расчет дат отчетного периода по году, месяцу (0-11) и режиму ('report', 'full')
+  function getCalendarPeriodDates(year, month, mode = 'report') {
+    let startObj, endObj;
+    if (mode === 'full') {
+      // Полный календарный месяц: с 1-го по последнее число выбранного месяца
+      startObj = new Date(year, month, 1);
+      endObj = new Date(year, month + 1, 0);
+    } else {
+      // Отчетный период розницы: с 10-го выбранного месяца по 9-е следующего месяца
+      startObj = new Date(year, month, 10);
+      const nextM = month === 11 ? 0 : month + 1;
+      const nextY = month === 11 ? year + 1 : year;
+      endObj = new Date(nextY, nextM, 9);
+    }
+    return {
+      startDate: formatLocalDateISO(startObj),
+      endDate: formatLocalDateISO(endObj)
+    };
+  }
+
+  // Расчет дат стандартного отчетного периода (с 10 по 9) относительно даты
+  function getCalendarDefaultDates(refDate = new Date()) {
+    const day = refDate.getDate();
+    let startY = refDate.getFullYear();
+    let startM = refDate.getMonth(); // 0-based
+
+    if (day < 10) {
+      // Если день до 10-го: отчетный период начался 10-го прошлого месяца
+      if (startM === 0) {
+        startY = startY - 1;
+        startM = 11;
+      } else {
+        startM = startM - 1;
+      }
+    }
+    return getCalendarPeriodDates(startY, startM, 'report');
+  }
+
+  function parseLocalDate(str) {
+    if (!str) return new Date();
+    const parts = str.split('-');
+    if (parts.length === 3) {
+      return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    }
+    return new Date(str);
+  }
+
+  function formatLocalDateISO(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  function formatDDMMYYYY(d) {
+    const day = String(d.getDate()).padStart(2, '0');
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const y = d.getFullYear();
+    return `${day}.${m}.${y}`;
+  }
+
+  // Генерация строк сетки календаря по неделям (ПН-ВС)
+  function generateCalendarGridRows(startDate, endDate) {
+    const rows = [];
+    let currentRow = [];
+
+    const getIsoDay = d => (d.getDay() === 0 ? 7 : d.getDay());
+    const startIso = getIsoDay(startDate);
+
+    // Пустые ячейки в первой строке до даты начала периода
+    for (let c = 1; c < startIso; c++) {
+      currentRow.push({ blank: true, col: c });
+    }
+
+    const cur = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+    const end = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+
+    let isPeriodStart = true;
+
+    while (cur <= end) {
+      const col = getIsoDay(cur);
+      const day = cur.getDate();
+      const month = cur.getMonth() + 1;
+      const year = cur.getFullYear();
+
+      currentRow.push({
+        blank: false,
+        col: col,
+        day: day,
+        month: month,
+        year: year,
+        isFirstOfMonth: day === 1,
+        isPeriodStart: isPeriodStart
+      });
+
+      isPeriodStart = false;
+
+      if (col === 7) {
+        rows.push(currentRow);
+        currentRow = [];
+      }
+
+      cur.setDate(cur.getDate() + 1);
+    }
+
+    if (currentRow.length > 0) {
+      // Пустые ячейки в последней строке после даты окончания периода
+      while (currentRow.length < 7) {
+        currentRow.push({ blank: true, col: currentRow.length + 1 });
+      }
+      rows.push(currentRow);
+    }
+
+    return rows;
+  }
+
+  // Создает DOM-структуру листа календаря на отчетный период
+  function createCalendarSheetElement() {
+    const container = document.createElement('div');
+    container.className = 'calendar-sheet-container is-landscape';
+
+    const startInp = document.getElementById('calendarStartDate');
+    const endInp = document.getElementById('calendarEndDate');
+    const headerInp = document.getElementById('calendarHeaderTextInput');
+    const footerInp = document.getElementById('calendarFooterTextInput');
+    const highlightWeekendsChk = document.getElementById('calendarHighlightWeekendsChk');
+    const showMonthNameChk = document.getElementById('calendarShowMonthNameChk');
+    const ruledLinesChk = document.getElementById('calendarRuledLinesChk');
+
+    const defaults = getCalendarDefaultDates();
+    const startStr = (startInp && startInp.value) ? startInp.value : defaults.startDate;
+    const endStr = (endInp && endInp.value) ? endInp.value : defaults.endDate;
+
+    const startDate = parseLocalDate(startStr);
+    const endDate = parseLocalDate(endStr);
+
+    const highlightWeekends = highlightWeekendsChk ? highlightWeekendsChk.checked : true;
+    const showMonthName = showMonthNameChk ? showMonthNameChk.checked : true;
+    const ruledLines = ruledLinesChk ? ruledLinesChk.checked : false;
+
+    // Шапка листа (заголовок периода)
+    const headerRow = document.createElement('div');
+    headerRow.className = 'calendar-header-row';
+    const headerTitle = document.createElement('div');
+    headerTitle.className = 'calendar-header-title';
+    const defaultPeriodText = `${formatDDMMYYYY(startDate)} - ${formatDDMMYYYY(endDate)}`;
+    headerTitle.textContent = (headerInp && headerInp.value.trim()) ? headerInp.value.trim() : defaultPeriodText;
+    headerRow.appendChild(headerTitle);
+    container.appendChild(headerRow);
+
+    // Подстрока дней недели
+    const weekdaysRow = document.createElement('div');
+    weekdaysRow.className = 'calendar-weekdays-row';
+    const weekdayNames = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'];
+    weekdayNames.forEach((name, idx) => {
+      const cell = document.createElement('div');
+      cell.className = 'calendar-weekday-cell' + (idx >= 5 ? ' is-weekend' : '');
+      cell.textContent = name;
+      weekdaysRow.appendChild(cell);
+    });
+    container.appendChild(weekdaysRow);
+
+    // Сетка дней календаря
+    const gridContainer = document.createElement('div');
+    gridContainer.className = 'calendar-grid-body';
+
+    const monthNamesShort = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+    const gridRows = generateCalendarGridRows(startDate, endDate);
+    gridContainer.style.gridTemplateRows = `repeat(${gridRows.length}, 1fr)`;
+
+    gridRows.forEach(row => {
+      row.forEach(cell => {
+        const cellEl = document.createElement('div');
+        const isWeekend = highlightWeekends && (cell.col >= 6);
+        cellEl.className = 'calendar-day-cell' + 
+          (cell.blank ? ' is-blank' : '') + 
+          (isWeekend ? ' is-weekend' : '');
+
+        if (!cell.blank) {
+          const topWrap = document.createElement('div');
+          topWrap.className = 'calendar-cell-top';
+
+          const numEl = document.createElement('span');
+          numEl.className = 'calendar-day-num';
+          numEl.textContent = String(cell.day);
+          topWrap.appendChild(numEl);
+
+          if (showMonthName && (cell.isFirstOfMonth || cell.isPeriodStart)) {
+            const badge = document.createElement('span');
+            badge.className = 'calendar-month-badge';
+            badge.textContent = monthNamesShort[cell.month - 1];
+            topWrap.appendChild(badge);
+          }
+          cellEl.appendChild(topWrap);
+
+          const contentWrap = document.createElement('div');
+          contentWrap.className = 'calendar-cell-content';
+          if (ruledLines) {
+            contentWrap.className += ' with-ruled-lines';
+            for (let l = 0; l < 3; l++) {
+              const line = document.createElement('div');
+              line.className = 'calendar-ruled-line';
+              contentWrap.appendChild(line);
+            }
+          }
+          cellEl.appendChild(contentWrap);
+        }
+        gridContainer.appendChild(cellEl);
+      });
+    });
+    container.appendChild(gridContainer);
+
+    // Нижняя строка / футер
+    const footerRow = document.createElement('div');
+    footerRow.className = 'calendar-footer-row';
+    const footerText = document.createElement('div');
+    footerText.className = 'calendar-footer-text';
+    footerText.textContent = (footerInp && footerInp.value.trim()) ? footerInp.value.trim() : 'Календарь для рукописных заметок';
+    footerRow.appendChild(footerText);
+    container.appendChild(footerRow);
+
+    return container;
+  }
+
+  // Отрисовывает календарь в основном холсте предпросмотра (альбомный А4)
+  function renderCalendarSheetPreview() {
+    const container = document.getElementById('calendarSheetContainer');
+    if (!container) return;
+
+    container.innerHTML = '';
+    const sheetEl = createCalendarSheetElement();
+    while (sheetEl.firstChild) {
+      container.appendChild(sheetEl.firstChild);
+    }
+    container.className = 'calendar-sheet-container is-landscape';
+    container.style.display = 'flex';
+  }
+
+  // Сохранение настроек календаря в localStorage
+  function saveCalendarSettings() {
+    try {
+      const modeRadio = document.querySelector('input[name="calendarPeriodMode"]:checked');
+      const data = {
+        month: document.getElementById('calendarMonthSelect')?.value ?? '10',
+        year: document.getElementById('calendarYearSelect')?.value ?? '2026',
+        periodMode: modeRadio ? modeRadio.value : 'report',
+        startDate: document.getElementById('calendarStartDate')?.value || '',
+        endDate: document.getElementById('calendarEndDate')?.value || '',
+        headerText: document.getElementById('calendarHeaderTextInput')?.value || '',
+        footerText: document.getElementById('calendarFooterTextInput')?.value || '',
+        highlightWeekends: document.getElementById('calendarHighlightWeekendsChk')?.checked ?? true,
+        showMonthName: document.getElementById('calendarShowMonthNameChk')?.checked ?? true,
+        ruledLines: document.getElementById('calendarRuledLinesChk')?.checked ?? false,
+        copies: document.getElementById('calendarCopiesInput')?.value || '1'
+      };
+      localStorage.setItem(CALENDAR_STORAGE_KEY, JSON.stringify(data));
+    } catch (e) {}
+  }
+
+  // Загрузка настроек календаря из localStorage
+  function loadCalendarSettings() {
+    try {
+      const raw = localStorage.getItem(CALENDAR_STORAGE_KEY);
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Синхронизирует видимость контролов для шаблона «Календарь»
+  function syncCalendarControlsVisibility() {
+    const isCalendar = isCalendarActive();
+    const calendarSection = document.getElementById('calendarSection');
+    const radioGroup = document.querySelector('#section2 .radio-group');
+    const multiItemSec = document.getElementById('multiItemSection');
+    const singleItemSec = document.getElementById('singleItemSection');
+    const floatingBtn = document.getElementById('floatingItemsDrawerBtn');
+    const beerSingleGroup = document.getElementById('beerSingleParamsGroup');
+    const digitsSection = document.getElementById('digitsSection');
+    const stopSection = document.getElementById('stopSection');
+
+    if (calendarSection) calendarSection.style.display = isCalendar ? 'block' : 'none';
+
+    if (isCalendar) {
+      if (digitsSection) digitsSection.style.display = 'none';
+      if (stopSection) stopSection.style.display = 'none';
+      if (beerSingleGroup) beerSingleGroup.style.display = 'none';
+      if (radioGroup) radioGroup.style.display = 'none';
+      if (multiItemSec) multiItemSec.style.display = 'none';
+      if (singleItemSec) singleItemSec.style.display = 'none';
+      if (floatingBtn) floatingBtn.style.display = 'none';
+      if (typeof closeItemsDrawer === 'function') closeItemsDrawer();
+
+      const singleRadio = document.querySelector('input[name="printMode"][value="single"]');
+      if (singleRadio) singleRadio.checked = true;
+
+      const headerInp = document.getElementById('calendarHeaderTextInput');
+      if (inputTitle && headerInp && headerInp.value.trim()) {
+        inputTitle.value = headerInp.value.trim();
+      }
+
+      // Переключаем монтажный стол в режим отдельного холста (tag view),
+      // где #wobblerPreview виден и отображает альбомный календарь
+      if (typeof setWorkspaceViewMode === 'function') {
+        setWorkspaceViewMode('tag');
+      }
+
+      // Автоматически переключаем сайдбар на вкладку настроек (section2),
+      // где во главе находится секция #calendarSection с выбором месяца
+      if (typeof setSidebarTab === 'function') {
+        setSidebarTab('section2');
+      } else {
+        const sec2Btn = document.querySelector('.sidebar-tab-btn[data-target="section2"]');
+        if (sec2Btn && !sec2Btn.classList.contains('active')) {
+          sec2Btn.click();
+        }
+      }
+      if (controlsSidebarEl) {
+        controlsSidebarEl.scrollTop = 0;
+      }
+
+      // Скрываем блок раскладки на листе А4, так как календарь сам является полным листом А4
+      const sheetCard = document.querySelector('.sheet-preview-card');
+      if (sheetCard) sheetCard.style.display = 'none';
+
+      // Автоматически настраиваем печать в альбомную ориентацию
+      document.body.classList.add('print-landscape');
+      let dynPrintStyle = document.getElementById('dynamicPrintPageOrientation');
+      if (!dynPrintStyle) {
+        dynPrintStyle = document.createElement('style');
+        dynPrintStyle.id = 'dynamicPrintPageOrientation';
+        document.head.appendChild(dynPrintStyle);
+      }
+      dynPrintStyle.textContent = `@page { size: A4 landscape; margin: 0; }`;
+    } else {
+      // Возвращаем блок раскладки на листе А4 для обычных ценников
+      const sheetCard = document.querySelector('.sheet-preview-card');
+      if (sheetCard) sheetCard.style.display = '';
+
+      // Снимаем принудительный альбомный режим печати body
+      document.body.classList.remove('print-landscape');
+
+      // ВОССТАНАВЛИВАЕМ элементы управления для обычных ценников
+      if (!isDigitsActive() && !isStopActive()) {
+        if (radioGroup) radioGroup.style.display = '';
+        if (floatingBtn) floatingBtn.style.display = '';
+        const isMulti = document.querySelector('input[name="printMode"]:checked')?.value === 'multi';
+        if (multiItemSec) multiItemSec.style.display = isMulti ? 'block' : 'none';
+        if (singleItemSec) singleItemSec.style.display = isMulti ? 'none' : 'block';
+      }
+    }
+  }
+
+  // Быстрая печать календаря из сайдбара
+  function printCalendarFromUI() {
+    if (!isCalendarActive()) {
+      const card = document.querySelector('#builtInTemplates .preset-card[data-preset="calendar"]');
+      if (card) card.click();
+    }
+    setTimeout(() => {
+      triggerPrint();
+    }, 50);
+  }
+
+  // Быстрый экспорт календаря в PDF из сайдбара
+  function pdfCalendarFromUI() {
+    if (!isCalendarActive()) {
+      const card = document.querySelector('#builtInTemplates .preset-card[data-preset="calendar"]');
+      if (card) card.click();
+    }
+    setTimeout(() => {
+      exportToPdf(false);
+    }, 50);
+  }
+
+  // Инициализация событий контролов шаблона «Календарь»
+  function setupCalendarControls() {
+    const monthSel = document.getElementById('calendarMonthSelect');
+    const yearInp = document.getElementById('calendarYearSelect');
+    const modeRadios = document.querySelectorAll('input[name="calendarPeriodMode"]');
+    const customDatesGroup = document.getElementById('calendarCustomDatesGroup');
+    const startInp = document.getElementById('calendarStartDate');
+    const endInp = document.getElementById('calendarEndDate');
+    const headerInp = document.getElementById('calendarHeaderTextInput');
+    const footerInp = document.getElementById('calendarFooterTextInput');
+    const highlightWeekendsChk = document.getElementById('calendarHighlightWeekendsChk');
+    const showMonthNameChk = document.getElementById('calendarShowMonthNameChk');
+    const ruledLinesChk = document.getElementById('calendarRuledLinesChk');
+    const copiesInp = document.getElementById('calendarCopiesInput');
+    const prevMonthBtn = document.getElementById('calendarQuickPrevMonthBtn');
+    const currentMonthBtn = document.getElementById('calendarQuickCurrentMonthBtn');
+    const nextMonthBtn = document.getElementById('calendarQuickNextMonthBtn');
+    const printBtn = document.getElementById('calendarPrintQuickBtn');
+    const pdfBtn = document.getElementById('calendarPdfQuickBtn');
+
+    // Восстанавливаем сохраненные настройки или вычисляем дефолты
+    const saved = loadCalendarSettings();
+    const now = new Date();
+    const defaults = getCalendarDefaultDates(now);
+    const defStartObj = parseLocalDate(defaults.startDate);
+
+    let currentYear = (saved && saved.year) ? parseInt(saved.year, 10) : defStartObj.getFullYear();
+    let currentMonth = (saved && saved.month !== undefined) ? parseInt(saved.month, 10) : defStartObj.getMonth();
+    let currentMode = (saved && saved.periodMode) ? saved.periodMode : 'report';
+
+    if (monthSel) monthSel.value = String(currentMonth);
+    if (yearInp) yearInp.value = String(currentYear);
+
+    modeRadios.forEach(r => {
+      r.checked = (r.value === currentMode);
+    });
+
+    if (customDatesGroup) {
+      customDatesGroup.style.display = (currentMode === 'custom') ? 'flex' : 'none';
+    }
+
+    if (startInp) startInp.value = (saved && saved.startDate) || defaults.startDate;
+    if (endInp) endInp.value = (saved && saved.endDate) || defaults.endDate;
+
+    const sDate = parseLocalDate(startInp ? startInp.value : defaults.startDate);
+    const eDate = parseLocalDate(endInp ? endInp.value : defaults.endDate);
+    const defaultPeriodText = `${formatDDMMYYYY(sDate)} - ${formatDDMMYYYY(eDate)}`;
+
+    if (headerInp) {
+      headerInp.value = (saved && saved.headerText) || defaultPeriodText;
+    }
+    if (footerInp) {
+      footerInp.value = (saved && saved.footerText) || 'Календарь для рукописных заметок';
+    }
+    if (highlightWeekendsChk && saved && typeof saved.highlightWeekends === 'boolean') {
+      highlightWeekendsChk.checked = saved.highlightWeekends;
+    }
+    if (showMonthNameChk && saved && typeof saved.showMonthName === 'boolean') {
+      showMonthNameChk.checked = saved.showMonthName;
+    }
+    if (ruledLinesChk && saved && typeof saved.ruledLines === 'boolean') {
+      ruledLinesChk.checked = saved.ruledLines;
+    }
+    if (copiesInp && saved && saved.copies) {
+      copiesInp.value = saved.copies;
+    }
+
+    let headerManuallyEdited = (saved && saved.headerText && saved.headerText !== defaultPeriodText) ? true : false;
+
+    // Пересчет дат при смене месяца, года или режима расчета
+    function applySelectedMonth(forceHeader = false) {
+      const mode = document.querySelector('input[name="calendarPeriodMode"]:checked')?.value || 'report';
+      const m = parseInt(monthSel?.value ?? currentMonth, 10);
+      const y = parseInt(yearInp?.value ?? currentYear, 10);
+
+      if (customDatesGroup) {
+        customDatesGroup.style.display = (mode === 'custom') ? 'flex' : 'none';
+      }
+
+      if (mode !== 'custom') {
+        const dates = getCalendarPeriodDates(y, m, mode);
+        if (startInp) startInp.value = dates.startDate;
+        if (endInp) endInp.value = dates.endDate;
+      }
+
+      const s = parseLocalDate(startInp?.value || '');
+      const e = parseLocalDate(endInp?.value || '');
+
+      if (headerInp && (!headerManuallyEdited || forceHeader)) {
+        headerInp.value = `${formatDDMMYYYY(s)} - ${formatDDMMYYYY(e)}`;
+        if (inputTitle) inputTitle.value = headerInp.value;
+      }
+
+      if (isCalendarActive()) {
+        renderCalendarSheetPreview();
+        if (typeof autoFitBeerPreviewIfActive === 'function') autoFitBeerPreviewIfActive(true);
+        saveCalendarSettings();
+        scheduleSessionSave();
+      }
+    }
+
+    if (monthSel) {
+      monthSel.addEventListener('change', () => {
+        headerManuallyEdited = false;
+        applySelectedMonth(true);
+      });
+    }
+
+    if (yearInp) {
+      yearInp.addEventListener('change', () => {
+        headerManuallyEdited = false;
+        applySelectedMonth(true);
+      });
+    }
+
+    modeRadios.forEach(radio => {
+      radio.addEventListener('change', () => {
+        headerManuallyEdited = false;
+        applySelectedMonth(true);
+      });
+    });
+
+    // Кнопка: предыдущий месяц
+    if (prevMonthBtn) {
+      prevMonthBtn.addEventListener('click', () => {
+        let m = parseInt(monthSel?.value ?? 0, 10);
+        let y = parseInt(yearInp?.value ?? 2026, 10);
+        if (m === 0) {
+          m = 11;
+          y -= 1;
+        } else {
+          m -= 1;
+        }
+        if (monthSel) monthSel.value = String(m);
+        if (yearInp) yearInp.value = String(y);
+        headerManuallyEdited = false;
+        applySelectedMonth(true);
+      });
+    }
+
+    // Кнопка: текущий месяц (сегодня)
+    if (currentMonthBtn) {
+      currentMonthBtn.addEventListener('click', () => {
+        const d = new Date();
+        const def = getCalendarDefaultDates(d);
+        const defStart = parseLocalDate(def.startDate);
+        const m = defStart.getMonth();
+        const y = defStart.getFullYear();
+        if (monthSel) monthSel.value = String(m);
+        if (yearInp) yearInp.value = String(y);
+        headerManuallyEdited = false;
+        applySelectedMonth(true);
+      });
+    }
+
+    // Кнопка: следующий месяц
+    if (nextMonthBtn) {
+      nextMonthBtn.addEventListener('click', () => {
+        let m = parseInt(monthSel?.value ?? 0, 10);
+        let y = parseInt(yearInp?.value ?? 2026, 10);
+        if (m === 11) {
+          m = 0;
+          y += 1;
+        } else {
+          m += 1;
+        }
+        if (monthSel) monthSel.value = String(m);
+        if (yearInp) yearInp.value = String(y);
+        headerManuallyEdited = false;
+        applySelectedMonth(true);
+      });
+    }
+
+    if (startInp) {
+      startInp.addEventListener('change', () => {
+        let s = parseLocalDate(startInp.value);
+        let e = parseLocalDate(endInp.value);
+        if (s > e) {
+          e = new Date(s.getFullYear(), s.getMonth(), s.getDate());
+          endInp.value = formatLocalDateISO(e);
+        }
+        if (headerInp && !headerManuallyEdited) {
+          headerInp.value = `${formatDDMMYYYY(s)} - ${formatDDMMYYYY(e)}`;
+          if (inputTitle) inputTitle.value = headerInp.value;
+        }
+        if (isCalendarActive()) {
+          renderCalendarSheetPreview();
+          saveCalendarSettings();
+          scheduleSessionSave();
+        }
+      });
+    }
+
+    if (endInp) {
+      endInp.addEventListener('change', () => {
+        let s = parseLocalDate(startInp.value);
+        let e = parseLocalDate(endInp.value);
+        if (e < s) {
+          s = new Date(e.getFullYear(), e.getMonth(), e.getDate());
+          startInp.value = formatLocalDateISO(s);
+        }
+        if (headerInp && !headerManuallyEdited) {
+          headerInp.value = `${formatDDMMYYYY(s)} - ${formatDDMMYYYY(e)}`;
+          if (inputTitle) inputTitle.value = headerInp.value;
+        }
+        if (isCalendarActive()) {
+          renderCalendarSheetPreview();
+          saveCalendarSettings();
+          scheduleSessionSave();
+        }
+      });
+    }
+
+    if (headerInp) {
+      headerInp.addEventListener('input', () => {
+        headerManuallyEdited = true;
+        if (inputTitle) inputTitle.value = headerInp.value.trim();
+        if (isCalendarActive()) {
+          renderCalendarSheetPreview();
+          saveCalendarSettings();
+          scheduleSessionSave();
+        }
+      });
+    }
+
+    if (footerInp) {
+      footerInp.addEventListener('input', () => {
+        if (isCalendarActive()) {
+          renderCalendarSheetPreview();
+          saveCalendarSettings();
+          scheduleSessionSave();
+        }
+      });
+    }
+
+    if (highlightWeekendsChk) {
+      highlightWeekendsChk.addEventListener('change', () => {
+        if (isCalendarActive()) {
+          renderCalendarSheetPreview();
+          saveCalendarSettings();
+          scheduleSessionSave();
+        }
+      });
+    }
+
+    if (showMonthNameChk) {
+      showMonthNameChk.addEventListener('change', () => {
+        if (isCalendarActive()) {
+          renderCalendarSheetPreview();
+          saveCalendarSettings();
+          scheduleSessionSave();
+        }
+      });
+    }
+
+    if (ruledLinesChk) {
+      ruledLinesChk.addEventListener('change', () => {
+        if (isCalendarActive()) {
+          renderCalendarSheetPreview();
+          saveCalendarSettings();
+          scheduleSessionSave();
+        }
+      });
+    }
+
+    if (copiesInp) {
+      copiesInp.addEventListener('change', () => {
+        saveCalendarSettings();
+      });
+    }
+
+    if (printBtn) {
+      printBtn.addEventListener('click', () => {
+        printCalendarFromUI();
+      });
+    }
+
+    if (pdfBtn) {
+      pdfBtn.addEventListener('click', () => {
+        pdfCalendarFromUI();
       });
     }
   }
@@ -7528,7 +8336,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const idrBeerTools = document.getElementById('idrBeerTools');
     if (idrBeerTools) idrBeerTools.style.display = isBeer ? 'flex' : 'none';
 
+    const calendarSection = document.getElementById('calendarSection');
+    if (calendarSection && isBeer) calendarSection.style.display = 'none';
+
     syncDigitsControlsVisibility();
+    syncStopControlsVisibility();
+    syncCalendarControlsVisibility();
 
     // Сайдбар: карточка активного пива вверху, таблица товаров доступна ниже
     const beerSidebarCard = document.getElementById('beerSidebarActiveCard');
@@ -12067,6 +12880,27 @@ document.addEventListener('DOMContentLoaded', () => {
       if (digitsContainer) digitsContainer.style.display = 'none';
     }
 
+    // === Отрисовка шаблона «Календарь» ===
+    const isCalendar = typeof isCalendarActive === 'function' && isCalendarActive();
+    wobblerPreview.classList.toggle('is-calendar-template', isCalendar);
+    const calendarContainer = document.getElementById('calendarSheetContainer');
+    if (isCalendar) {
+      if (rulerHText) rulerHText.textContent = '29,7 см';
+      if (rulerVText) rulerVText.textContent = '21,0 см';
+      renderCalendarSheetPreview();
+      if (typeof autoFitBeerPreviewIfActive === 'function') autoFitBeerPreviewIfActive(true);
+    } else {
+      wobblerPreview.style.removeProperty('--wobbler-width');
+      wobblerPreview.style.removeProperty('--wobbler-height');
+      if (calendarContainer) {
+        calendarContainer.style.display = 'none';
+        calendarContainer.innerHTML = '';
+      }
+      if (!isBeerA5Active() && !isDigitsActive()) {
+        if (typeof resetBeerPreviewZoom === 'function') resetBeerPreviewZoom();
+      }
+    }
+
     // Update preview item badge
     renderPreviewItemBadge();
     if (typeof updatePreviewItemNav === 'function') updatePreviewItemNav();
@@ -13764,6 +14598,13 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderSheetPreview(wMm, hMm) {
     sheetGridPreview.innerHTML = '';
 
+    if (typeof isCalendarActive === 'function' && isCalendarActive()) {
+      return;
+    }
+    if (typeof isDigitsActive === 'function' && isDigitsActive()) {
+      return;
+    }
+
     const isMultiPrintJob = (typeof getPrintJobVal === 'function' && getPrintJobVal() === 'multi');
     if (isMultiPrintJob) {
       renderMultiSheetPreview();
@@ -13933,6 +14774,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const cloned = wobblerPreview.cloneNode(true);
         cloned.removeAttribute('id');
         cloned.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+        cloned.querySelectorAll('.calendar-sheet-container, .digits-sheet-container, .stop-sheet-container').forEach(el => el.remove());
         cloned.classList.remove('drag-mode');
         cloned.querySelectorAll('.interactive-2d-box').forEach(el => el.remove());
 
@@ -14093,6 +14935,29 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    if (isCalendarActive()) {
+      document.body.classList.add('print-landscape');
+      let dynPrintStyle = document.getElementById('dynamicPrintPageOrientation');
+      if (!dynPrintStyle) {
+        dynPrintStyle = document.createElement('style');
+        dynPrintStyle.id = 'dynamicPrintPageOrientation';
+        document.head.appendChild(dynPrintStyle);
+      }
+      dynPrintStyle.textContent = `@page { size: A4 landscape; margin: 0; }`;
+
+      const copiesInp = document.getElementById('calendarCopiesInput');
+      const copies = copiesInp ? Math.max(1, parseInt(copiesInp.value, 10) || 1) : 1;
+
+      for (let p = 0; p < copies; p++) {
+        const page = document.createElement('div');
+        page.className = 'print-page is-calendar-page is-landscape';
+        const sheetEl = createCalendarSheetElement();
+        page.appendChild(sheetEl);
+        printArea.appendChild(page);
+      }
+      return;
+    }
+
     const wCm = parseFloat(wobblerWidthInput.value) || 6.5;
     const hCm = parseFloat(wobblerHeightInput.value) || 4.5;
     const wMm = wCm * 10;
@@ -14219,7 +15084,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Print Trigger
   function triggerPrint() {
     try {
-      if (!isDigitsActive()) {
+      if (!isDigitsActive() && !isCalendarActive()) {
         const isMultiMode = document.querySelector('input[name="printMode"]:checked').value === 'multi';
         if (isMultiMode) {
           const filled = itemsData.filter(it => it && it.title && it.title.trim() && !it.skipPrint);
@@ -14650,7 +15515,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
     } else {
-      if (!isDigitsActive()) {
+      if (!isDigitsActive() && !isCalendarActive()) {
         const isMultiMode = document.querySelector('input[name="printMode"]:checked')?.value === 'multi';
         if (isMultiMode) {
           const filled = itemsData.filter(it => it && it.title && it.title.trim());
@@ -14682,11 +15547,12 @@ document.addEventListener('DOMContentLoaded', () => {
       b.innerHTML = '<span class="icon">⏳</span> <span class="btn-text">Создание PDF...</span>';
     });
 
+    const isCalendar = typeof isCalendarActive === 'function' && isCalendarActive();
     const wCm = parseFloat(wobblerWidthInput ? wobblerWidthInput.value : 6.5) || 6.5;
     const hCm = parseFloat(wobblerHeightInput ? wobblerHeightInput.value : 4.5) || 4.5;
     const effH = effectiveCardHeight(hCm * 10);
     const grid = calcA4Grid(wCm * 10, effH);
-    const isLandscape = !isMulti && grid.isLandscape;
+    const isLandscape = isCalendar ? isCalendarLandscape() : (!isMulti && grid.isLandscape);
     const wrapperW = isLandscape ? '297mm' : '210mm';
 
     // Создаем чистый видимый контейнер для захвата html2pdf БЕЗ класса print-only
@@ -14707,7 +15573,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const dateStr = new Date().toISOString().slice(0, 10);
     const activePreset = (activeTemplateRef && activeTemplateRef.kind === 'builtin') ? builtInPresets[activeTemplateRef.key] : null;
-    const tName = isMulti ? 'Мульти_Ценники' : ((activePreset && activePreset.name) || 'Ценники');
+    const tName = isCalendar ? 'Календарь' : (isMulti ? 'Мульти_Ценники' : ((activePreset && activePreset.name) || 'Ценники'));
     const filename = `${tName}_А4_${dateStr}.pdf`;
 
     const opt = {
@@ -15411,6 +16277,7 @@ document.addEventListener('DOMContentLoaded', () => {
         syncBeerControlsVisibility();
         syncDigitsControlsVisibility();
         syncStopControlsVisibility();
+        syncCalendarControlsVisibility();
         if (typeof syncWorkspaceViewModeForCurrentTemplate === 'function') {
           syncWorkspaceViewModeForCurrentTemplate();
         }
@@ -15418,14 +16285,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // выполняется синхронно, т.к. CSS-анимации отключены и размеры применены сразу.
         autoFitFontSize(true);
 
-        // При выборе шаблона из категории «Ценники» (кроме шаблона «Цифры»)
+        // При выборе шаблона из категории «Ценники» (кроме шаблона «Цифры» и «Календарь»)
         // автоматически переключаемся на вкладку «Товары» в режим «Разные товары»
         const isPriceTagSubgroup = !!card.closest('.preset-subgroup')?.querySelector('[data-subgroup="priceTags"]') ||
           ['alaska_dots', 'ryba', 'sneki', 'sneki_5', 'sneki_digit', 'yellow_tag', 'beer_a5', 'beer_a5_aktsiya'].includes(key);
 
         const shouldAutoSwitchToGoods = !autoSwitchGoodsChk || autoSwitchGoodsChk.checked;
 
-        if (isPriceTagSubgroup && key !== 'digits' && shouldAutoSwitchToGoods) {
+        if (isPriceTagSubgroup && key !== 'digits' && key !== 'calendar' && shouldAutoSwitchToGoods) {
           const multiRadio = document.querySelector('input[name="printMode"][value="multi"]');
           if (multiRadio && !multiRadio.checked) {
             multiRadio.checked = true;
@@ -15443,7 +16310,20 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
 
-        if (key !== 'digits' && key !== 'stop' && autoOpenDrawerChk && autoOpenDrawerChk.checked) {
+        // Для шаблона «Календарь» — переключаем сайдбар на вкладку «Товары» к параметрам календаря и закрываем шторку
+        if (key === 'calendar') {
+          if (typeof setSidebarTab === 'function') {
+            setSidebarTab('section2');
+          }
+          if (typeof closeItemsDrawer === 'function') {
+            closeItemsDrawer();
+          }
+          if (controlsSidebarEl) {
+            controlsSidebarEl.scrollTop = 0;
+          }
+        }
+
+        if (key !== 'digits' && key !== 'stop' && key !== 'calendar' && autoOpenDrawerChk && autoOpenDrawerChk.checked) {
           openItemsDrawer();
         }
       }
@@ -18573,7 +19453,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function syncWorkspaceViewModeForCurrentTemplate() {
-    if (isBeerA5Active()) {
+    if (isBeerA5Active() || isDigitsActive()) {
       setWorkspaceViewMode('sheet');
     } else {
       setWorkspaceViewMode('tag');
@@ -21820,8 +22700,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const availH = Math.max(340, winH - topOffset - 35);
     const cardH = preview.offsetHeight || 830;
 
-    const scale = (availH - 20) / cardH;
-    _lastFitScale = Math.max(0.35, Math.min(1.15, Math.round(scale * 100) / 100));
+    const isCal = typeof isCalendarActive === 'function' && isCalendarActive();
+    const availW = Math.max(300, (container.clientWidth || (winW - 400)) - 30);
+    const cardW = preview.offsetWidth || 1122;
+    const scaleW = availW / cardW;
+    const scaleH = (availH - 20) / cardH;
+    const scale = isCal ? Math.min(scaleH, scaleW) : scaleH;
+    _lastFitScale = isCal ? Math.max(0.2, Math.min(1.15, Math.round(scale * 100) / 100)) : Math.max(0.35, Math.min(1.15, Math.round(scale * 100) / 100));
     return _lastFitScale;
   }
 
@@ -21856,7 +22741,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function autoFitBeerPreviewIfActive(force = false) {
-    if ((typeof isBeerA5Active !== 'function' || !isBeerA5Active()) && (typeof isDigitsActive !== 'function' || !isDigitsActive())) return;
+    if ((typeof isBeerA5Active !== 'function' || !isBeerA5Active()) &&
+        (typeof isDigitsActive !== 'function' || !isDigitsActive()) &&
+        (typeof isCalendarActive !== 'function' || !isCalendarActive())) return;
     if (typeof beerPreviewFitMode !== 'undefined' && !beerPreviewFitMode) return;
     const scale = calcFitScale(force);
     applyPreviewScale(scale);
@@ -21899,7 +22786,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     window.addEventListener('resize', () => {
-      if ((isBeerA5Active() || isDigitsActive()) && beerPreviewFitMode) {
+      if ((isBeerA5Active() || isDigitsActive() || (typeof isCalendarActive === 'function' && isCalendarActive())) && beerPreviewFitMode) {
         autoFitBeerPreviewIfActive(true);
       }
     });
@@ -21912,9 +22799,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // Финальная синхронизация видимости контролов Пиво А5, Цифры и СТОП
   setupDigitsControls();
   setupStopControls();
+  setupCalendarControls();
   syncBeerControlsVisibility();
   syncDigitsControlsVisibility();
   syncStopControlsVisibility();
+  syncCalendarControlsVisibility();
   if (typeof syncWorkspaceViewModeForCurrentTemplate === 'function') {
     syncWorkspaceViewModeForCurrentTemplate();
   }
