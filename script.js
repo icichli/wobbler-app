@@ -9068,6 +9068,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
         const rows = list.querySelectorAll('.item-row');
         if (rows[rowIndex + 1]) {
+          rows[rowIndex + 1].classList.add('row-entering');
           const targetInp = rows[rowIndex + 1].querySelector('.' + colClass) || rows[rowIndex + 1].querySelector('.item-title-input');
           if (targetInp) {
             targetInp.focus();
@@ -9092,6 +9093,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
         const rows = list.querySelectorAll('.item-row');
         if (rows[rowIndex + 1]) {
+          rows[rowIndex + 1].classList.add('row-entering');
           const targetInp = rows[rowIndex + 1].querySelector('.' + colClass) || rows[rowIndex + 1].querySelector('.item-title-input');
           if (targetInp) {
             targetInp.focus();
@@ -9645,15 +9647,18 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
         if (typeof pushHistoryState === 'function') pushHistoryState('Удаление товара', true);
-        itemsData.splice(idx, 1);
-        if (idx < activePreviewIndex) activePreviewIndex--;
-        if (activePreviewIndex >= itemsData.length) activePreviewIndex = Math.max(0, itemsData.length - 1);
-        renderItemsListInputs();
-        syncFontControlsToContext();
-        syncDecorControlsToContext();
-        syncBgControlsToContext();
-        updatePreview();
-        if (typeof showToast === 'function') showToast(`Товар №${idx + 1} удален`, 'info', 1500);
+        row.classList.add('row-removing');
+        setTimeout(() => {
+          itemsData.splice(idx, 1);
+          if (idx < activePreviewIndex) activePreviewIndex--;
+          if (activePreviewIndex >= itemsData.length) activePreviewIndex = Math.max(0, itemsData.length - 1);
+          renderItemsListInputs();
+          syncFontControlsToContext();
+          syncDecorControlsToContext();
+          syncBgControlsToContext();
+          updatePreview();
+          if (typeof showToast === 'function') showToast(`Товар №${idx + 1} удален`, 'info', 1500);
+        }, 180);
       });
     }
 
