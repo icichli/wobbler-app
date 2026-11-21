@@ -216,6 +216,7 @@ body {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transition: all 0.15s ease;
   transition: transform var(--dur-tactile) var(--ease-spring),
               background-color var(--dur-fast) ease,
               color var(--dur-fast) ease;
@@ -271,6 +272,7 @@ body {
   background: rgba(255, 255, 255, 0.05) !important;
   border: 1px solid var(--border-color) !important;
   cursor: pointer;
+  transition: all 0.18s ease;
   transition: transform var(--dur-tactile) var(--ease-spring),
               background-color var(--dur-fast) ease,
               border-color var(--dur-fast) ease;
@@ -514,10 +516,13 @@ body.theme-light .btn-theme-toggle:hover {
 
 .btn-print-cta:hover {
   background: var(--accent-blue-hover) !important;
+  transform: none;
+  box-shadow: none !important;
   box-shadow: 0 2px 8px rgba(46, 107, 99, 0.3) !important;
 }
 
 .btn-print-cta:active {
+  transform: none;
   transform: scale(0.965) !important;
 }
 
@@ -548,6 +553,7 @@ body.theme-light .btn-theme-toggle:hover {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  transition: all 0.2s ease;
   transition: transform var(--dur-tactile) var(--ease-spring),
               background-color var(--dur-fast) ease,
               border-color var(--dur-fast) ease,
@@ -585,7 +591,9 @@ body.theme-light .btn-theme-toggle:hover {
 }
 
 .btn-primary:hover {
+  transform: none;
   background: var(--accent-blue-hover);
+  box-shadow: none;
   box-shadow: 0 2px 8px rgba(46, 107, 99, 0.3);
 }
 
@@ -631,6 +639,7 @@ body.theme-light .btn-theme-toggle:hover {
   font-size: 0.82rem;
   border-radius: 8px;
   cursor: pointer;
+  transition: all 0.2s ease;
   transition: transform var(--dur-tactile) var(--ease-spring),
               background-color var(--dur-fast) ease,
               border-color var(--dur-fast) ease,
@@ -868,6 +877,7 @@ body.theme-light .btn-theme-toggle:hover {
   border-radius: 9px;
   color: var(--text-muted);
   cursor: pointer;
+  transition: all 0.2s ease;
   transition: transform var(--dur-tactile) var(--ease-spring),
               background-color var(--dur-fast) ease,
               border-color var(--dur-fast) ease,
@@ -1336,6 +1346,7 @@ body.theme-light .btn-theme-toggle:hover {
   font-size: 0.8rem;
   border-radius: 6px;
   cursor: pointer;
+  transition: all 0.2s ease;
   transition: transform var(--dur-tactile) var(--ease-spring),
               background-color var(--dur-fast) ease,
               color var(--dur-fast) ease;
@@ -1377,6 +1388,7 @@ body.theme-light .btn-theme-toggle:hover {
   border-radius: var(--radius-md);
   cursor: pointer;
   text-align: left;
+  transition: all 0.2s ease;
   transition: transform var(--dur-tactile) var(--ease-spring),
               border-color var(--dur-fast) ease,
               background-color var(--dur-fast) ease,
@@ -5402,7 +5414,9 @@ body.theme-light .preview-item-badge.mode-template {
 
 .price-box-inner.is-crossed .price-cross-overlay,
 .wobbler-price-box.is-crossed .price-cross-overlay,
-.wobbler-element.price-crossed .price-cross-overlay {
+.wobbler-element.price-crossed .price-cross-overlay,
+.print-wobbler-wrapper .wobbler-element.price-crossed .price-cross-overlay,
+.print-wobbler-wrapper .wobbler-price-box.is-crossed .price-cross-overlay {
   display: block;
 }
 
@@ -5529,10 +5543,12 @@ body.theme-light .preview-item-badge.mode-template {
 
 /* Modal Dialog */
 .modal-backdrop {
+  display: none;
   display: flex;
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   z-index: 1000;
@@ -5546,6 +5562,7 @@ body.theme-light .preview-item-badge.mode-template {
 }
 
 .modal-backdrop.active {
+  display: flex;
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
@@ -5558,6 +5575,7 @@ body.theme-light .preview-item-badge.mode-template {
   padding: 1.5rem;
   width: 92%;
   max-width: 400px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
   transform: scale(0.94) translateY(12px);
   opacity: 0;
@@ -6919,6 +6937,14 @@ body.is-pdf-exporting #printArea {
   .interactive-2d-box {
     display: none !important;
   }
+  .price-box-inner.is-crossed .price-cross-overlay,
+  .wobbler-price-box.is-crossed .price-cross-overlay,
+  .wobbler-element.price-crossed .price-cross-overlay,
+  .print-wobbler-wrapper .wobbler-element.price-crossed .price-cross-overlay,
+  .print-wobbler-wrapper .wobbler-price-box.is-crossed .price-cross-overlay {
+    display: block !important;
+    visibility: visible !important;
+  }
 }
 
 .print-page .interactive-2d-box,
@@ -7133,12 +7159,16 @@ body.is-pdf-exporting #printArea {
 .items-drawer-backdrop {
   position: fixed;
   inset: 0;
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(1.5px);
+  -webkit-backdrop-filter: blur(1.5px);
   background: rgba(0, 0, 0, 0.35);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   z-index: 1200;
   opacity: 0;
   visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
   transition: opacity var(--dur-drawer) var(--ease-smooth), visibility var(--dur-drawer) var(--ease-smooth);
 }
 
@@ -7161,6 +7191,7 @@ body.is-pdf-exporting #printArea {
   display: flex;
   flex-direction: column;
   transform: translateX(100%);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
   transition: transform var(--dur-drawer) var(--ease-spring);
   will-change: transform;
   overscroll-behavior-y: contain;
@@ -7213,6 +7244,7 @@ body.is-pdf-exporting #printArea {
   padding: 5px 12px;
   border-radius: var(--radius-sm, 6px);
   cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   transition: transform var(--dur-tactile) var(--ease-spring),
               background-color var(--dur-fast) ease,
               border-color var(--dur-fast) ease,
@@ -7450,6 +7482,7 @@ body.is-pdf-exporting #printArea {
   font-size: 0.86rem;
   box-shadow: 0 6px 24px rgba(46, 107, 99, 0.45);
   cursor: pointer;
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s ease;
   transition: transform var(--dur-tactile) var(--ease-spring), box-shadow var(--dur-fast) ease;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
@@ -7508,6 +7541,7 @@ body.is-pdf-exporting #printArea {
   align-items: flex-start;
   gap: 12px;
   padding: 12px 16px;
+  background: rgba(15, 23, 42, 0.96);
   background: rgba(15, 23, 42, 0.94);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
@@ -7517,6 +7551,8 @@ body.is-pdf-exporting #printArea {
   color: var(--text-primary);
   font-size: 0.85rem;
   line-height: 1.4;
+  animation: toastSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.25s ease, transform 0.25s ease;
   animation: toastSlideIn var(--dur-normal) var(--ease-spring);
   transition: opacity var(--dur-fast) var(--ease-smooth),
               transform var(--dur-normal) var(--ease-spring),
@@ -7528,6 +7564,7 @@ body.is-pdf-exporting #printArea {
 
 .toast-item.toast-closing {
   opacity: 0;
+  transform: translateX(30px) scale(0.96);
   transform: translateY(12px) scale(0.92);
   pointer-events: none;
 }
@@ -7535,11 +7572,13 @@ body.is-pdf-exporting #printArea {
 @keyframes toastSlideIn {
   from {
     opacity: 0;
+    transform: translateX(40px) scale(0.95);
     transform: translateY(20px) scale(0.94);
   }
 
   to {
     opacity: 1;
+    transform: translateX(0) scale(1);
     transform: translateY(0) scale(1);
   }
 }
@@ -7581,8 +7620,10 @@ body.is-pdf-exporting #printArea {
   font-size: 1.1rem;
   line-height: 1;
   cursor: pointer;
+  padding: 0 2px;
   padding: 0 4px;
   opacity: 0.7;
+  transition: opacity 0.15s ease, color 0.15s ease;
   transition: opacity var(--dur-fast) ease, color var(--dur-fast) ease, transform var(--dur-tactile) var(--ease-spring);
   flex-shrink: 0;
   user-select: none;
@@ -7825,6 +7866,7 @@ body.is-pdf-exporting #printArea {
   display: flex;
   align-items: center;
   gap: 14px;
+  animation: toastSlideIn 0.2s ease-out;
   animation: toolbarPopIn var(--dur-normal) var(--ease-spring);
   white-space: nowrap;
 }

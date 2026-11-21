@@ -3998,6 +3998,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (id === 'novaya_tsena') {
         it.priceCross = true;
+        if (!it.fonts) it.fonts = {};
+        it.fonts.priceCross = true;
         const ntVal = it.decor && it.decor.novayaTsenaVal;
         const ntCurr = (it.decor && it.decor.novayaTsenaCurr) !== undefined ? it.decor.novayaTsenaCurr : '₽';
         if (ntVal) {
@@ -4078,6 +4080,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const top = (decorBlockPos !== 'bottom');
         effective.outsideShow = top;
         effective.bottomShow = !top;
+      }
+      if (id === 'novaya_tsena') {
+        if (templateFonts) templateFonts.priceCross = true;
+        if (priceCrossToggle) priceCrossToggle.checked = true;
       }
     });
     templateDecor = effective;
@@ -4584,6 +4590,20 @@ document.addEventListener('DOMContentLoaded', () => {
     return appliedCount;
   }
 
+  // Проверяет, перечёркнута ли цена товара (учитывая флаг priceCross, пресет «Новая цена» и шаблонные настройки)
+  function isItemPriceCrossed(item, fallback = false) {
+    if (!item) return !!fallback;
+    if (item.priceCross === true) return true;
+    if (item.priceCross === false) return false;
+    const hasNovaya = (
+      (Array.isArray(item.decorPresets) && item.decorPresets.includes('novaya_tsena')) ||
+      item.decorPreset === 'novaya_tsena' ||
+      (item.decor && item.decor.novayaTsenaVal != null && String(item.decor.novayaTsenaVal).trim() !== '')
+    );
+    if (hasNovaya) return true;
+    return !!fontOf(item, 'priceCross', fallback);
+  }
+
   // Функция отрисовки/обновления наложения красного креста на блок цены
   function applyCrossOverlay(container, isCrossed, color, width) {
     if (!container) return;
@@ -4606,6 +4626,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const inner = container.querySelector('.price-box-inner');
     if (inner) inner.classList.toggle('is-crossed', !!isCrossed);
     container.classList.toggle('is-crossed', !!isCrossed);
+    const wEl = container.closest ? container.closest('.wobbler-element') : null;
+    if (wEl) wEl.classList.toggle('price-crossed', !!isCrossed);
   }
 
   // Подсветка иконки 🎨: активна, если у товара выбран хотя бы один пресет.
@@ -4622,7 +4644,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const it = itemsData[idx];
     const tf = templateFonts || {};
     const templateCross = !!tf.priceCross || !!(priceCrossToggle && priceCrossToggle.checked);
-    const isCrossed = fontOf(it, 'priceCross', templateCross);
+    const isCrossed = isItemPriceCrossed(it, templateCross);
     const isCustom = it && it.priceCross !== undefined;
     const title = isCrossed
       ? `Цена перечёркнута${isCustom ? ' (для этого товара)' : ' (по шаблону)'}. Нажмите, чтобы снять/поставить`
@@ -9712,7 +9734,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!itemsData[idx]) itemsData[idx] = freshItem();
         const tf = templateFonts || {};
         const templateCross = !!tf.priceCross || !!(priceCrossToggle && priceCrossToggle.checked);
-        const current = fontOf(itemsData[idx], 'priceCross', templateCross);
+        const current = isItemPriceCrossed(itemsData[idx], templateCross);
         itemsData[idx].priceCross = !current;
         refreshCrossBtnState(idx, crossBtn);
         if (fontApplyMode === 'item' && priceCrossToggle) {
@@ -11675,7 +11697,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Красный крест на цене (клон печати/раскладки)
     {
       const tfCross = templateFonts || {};
-      const isCrossed = fontOf(item, 'priceCross', !!tfCross.priceCross || !!(priceCrossToggle && priceCrossToggle.checked));
+      const templateCross = !!tfCross.priceCross || !!(priceCrossToggle && priceCrossToggle.checked);
+      const isCrossed = isItemPriceCrossed(item, templateCross);
       const crossColor = fontOf(item, 'priceCrossColor', tfCross.priceCrossColor || (priceCrossColor ? priceCrossColor.value : '#e63946'));
       const crossWidth = fontOf(item, 'priceCrossWidth', tfCross.priceCrossWidth != null ? tfCross.priceCrossWidth : (priceCrossWidth ? priceCrossWidth.value : 7));
       applyCrossOverlay(box || clone.querySelector('.wobbler-price-box'), isCrossed, crossColor, crossWidth);
@@ -12233,7 +12256,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Красный крест на цене (мульти-печать)
     {
-      const isCrossed = fontOf(item, 'priceCross', !!tf.priceCross);
+      const templateCross = !!tf.priceCross;
+      const isCrossed = isItemPriceCrossed(item, templateCross);
       const crossColor = fontOf(item, 'priceCrossColor', tf.priceCrossColor || '#e63946');
       const crossWidth = fontOf(item, 'priceCrossWidth', tf.priceCrossWidth != null ? tf.priceCrossWidth : 7);
       applyCrossOverlay(box || clone.querySelector('.wobbler-price-box'), isCrossed, crossColor, crossWidth);
@@ -12438,8 +12462,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const isStopPreset = (ctx.key === 'stop' || ctx.tb?.bgImage === 'stop_text.png' || ctx.tb?.bgImage === 'stop_empty.png' || clone.classList.contains('is-stop-template'));
     clone.classList.toggle('is-stop-template', isStopPreset);
     if (isStopPreset) {
+      const itemTitle = (item && item.title) ? item.title.trim() : '';
       const p = preset || (activeTemplateRef && builtInPresets[activeTemplateRef.key]) || {};
-      const isGraphic = (p.stopMode === 'graphic' && (!itemTitle || itemTitle === 'СТОП'));
+      const stopMode = p.stopMode || (item && item.stopMode) || 'graphic';
+      const isGraphic = (stopMode === 'graphic' && (!itemTitle || itemTitle === 'СТОП'));
 
       clone.classList.toggle('is-stop-graphic', isGraphic);
       clone.classList.toggle('is-stop-custom', !isGraphic);
@@ -12954,12 +12980,13 @@ document.addEventListener('DOMContentLoaded', () => {
       previewPriceBox.style.transform = `translate(${lp.price.x}mm, ${yOffset}mm) rotate(${layerRotate}deg)${pScaleStr}`;
 
       // Красный крест на цене
-      const isCrossed = fontOf(activeItem, 'priceCross', !!tf.priceCross || !!(priceCrossToggle && priceCrossToggle.checked));
+      const templateCross = !!tf.priceCross || !!(priceCrossToggle && priceCrossToggle.checked);
+      const isCrossed = isItemPriceCrossed(activeItem, templateCross);
       const crossColor = fontOf(activeItem, 'priceCrossColor', tf.priceCrossColor || (priceCrossColor ? priceCrossColor.value : '#e63946'));
       const crossWidth = fontOf(activeItem, 'priceCrossWidth', tf.priceCrossWidth != null ? tf.priceCrossWidth : (priceCrossWidth ? priceCrossWidth.value : 7));
       applyCrossOverlay(previewPriceBox, isCrossed, crossColor, crossWidth);
       if (priceCrossWidthVal && priceCrossWidth) priceCrossWidthVal.textContent = priceCrossWidth.value;
-      if (priceCrossSettingsRow && priceCrossToggle) priceCrossSettingsRow.style.display = priceCrossToggle.checked ? 'flex' : 'none';
+      if (priceCrossSettingsRow && priceCrossToggle) priceCrossSettingsRow.style.display = (priceCrossToggle.checked || isCrossed) ? 'flex' : 'none';
 
       priceSizeVal.textContent = priceSize.value;
       priceOffsetYVal.textContent = priceOffsetY.value;
@@ -14996,7 +15023,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
     } else {
-      const baseItem = { title: inputTitle.value.trim(), price: inputPrice.value.replace(/\s+$/, ''), subtitle: (inputSubtitle ? inputSubtitle.value.trim() : ''), labelPos: singleLabelPos };
+      const act0 = (itemsData && itemsData[0]) ? itemsData[0] : {};
+      const baseItem = Object.assign({}, act0, {
+        title: inputTitle.value.trim(),
+        price: inputPrice.value.replace(/\s+$/, ''),
+        subtitle: (inputSubtitle ? inputSubtitle.value.trim() : ''),
+        labelPos: singleLabelPos,
+        priceCross: act0.priceCross !== undefined ? act0.priceCross : (priceCrossToggle ? priceCrossToggle.checked : false)
+      });
       let times = 1;
       if (singleRepeatCount) {
         if (singleRepeatCount.value === 'auto') {
@@ -15228,7 +15262,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!isNaN(rep) && rep > 0) repCount = rep;
           }
         }
-        return [{ title, price, subtitle, digit, labelPos: singleLabelPos, count: repCount }];
+        const act0 = (itemsData && itemsData[0]) ? itemsData[0] : {};
+        return [Object.assign({}, act0, {
+          title, price, subtitle, digit,
+          labelPos: singleLabelPos,
+          count: repCount,
+          priceCross: act0.priceCross !== undefined ? act0.priceCross : (priceCrossToggle ? priceCrossToggle.checked : false)
+        })];
       }
       return [];
     }
@@ -18764,14 +18804,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Print Handlers with Pre-Flight Audit Check
   function handlePrintRequest(isPdf = false, isMulti = false) {
-    const audit = runPreflightAudit();
-    if (audit.hasErrors || audit.hasWarnings) {
-      showPreflightModal(() => {
+    try {
+      if (typeof isDigitsActive === 'function' && isDigitsActive()) {
+        if (isPdf) downloadPrintAreaPdf(false);
+        else triggerPrint();
+        return;
+      }
+      if (typeof isCalendarActive === 'function' && isCalendarActive()) {
+        if (isPdf) downloadPrintAreaPdf(false);
+        else triggerPrint();
+        return;
+      }
+
+      const audit = (typeof runPreflightAudit === 'function') ? runPreflightAudit() : { hasErrors: false, hasWarnings: false };
+      if (audit && (audit.hasErrors || audit.hasWarnings)) {
+        showPreflightModal(() => {
+          if (isPdf) downloadPrintAreaPdf(isMulti);
+          else if (isMulti) runMultiPrintFromUI();
+          else triggerPrint();
+        });
+      } else {
         if (isPdf) downloadPrintAreaPdf(isMulti);
         else if (isMulti) runMultiPrintFromUI();
         else triggerPrint();
-      });
-    } else {
+      }
+    } catch (err) {
+      console.error('handlePrintRequest error:', err);
       if (isPdf) downloadPrintAreaPdf(isMulti);
       else if (isMulti) runMultiPrintFromUI();
       else triggerPrint();
@@ -19711,12 +19769,12 @@ document.addEventListener('DOMContentLoaded', () => {
         copyItemsModal.classList.remove('active');
         return;
       }
-      if (typeof shortcutsModal !== 'undefined' && shortcutsModal && shortcutsModal.style.display !== 'none') {
-        shortcutsModal.style.display = 'none';
+      if (typeof shortcutsModal !== 'undefined' && shortcutsModal && (shortcutsModal.classList.contains('active') || shortcutsModal.style.display !== 'none')) {
+        closeShortcutsModal();
         return;
       }
-      if (typeof preflightModal !== 'undefined' && preflightModal && preflightModal.style.display !== 'none') {
-        preflightModal.style.display = 'none';
+      if (typeof preflightModal !== 'undefined' && preflightModal && (preflightModal.classList.contains('active') || preflightModal.style.display !== 'none')) {
+        closePreflightModal();
         return;
       }
       if (typeof sidebarSortMenu !== 'undefined' && sidebarSortMenu && sidebarSortMenu.style.display !== 'none') {
@@ -20402,6 +20460,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Одиночный режим печати (активный шаблон)
+    if (typeof isDigitsActive === 'function' && isDigitsActive()) {
+      return { hasErrors: false, hasWarnings: false, isEmpty: false, issues: [], totalCards: 11, totalSheets: 1, sheetCapacity: 11, filledItemsCount: 11, isMultiJob: false, copiesDetail: 'Цифры розлива' };
+    }
+    if (typeof isCalendarActive === 'function' && isCalendarActive()) {
+      return { hasErrors: false, hasWarnings: false, isEmpty: false, issues: [], totalCards: 1, totalSheets: 1, sheetCapacity: 1, filledItemsCount: 1, isMultiJob: false, copiesDetail: 'Календарь' };
+    }
+
     const isMultiMode = document.querySelector('input[name="printMode"]:checked')?.value === 'multi';
     const activeKey = (activeTemplateRef && activeTemplateRef.kind === 'builtin') ? activeTemplateRef.key : '';
     const wCm = parseFloat(wobblerWidthInput.value) || 6.5;
@@ -20443,6 +20508,18 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    if (activeKey === 'stop' && !isMultiMode && filledItems.length === 0) {
+      filledItems.push({
+        it: {
+          title: 'СТОП',
+          price: '',
+          subtitle: '',
+          count: sheetCapacity
+        },
+        idx: 0
+      });
+    }
+
     if (filledItems.length === 0) {
       issues.push({
         type: 'err',
@@ -20456,6 +20533,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. Проверка цен и тиража (шаблоны без цены исключены из проверки)
     const activePreset = (typeof getActivePreset === 'function') ? getActivePreset() : null;
     const isSinglePriceExempt = (
+      activeKey === 'stop' ||
       activeKey === 'korona_a5' || activeKey === 'aktsiya_a5' || activeKey === 'a5' ||
       activeKey === 'novy_vkus' || activeKey === 'novinka' || activeKey === 'tomat' || activeKey === 'sladko' ||
       (activePreset && activePreset.showPrice === false) ||
@@ -20740,10 +20818,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     preflightModal.style.display = 'flex';
+    preflightModal.classList.add('active');
   }
 
   function closePreflightModal() {
-    if (preflightModal) preflightModal.style.display = 'none';
+    if (preflightModal) {
+      preflightModal.classList.remove('active');
+      preflightModal.style.display = 'none';
+    }
   }
 
   if (preflightCloseBtn) preflightCloseBtn.addEventListener('click', closePreflightModal);
@@ -20824,11 +20906,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const shortcutsCloseIconBtn = document.getElementById('shortcutsCloseIconBtn');
 
   function openShortcutsModal() {
-    if (shortcutsModal) shortcutsModal.style.display = 'flex';
+    if (shortcutsModal) {
+      shortcutsModal.style.display = 'flex';
+      shortcutsModal.classList.add('active');
+    }
   }
 
   function closeShortcutsModal() {
-    if (shortcutsModal) shortcutsModal.style.display = 'none';
+    if (shortcutsModal) {
+      shortcutsModal.classList.remove('active');
+      shortcutsModal.style.display = 'none';
+    }
   }
 
   function toggleShortcutsModal() {
