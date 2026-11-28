@@ -6751,6 +6751,12 @@ body.is-pdf-exporting #printArea {
   position: relative !important;
 }
 
+/* html2canvas не масштабирует глифы текста через scaleY(1.35) и смещает цифры вниз */
+.pdf-export-flow .wobbler-element.is-beer-a5 .price-box-inner,
+.pdf-export-flow .wobbler-element.is-beer-a5-aktsiya .beer-promo-price-box .price-box-inner {
+  transform: none !important;
+}
+
 /* Common Layout for Print & PDF Pages */
 .print-page,
 #printArea .print-page,

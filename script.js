@@ -1186,7 +1186,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let db = null;
     try {
       db = await openExtraBgDb();
-    } catch (_) {}
+    } catch (_) { }
 
     if (!db) {
       loadExtraBackgroundsFallback();
@@ -4695,12 +4695,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**
-   * Для надёжной печати в Firefox и других браузерах запекает видимые SVG-кресты
-   * в самостоятельные векторные <img src="data:image/svg+xml,..."> с явными
-   * размерами и без зависимости от flex/inline-flex контейнеров при @media print.
+   * Для надёжной печати в Firefox и экспорта в PDF запекает видимые SVG-кресты
+   * в самостоятельные <img> с явными размерами и вне flex/inline-flex контейнеров.
+   * При asPng=true (для html2pdf) рисует линии на high-DPI canvas в PNG DataURL,
+   * полностью исключая артефакты SVG-рендера html2canvas.
    */
-  function bakePrintCrossOverlays(container) {
+  function bakePrintCrossOverlays(container, opts = {}) {
     if (!container) return Promise.resolve();
+    const asPng = !!(opts && opts.asPng);
     const waitPromises = [];
     const wrappers = container.querySelectorAll('.print-wobbler-wrapper');
 
@@ -4744,7 +4746,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!lines.length) return;
 
         const scaleFactor = (w + h) / 200;
-        const linesMarkup = lines.map(ln => {
+        const parsedLines = lines.map(ln => {
           const x1 = ((parseFloat(ln.getAttribute('x1')) || 0) / 100) * w;
           const y1 = ((parseFloat(ln.getAttribute('y1')) || 0) / 100) * h;
           const x2 = ((parseFloat(ln.getAttribute('x2')) || 0) / 100) * w;
@@ -4754,18 +4756,44 @@ document.addEventListener('DOMContentLoaded', () => {
           const rawSw = parseFloat(ln.getAttribute('stroke-width')) || parseFloat(lnCs && lnCs.strokeWidth) || 7;
           const sw = Math.max(1.5, rawSw * scaleFactor);
           const linecap = (lnCs && lnCs.strokeLinecap) || ln.getAttribute('stroke-linecap') || (isPromo ? 'square' : 'round');
-          const opacity = ln.getAttribute('opacity') || (lnCs && lnCs.opacity) || '1';
-          return `<line x1="${x1.toFixed(2)}" y1="${y1.toFixed(2)}" x2="${x2.toFixed(2)}" y2="${y2.toFixed(2)}" stroke="${stroke}" stroke-width="${sw.toFixed(2)}" stroke-linecap="${linecap}" opacity="${opacity}"/>`;
-        }).join('');
+          const opacity = parseFloat(ln.getAttribute('opacity') || (lnCs && lnCs.opacity) || '1');
+          return { x1, y1, x2, y2, stroke, sw, linecap, opacity: isNaN(opacity) ? 1 : opacity };
+        });
 
-        const svgDoc = `<svg xmlns="http://www.w3.org/2000/svg" width="${wStr}" height="${hStr}" viewBox="0 0 ${wStr} ${hStr}">${linesMarkup}</svg>`;
         const img = document.createElement('img');
         img.className = 'baked-print-cross-img';
         img.alt = '';
         img.setAttribute('aria-hidden', 'true');
         img.width = Math.max(1, Math.round(w));
         img.height = Math.max(1, Math.round(h));
-        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgDoc);
+
+        if (asPng) {
+          const dpr = 4;
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(4, Math.round(w * dpr));
+          canvas.height = Math.max(4, Math.round(h * dpr));
+          const ctx = canvas.getContext('2d');
+          ctx.scale(dpr, dpr);
+          parsedLines.forEach(l => {
+            ctx.save();
+            ctx.globalAlpha = l.opacity;
+            ctx.strokeStyle = l.stroke;
+            ctx.lineWidth = l.sw;
+            ctx.lineCap = l.linecap === 'square' ? 'square' : 'round';
+            ctx.beginPath();
+            ctx.moveTo(l.x1, l.y1);
+            ctx.lineTo(l.x2, l.y2);
+            ctx.stroke();
+            ctx.restore();
+          });
+          img.src = canvas.toDataURL('image/png');
+        } else {
+          const linesMarkup = parsedLines.map(l =>
+            `<line x1="${l.x1.toFixed(2)}" y1="${l.y1.toFixed(2)}" x2="${l.x2.toFixed(2)}" y2="${l.y2.toFixed(2)}" stroke="${l.stroke}" stroke-width="${l.sw.toFixed(2)}" stroke-linecap="${l.linecap}" opacity="${l.opacity}"/>`
+          ).join('');
+          const svgDoc = `<svg xmlns="http://www.w3.org/2000/svg" width="${wStr}" height="${hStr}" viewBox="0 0 ${wStr} ${hStr}">${linesMarkup}</svg>`;
+          img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgDoc);
+        }
 
         waitPromises.push(new Promise(resolve => {
           if (img.complete) { resolve(); return; }
@@ -5521,8 +5549,8 @@ document.addEventListener('DOMContentLoaded', () => {
       row.forEach(cell => {
         const cellEl = document.createElement('div');
         const isWeekend = highlightWeekends && (cell.col >= 6);
-        cellEl.className = 'calendar-day-cell' + 
-          (cell.blank ? ' is-blank' : '') + 
+        cellEl.className = 'calendar-day-cell' +
+          (cell.blank ? ' is-blank' : '') +
           (isWeekend ? ' is-weekend' : '');
 
         if (!cell.blank) {
@@ -5603,7 +5631,7 @@ document.addEventListener('DOMContentLoaded', () => {
         copies: document.getElementById('calendarCopiesInput')?.value || '1'
       };
       localStorage.setItem(CALENDAR_STORAGE_KEY, JSON.stringify(data));
-    } catch (e) {}
+    } catch (e) { }
   }
 
   // Загрузка настроек календаря из localStorage
@@ -15775,20 +15803,22 @@ document.addEventListener('DOMContentLoaded', () => {
         useCORS: true,
         allowTaint: false,
         logging: false,
-        backgroundColor: '#ffffff',
-        scrollX: 0,
-        scrollY: 0
+        backgroundColor: '#ffffff'
       },
       jsPDF: { unit: 'mm', format: 'a4', orientation: isLandscape ? 'landscape' : 'portrait' },
       pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
     };
+
+    const prevScrollX = window.scrollX || 0;
+    const prevScrollY = window.scrollY || 0;
+    window.scrollTo(0, 0);
 
     try {
       if (document.fonts && document.fonts.ready) {
         await document.fonts.ready;
       }
       await new Promise(r => setTimeout(r, 250));
-      await bakePrintCrossOverlays(exportWrapper);
+      await bakePrintCrossOverlays(exportWrapper, { asPng: true });
       await html2pdf().set(opt).from(exportWrapper).save();
     } catch (err) {
       console.error('html2pdf error:', err);
@@ -15800,6 +15830,7 @@ document.addEventListener('DOMContentLoaded', () => {
         alert('Ошибка при сохранении PDF: ' + (err.message || err));
       }
     } finally {
+      window.scrollTo(prevScrollX, prevScrollY);
       if (exportWrapper.parentNode) {
         exportWrapper.parentNode.removeChild(exportWrapper);
       }
@@ -22983,8 +23014,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function autoFitBeerPreviewIfActive(force = false) {
     if ((typeof isBeerA5Active !== 'function' || !isBeerA5Active()) &&
-        (typeof isDigitsActive !== 'function' || !isDigitsActive()) &&
-        (typeof isCalendarActive !== 'function' || !isCalendarActive())) return;
+      (typeof isDigitsActive !== 'function' || !isDigitsActive()) &&
+      (typeof isCalendarActive !== 'function' || !isCalendarActive())) return;
     if (typeof beerPreviewFitMode !== 'undefined' && !beerPreviewFitMode) return;
     const scale = calcFitScale(force);
     applyPreviewScale(scale);
