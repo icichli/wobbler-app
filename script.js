@@ -4820,6 +4820,81 @@ document.addEventListener('DOMContentLoaded', () => {
     return Promise.all(waitPromises);
   }
 
+  /**
+   * В шаблонах «Пиво А5» и «Пиво А5 АКЦИЯ» цифры цены растянуты по вертикали (scaleY(1.35)).
+   * html2canvas не применяет scaleY к текстовым глифам, поэтому для точного совпадения
+   * размеров с печатью запекаем символы цифр/валюты в high-DPI PNG на offscreen canvas.
+   */
+  function bakeScaledBeerPricesForPdf(container) {
+    if (!container) return Promise.resolve();
+    const waitPromises = [];
+    const beerEls = container.querySelectorAll('.wobbler-element.is-beer-a5');
+
+    beerEls.forEach(wEl => {
+      const boxes = wEl.querySelectorAll('.wobbler-price-box, .beer-promo-price-box');
+      boxes.forEach(box => {
+        const boxCs = window.getComputedStyle(box);
+        if (!boxCs || boxCs.display === 'none' || boxCs.visibility === 'hidden') return;
+
+        const cells = box.querySelectorAll('.price-digit:not(.price-space), .price-curr');
+        cells.forEach(cell => {
+          const cellCs = window.getComputedStyle(cell);
+          if (!cellCs || cellCs.display === 'none' || cellCs.visibility === 'hidden') return;
+          const char = (cell.textContent || '').trim();
+          if (!char) return;
+
+          const rect = cell.getBoundingClientRect();
+          const w = rect.width;
+          const h = rect.height;
+          if (!w || w <= 1 || !h || h <= 1) return;
+
+          const dpr = 4;
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(4, Math.round(w * dpr));
+          canvas.height = Math.max(4, Math.round(h * dpr));
+          const ctx = canvas.getContext('2d');
+
+          const fontStr = `${cellCs.fontWeight || '900'} ${cellCs.fontSize || '69.33px'} ${cellCs.fontFamily || "'Montserrat', Arial, sans-serif"}`;
+          ctx.font = fontStr;
+          const mRef = ctx.measureText('8');
+          const fontPx = parseFloat(cellCs.fontSize) || 69.33;
+          const ascent = mRef.actualBoundingBoxAscent || fontPx * 0.72;
+          const descent = mRef.actualBoundingBoxDescent || 0;
+          const yBaseline = (ascent - descent) / 2;
+
+          ctx.scale(dpr, dpr);
+          ctx.translate(w / 2, h / 2);
+          ctx.scale(1, 1.35);
+          ctx.fillStyle = cellCs.color || '#000000';
+          ctx.font = fontStr;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'alphabetic';
+          ctx.fillText(char, 0, yBaseline);
+
+          const img = document.createElement('img');
+          img.alt = char;
+          img.width = Math.max(1, Math.round(w));
+          img.height = Math.max(1, Math.round(h));
+          img.style.cssText = `width:${w.toFixed(2)}px;height:${h.toFixed(2)}px;display:block;pointer-events:none;`;
+          img.src = canvas.toDataURL('image/png');
+
+          waitPromises.push(new Promise(resolve => {
+            if (img.complete) { resolve(); return; }
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+            setTimeout(resolve, 200);
+          }));
+
+          cell.textContent = '';
+          cell.style.setProperty('padding', '0', 'important');
+          cell.appendChild(img);
+        });
+      });
+    });
+
+    return Promise.all(waitPromises);
+  }
+
   // Подсветка иконки 🎨: активна, если у товара выбран хотя бы один пресет.
   function refreshDecorBtnState(i, btn) {
     const isAct = getItemDecorPresetIds(itemsData[i]).length > 0;
@@ -15818,6 +15893,7 @@ document.addEventListener('DOMContentLoaded', () => {
         await document.fonts.ready;
       }
       await new Promise(r => setTimeout(r, 250));
+      await bakeScaledBeerPricesForPdf(exportWrapper);
       await bakePrintCrossOverlays(exportWrapper, { asPng: true });
       await html2pdf().set(opt).from(exportWrapper).save();
     } catch (err) {
