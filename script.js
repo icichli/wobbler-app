@@ -6200,6 +6200,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (t.includes('maisel') || t.includes('майзел') || t.includes('майзель')) return 'images/beer/Maisels_Weisse_Original.jpg';
       if (t.includes('bayreuth') || t.includes('байройт') || t.includes('байрейт')) return 'images/beer/Bayreuther_Hell.jpg';
       if (t.includes('4brewers') || t.includes('4 brewers') || t.includes('хефевайцен')) return 'images/beer/4BREWERS_Hefeweizen.jpg';
+      if (t.includes('гласност') || t.includes('glasnost')) return 'images/beer/Glasnost_IPA.jpg';
       return '';
     }
   }
@@ -7324,6 +7325,19 @@ document.addEventListener('DOMContentLoaded', () => {
       beerStyle: 'Пшеничный эль',
       composition: 'СОСТАВ: вода, солод пив. яч., солод пив. пш., хмель, дрожжи',
       beerPhoto: '4BREWERS_Hefeweizen.jpg'
+    },
+    {
+      title: 'Гласность IPA',
+      category: 'Крафт',
+      categories: ["Крафт"],
+      price: '',
+      beerStrength: '6,0%',
+      beerBitterness: '50',
+      beerDensity: '16,0%',
+      beerType: 'светлое нефильтрованное',
+      beerStyle: 'ИПА',
+      composition: 'СОСТАВ: вода, солод пив. яч., хмель, дрожжи',
+      beerPhoto: 'Glasnost_IPA.jpg'
     },
     {
       title: 'Барбарис',
