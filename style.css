@@ -6954,6 +6954,28 @@ body.is-pdf-exporting #printArea {
     filter: none !important;
     visibility: visible !important;
   }
+  /* Обход бага Firefox при печати: position:absolute внутри flex/inline-flex */
+  #printArea .wobbler-price-box .price-box-inner {
+    display: inline-block !important;
+    position: relative !important;
+  }
+  #printArea .wobbler-price-box .price-val {
+    display: inline-flex !important;
+    vertical-align: baseline !important;
+  }
+  #printArea .wobbler-price-box .price-curr {
+    display: inline-block !important;
+    vertical-align: baseline !important;
+  }
+  #printArea .wobbler-element.is-beer-a5-aktsiya .beer-promo-row,
+  #printArea .wobbler-element.is-beer-a5-aktsiya .beer-promo-price-box {
+    display: block !important;
+  }
+  #printArea .baked-print-cross-img {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
 }
 
 .print-page .interactive-2d-box,

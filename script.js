@@ -4694,6 +4694,103 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  /**
+   * Для надёжной печати в Firefox и других браузерах запекает видимые SVG-кресты
+   * в самостоятельные векторные <img src="data:image/svg+xml,..."> с явными
+   * размерами и без зависимости от flex/inline-flex контейнеров при @media print.
+   */
+  function bakePrintCrossOverlays(container) {
+    if (!container) return Promise.resolve();
+    const waitPromises = [];
+    const wrappers = container.querySelectorAll('.print-wobbler-wrapper');
+
+    wrappers.forEach(wrapper => {
+      const wrapRect = wrapper.getBoundingClientRect();
+      if (!wrapRect || wrapRect.width <= 0 || wrapRect.height <= 0) return;
+
+      const overlays = wrapper.querySelectorAll('.price-cross-overlay');
+      overlays.forEach(ov => {
+        const cs = window.getComputedStyle(ov);
+        if (!cs || cs.display === 'none' || cs.visibility === 'hidden') return;
+
+        const svg = ov.querySelector('svg');
+        if (!svg) return;
+
+        const ovRect = ov.getBoundingClientRect();
+        if (!ovRect || ovRect.width <= 1 || ovRect.height <= 1) return;
+
+        const isPromo = ov.classList.contains('beer-promo-cross-overlay');
+        const priceBox = ov.closest('.wobbler-price-box, .beer-promo-price-box');
+        const boxTransform = priceBox ? window.getComputedStyle(priceBox).transform : 'none';
+        let hasRotation = false;
+        if (boxTransform && boxTransform !== 'none') {
+          const m = boxTransform.match(/^matrix\(([^)]+)\)$/);
+          if (m) {
+            const parts = m[1].split(',').map(Number);
+            if (Math.abs(parts[1] || 0) > 0.001 || Math.abs(parts[2] || 0) > 0.001) {
+              hasRotation = true;
+            }
+          } else {
+            hasRotation = true;
+          }
+        }
+
+        const w = hasRotation ? Math.max(1, ov.offsetWidth || ovRect.width) : ovRect.width;
+        const h = hasRotation ? Math.max(1, ov.offsetHeight || ovRect.height) : ovRect.height;
+        const wStr = w.toFixed(2);
+        const hStr = h.toFixed(2);
+
+        const lines = Array.from(svg.querySelectorAll('line'));
+        if (!lines.length) return;
+
+        const scaleFactor = (w + h) / 200;
+        const linesMarkup = lines.map(ln => {
+          const x1 = ((parseFloat(ln.getAttribute('x1')) || 0) / 100) * w;
+          const y1 = ((parseFloat(ln.getAttribute('y1')) || 0) / 100) * h;
+          const x2 = ((parseFloat(ln.getAttribute('x2')) || 0) / 100) * w;
+          const y2 = ((parseFloat(ln.getAttribute('y2')) || 0) / 100) * h;
+          const lnCs = window.getComputedStyle(ln);
+          const stroke = (lnCs && lnCs.stroke && lnCs.stroke !== 'none') ? lnCs.stroke : (ln.getAttribute('stroke') || (isPromo ? '#e3000f' : '#e63946'));
+          const rawSw = parseFloat(ln.getAttribute('stroke-width')) || parseFloat(lnCs && lnCs.strokeWidth) || 7;
+          const sw = Math.max(1.5, rawSw * scaleFactor);
+          const linecap = (lnCs && lnCs.strokeLinecap) || ln.getAttribute('stroke-linecap') || (isPromo ? 'square' : 'round');
+          const opacity = ln.getAttribute('opacity') || (lnCs && lnCs.opacity) || '1';
+          return `<line x1="${x1.toFixed(2)}" y1="${y1.toFixed(2)}" x2="${x2.toFixed(2)}" y2="${y2.toFixed(2)}" stroke="${stroke}" stroke-width="${sw.toFixed(2)}" stroke-linecap="${linecap}" opacity="${opacity}"/>`;
+        }).join('');
+
+        const svgDoc = `<svg xmlns="http://www.w3.org/2000/svg" width="${wStr}" height="${hStr}" viewBox="0 0 ${wStr} ${hStr}">${linesMarkup}</svg>`;
+        const img = document.createElement('img');
+        img.className = 'baked-print-cross-img';
+        img.alt = '';
+        img.setAttribute('aria-hidden', 'true');
+        img.width = Math.max(1, Math.round(w));
+        img.height = Math.max(1, Math.round(h));
+        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgDoc);
+
+        waitPromises.push(new Promise(resolve => {
+          if (img.complete) { resolve(); return; }
+          img.onload = () => resolve();
+          img.onerror = () => resolve();
+          setTimeout(resolve, 200);
+        }));
+
+        svg.style.setProperty('display', 'none', 'important');
+
+        if (!hasRotation) {
+          img.style.cssText = `position:absolute;left:${(ovRect.left - wrapRect.left).toFixed(2)}px;top:${(ovRect.top - wrapRect.top).toFixed(2)}px;width:${wStr}px;height:${hStr}px;pointer-events:none;z-index:50;display:block;`;
+          wrapper.appendChild(img);
+        } else {
+          ov.style.setProperty('width', `${wStr}px`, 'important');
+          ov.style.setProperty('height', `${hStr}px`, 'important');
+          img.style.cssText = `width:100%;height:100%;display:block;pointer-events:none;`;
+          ov.appendChild(img);
+        }
+      });
+    });
+
+    return Promise.all(waitPromises);
+  }
+
   // Подсветка иконки 🎨: активна, если у товара выбран хотя бы один пресет.
   function refreshDecorBtnState(i, btn) {
     const isAct = getItemDecorPresetIds(itemsData[i]).length > 0;
@@ -15194,6 +15291,7 @@ document.addEventListener('DOMContentLoaded', () => {
         img.style.objectFit = 'cover';
       });
       document.body.classList.add('is-printing');
+      void printArea.offsetWidth;
       const cleanup = () => {
         document.body.classList.remove('is-printing');
       };
@@ -15206,10 +15304,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         setTimeout(cleanup, 1200);
       };
+      const runBakedPrint = () => {
+        bakePrintCrossOverlays(printArea).then(() => setTimeout(launchPrint, 250)).catch(() => setTimeout(launchPrint, 250));
+      };
       if (document.fonts && document.fonts.ready) {
-        document.fonts.ready.then(() => setTimeout(launchPrint, 250)).catch(() => setTimeout(launchPrint, 250));
+        document.fonts.ready.then(runBakedPrint).catch(runBakedPrint);
       } else {
-        setTimeout(launchPrint, 250);
+        runBakedPrint();
       }
     } catch (err) {
       console.error('triggerPrint error:', err);
@@ -15425,6 +15526,7 @@ document.addEventListener('DOMContentLoaded', () => {
         img.style.objectFit = 'cover';
       });
       document.body.classList.add('is-printing');
+      void printArea.offsetWidth;
       const cleanup = () => {
         document.body.classList.remove('is-printing');
       };
@@ -15437,10 +15539,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         setTimeout(cleanup, 1200);
       };
+      const runBakedPrint = () => {
+        bakePrintCrossOverlays(printArea).then(() => setTimeout(launchPrint, 250)).catch(() => setTimeout(launchPrint, 250));
+      };
       if (document.fonts && document.fonts.ready) {
-        document.fonts.ready.then(() => setTimeout(launchPrint, 250)).catch(() => setTimeout(launchPrint, 250));
+        document.fonts.ready.then(runBakedPrint).catch(runBakedPrint);
       } else {
-        setTimeout(launchPrint, 250);
+        runBakedPrint();
       }
       return res;
     } catch (err) {
