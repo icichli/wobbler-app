@@ -4774,9 +4774,10 @@ document.addEventListener('DOMContentLoaded', () => {
           setTimeout(resolve, 200);
         }));
 
-        svg.style.setProperty('display', 'none', 'important');
+        svg.remove();
 
         if (!hasRotation) {
+          ov.style.setProperty('display', 'none', 'important');
           img.style.cssText = `position:absolute;left:${(ovRect.left - wrapRect.left).toFixed(2)}px;top:${(ovRect.top - wrapRect.top).toFixed(2)}px;width:${wStr}px;height:${hStr}px;pointer-events:none;z-index:50;display:block;`;
           wrapper.appendChild(img);
         } else {
@@ -12180,7 +12181,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <span class="price-val"></span>
               <span class="price-curr"></span>
               <div class="price-cross-overlay" aria-hidden="true" style="display:none;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none">
                   <line class="cross-shadow-1" x1="2" y1="2" x2="98" y2="98" stroke="#000000" stroke-width="11" stroke-linecap="round" opacity="0.35"/>
                   <line class="cross-shadow-2" x1="98" y1="2" x2="2" y2="98" stroke="#000000" stroke-width="11" stroke-linecap="round" opacity="0.35"/>
                   <line class="cross-line-1" x1="2" y1="2" x2="98" y2="98" stroke="#e63946" stroke-width="7" stroke-linecap="round"/>
@@ -12210,7 +12211,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span class="price-val"></span>
                 <span class="price-curr">₽</span>
                 <div class="price-cross-overlay beer-promo-cross-overlay" aria-hidden="true" style="display:none;">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none">
                     <line class="cross-shadow-1" x1="0" y1="0" x2="100" y2="100" stroke="#000000" stroke-width="9.5" stroke-linecap="square" opacity="0.3"/>
                     <line class="cross-shadow-2" x1="100" y1="0" x2="0" y2="100" stroke="#000000" stroke-width="9.5" stroke-linecap="square" opacity="0.3"/>
                     <line class="cross-line-1" x1="0" y1="0" x2="100" y2="100" stroke="#e3000f" stroke-width="6.5" stroke-linecap="square"/>
@@ -15774,7 +15775,9 @@ document.addEventListener('DOMContentLoaded', () => {
         useCORS: true,
         allowTaint: false,
         logging: false,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        scrollX: 0,
+        scrollY: 0
       },
       jsPDF: { unit: 'mm', format: 'a4', orientation: isLandscape ? 'landscape' : 'portrait' },
       pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
@@ -15785,6 +15788,7 @@ document.addEventListener('DOMContentLoaded', () => {
         await document.fonts.ready;
       }
       await new Promise(r => setTimeout(r, 250));
+      await bakePrintCrossOverlays(exportWrapper);
       await html2pdf().set(opt).from(exportWrapper).save();
     } catch (err) {
       console.error('html2pdf error:', err);
