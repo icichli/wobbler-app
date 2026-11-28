@@ -5408,7 +5408,7 @@ body.theme-light .preview-item-badge.mode-template {
   left: -2mm;
   right: -2mm;
   pointer-events: none;
-  z-index: 10;
+  z-index: 20;
   display: none;
 }
 
@@ -5425,7 +5425,6 @@ body.theme-light .preview-item-badge.mode-template {
   height: 100%;
   display: block;
   overflow: visible;
-  filter: drop-shadow(0 0 0.8px rgba(0, 0, 0, 0.9));
 }
 
 /* Большая цифра справа (шаблоны вроде «Снеки с цифрой»): зона от x≈0.70 до
@@ -6941,8 +6940,18 @@ body.is-pdf-exporting #printArea {
   .wobbler-price-box.is-crossed .price-cross-overlay,
   .wobbler-element.price-crossed .price-cross-overlay,
   .print-wobbler-wrapper .wobbler-element.price-crossed .price-cross-overlay,
-  .print-wobbler-wrapper .wobbler-price-box.is-crossed .price-cross-overlay {
+  .print-wobbler-wrapper .wobbler-price-box.is-crossed .price-cross-overlay,
+  .wobbler-element.is-beer-a5-aktsiya.is-promo-discount .beer-promo-row-top .beer-promo-cross-overlay,
+  .print-wobbler-wrapper .wobbler-element.is-beer-a5-aktsiya.is-promo-discount .beer-promo-row-top .beer-promo-cross-overlay {
     display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  .price-cross-overlay svg,
+  .price-cross-overlay line,
+  .beer-promo-cross-overlay svg,
+  .beer-promo-cross-overlay line {
+    filter: none !important;
     visibility: visible !important;
   }
 }
@@ -11106,7 +11115,7 @@ label:has(input:focus-visible) {
   width: 100% !important;
   height: 100% !important;
   pointer-events: none !important;
-  z-index: 10 !important;
+  z-index: 20 !important;
   display: none;
 }
 
@@ -11121,11 +11130,19 @@ label:has(input:focus-visible) {
   overflow: visible !important;
 }
 
-.beer-promo-cross-overlay line {
+.beer-promo-cross-overlay .cross-shadow-1,
+.beer-promo-cross-overlay .cross-shadow-2 {
+  stroke: #000000 !important;
+  stroke-width: 9.5 !important;
+  stroke-linecap: square !important;
+  opacity: 0.3 !important;
+}
+
+.beer-promo-cross-overlay .cross-line-1,
+.beer-promo-cross-overlay .cross-line-2 {
   stroke: #e3000f !important;
   stroke-width: 6.5 !important;
   stroke-linecap: square !important;
-  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.45));
 }
 
 .wobbler-element.is-beer-a5-aktsiya.is-promo-discount .beer-promo-label {

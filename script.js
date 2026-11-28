@@ -4630,6 +4630,70 @@ document.addEventListener('DOMContentLoaded', () => {
     if (wEl) wEl.classList.toggle('price-crossed', !!isCrossed);
   }
 
+  /**
+   * Синхронизирует промо-строки и перечёркивание цены для клона шаблона «Пиво А5 АКЦИЯ».
+   */
+  function applyBeerPromoStateToClone(clone, item, isBeerPromo) {
+    if (!clone) return;
+    clone.classList.toggle('is-beer-a5-aktsiya', !!isBeerPromo);
+    const clonePromoTop = clone.querySelector('.beer-promo-row-top');
+    const clonePromoBottom = clone.querySelector('.beer-promo-row-bottom');
+    const cloneBeerMetrics = clone.querySelector('.beer-metrics-row');
+    const cPriceBox = clone.querySelector('.wobbler-price-box');
+
+    if (!isBeerPromo) {
+      clone.classList.remove('is-promo-discount');
+      if (clonePromoTop) {
+        clonePromoTop.style.display = 'none';
+        const crossEl = clonePromoTop.querySelector('.beer-promo-cross-overlay');
+        if (crossEl) crossEl.style.display = 'none';
+        const inner = clonePromoTop.querySelector('.price-box-inner');
+        if (inner) inner.classList.remove('is-crossed');
+      }
+      if (clonePromoBottom) clonePromoBottom.style.display = 'none';
+      return;
+    }
+
+    if (cloneBeerMetrics) cloneBeerMetrics.style.display = 'none';
+    if (cPriceBox) cPriceBox.style.display = 'none';
+
+    const isDiscount = !!(item && (item.promoMode === 'discount' || item.priceCross === true));
+    clone.classList.toggle('is-promo-discount', isDiscount);
+
+    if (clonePromoTop) {
+      clonePromoTop.style.display = 'flex';
+      const lbl = clonePromoTop.querySelector('.beer-promo-label');
+      if (lbl) {
+        lbl.textContent = (item && item.priceLabel) || '1л -';
+        lbl.style.display = isDiscount ? 'none' : 'flex';
+      }
+      const pVal = clonePromoTop.querySelector('.price-val');
+      const pCur = clonePromoTop.querySelector('.price-curr');
+      renderBeerPromoPriceBox(pVal, pCur, (item && item.price) || '', '₽');
+      const crossEl = clonePromoTop.querySelector('.beer-promo-cross-overlay');
+      if (crossEl) crossEl.style.display = isDiscount ? 'block' : 'none';
+      const inner = clonePromoTop.querySelector('.price-box-inner');
+      if (inner) inner.classList.toggle('is-crossed', isDiscount);
+      const strEl = clonePromoTop.querySelector('.circle-strength .metric-val');
+      if (strEl) strEl.textContent = stripBeerMetric((item && item.beerStrength) || '') || '4,0%';
+    }
+    if (clonePromoBottom) {
+      clonePromoBottom.style.display = 'flex';
+      const lbl2 = clonePromoBottom.querySelector('.beer-promo-label');
+      if (lbl2) {
+        lbl2.textContent = (item && item.price2Label) || '1.5л -';
+        lbl2.style.display = isDiscount ? 'none' : 'flex';
+      }
+      const pVal2 = clonePromoBottom.querySelector('.price-val');
+      const pCur2 = clonePromoBottom.querySelector('.price-curr');
+      renderBeerPromoPriceBox(pVal2, pCur2, (item && item.price2) || '', '₽');
+      if (pVal2) pVal2.style.color = isDiscount ? '#e3000f' : '#000000';
+      if (pCur2) pCur2.style.color = isDiscount ? '#e3000f' : '#000000';
+      const denEl = clonePromoBottom.querySelector('.circle-density .metric-val');
+      if (denEl) denEl.textContent = stripBeerMetric((item && item.beerDensity) || '') || '11,0%';
+    }
+  }
+
   // Подсветка иконки 🎨: активна, если у товара выбран хотя бы один пресет.
   function refreshDecorBtnState(i, btn) {
     const isAct = getItemDecorPresetIds(itemsData[i]).length > 0;
@@ -11694,11 +11758,12 @@ document.addEventListener('DOMContentLoaded', () => {
       box.style.transform = `translate(${lp.price.x}mm, ${yOffset}mm) rotate(${layerRotate}deg)${pScaleStr}`;
     }
 
-    // Красный крест на цене (клон печати/раскладки)
+    // Красный крест на цене (клон печати/раскладки; для «Пиво А5 АКЦИЯ» крест рисуется в promo-строке)
     {
+      const isPromoNow = isBeerA5PromoActive() || clone.classList.contains('is-beer-a5-aktsiya');
       const tfCross = templateFonts || {};
       const templateCross = !!tfCross.priceCross || !!(priceCrossToggle && priceCrossToggle.checked);
-      const isCrossed = isItemPriceCrossed(item, templateCross);
+      const isCrossed = !isPromoNow && isItemPriceCrossed(item, templateCross);
       const crossColor = fontOf(item, 'priceCrossColor', tfCross.priceCrossColor || (priceCrossColor ? priceCrossColor.value : '#e63946'));
       const crossWidth = fontOf(item, 'priceCrossWidth', tfCross.priceCrossWidth != null ? tfCross.priceCrossWidth : (priceCrossWidth ? priceCrossWidth.value : 7));
       applyCrossOverlay(box || clone.querySelector('.wobbler-price-box'), isCrossed, crossColor, crossWidth);
@@ -11780,8 +11845,9 @@ document.addEventListener('DOMContentLoaded', () => {
     clone.style.setProperty('--title-safe-w', `${(slotMetrics.safeWFrac * 100).toFixed(2)}%`);
     clone.style.setProperty('--price-slot-top', `${slotMetrics.priceTop.toFixed(2)}mm`);
 
-    // Пиво А5: рендер специфичных полей товара на клоне
+    // Пиво А5 / Пиво А5 АКЦИЯ: рендер специфичных полей товара на клоне
     const isBeerClone = isBeerA5Active() || clone.classList.contains('is-beer-a5');
+    const isBeerPromoClone = isBeerA5PromoActive() || clone.classList.contains('is-beer-a5-aktsiya');
     clone.classList.toggle('is-beer-a5', isBeerClone);
     const cloneBeerCap = clone.querySelector('.beer-cap-photo-wrap');
     const cloneBeerPhoto = clone.querySelector('.beer-cap-img');
@@ -11825,27 +11891,32 @@ document.addEventListener('DOMContentLoaded', () => {
       if (cloneBeerComp) {
         cloneBeerComp.style.display = 'block';
       }
-      if (cloneBeerMetrics) cloneBeerMetrics.style.display = 'block';
       if (cloneBeerBot) cloneBeerBot.style.display = 'flex';
       if (cloneBeerComp) {
         cloneBeerComp.textContent = (item && (item.composition || item.subtitle)) || '';
         const compSize = getBeerCompSize(item);
         cloneBeerComp.style.setProperty('font-size', `${compSize}pt`, 'important');
       }
-      if (cloneBeerStr) cloneBeerStr.textContent = stripBeerMetric((item && item.beerStrength) || '');
-      if (cloneBeerBit) cloneBeerBit.textContent = (item && item.beerBitterness) || '';
-      if (cloneBeerDen) cloneBeerDen.textContent = stripBeerMetric((item && item.beerDensity) || '');
       if (cloneBeerType) cloneBeerType.textContent = (item && item.beerType) || '';
       if (cloneBeerStyle) cloneBeerStyle.textContent = (item && item.beerStyle) || '';
       if (cloneBeerBot) {
         const isHidden = isBeerItemTypeHidden(item);
         cloneBeerBot.classList.toggle('is-style-centered', isHidden);
       }
+
+      applyBeerPromoStateToClone(clone, item, isBeerPromoClone);
+      if (!isBeerPromoClone) {
+        if (cloneBeerMetrics) cloneBeerMetrics.style.display = 'block';
+        if (cloneBeerStr) cloneBeerStr.textContent = stripBeerMetric((item && item.beerStrength) || '');
+        if (cloneBeerBit) cloneBeerBit.textContent = (item && item.beerBitterness) || '';
+        if (cloneBeerDen) cloneBeerDen.textContent = stripBeerMetric((item && item.beerDensity) || '');
+      }
     } else {
       if (cloneBeerCap) cloneBeerCap.style.display = 'none';
       if (cloneBeerComp) cloneBeerComp.style.display = 'none';
       if (cloneBeerMetrics) cloneBeerMetrics.style.display = 'none';
       if (cloneBeerBot) cloneBeerBot.style.display = 'none';
+      applyBeerPromoStateToClone(clone, item, false);
     }
 
     // Шаблон «СТОП» (стоп-плашки для розлива)
@@ -12012,7 +12083,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <span class="price-val"></span>
               <span class="price-curr"></span>
               <div class="price-cross-overlay" aria-hidden="true" style="display:none;">
-                <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+                <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
                   <line class="cross-shadow-1" x1="2" y1="2" x2="98" y2="98" stroke="#000000" stroke-width="11" stroke-linecap="round" opacity="0.35"/>
                   <line class="cross-shadow-2" x1="98" y1="2" x2="2" y2="98" stroke="#000000" stroke-width="11" stroke-linecap="round" opacity="0.35"/>
                   <line class="cross-line-1" x1="2" y1="2" x2="98" y2="98" stroke="#e63946" stroke-width="7" stroke-linecap="round"/>
@@ -12042,9 +12113,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span class="price-val"></span>
                 <span class="price-curr">₽</span>
                 <div class="price-cross-overlay beer-promo-cross-overlay" aria-hidden="true" style="display:none;">
-                  <svg viewBox="0 0 100 100" preserveAspectRatio="none">
-                    <line x1="0" y1="0" x2="100" y2="100" stroke="#e3000f" stroke-width="6.5" stroke-linecap="square"/>
-                    <line x1="100" y1="0" x2="0" y2="100" stroke="#e3000f" stroke-width="6.5" stroke-linecap="square"/>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <line class="cross-shadow-1" x1="0" y1="0" x2="100" y2="100" stroke="#000000" stroke-width="9.5" stroke-linecap="square" opacity="0.3"/>
+                    <line class="cross-shadow-2" x1="100" y1="0" x2="0" y2="100" stroke="#000000" stroke-width="9.5" stroke-linecap="square" opacity="0.3"/>
+                    <line class="cross-line-1" x1="0" y1="0" x2="100" y2="100" stroke="#e3000f" stroke-width="6.5" stroke-linecap="square"/>
+                    <line class="cross-line-2" x1="100" y1="0" x2="0" y2="100" stroke="#e3000f" stroke-width="6.5" stroke-linecap="square"/>
                   </svg>
                 </div>
               </div>
@@ -12254,10 +12327,11 @@ document.addEventListener('DOMContentLoaded', () => {
       box.style.transform = `translate(${lp.price.x}mm, ${yOffset}mm) rotate(${ctx.layerRotate || 0}deg)${pScaleStr}`;
     }
 
-    // Красный крест на цене (мульти-печать)
+    // Красный крест на цене (мульти-печать; для «Пиво А5 АКЦИЯ» крест рисуется в promo-строке)
     {
+      const isPromoNow = (ctx.key === 'beer_a5_aktsiya' || ctx.tb?.bgImage === 'pivo_a5_aktsiya_bg.jpg' || clone.classList.contains('is-beer-a5-aktsiya'));
       const templateCross = !!tf.priceCross;
-      const isCrossed = isItemPriceCrossed(item, templateCross);
+      const isCrossed = !isPromoNow && isItemPriceCrossed(item, templateCross);
       const crossColor = fontOf(item, 'priceCrossColor', tf.priceCrossColor || '#e63946');
       const crossWidth = fontOf(item, 'priceCrossWidth', tf.priceCrossWidth != null ? tf.priceCrossWidth : 7);
       applyCrossOverlay(box || clone.querySelector('.wobbler-price-box'), isCrossed, crossColor, crossWidth);
@@ -12346,7 +12420,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const isBeerPreset = (ctx.key === 'beer_a5' || ctx.key === 'beer_a5_aktsiya' || ctx.tb?.bgImage === 'pivo_a5_bg.jpg' || ctx.tb?.bgImage === 'pivo_a5_aktsiya_bg.jpg' || clone.classList.contains('is-beer-a5'));
     const isBeerPromo = (ctx.key === 'beer_a5_aktsiya' || ctx.tb?.bgImage === 'pivo_a5_aktsiya_bg.jpg' || clone.classList.contains('is-beer-a5-aktsiya'));
     clone.classList.toggle('is-beer-a5', isBeerPreset);
-    clone.classList.toggle('is-beer-a5-aktsiya', isBeerPromo);
     const cloneBeerCap = clone.querySelector('.beer-cap-photo-wrap');
     const cloneBeerPhoto = clone.querySelector('.beer-cap-img');
     const cloneBeerComp = clone.querySelector('.beer-composition');
@@ -12357,9 +12430,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const cloneBeerBot = clone.querySelector('.beer-bottom-row');
     const cloneBeerType = clone.querySelector('.beer-type-val');
     const cloneBeerStyle = clone.querySelector('.beer-style-val');
-
-    const clonePromoTop = clone.querySelector('.beer-promo-row-top');
-    const clonePromoBottom = clone.querySelector('.beer-promo-row-bottom');
 
     if (isBeerPreset) {
       const cloneSub = clone.querySelector('.wobbler-subtitle');
@@ -12403,47 +12473,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (cloneBeerType) cloneBeerType.textContent = (item && item.beerType) || '';
       if (cloneBeerStyle) cloneBeerStyle.textContent = (item && item.beerStyle) || '';
 
-      if (isBeerPromo) {
-        if (cloneBeerMetrics) cloneBeerMetrics.style.display = 'none';
-        const cPriceBox = clone.querySelector('.wobbler-price-box');
-        if (cPriceBox) cPriceBox.style.display = 'none';
-
-        const isDiscount = (item && item.promoMode === 'discount');
-        clone.classList.toggle('is-promo-discount', isDiscount);
-
-        if (clonePromoTop) {
-          clonePromoTop.style.display = 'flex';
-          const lbl = clonePromoTop.querySelector('.beer-promo-label');
-          if (lbl) {
-            lbl.textContent = (item && item.priceLabel) || '1л -';
-            lbl.style.display = isDiscount ? 'none' : 'flex';
-          }
-          const pVal = clonePromoTop.querySelector('.price-val');
-          const pCur = clonePromoTop.querySelector('.price-curr');
-          renderBeerPromoPriceBox(pVal, pCur, (item && item.price) || '', '₽');
-          const crossEl = clonePromoTop.querySelector('.beer-promo-cross-overlay');
-          if (crossEl) crossEl.style.display = isDiscount ? 'block' : 'none';
-          const strEl = clonePromoTop.querySelector('.circle-strength .metric-val');
-          if (strEl) strEl.textContent = stripBeerMetric((item && item.beerStrength) || '') || '4,0%';
-        }
-        if (clonePromoBottom) {
-          clonePromoBottom.style.display = 'flex';
-          const lbl2 = clonePromoBottom.querySelector('.beer-promo-label');
-          if (lbl2) {
-            lbl2.textContent = (item && item.price2Label) || '1.5л -';
-            lbl2.style.display = isDiscount ? 'none' : 'flex';
-          }
-          const pVal2 = clonePromoBottom.querySelector('.price-val');
-          const pCur2 = clonePromoBottom.querySelector('.price-curr');
-          renderBeerPromoPriceBox(pVal2, pCur2, (item && item.price2) || '', '₽');
-          if (pVal2) pVal2.style.color = isDiscount ? '#e3000f' : '#000000';
-          if (pCur2) pCur2.style.color = isDiscount ? '#e3000f' : '#000000';
-          const denEl = clonePromoBottom.querySelector('.circle-density .metric-val');
-          if (denEl) denEl.textContent = stripBeerMetric((item && item.beerDensity) || '') || '11,0%';
-        }
-      } else {
-        if (clonePromoTop) clonePromoTop.style.display = 'none';
-        if (clonePromoBottom) clonePromoBottom.style.display = 'none';
+      applyBeerPromoStateToClone(clone, item, isBeerPromo);
+      if (!isBeerPromo) {
         if (cloneBeerMetrics) cloneBeerMetrics.style.display = 'block';
         if (cloneBeerStr) cloneBeerStr.textContent = stripBeerMetric((item && item.beerStrength) || '');
         if (cloneBeerBit) cloneBeerBit.textContent = (item && item.beerBitterness) || '';
@@ -12454,8 +12485,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (cloneBeerComp) cloneBeerComp.style.display = 'none';
       if (cloneBeerMetrics) cloneBeerMetrics.style.display = 'none';
       if (cloneBeerBot) cloneBeerBot.style.display = 'none';
-      if (clonePromoTop) clonePromoTop.style.display = 'none';
-      if (clonePromoBottom) clonePromoBottom.style.display = 'none';
+      applyBeerPromoStateToClone(clone, item, false);
     }
 
     // Шаблон «СТОП» (стоп-плашка для розлива)
@@ -12844,7 +12874,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Отрисовка промо-строк (Пиво А5 АКЦИЯ)
       const isPromo = isBeerA5PromoActive();
       wobblerPreview.classList.toggle('is-beer-a5-aktsiya', isPromo);
-      const isDiscount = isPromo && (activeItem && activeItem.promoMode === 'discount');
+      const isDiscount = isPromo && !!(activeItem && (activeItem.promoMode === 'discount' || activeItem.priceCross === true));
       wobblerPreview.classList.toggle('is-promo-discount', isDiscount);
 
       const promoRowTop = document.getElementById('previewBeerPromoRowTop');
@@ -12862,6 +12892,8 @@ document.addEventListener('DOMContentLoaded', () => {
           renderBeerPromoPriceBox(valEl, curEl, (activeItem && activeItem.price) || '', '₽');
           const crossEl = promoRowTop.querySelector('.beer-promo-cross-overlay');
           if (crossEl) crossEl.style.display = isDiscount ? 'block' : 'none';
+          const promoInner = promoRowTop.querySelector('.price-box-inner');
+          if (promoInner) promoInner.classList.toggle('is-crossed', isDiscount);
           const strEl = document.getElementById('previewBeerPromoStrength');
           if (strEl && document.activeElement !== strEl) strEl.textContent = strText || '4,0%';
         }
@@ -12887,7 +12919,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (promoRowBottom) promoRowBottom.style.display = 'none';
       }
     } else {
-      wobblerPreview.classList.remove('is-beer-a5-aktsiya');
+      wobblerPreview.classList.remove('is-beer-a5-aktsiya', 'is-promo-discount');
       const promoRowTop = document.getElementById('previewBeerPromoRowTop');
       const promoRowBottom = document.getElementById('previewBeerPromoRowBottom');
       if (promoRowTop) promoRowTop.style.display = 'none';
@@ -12979,9 +13011,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const pScaleStr = pScaleX !== 1 ? ` scaleX(${pScaleX})` : '';
       previewPriceBox.style.transform = `translate(${lp.price.x}mm, ${yOffset}mm) rotate(${layerRotate}deg)${pScaleStr}`;
 
-      // Красный крест на цене
+      // Красный крест на цене (для «Пиво А5 АКЦИЯ» крест рендерится в promo-строке)
       const templateCross = !!tf.priceCross || !!(priceCrossToggle && priceCrossToggle.checked);
-      const isCrossed = isItemPriceCrossed(activeItem, templateCross);
+      const isCrossed = !isPromoNow && isItemPriceCrossed(activeItem, templateCross);
       const crossColor = fontOf(activeItem, 'priceCrossColor', tf.priceCrossColor || (priceCrossColor ? priceCrossColor.value : '#e63946'));
       const crossWidth = fontOf(activeItem, 'priceCrossWidth', tf.priceCrossWidth != null ? tf.priceCrossWidth : (priceCrossWidth ? priceCrossWidth.value : 7));
       applyCrossOverlay(previewPriceBox, isCrossed, crossColor, crossWidth);
@@ -14676,11 +14708,18 @@ document.addEventListener('DOMContentLoaded', () => {
         itemsToShow.push({ it: first, origIndex: 0, copyIndex: 0 });
       }
     } else {
-      // одиночный режим: позиции из singleLabelPos
+      // одиночный режим: позиции из singleLabelPos + оформление/перечёркивание с itemsData[0]
+      const act0 = (itemsData && itemsData[0]) ? itemsData[0] : {};
       const hasTitle = !!(inputTitle && inputTitle.value.trim());
       if (hasTitle) filledUniqueCount = 1;
       itemsToShow = [{
-        it: { title: inputTitle.value.trim(), price: inputPrice.value.replace(/\s+$/, ''), subtitle: (inputSubtitle ? inputSubtitle.value.trim() : ''), labelPos: singleLabelPos },
+        it: Object.assign({}, act0, {
+          title: inputTitle.value.trim(),
+          price: inputPrice.value.replace(/\s+$/, ''),
+          subtitle: (inputSubtitle ? inputSubtitle.value.trim() : ''),
+          labelPos: singleLabelPos,
+          priceCross: isItemPriceCrossed(act0, !!(priceCrossToggle && priceCrossToggle.checked))
+        }),
         origIndex: 0
       }];
     }
@@ -15029,7 +15068,7 @@ document.addEventListener('DOMContentLoaded', () => {
         price: inputPrice.value.replace(/\s+$/, ''),
         subtitle: (inputSubtitle ? inputSubtitle.value.trim() : ''),
         labelPos: singleLabelPos,
-        priceCross: act0.priceCross !== undefined ? act0.priceCross : (priceCrossToggle ? priceCrossToggle.checked : false)
+        priceCross: isItemPriceCrossed(act0, !!(priceCrossToggle && priceCrossToggle.checked))
       });
       let times = 1;
       if (singleRepeatCount) {
@@ -15267,7 +15306,7 @@ document.addEventListener('DOMContentLoaded', () => {
           title, price, subtitle, digit,
           labelPos: singleLabelPos,
           count: repCount,
-          priceCross: act0.priceCross !== undefined ? act0.priceCross : (priceCrossToggle ? priceCrossToggle.checked : false)
+          priceCross: isItemPriceCrossed(act0, !!(priceCrossToggle && priceCrossToggle.checked))
         })];
       }
       return [];
